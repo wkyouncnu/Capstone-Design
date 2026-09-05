@@ -907,8 +907,8 @@ build_w07_models
 
 ### 이 주차의 원본
 
-- **Fossen, T. I.** *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed. — 볼트 루트에 PDF 있음
-- **Fossen 2024 Lecture on 2D and 3D path-following control** — 볼트 루트, LOS 유도 전반
+- **Fossen, T. I.** *Handbook of Marine Craft Hydrodynamics and Motion Control*, 2nd ed. — `50-원본자료/` 에 PDF 있음
+- **Fossen 2024 Lecture on 2D and 3D path-following control** — `50-원본자료/`, LOS 유도 전반
 - **MSS 툴박스** — https://github.com/cybergalactic/MSS
   - `SIMULINK/mssSimulinkDemos/demoOtterUSVHeadingControl_P_D_Waypoint.slx`
     (LOS / atan2 / ILOS 를 모드로 고르는 원본 데모)

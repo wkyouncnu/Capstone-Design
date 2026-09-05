@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'cd \"$(cygpath -u \"$CLAUDE_PROJECT_DIR\")\" && bash _tools/git_autopush.sh'",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

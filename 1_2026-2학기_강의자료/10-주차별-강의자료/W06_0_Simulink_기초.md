@@ -1442,7 +1442,7 @@ tidy_layout('SB9_continuous_done')
 
 ### 교재
 
-- **`Simulink Fundamentals.pdf`** (볼트 루트) — MathWorks 공식 교육 교재 333쪽
+- **`Simulink Fundamentals.pdf`** (`50-원본자료/`) — MathWorks 공식 교육 교재 333쪽
   - 이 문서의 A~L 절은 이 교재의 **2~9장 순서를 그대로 따른다**
 
 | 이 문서 | 교재 장 |
