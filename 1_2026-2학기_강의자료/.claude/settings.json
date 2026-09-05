@@ -1,12 +1,24 @@
 {
+  "_설명": "세션이 끝날 때 자동으로 커밋·푸시한다. 스크립트가 저장소 루트를 스스로 찾으므로 어느 폴더에서 열어도 동작한다. 폴더를 옮기면 아래 경로를 고칠 것.",
   "hooks": {
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "bash -lc 'cd \"$(cygpath -u \"$CLAUDE_PROJECT_DIR\")\" && bash _tools/git_autopush.sh'",
-            "timeout": 120
+            "command": "bash \"/c/Users/admin/Dropbox/캡스톤디자인/1_2026-2학기_강의자료/_tools/git_autopush.sh\"",
+            "timeout": 180
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"/c/Users/admin/Dropbox/캡스톤디자인/1_2026-2학기_강의자료/_tools/git_autopush.sh\"",
+            "timeout": 180
           }
         ]
       }

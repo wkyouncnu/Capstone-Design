@@ -1,0 +1,16 @@
+{
+  "_설명": "저장소 루트에서 Claude Code 를 열었을 때에도 자동 커밋·푸시가 걸리도록 볼트와 같은 훅을 둔다.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"/c/Users/admin/Dropbox/캡스톤디자인/1_2026-2학기_강의자료/_tools/git_autopush.sh\"",
+            "timeout": 180
+          }
+        ]
+      }
+    ]
+  }
+}
