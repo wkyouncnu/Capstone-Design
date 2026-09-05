@@ -58,6 +58,23 @@
 
 ---
 
+## GitHub 백업
+
+- 원격 — `git@github.com:wkyouncnu/Capstone-Design.git` (브랜치 `main`)
+- 올라가는 것은 **직접 만든 자료만** — 강의자료 MD·PDF·SVG, Simulink 모델, MATLAB 코드
+- 올라가지 않는 것 — 학생 제출물·출결(개인정보), 교재·논문(저작권), 100 MB 초과 파일
+- 세션이 끝날 때 자동으로 커밋·푸시된다. 직접 하려면
+
+```bash
+bash 1_2026-2학기_강의자료/_tools/git_autopush.sh
+```
+
+> [!important] 첫 푸시 전에 SSH 공개키를 GitHub 에 등록해야 한다
+> `cat ~/.ssh/id_ed25519.pub` 의 출력을 https://github.com/settings/keys 에 등록.
+> 자세한 절차와 오류 대처는 스킬 `capstone-git-sync` 참고.
+
+---
+
 ## 정리 전에는 이랬다
 
 ```
