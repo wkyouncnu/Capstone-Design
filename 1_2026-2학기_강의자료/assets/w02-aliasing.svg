@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 330" width="900" height="330" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="330" fill="#ffffff"/>
+  <text x="450" y="30" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">에일리어싱 - 9 Hz 신호를 10 Hz 로 표본화하면 1 Hz 로 둔갑한다</text>
+  <line x1="60" y1="150" x2="870" y2="150" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="880" y="155" font-size="14" fill="#94a3b8">t</text>
+  <path d="M60,150 q22.2,-60 44.4,0 q22.2,60 44.4,0 q22.2,-60 44.4,0 q22.2,60 44.4,0 q22.2,-60 44.4,0 q22.2,60 44.4,0 q22.2,-60 44.4,0 q22.2,60 44.4,0 q22.2,-60 44.4,0 q22.2,60 44.4,0 q22.2,-60 44.4,0 q22.2,60 44.4,0 q22.2,-60 44.4,0 q22.2,60 44.4,0 q22.2,-60 44.4,0 q22.2,60 44.4,0 q22.2,-60 44.4,0 q22.2,60 44.4,0" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <path d="M60,150 q200,120 400,0 q200,-120 400,0" fill="none" stroke="#dc2626" stroke-width="4"/>
+  <circle cx="60" cy="150" r="7" fill="#dc2626"/>
+  <circle cx="140" cy="185" r="7" fill="#dc2626"/>
+  <circle cx="220" cy="207" r="7" fill="#dc2626"/>
+  <circle cx="300" cy="207" r="7" fill="#dc2626"/>
+  <circle cx="380" cy="185" r="7" fill="#dc2626"/>
+  <circle cx="460" cy="150" r="7" fill="#dc2626"/>
+  <circle cx="540" cy="115" r="7" fill="#dc2626"/>
+  <circle cx="620" cy="93" r="7" fill="#dc2626"/>
+  <circle cx="700" cy="93" r="7" fill="#dc2626"/>
+  <circle cx="780" cy="115" r="7" fill="#dc2626"/>
+  <circle cx="860" cy="150" r="7" fill="#dc2626"/>
+  <line x1="60" y1="240" x2="110" y2="240" stroke="#94a3b8" stroke-width="2"/>
+  <text x="122" y="246" font-size="16" fill="#334155">실제 신호 9 Hz  (센서에 들어온 진짜 진동)</text>
+  <circle cx="85" cy="272" r="7" fill="#dc2626"/>
+  <text x="122" y="278" font-size="16" fill="#334155">표본점 10 Hz  (0.1초마다 한 번씩 값을 읽음)</text>
+  <line x1="60" y1="304" x2="110" y2="304" stroke="#dc2626" stroke-width="4"/>
+  <text x="122" y="310" font-size="16" fill="#dc2626">관측 결과 1 Hz  -  존재하지 않는 느린 신호가 보인다</text>
+</svg>

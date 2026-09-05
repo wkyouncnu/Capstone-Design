@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="400" fill="#ffffff"/>
+  <rect x="12" y="12" width="876" height="376" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="30" y="42" font-size="18" font-weight="700" fill="#475569">Windows 11  (내 노트북 한 대)</text>
+  <rect x="40" y="64" width="340" height="150" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="210" y="98" font-size="21" font-weight="700" fill="#1e293b" text-anchor="middle">MATLAB R2024b</text>
+  <text x="210" y="128" font-size="16" fill="#334155" text-anchor="middle">Simulink + ROS Toolbox</text>
+  <text x="210" y="160" font-size="16" fill="#dc2626" text-anchor="middle">제어기를 설계하고 튜닝</text>
+  <text x="210" y="190" font-size="15" fill="#64748b" text-anchor="middle">6주차부터 사용</text>
+  <rect x="520" y="64" width="340" height="150" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="690" y="98" font-size="21" font-weight="700" fill="#1e293b" text-anchor="middle">WSL2 - Ubuntu 22.04</text>
+  <text x="690" y="128" font-size="16" fill="#334155" text-anchor="middle">ROS 2 Humble + Gazebo Garden</text>
+  <text x="690" y="160" font-size="16" fill="#1d4ed8" text-anchor="middle">VRX 시뮬레이터 · 인지 노드</text>
+  <text x="690" y="190" font-size="15" fill="#64748b" text-anchor="middle">1 ~ 3주차에 설치</text>
+  <line x1="386" y1="139" x2="514" y2="139" stroke="#0d9488" stroke-width="3"/>
+  <polygon points="514,139 500,132 500,146" fill="#0d9488"/>
+  <polygon points="386,139 400,132 400,146" fill="#0d9488"/>
+  <text x="450" y="122" font-size="16" font-weight="700" fill="#0d9488" text-anchor="middle">ROS 2 토픽</text>
+  <text x="450" y="166" font-size="14" fill="#64748b" text-anchor="middle">(DDS 통신)</text>
+  <rect x="40" y="250" width="340" height="70" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="210" y="280" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">VSCode + Claude Code</text>
+  <text x="210" y="306" font-size="15" fill="#64748b" text-anchor="middle">5주차부터 사용</text>
+  <line x1="386" y1="285" x2="514" y2="285" stroke="#7c3aed" stroke-width="3"/>
+  <polygon points="514,285 500,278 500,292" fill="#7c3aed"/>
+  <text x="690" y="278" font-size="16" fill="#334155" text-anchor="middle">WSL Remote 로 접속해서</text>
+  <text x="690" y="302" font-size="16" fill="#334155" text-anchor="middle">Ubuntu 안의 코드를 편집</text>
+  <text x="450" y="362" font-size="15" fill="#64748b" text-anchor="middle">노트북 한 대 안에서 Windows 와 Ubuntu 가 동시에 돌아간다</text>
+</svg>

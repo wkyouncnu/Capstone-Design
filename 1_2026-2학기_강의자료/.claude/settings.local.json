@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/admin/Dropbox/캡스톤디자인/**)",
+      "Bash(mkdir -p W06_0_simulink/img)"
+    ]
+  }
+}

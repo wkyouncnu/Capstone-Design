@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="900" height="320" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="320" fill="#ffffff"/>
+  <rect x="20" y="24" width="240" height="76" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <rect x="330" y="24" width="240" height="76" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <rect x="640" y="24" width="240" height="76" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="140" y="56" font-size="22" font-weight="700" fill="#1e293b" text-anchor="middle">1. 인지 Perception</text>
+  <text x="140" y="84" font-size="17" fill="#1d4ed8" text-anchor="middle">무엇이 있나?</text>
+  <text x="450" y="56" font-size="22" font-weight="700" fill="#1e293b" text-anchor="middle">2. 판단 Guidance</text>
+  <text x="450" y="84" font-size="17" fill="#0d9488" text-anchor="middle">어디로 갈까?</text>
+  <text x="760" y="56" font-size="22" font-weight="700" fill="#1e293b" text-anchor="middle">3. 제어 Control</text>
+  <text x="760" y="84" font-size="17" fill="#dc2626" text-anchor="middle">어떻게 움직일까?</text>
+  <line x1="265" y1="62" x2="320" y2="62" stroke="#64748b" stroke-width="3"/>
+  <polygon points="328,62 314,55 314,69" fill="#64748b"/>
+  <line x1="575" y1="62" x2="630" y2="62" stroke="#64748b" stroke-width="3"/>
+  <polygon points="638,62 624,55 624,69" fill="#64748b"/>
+  <text x="140" y="140" font-size="16" fill="#334155" text-anchor="middle">LiDAR 포인트클라우드</text>
+  <text x="140" y="166" font-size="16" fill="#334155" text-anchor="middle">카메라 영상</text>
+  <text x="140" y="192" font-size="16" fill="#334155" text-anchor="middle">GNSS · IMU</text>
+  <text x="140" y="218" font-size="16" fill="#334155" text-anchor="middle">센서 융합 (EKF)</text>
+  <text x="450" y="140" font-size="16" fill="#334155" text-anchor="middle">경로 계획</text>
+  <text x="450" y="166" font-size="16" fill="#334155" text-anchor="middle">충돌회피 (VFH · DWA)</text>
+  <text x="450" y="192" font-size="16" fill="#334155" text-anchor="middle">LOS 유도 법칙</text>
+  <text x="450" y="218" font-size="16" fill="#334155" text-anchor="middle">미션 상태기계 (FSM)</text>
+  <text x="760" y="140" font-size="16" fill="#334155" text-anchor="middle">헤딩 제어기</text>
+  <text x="760" y="166" font-size="16" fill="#334155" text-anchor="middle">속도 제어기</text>
+  <text x="760" y="192" font-size="16" fill="#334155" text-anchor="middle">추력 배분</text>
+  <text x="760" y="218" font-size="16" fill="#334155" text-anchor="middle">위치 유지 (DP)</text>
+  <line x1="20" y1="248" x2="880" y2="248" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="140" y="278" font-size="18" font-weight="700" fill="#1d4ed8" text-anchor="middle">10 ~ 12주차</text>
+  <text x="450" y="278" font-size="18" font-weight="700" fill="#0d9488" text-anchor="middle">9 · 11 · 13주차</text>
+  <text x="760" y="278" font-size="18" font-weight="700" fill="#dc2626" text-anchor="middle">6 ~ 9 · 13주차</text>
+  <text x="450" y="306" font-size="15" fill="#64748b" text-anchor="middle">우리는 오른쪽(제어)부터 시작해서 왼쪽(인지)으로 간다</text>
+</svg>

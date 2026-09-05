@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 430" width="940" height="430" font-family="Malgun Gothic, sans-serif">
+  <rect width="940" height="430" fill="#ffffff"/>
+  <text x="470" y="30" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">6주차에 만들 제어 구조 - 속도 루프와 헤딩 루프</text>
+
+  <rect x="62" y="60" width="122" height="52" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+  <text x="123" y="82" font-size="15" fill="#1e293b" text-anchor="middle">목표 속도</text>
+  <text x="123" y="102" font-size="14" fill="#64748b" text-anchor="middle">u_ref [m/s]</text>
+  <rect x="62" y="186" width="122" height="52" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+  <text x="123" y="208" font-size="15" fill="#1e293b" text-anchor="middle">목표 선수각</text>
+  <text x="123" y="228" font-size="14" fill="#64748b" text-anchor="middle">psi_ref [deg]</text>
+
+  <circle cx="228" cy="86" r="16" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+  <text x="228" y="80" font-size="13" fill="#334155" text-anchor="middle">+</text>
+  <text x="215" y="100" font-size="20" font-weight="700" fill="#334155" text-anchor="middle">&#8722;</text>
+  <circle cx="228" cy="212" r="16" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+  <text x="228" y="206" font-size="13" fill="#334155" text-anchor="middle">+</text>
+  <text x="215" y="226" font-size="20" font-weight="700" fill="#334155" text-anchor="middle">&#8722;</text>
+
+  <rect x="278" y="60" width="118" height="52" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="337" y="84" font-size="16" font-weight="700" fill="#1d4ed8" text-anchor="middle">PI</text>
+  <text x="337" y="104" font-size="13" fill="#64748b" text-anchor="middle">속도 제어기</text>
+  <rect x="278" y="186" width="118" height="52" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="337" y="210" font-size="16" font-weight="700" fill="#0d9488" text-anchor="middle">PD</text>
+  <text x="337" y="230" font-size="13" fill="#64748b" text-anchor="middle">헤딩 제어기</text>
+
+  <rect x="452" y="112" width="132" height="76" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="518" y="138" font-size="16" font-weight="700" fill="#b45309" text-anchor="middle">차동 배분</text>
+  <text x="518" y="160" font-size="13" fill="#334155" text-anchor="middle">F_L = X/2 + N/2b</text>
+  <text x="518" y="179" font-size="13" fill="#334155" text-anchor="middle">F_R = X/2 - N/2b</text>
+
+  <rect x="638" y="112" width="118" height="76" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="697" y="138" font-size="15" font-weight="700" fill="#dc2626" text-anchor="middle">추력 발행</text>
+  <text x="697" y="160" font-size="13" fill="#334155" text-anchor="middle">left/thrust</text>
+  <text x="697" y="179" font-size="13" fill="#334155" text-anchor="middle">right/thrust</text>
+
+  <rect x="800" y="100" width="122" height="100" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="861" y="132" font-size="16" font-weight="700" fill="#7c3aed" text-anchor="middle">Gazebo</text>
+  <text x="861" y="154" font-size="14" fill="#334155" text-anchor="middle">WAM-V</text>
+  <text x="861" y="176" font-size="13" fill="#64748b" text-anchor="middle">유체력 · 파랑</text>
+
+  <line x1="184" y1="86" x2="208" y2="86" stroke="#334155" stroke-width="2"/>
+  <polygon points="212,86 200,81 200,91" fill="#334155"/>
+  <line x1="244" y1="86" x2="274" y2="86" stroke="#334155" stroke-width="2"/>
+  <polygon points="278,86 266,81 266,91" fill="#334155"/>
+  <line x1="184" y1="212" x2="208" y2="212" stroke="#334155" stroke-width="2"/>
+  <polygon points="212,212 200,207 200,217" fill="#334155"/>
+  <line x1="244" y1="212" x2="274" y2="212" stroke="#334155" stroke-width="2"/>
+  <polygon points="278,212 266,207 266,217" fill="#334155"/>
+
+  <path d="M396,86 L424,86 L424,136 L448,136" fill="none" stroke="#1d4ed8" stroke-width="2"/>
+  <polygon points="452,136 440,131 440,141" fill="#1d4ed8"/>
+  <text x="404" y="78" font-size="15" font-weight="700" fill="#1d4ed8">X</text>
+  <path d="M396,212 L424,212 L424,166 L448,166" fill="none" stroke="#0d9488" stroke-width="2"/>
+  <polygon points="452,166 440,161 440,171" fill="#0d9488"/>
+  <text x="404" y="232" font-size="15" font-weight="700" fill="#0d9488">N</text>
+
+  <line x1="584" y1="150" x2="634" y2="150" stroke="#334155" stroke-width="2"/>
+  <polygon points="638,150 626,145 626,155" fill="#334155"/>
+  <line x1="756" y1="150" x2="796" y2="150" stroke="#334155" stroke-width="2"/>
+  <polygon points="800,150 788,145 788,155" fill="#334155"/>
+
+  <path d="M861,200 L861,296 L30,296 L30,86 L208,86" fill="none" stroke="#7c3aed" stroke-width="2.5"/>
+  <polygon points="212,86 200,81 200,91" fill="#7c3aed"/>
+  <path d="M30,212 L208,212" fill="none" stroke="#7c3aed" stroke-width="2.5"/>
+  <polygon points="212,212 200,207 200,217" fill="#7c3aed"/>
+  <circle cx="30" cy="212" r="4" fill="#7c3aed"/>
+
+  <text x="470" y="288" font-size="15" font-weight="700" fill="#7c3aed" text-anchor="middle">ground_truth_odometry   (nav_msgs/Odometry, 10 Hz)</text>
+  <text x="40" y="150" font-size="13" font-weight="700" fill="#1d4ed8">u = twist.twist.linear.x</text>
+  <text x="40" y="252" font-size="13" font-weight="700" fill="#0d9488">psi = 쿼터니언에서 계산</text>
+
+  <line x1="30" y1="326" x2="910" y2="326" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="30" y="352" font-size="15" fill="#334155">속도와 선수각을 둘 다 참값으로 받으므로 <tspan font-weight="700" fill="#dc2626">EKF 같은 추정기를 만들지 않아도 된다</tspan></text>
+  <text x="30" y="378" font-size="15" fill="#64748b">먼저 참값으로 제어기를 완성하고, 추정기로 바꾸는 것은 나중 문제로 미룬다</text>
+  <text x="30" y="404" font-size="14" fill="#64748b">b = 1.027 m (추진기 반폭)</text>
+</svg>

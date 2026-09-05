@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" width="900" height="360" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="360" fill="#ffffff"/>
+  <text x="450" y="30" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">에이전트가 쓴 코드를 검증하는 세 겹</text>
+  <rect x="30" y="58" width="270" height="150" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="165" y="88" font-size="17" font-weight="700" fill="#1d4ed8" text-anchor="middle">1겹 · 단위 테스트</text>
+  <text x="165" y="118" font-size="14" fill="#334155" text-anchor="middle">함수 하나에 입력을 넣고</text>
+  <text x="165" y="140" font-size="14" fill="#334155" text-anchor="middle">답을 아는 출력과 비교</text>
+  <text x="165" y="172" font-size="13" fill="#64748b" text-anchor="middle">예: 북쪽 90도를 넣으면</text>
+  <text x="165" y="192" font-size="13" fill="#64748b" text-anchor="middle">NED 로 0도가 나오는가</text>
+  <rect x="315" y="58" width="270" height="150" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="450" y="88" font-size="17" font-weight="700" fill="#0d9488" text-anchor="middle">2겹 · rosbag 재생</text>
+  <text x="450" y="118" font-size="14" fill="#334155" text-anchor="middle">실제로 기록한 센서 데이터를</text>
+  <text x="450" y="140" font-size="14" fill="#334155" text-anchor="middle">그대로 다시 흘려 보냄</text>
+  <text x="450" y="172" font-size="13" fill="#64748b" text-anchor="middle">시뮬레이터를 다시 안 돌려도</text>
+  <text x="450" y="192" font-size="13" fill="#64748b" text-anchor="middle">같은 조건에서 비교 가능</text>
+  <rect x="600" y="58" width="270" height="150" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="735" y="88" font-size="17" font-weight="700" fill="#b45309" text-anchor="middle">3겹 · 경계조건</text>
+  <text x="735" y="118" font-size="14" fill="#334155" text-anchor="middle">정상 입력이 아니라</text>
+  <text x="735" y="140" font-size="14" fill="#334155" text-anchor="middle">극단·이상 입력을 넣음</text>
+  <text x="735" y="172" font-size="13" fill="#64748b" text-anchor="middle">예: 179도 -&gt; -180도 넘어갈 때</text>
+  <text x="735" y="192" font-size="13" fill="#64748b" text-anchor="middle">값이 튀지 않는가</text>
+  <rect x="30" y="234" width="840" height="52" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="450" y="266" font-size="16" font-weight="700" fill="#7c3aed" text-anchor="middle">세 겹을 다 통과해야 &quot;검증했다&quot; 고 말할 수 있다</text>
+  <line x1="30" y1="308" x2="870" y2="308" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="450" y="332" font-size="15" fill="#334155" text-anchor="middle">제출물은 코드가 아니라 <tspan font-weight="700" fill="#dc2626">초안과 최종본의 diff + 수정 사유 3가지</tspan> 이다</text>
+</svg>

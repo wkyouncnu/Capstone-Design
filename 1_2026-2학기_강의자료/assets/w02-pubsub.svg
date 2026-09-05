@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 350" width="900" height="350" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="350" fill="#ffffff"/>
+  <text x="450" y="32" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">노드와 토픽 - 발행(publish)과 구독(subscribe)</text>
+  <ellipse cx="140" cy="120" rx="115" ry="46" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="140" y="114" font-size="18" font-weight="700" fill="#1e293b" text-anchor="middle">GPS 노드</text>
+  <text x="140" y="140" font-size="14" fill="#64748b" text-anchor="middle">발행자 publisher</text>
+  <rect x="330" y="92" width="240" height="56" rx="28" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="450" y="116" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">/wamv/sensors/gps/gps/fix</text>
+  <text x="450" y="138" font-size="13" fill="#92400e" text-anchor="middle">토픽 (sensor_msgs/NavSatFix)</text>
+  <ellipse cx="770" cy="70" rx="115" ry="42" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="770" y="66" font-size="17" font-weight="700" fill="#1e293b" text-anchor="middle">상태추정 노드</text>
+  <text x="770" y="88" font-size="14" fill="#64748b" text-anchor="middle">구독자 subscriber</text>
+  <ellipse cx="770" cy="180" rx="115" ry="42" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="770" y="176" font-size="17" font-weight="700" fill="#1e293b" text-anchor="middle">로깅 노드</text>
+  <text x="770" y="198" font-size="14" fill="#64748b" text-anchor="middle">구독자 subscriber</text>
+  <line x1="256" y1="120" x2="322" y2="120" stroke="#1d4ed8" stroke-width="3"/>
+  <polygon points="330,120 316,113 316,127" fill="#1d4ed8"/>
+  <line x1="572" y1="112" x2="650" y2="80" stroke="#0d9488" stroke-width="3"/>
+  <polygon points="658,77 642,74 646,88" fill="#0d9488"/>
+  <line x1="572" y1="130" x2="650" y2="168" stroke="#0d9488" stroke-width="3"/>
+  <polygon points="658,172 645,161 641,175" fill="#0d9488"/>
+  <line x1="20" y1="240" x2="880" y2="240" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="40" y="270" font-size="16" fill="#334155">핵심 1  발행자는 누가 듣는지 모른다. 구독자도 누가 보내는지 모른다</text>
+  <text x="40" y="298" font-size="16" fill="#334155">핵심 2  한 토픽을 여러 노드가 동시에 구독할 수 있다</text>
+  <text x="40" y="326" font-size="16" fill="#dc2626">핵심 3  토픽 이름과 메시지 타입과 QoS 가 모두 맞아야 연결된다</text>
+</svg>

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" width="900" height="300" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="300" fill="#ffffff"/>
+  <text x="450" y="34" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">기말 Term Project - 네 구간을 끊지 않고 이어서 수행</text>
+  <rect x="20" y="60" width="195" height="110" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <rect x="235" y="60" width="195" height="110" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <rect x="450" y="60" width="195" height="110" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <rect x="665" y="60" width="215" height="110" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="117" y="92" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">1. 이안 · 항주</text>
+  <text x="117" y="122" font-size="15" fill="#334155" text-anchor="middle">부두를 빠져나와</text>
+  <text x="117" y="146" font-size="15" fill="#334155" text-anchor="middle">목표 해역까지</text>
+  <text x="332" y="92" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">2. 장애물 회피</text>
+  <text x="332" y="122" font-size="15" fill="#334155" text-anchor="middle">부표 36개 필드를</text>
+  <text x="332" y="146" font-size="15" fill="#334155" text-anchor="middle">부딪히지 않고 통과</text>
+  <text x="547" y="92" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">3. 위치 유지</text>
+  <text x="547" y="122" font-size="15" fill="#334155" text-anchor="middle">반경 5 m 안에서</text>
+  <text x="547" y="146" font-size="15" fill="#334155" text-anchor="middle">5초 이상 정지</text>
+  <text x="772" y="92" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">4. 자율 도킹</text>
+  <text x="772" y="122" font-size="15" fill="#334155" text-anchor="middle">3개 도크 중 지정 표식을</text>
+  <text x="772" y="146" font-size="15" fill="#334155" text-anchor="middle">찾아서 접안</text>
+  <polygon points="233,115 219,108 219,122" fill="#64748b"/>
+  <polygon points="448,115 434,108 434,122" fill="#64748b"/>
+  <polygon points="663,115 649,108 649,122" fill="#64748b"/>
+  <line x1="20" y1="200" x2="880" y2="200" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="117" y="228" font-size="15" fill="#64748b" text-anchor="middle">Simulink 제어 + LOS</text>
+  <text x="332" y="228" font-size="15" fill="#64748b" text-anchor="middle">LiDAR + VFH</text>
+  <text x="547" y="228" font-size="15" fill="#64748b" text-anchor="middle">DP 제어</text>
+  <text x="772" y="228" font-size="15" fill="#64748b" text-anchor="middle">카메라 + RANSAC</text>
+  <text x="117" y="252" font-size="15" font-weight="700" fill="#1d4ed8" text-anchor="middle">8 · 9주차</text>
+  <text x="332" y="252" font-size="15" font-weight="700" fill="#0d9488" text-anchor="middle">10 · 11주차</text>
+  <text x="547" y="252" font-size="15" font-weight="700" fill="#d97706" text-anchor="middle">13주차</text>
+  <text x="772" y="252" font-size="15" font-weight="700" fill="#dc2626" text-anchor="middle">12 · 13주차</text>
+  <text x="450" y="284" font-size="15" fill="#64748b" text-anchor="middle">10회 반복해서 성공률을 측정한다. 1회 성공은 성공이 아니다</text>
+</svg>

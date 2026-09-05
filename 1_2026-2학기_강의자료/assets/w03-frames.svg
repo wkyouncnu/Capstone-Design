@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" width="900" height="380" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="380" fill="#ffffff"/>
+  <text x="450" y="30" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">ENU 와 NED - 같은 장소를 다르게 부른다</text>
+  <text x="225" y="66" font-size="18" font-weight="700" fill="#1d4ed8" text-anchor="middle">ENU  (ROS · Gazebo 가 쓰는 것)</text>
+  <line x1="130" y1="240" x2="330" y2="240" stroke="#1d4ed8" stroke-width="3"/>
+  <polygon points="338,240 322,232 322,248" fill="#1d4ed8"/>
+  <text x="352" y="246" font-size="17" font-weight="700" fill="#1d4ed8">x = 동</text>
+  <line x1="130" y1="240" x2="130" y2="110" stroke="#1d4ed8" stroke-width="3"/>
+  <polygon points="130,102 122,118 138,118" fill="#1d4ed8"/>
+  <text x="90" y="100" font-size="17" font-weight="700" fill="#1d4ed8">y = 북</text>
+  <circle cx="130" cy="240" r="9" fill="#ffffff" stroke="#1d4ed8" stroke-width="3"/>
+  <circle cx="130" cy="240" r="3" fill="#1d4ed8"/>
+  <text x="98" y="272" font-size="15" fill="#1d4ed8">z = 위</text>
+  <text x="225" y="306" font-size="15" fill="#334155" text-anchor="middle">각도는 동쪽 기준 반시계방향</text>
+  <text x="225" y="330" font-size="15" fill="#334155" text-anchor="middle">수학 교과서의 xy 평면과 같다</text>
+  <line x1="450" y1="60" x2="450" y2="345" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="675" y="66" font-size="18" font-weight="700" fill="#dc2626" text-anchor="middle">NED  (선박 · 제어 이론이 쓰는 것)</text>
+  <line x1="580" y1="240" x2="780" y2="240" stroke="#dc2626" stroke-width="3"/>
+  <polygon points="788,240 772,232 772,248" fill="#dc2626"/>
+  <text x="802" y="246" font-size="17" font-weight="700" fill="#dc2626">y = 동</text>
+  <line x1="580" y1="240" x2="580" y2="110" stroke="#dc2626" stroke-width="3"/>
+  <polygon points="580,102 572,118 588,118" fill="#dc2626"/>
+  <text x="540" y="100" font-size="17" font-weight="700" fill="#dc2626">x = 북</text>
+  <circle cx="580" cy="240" r="9" fill="#ffffff" stroke="#dc2626" stroke-width="3"/>
+  <line x1="574" y1="234" x2="586" y2="246" stroke="#dc2626" stroke-width="2"/>
+  <line x1="586" y1="234" x2="574" y2="246" stroke="#dc2626" stroke-width="2"/>
+  <text x="546" y="272" font-size="15" fill="#dc2626">z = 아래</text>
+  <text x="675" y="306" font-size="15" fill="#334155" text-anchor="middle">각도는 북쪽 기준 시계방향</text>
+  <text x="675" y="330" font-size="15" fill="#334155" text-anchor="middle">나침반 · 해도와 같다</text>
+  <rect x="60" y="352" width="780" height="0.5" fill="#cbd5e1"/>
+  <text x="115" y="372" font-size="16" font-weight="700" fill="#0d9488" text-anchor="middle">N = y_ENU</text>
+  <text x="320" y="372" font-size="16" font-weight="700" fill="#0d9488" text-anchor="middle">E = x_ENU</text>
+  <text x="525" y="372" font-size="16" font-weight="700" fill="#0d9488" text-anchor="middle">D = -z_ENU</text>
+  <text x="760" y="372" font-size="16" font-weight="700" fill="#0d9488" text-anchor="middle">psi_NED = 90도 - psi_ENU</text>
+</svg>

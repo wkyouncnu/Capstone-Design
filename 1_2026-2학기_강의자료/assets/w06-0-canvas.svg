@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="430" viewBox="0 0 900 430" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="430" fill="#ffffff"/>
+
+  <text x="20" y="28" font-size="18" font-weight="bold" fill="#1e293b">Simulink 편집기 — 이 네 군데만 알면 된다</text>
+
+  <!-- window frame -->
+  <rect x="20" y="48" width="700" height="330" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+
+  <!-- toolstrip -->
+  <rect x="20" y="48" width="700" height="52" rx="6" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="36" y="72" font-size="15" fill="#1d4ed8" font-weight="bold">&#9312; 툴스트립</text>
+  <rect x="150" y="60" width="74" height="28" rx="4" fill="#ffffff" stroke="#1d4ed8"/>
+  <text x="163" y="79" font-size="15" fill="#1d4ed8">&#9654; Run</text>
+  <rect x="236" y="60" width="120" height="28" rx="4" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="248" y="79" font-size="15" fill="#334155">정지 시간 20</text>
+  <rect x="368" y="60" width="150" height="28" rx="4" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="380" y="79" font-size="15" fill="#334155">Model Settings</text>
+
+  <!-- library browser -->
+  <rect x="20" y="100" width="170" height="278" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="32" y="126" font-size="15" fill="#0d9488" font-weight="bold">&#9313; 라이브러리</text>
+  <text x="32" y="148" font-size="15" fill="#334155">Sources</text>
+  <text x="32" y="172" font-size="15" fill="#334155">Sinks</text>
+  <text x="32" y="196" font-size="15" fill="#334155">Math Operations</text>
+  <text x="32" y="220" font-size="15" fill="#334155">Signal Routing</text>
+  <text x="32" y="244" font-size="15" fill="#334155">Discrete</text>
+  <text x="32" y="268" font-size="15" fill="#334155">Discontinuities</text>
+  <text x="32" y="292" font-size="15" fill="#334155">User-Defined</text>
+  <text x="32" y="316" font-size="15" fill="#334155">Ports &amp; Subsystems</text>
+  <text x="32" y="350" font-size="15" fill="#64748b">여기서 끌어다 놓는다</text>
+
+  <!-- canvas -->
+  <rect x="190" y="100" width="530" height="278" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="204" y="126" font-size="15" fill="#d97706" font-weight="bold">&#9314; 캔버스 — 블록을 놓고 선으로 잇는 곳</text>
+
+  <rect x="230" y="180" width="90" height="52" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="252" y="211" font-size="15" fill="#1e293b">Sine</text>
+  <line x1="320" y1="206" x2="400" y2="206" stroke="#334155" stroke-width="2"/>
+  <polygon points="400,206 392,202 392,210" fill="#334155"/>
+  <rect x="400" y="180" width="90" height="52" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="428" y="211" font-size="15" fill="#1e293b">Gain</text>
+  <line x1="490" y1="206" x2="570" y2="206" stroke="#334155" stroke-width="2"/>
+  <polygon points="570,206 562,202 562,210" fill="#334155"/>
+  <rect x="570" y="180" width="90" height="52" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="590" y="211" font-size="15" fill="#1e293b">Scope</text>
+  <text x="290" y="268" font-size="15" fill="#64748b">블록 = 계산 한 덩어리 / 선 = 흘러가는 값</text>
+
+  <!-- callout: settings -->
+  <rect x="745" y="60" width="140" height="60" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="757" y="84" font-size="15" fill="#dc2626" font-weight="bold">&#9315; Ctrl + E</text>
+  <text x="757" y="106" font-size="15" fill="#334155">솔버 설정</text>
+  <line x1="745" y1="88" x2="520" y2="80" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,4"/>
+
+  <rect x="745" y="150" width="140" height="112" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="757" y="174" font-size="15" fill="#1e293b" font-weight="bold">이 수업 설정</text>
+  <text x="757" y="198" font-size="15" fill="#334155">고정 스텝</text>
+  <text x="757" y="220" font-size="15" fill="#334155">이산(discrete)</text>
+  <text x="757" y="242" font-size="15" fill="#334155">0.05 초</text>
+
+  <text x="20" y="406" font-size="15" fill="#64748b">MATLAB 스크립트와 다른 점 — 시간이 저절로 흐른다. 0.05초마다 모든 블록이 한 번씩 계산된다</text>
+</svg>

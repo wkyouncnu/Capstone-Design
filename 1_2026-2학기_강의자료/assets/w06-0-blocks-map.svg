@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="470" viewBox="0 0 900 470" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="470" fill="#ffffff"/>
+
+  <text x="20" y="28" font-size="18" font-weight="bold" fill="#1e293b">오늘 배우는 블록 — 이것이 전부다</text>
+  <text x="20" y="52" font-size="15" fill="#64748b">Simulink 블록은 수백 개다. 그중 실제로 쓰는 것만 골랐다</text>
+
+  <!-- A -->
+  <rect x="20" y="70" width="270" height="176" rx="6" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="34" y="96" font-size="16" font-weight="bold" fill="#1d4ed8">A · 신호를 만들고 본다</text>
+  <text x="34" y="124" font-size="15" fill="#334155">Constant — 고정된 값</text>
+  <text x="34" y="148" font-size="15" fill="#334155">Step — 어느 시각에 뛰는 값</text>
+  <text x="34" y="172" font-size="15" fill="#334155">Sine Wave — 사인파</text>
+  <text x="34" y="196" font-size="15" fill="#334155">Digital Clock — 지금 시각</text>
+  <text x="34" y="220" font-size="15" fill="#334155">Scope / Display — 눈으로 확인</text>
+
+  <!-- B -->
+  <rect x="310" y="70" width="270" height="176" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="324" y="96" font-size="16" font-weight="bold" fill="#0d9488">B · 계산한다</text>
+  <text x="324" y="124" font-size="15" fill="#334155">Gain — 곱하기</text>
+  <text x="324" y="148" font-size="15" fill="#334155">Sum — 더하기 / 빼기</text>
+  <text x="324" y="172" font-size="15" fill="#334155">Product — 곱하기 / 나누기</text>
+  <text x="324" y="196" font-size="15" fill="#334155">Saturation — 위아래로 자르기</text>
+  <text x="324" y="222" font-size="15" fill="#0d9488" font-weight="bold">MATLAB Function — 코드로</text>
+
+  <!-- C -->
+  <rect x="600" y="70" width="280" height="176" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="614" y="96" font-size="16" font-weight="bold" fill="#d97706">C · 선을 정리한다</text>
+  <text x="614" y="124" font-size="15" fill="#334155">Subsystem — 여러 블록을 한 칸에</text>
+  <text x="614" y="148" font-size="15" fill="#334155">In1 / Out1 — 그 칸의 입출력</text>
+  <text x="614" y="172" font-size="15" fill="#334155">Goto / From — 선 없이 잇기</text>
+  <text x="614" y="196" font-size="15" fill="#334155">Bus Creator — 여러 개를 한 줄로</text>
+  <text x="614" y="220" font-size="15" fill="#334155">Bus Selector / Assignment</text>
+
+  <!-- D -->
+  <rect x="20" y="266" width="270" height="130" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="34" y="292" font-size="16" font-weight="bold" fill="#dc2626">D · 시간을 기억한다</text>
+  <text x="34" y="320" font-size="15" fill="#334155">Unit Delay — 한 스텝 전 값</text>
+  <text x="34" y="344" font-size="15" fill="#334155">Discrete-Time Integrator</text>
+  <text x="34" y="368" font-size="15" fill="#334155">Discrete Transfer Fcn</text>
+
+  <!-- E -->
+  <rect x="310" y="266" width="270" height="130" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="324" y="292" font-size="16" font-weight="bold" fill="#334155">E · 제어한다</text>
+  <text x="324" y="320" font-size="15" fill="#334155">Discrete PID Controller</text>
+  <text x="324" y="346" font-size="15" fill="#64748b">— P / I / D 를 한 블록으로</text>
+  <text x="324" y="370" font-size="15" fill="#64748b">— 안티와인드업 옵션 포함</text>
+
+  <!-- F -->
+  <rect x="600" y="266" width="280" height="130" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="614" y="292" font-size="16" font-weight="bold" fill="#334155">F · 결과를 꺼낸다</text>
+  <text x="614" y="320" font-size="15" fill="#334155">To Workspace — 변수로 내보내기</text>
+  <text x="614" y="344" font-size="15" fill="#334155">신호 로깅 — 선에 이름 붙이기</text>
+  <text x="614" y="368" font-size="15" fill="#334155">Data Inspector — 겹쳐 보기</text>
+
+  <text x="20" y="428" font-size="15" fill="#1e293b">Stateflow 차트는 오늘 다루지 않는다. 미션 상태기계는 13주차에 기존 모델로 배운다</text>
+  <text x="20" y="452" font-size="15" fill="#1e293b">ROS 2 블록(Subscribe / Publish)도 오늘은 없다. 6주차에 이 블록들 위에 얹는다</text>
+</svg>

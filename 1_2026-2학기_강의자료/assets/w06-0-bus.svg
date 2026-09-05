@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="400" viewBox="0 0 900 400" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="400" fill="#ffffff"/>
+
+  <text x="20" y="28" font-size="18" font-weight="bold" fill="#1e293b">버스 — 여러 신호를 한 줄로 묶은 것</text>
+  <text x="20" y="52" font-size="15" fill="#64748b">묶을 때 이름이 붙고, 풀 때 그 이름으로 꺼낸다</text>
+
+  <!-- three source signals -->
+  <rect x="20" y="86" width="70" height="32" rx="4" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="49" y="108" font-size="15" fill="#1e293b">1</text>
+  <rect x="20" y="136" width="70" height="32" rx="4" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="49" y="158" font-size="15" fill="#1e293b">2</text>
+  <rect x="20" y="186" width="70" height="32" rx="4" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="49" y="208" font-size="15" fill="#1e293b">3</text>
+
+  <line x1="90" y1="102" x2="164" y2="102" stroke="#334155" stroke-width="2"/>
+  <line x1="90" y1="152" x2="164" y2="152" stroke="#334155" stroke-width="2"/>
+  <line x1="90" y1="202" x2="164" y2="202" stroke="#334155" stroke-width="2"/>
+  <text x="120" y="96"  font-size="15" fill="#1d4ed8">x</text>
+  <text x="120" y="146" font-size="15" fill="#1d4ed8">y</text>
+  <text x="120" y="196" font-size="15" fill="#1d4ed8">z</text>
+
+  <!-- inner bus creator -->
+  <rect x="164" y="86" width="16" height="132" fill="#0d9488"/>
+  <text x="150" y="240" font-size="15" fill="#0d9488" font-weight="bold">Inner</text>
+  <text x="20" y="288" font-size="15" fill="#64748b">선 이름 = 원소 이름</text>
+
+  <!-- inner -> outer -->
+  <line x1="180" y1="152" x2="300" y2="152" stroke="#0d9488" stroke-width="4"/>
+  <text x="196" y="140" font-size="15" fill="#0d9488">세 개가 한 줄로</text>
+
+  <!-- stamp signal, routed orthogonally under the diagram -->
+  <rect x="20" y="306" width="90" height="32" rx="4" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="36" y="328" font-size="15" fill="#1e293b">12:34</text>
+  <polyline points="110,322 260,322 260,222 300,222" fill="none" stroke="#334155" stroke-width="2"/>
+  <text x="150" y="314" font-size="15" fill="#1d4ed8">stamp</text>
+
+  <!-- outer bus creator -->
+  <rect x="300" y="136" width="16" height="102" fill="#d97706"/>
+  <text x="288" y="262" font-size="15" fill="#d97706" font-weight="bold">Outer</text>
+  <line x1="316" y1="187" x2="452" y2="187" stroke="#d97706" stroke-width="5"/>
+
+  <!-- structure box -->
+  <rect x="452" y="82" width="200" height="152" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="466" y="108" font-size="15" font-weight="bold" fill="#d97706">Outer 안의 구조</text>
+  <text x="466" y="136" font-size="15" fill="#334155">Inner</text>
+  <text x="494" y="160" font-size="15" fill="#334155">x = 1</text>
+  <text x="494" y="184" font-size="15" fill="#334155">y = 2</text>
+  <text x="494" y="208" font-size="15" fill="#334155">z = 3</text>
+  <text x="466" y="228" font-size="15" fill="#334155">stamp</text>
+
+  <!-- selector -->
+  <line x1="652" y1="187" x2="700" y2="187" stroke="#d97706" stroke-width="5"/>
+  <rect x="700" y="142" width="16" height="90" fill="#dc2626"/>
+  <text x="674" y="252" font-size="15" fill="#dc2626" font-weight="bold">Selector</text>
+  <line x1="716" y1="162" x2="796" y2="162" stroke="#334155" stroke-width="2"/>
+  <polygon points="796,162 788,158 788,166" fill="#334155"/>
+  <line x1="716" y1="214" x2="796" y2="214" stroke="#334155" stroke-width="2"/>
+  <polygon points="796,214 788,210 788,218" fill="#334155"/>
+  <text x="726" y="156" font-size="15" fill="#dc2626">2</text>
+  <text x="726" y="208" font-size="15" fill="#dc2626">12:34</text>
+
+  <!-- path notation -->
+  <rect x="452" y="272" width="428" height="90" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="466" y="298" font-size="15" font-weight="bold" fill="#dc2626">꺼낼 때는 전체 경로를 적는다</text>
+  <text x="466" y="324" font-size="15" fill="#1e293b">y 라고만 적으면 못 찾는다.  Inner.y  라고 적어야 한다</text>
+  <text x="466" y="348" font-size="15" fill="#64748b">버스 안에 버스가 있으면 점(.)으로 계속 이어 붙인다</text>
+
+  <text x="20" y="390" font-size="15" fill="#1e293b">Bus Assignment 는 버스를 통째로 받아 한 칸만 바꿔 내보낸다 &#8212; 나머지는 그대로 지나간다</text>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" width="900" height="380" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="380" fill="#ffffff"/>
+  <text x="450" y="32" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">선박의 6자유도 운동 - 이 수업은 이 중 3개만 제어한다</text>
+  <path d="M175,175 L370,175 Q445,205 370,235 L175,235 Q152,205 175,175 Z" fill="#e0f2fe" stroke="#0369a1" stroke-width="2"/>
+  <text x="175" y="288" font-size="15" fill="#0369a1" text-anchor="middle">선체 (위에서 본 모습)</text>
+  <line x1="300" y1="205" x2="565" y2="205" stroke="#dc2626" stroke-width="3"/>
+  <polygon points="573,205 557,197 557,213" fill="#dc2626"/>
+  <text x="585" y="211" font-size="17" font-weight="700" fill="#dc2626">Surge  u  전후</text>
+  <line x1="300" y1="205" x2="300" y2="318" stroke="#0d9488" stroke-width="3"/>
+  <polygon points="300,326 292,310 308,310" fill="#0d9488"/>
+  <text x="316" y="322" font-size="17" font-weight="700" fill="#0d9488">Sway  v  좌우</text>
+  <line x1="300" y1="205" x2="300" y2="100" stroke="#7c3aed" stroke-width="3"/>
+  <polygon points="300,92 292,108 308,108" fill="#7c3aed"/>
+  <text x="316" y="104" font-size="17" font-weight="700" fill="#7c3aed">Heave  w  상하</text>
+  <circle cx="300" cy="205" r="6" fill="#1e293b"/>
+  <path d="M195,140 a115,115 0 0 1 88,-24" fill="none" stroke="#d97706" stroke-width="3"/>
+  <polygon points="291,117 274,110 277,126" fill="#d97706"/>
+  <text x="180" y="128" font-size="17" font-weight="700" fill="#d97706" text-anchor="end">Yaw  r  선수동요</text>
+  <line x1="40" y1="348" x2="860" y2="348" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="40" y="372" font-size="16" fill="#334155">제어 대상 3자유도 : Surge · Sway · Yaw</text>
+  <text x="470" y="372" font-size="16" fill="#64748b">파랑 진동으로 보고 제외 : Heave · Roll · Pitch</text>
+</svg>

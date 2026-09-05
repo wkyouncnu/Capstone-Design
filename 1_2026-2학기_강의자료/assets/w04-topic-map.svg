@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="400" fill="#ffffff"/>
+  <text x="450" y="30" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">토픽 맵 - 데이터가 도는 한 바퀴</text>
+  <rect x="20" y="60" width="200" height="280" rx="10" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+  <text x="120" y="88" font-size="17" font-weight="700" fill="#0f172a" text-anchor="middle">Gazebo (VRX)</text>
+  <text x="120" y="112" font-size="14" fill="#64748b" text-anchor="middle">물리 · 센서 시뮬레이션</text>
+  <rect x="40" y="130" width="160" height="34" rx="6" fill="#eff6ff" stroke="#1d4ed8"/>
+  <text x="120" y="152" font-size="14" fill="#1e293b" text-anchor="middle">GPS · IMU</text>
+  <rect x="40" y="172" width="160" height="34" rx="6" fill="#eff6ff" stroke="#1d4ed8"/>
+  <text x="120" y="194" font-size="14" fill="#1e293b" text-anchor="middle">3D LiDAR · 카메라</text>
+  <rect x="40" y="250" width="160" height="34" rx="6" fill="#fef2f2" stroke="#dc2626"/>
+  <text x="120" y="272" font-size="14" fill="#1e293b" text-anchor="middle">추진기 플러그인</text>
+  <rect x="285" y="120" width="150" height="70" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="360" y="148" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">ros_gz_bridge</text>
+  <text x="360" y="172" font-size="13" fill="#92400e" text-anchor="middle">gz 토픽 - ROS 2 토픽</text>
+  <rect x="285" y="228" width="150" height="70" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="360" y="256" font-size="15" font-weight="700" fill="#1e293b" text-anchor="middle">ros_gz_bridge</text>
+  <text x="360" y="280" font-size="13" fill="#92400e" text-anchor="middle">ROS 2 토픽 - gz 토픽</text>
+  <rect x="510" y="90" width="360" height="102" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="690" y="118" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">구독하는 토픽</text>
+  <text x="690" y="144" font-size="13.5" fill="#334155" text-anchor="middle">/wamv/sensors/gps/gps/fix</text>
+  <text x="690" y="166" font-size="13.5" fill="#334155" text-anchor="middle">/wamv/sensors/imu/imu/data</text>
+  <text x="690" y="186" font-size="13.5" fill="#334155" text-anchor="middle">/wamv/sensors/lidars/lidar_wamv_sensor/points</text>
+  <rect x="510" y="212" width="360" height="46" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="690" y="241" font-size="16" font-weight="700" fill="#7c3aed" text-anchor="middle">내 제어기 / 인지 노드</text>
+  <rect x="510" y="278" width="360" height="72" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="690" y="304" font-size="16" font-weight="700" fill="#0f172a" text-anchor="middle">발행하는 토픽</text>
+  <text x="690" y="328" font-size="13.5" fill="#334155" text-anchor="middle">/wamv/thrusters/left/thrust</text>
+  <text x="690" y="346" font-size="13.5" fill="#334155" text-anchor="middle">/wamv/thrusters/right/thrust</text>
+  <line x1="222" y1="160" x2="278" y2="155" stroke="#0d9488" stroke-width="3"/>
+  <polygon points="285,154 269,148 271,162" fill="#0d9488"/>
+  <line x1="437" y1="150" x2="503" y2="140" stroke="#0d9488" stroke-width="3"/>
+  <polygon points="510,139 494,133 496,147" fill="#0d9488"/>
+  <line x1="690" y1="194" x2="690" y2="206" stroke="#7c3aed" stroke-width="3"/>
+  <polygon points="690,212 683,197 697,197" fill="#7c3aed"/>
+  <line x1="690" y1="260" x2="690" y2="272" stroke="#dc2626" stroke-width="3"/>
+  <polygon points="690,278 683,263 697,263" fill="#dc2626"/>
+  <line x1="503" y1="300" x2="440" y2="280" stroke="#dc2626" stroke-width="3"/>
+  <polygon points="433,277 450,274 445,288" fill="#dc2626"/>
+  <line x1="278" y1="272" x2="224" y2="270" stroke="#dc2626" stroke-width="3"/>
+  <polygon points="217,270 233,263 233,277" fill="#dc2626"/>
+  <line x1="20" y1="372" x2="880" y2="372" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="20" y="392" font-size="15" fill="#334155">이 그림의 토픽 이름을 외우지 말 것. 4주차 과제는 ros2 topic list 로 직접 조사해 표로 만드는 것이다</text>
+</svg>

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="450" viewBox="0 0 900 450">
+  <rect width="900" height="450" fill="#ffffff"/>
+  <defs>
+    <marker id="g2" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#64748b"/></marker>
+  </defs>
+
+  <text x="20" y="32" font-family="Malgun Gothic, sans-serif" font-size="19" font-weight="700" fill="#1e293b">점을 향해 가는가, 선을 따라가는가</text>
+  <text x="20" y="56" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#64748b">두 유도법칙은 목표점이 같아도 지나가는 자리가 다르다</text>
+
+  <rect x="20" y="76" width="425" height="248" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.4"/>
+  <text x="38" y="104" font-family="Malgun Gothic, sans-serif" font-size="17" font-weight="700" fill="#dc2626">atan2 유도</text>
+  <text x="150" y="104" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#64748b">다음 웨이포인트를 곧장 겨냥</text>
+
+  <line x1="70" y1="280" x2="400" y2="150" stroke="#94a3b8" stroke-width="2.4" stroke-dasharray="7 5"/>
+  <circle cx="70" cy="280" r="6" fill="#ffffff" stroke="#64748b" stroke-width="2"/>
+  <circle cx="400" cy="150" r="6" fill="#ffffff" stroke="#64748b" stroke-width="2"/>
+  <path d="M70,300 C 160,286 300,208 400,150" fill="none" stroke="#dc2626" stroke-width="3"/>
+  <g transform="translate(70,300) rotate(50)"><path d="M0,-11 L6,3 L0,10 L-6,3 Z" fill="#1e293b"/></g>
+  <text x="128" y="312" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#dc2626">경로를 벗어난 채로 목표점까지 간다</text>
+  <text x="196" y="196" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#64748b">계획 경로</text>
+
+  <rect x="455" y="76" width="425" height="248" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.4"/>
+  <text x="473" y="104" font-family="Malgun Gothic, sans-serif" font-size="17" font-weight="700" fill="#1d4ed8">LOS 유도</text>
+  <text x="570" y="104" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#64748b">경로 위 &#916; 앞의 한 점을 겨냥</text>
+
+  <line x1="505" y1="280" x2="835" y2="150" stroke="#94a3b8" stroke-width="2.4" stroke-dasharray="7 5"/>
+  <circle cx="505" cy="280" r="6" fill="#ffffff" stroke="#64748b" stroke-width="2"/>
+  <circle cx="835" cy="150" r="6" fill="#ffffff" stroke="#64748b" stroke-width="2"/>
+  <path d="M505,300 C 535,300 572,258 610,238 L 835,150" fill="none" stroke="#1d4ed8" stroke-width="3"/>
+  <g transform="translate(505,300) rotate(50)"><path d="M0,-11 L6,3 L0,10 L-6,3 Z" fill="#1e293b"/></g>
+  <text x="556" y="312" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#1d4ed8">빠르게 경로로 붙은 뒤 선을 따라간다</text>
+
+  <text x="38" y="356" font-family="Malgun Gothic, sans-serif" font-size="16" font-weight="700" fill="#1e293b">오프라인 WAM-V 모델 실측 &#8212; 평균 경로 이탈량 (초기 수렴 60 초 제외)</text>
+
+  <rect x="38" y="368" width="200" height="26" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <rect x="238" y="368" width="150" height="26" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <rect x="388" y="368" width="150" height="26" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <rect x="538" y="368" width="130" height="26" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="48"  y="386" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#334155">조건</text>
+  <text x="248" y="386" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#dc2626">atan2</text>
+  <text x="398" y="386" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#1d4ed8">LOS</text>
+  <text x="548" y="386" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#334155">배율</text>
+
+  <rect x="38" y="394" width="200" height="26" fill="#ffffff" stroke="#cbd5e1"/>
+  <rect x="238" y="394" width="150" height="26" fill="#ffffff" stroke="#cbd5e1"/>
+  <rect x="388" y="394" width="150" height="26" fill="#ffffff" stroke="#cbd5e1"/>
+  <rect x="538" y="394" width="130" height="26" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="48"  y="412" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#334155">조류 없음</text>
+  <text x="248" y="412" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#334155">1.78 m</text>
+  <text x="398" y="412" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#334155">0.70 m</text>
+  <text x="548" y="412" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#334155">2.5 배</text>
+
+  <rect x="38" y="420" width="200" height="26" fill="#ffffff" stroke="#cbd5e1"/>
+  <rect x="238" y="420" width="150" height="26" fill="#ffffff" stroke="#cbd5e1"/>
+  <rect x="388" y="420" width="150" height="26" fill="#ffffff" stroke="#cbd5e1"/>
+  <rect x="538" y="420" width="130" height="26" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="48"  y="438" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#334155">조류 0.5 m/s</text>
+  <text x="248" y="438" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#334155">5.26 m</text>
+  <text x="398" y="438" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#334155">1.76 m</text>
+  <text x="548" y="438" font-family="Malgun Gothic, sans-serif" font-size="15" font-weight="700" fill="#dc2626">3.0 배</text>
+
+  <text x="690" y="412" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#64748b">조류가 있으면</text>
+  <text x="690" y="434" font-family="Malgun Gothic, sans-serif" font-size="15" fill="#64748b">차이가 더 벌어진다</text>
+</svg>

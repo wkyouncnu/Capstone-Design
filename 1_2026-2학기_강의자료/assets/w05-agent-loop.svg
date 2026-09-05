@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="400" fill="#ffffff"/>
+  <text x="450" y="30" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">AI 코딩 에이전트가 도는 한 바퀴</text>
+  <rect x="30" y="70" width="180" height="72" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="120" y="100" font-size="17" font-weight="700" fill="#1e293b" text-anchor="middle">1. 읽는다</text>
+  <text x="120" y="126" font-size="14" fill="#334155" text-anchor="middle">파일 · 폴더 · CLAUDE.md</text>
+  <rect x="250" y="70" width="180" height="72" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="340" y="100" font-size="17" font-weight="700" fill="#1e293b" text-anchor="middle">2. 계획한다</text>
+  <text x="340" y="126" font-size="14" fill="#334155" text-anchor="middle">무엇을 고칠지 결정</text>
+  <rect x="470" y="70" width="180" height="72" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="560" y="100" font-size="17" font-weight="700" fill="#1e293b" text-anchor="middle">3. 쓴다</text>
+  <text x="560" y="126" font-size="14" fill="#334155" text-anchor="middle">파일 생성 · 수정</text>
+  <rect x="690" y="70" width="180" height="72" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="780" y="100" font-size="17" font-weight="700" fill="#1e293b" text-anchor="middle">4. 실행한다</text>
+  <text x="780" y="126" font-size="14" fill="#334155" text-anchor="middle">빌드 · 테스트 · 명령</text>
+  <polygon points="245,106 229,99 229,113" fill="#64748b"/>
+  <line x1="212" y1="106" x2="232" y2="106" stroke="#64748b" stroke-width="3"/>
+  <polygon points="465,106 449,99 449,113" fill="#64748b"/>
+  <line x1="432" y1="106" x2="452" y2="106" stroke="#64748b" stroke-width="3"/>
+  <polygon points="685,106 669,99 669,113" fill="#64748b"/>
+  <line x1="652" y1="106" x2="672" y2="106" stroke="#64748b" stroke-width="3"/>
+  <path d="M780,144 L780,180 L120,180 L120,146" fill="none" stroke="#64748b" stroke-width="3" stroke-dasharray="7 5"/>
+  <polygon points="120,140 113,156 127,156" fill="#64748b"/>
+  <text x="450" y="172" font-size="14" fill="#64748b" text-anchor="middle">결과를 보고 다시 읽는다 (반복)</text>
+  <rect x="30" y="216" width="840" height="60" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="450" y="242" font-size="17" font-weight="700" fill="#7c3aed" text-anchor="middle">여기까지는 에이전트가 한다</text>
+  <text x="450" y="266" font-size="15" fill="#334155" text-anchor="middle">하지만 그것이 맞는지는 판단하지 못한다. 그럴듯하게 틀린 코드도 똑같이 자신 있게 내놓는다</text>
+  <rect x="30" y="296" width="840" height="76" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="3"/>
+  <text x="450" y="324" font-size="18" font-weight="700" fill="#dc2626" text-anchor="middle">5. 검증한다  ←  이것은 사람이 한다</text>
+  <text x="450" y="350" font-size="15" fill="#334155" text-anchor="middle">단위 테스트 · rosbag 재생 · 경계조건 확인</text>
+  <text x="450" y="368" font-size="14" fill="#64748b" text-anchor="middle">이 수업에서 채점하는 것은 4번이 아니라 5번이다</text>
+</svg>

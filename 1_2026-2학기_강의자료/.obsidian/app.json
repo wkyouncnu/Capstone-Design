@@ -1,0 +1,12 @@
+{
+  "alwaysUpdateLinks": true,
+  "newLinkFormat": "shortest",
+  "useMarkdownLinks": false,
+  "attachmentFolderPath": "assets",
+  "showLineNumber": true,
+  "readableLineLength": true,
+  "userIgnoreFilters": [
+    "[2025] ROS2_VRX_Gazebo_Simulink/",
+    "slprj/"
+  ]
+}
