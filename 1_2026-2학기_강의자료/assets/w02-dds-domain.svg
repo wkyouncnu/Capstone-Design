@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="580" viewBox="0 0 940 580" font-family="Malgun Gothic, sans-serif">
+<rect width="940" height="580" fill="#ffffff"/>
+
+<text x="20" y="32" font-size="19" font-weight="bold" fill="#1e293b">DDS 자동 발견과 ROS_DOMAIN_ID</text>
+<text x="20" y="54" font-size="14" fill="#64748b">ROS 2 에는 중앙 서버가 없다. 노드끼리 알아서 서로를 찾는다</text>
+
+<!-- ===== 왼쪽: 같은 도메인 ===== -->
+<rect x="30" y="82" width="410" height="250" rx="12" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+<text x="50" y="110" font-size="15" font-weight="bold" fill="#0d9488">ROS_DOMAIN_ID = 30  (같은 값)</text>
+
+<ellipse cx="130" cy="170" rx="66" ry="30" fill="#ffffff" stroke="#334155" stroke-width="1.6"/>
+<text x="130" y="168" font-size="12" fill="#334155" text-anchor="middle">노드 A</text>
+<text x="130" y="184" font-size="11" fill="#64748b" text-anchor="middle">학생 1 노트북</text>
+
+<ellipse cx="330" cy="170" rx="66" ry="30" fill="#ffffff" stroke="#334155" stroke-width="1.6"/>
+<text x="330" y="168" font-size="12" fill="#334155" text-anchor="middle">노드 B</text>
+<text x="330" y="184" font-size="11" fill="#64748b" text-anchor="middle">학생 1 노트북</text>
+
+<line x1="196" y1="170" x2="264" y2="170" stroke="#0d9488" stroke-width="2.5"/>
+<polygon points="264,170 252,164 252,176" fill="#0d9488"/>
+<polygon points="196,170 208,164 208,176" fill="#0d9488"/>
+<text x="230" y="158" font-size="12" font-weight="bold" fill="#0d9488" text-anchor="middle">통신됨</text>
+
+<text x="50" y="238" font-size="12" fill="#334155">1. 켜지면 자기 존재를 방송한다 (broadcast)</text>
+<text x="50" y="260" font-size="12" fill="#334155">2. 같은 도메인의 노드가 응답한다</text>
+<text x="50" y="282" font-size="12" fill="#334155">3. 이름·타입·QoS 가 맞으면 연결한다</text>
+<text x="50" y="308" font-size="12" font-weight="bold" fill="#0d9488">→ roscore 같은 중앙 서버가 없다</text>
+
+<!-- ===== 오른쪽: 다른 도메인 ===== -->
+<rect x="500" y="82" width="410" height="250" rx="12" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+<text x="520" y="110" font-size="15" font-weight="bold" fill="#dc2626">ROS_DOMAIN_ID 가 다름</text>
+
+<ellipse cx="600" cy="170" rx="66" ry="30" fill="#ffffff" stroke="#334155" stroke-width="1.6"/>
+<text x="600" y="168" font-size="12" fill="#334155" text-anchor="middle">노드 C</text>
+<text x="600" y="184" font-size="11" fill="#64748b" text-anchor="middle">ID = 30</text>
+
+<ellipse cx="800" cy="170" rx="66" ry="30" fill="#ffffff" stroke="#334155" stroke-width="1.6"/>
+<text x="800" y="168" font-size="12" fill="#334155" text-anchor="middle">노드 D</text>
+<text x="800" y="184" font-size="11" fill="#64748b" text-anchor="middle">ID = 31</text>
+
+<line x1="666" y1="170" x2="734" y2="170" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="7 5"/>
+<line x1="688" y1="152" x2="712" y2="188" stroke="#dc2626" stroke-width="3"/>
+<line x1="712" y1="152" x2="688" y2="188" stroke="#dc2626" stroke-width="3"/>
+<text x="700" y="212" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="middle">서로 안 보임</text>
+
+<text x="520" y="252" font-size="12" fill="#334155">증상 — 오류 메시지가 <tspan font-weight="bold">전혀 없다</tspan>.</text>
+<text x="520" y="274" font-size="12" fill="#334155">그냥 `ros2 topic list` 에 아무것도 안 나온다.</text>
+<text x="520" y="300" font-size="12" font-weight="bold" fill="#dc2626">→ 강의실에서 서로 간섭하지 않게 하는 장치</text>
+
+<!-- ===== 아래: 사용법 ===== -->
+<text x="20" y="376" font-size="16" font-weight="bold" fill="#334155">쓰는 법</text>
+
+<rect x="30" y="392" width="880" height="66" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="50" y="418" font-size="13" font-family="Consolas, monospace" fill="#334155">export ROS_DOMAIN_ID=30        # 터미널마다. 안 하면 기본값 0</text>
+<text x="50" y="444" font-size="13" font-family="Consolas, monospace" fill="#334155">echo $ROS_DOMAIN_ID            # 확인</text>
+
+<rect x="30" y="474" width="430" height="86" rx="8" fill="#fffbeb" stroke="#d97706"/>
+<text x="48" y="500" font-size="13" font-weight="bold" fill="#d97706">범위는 0~101 을 쓴다</text>
+<text x="48" y="522" font-size="12" fill="#334155">그 위 값은 운영체제 포트 범위와 겹쳐</text>
+<text x="48" y="540" font-size="12" fill="#334155">충돌할 수 있다.</text>
+
+<rect x="480" y="474" width="430" height="86" rx="8" fill="#fef2f2" stroke="#dc2626"/>
+<text x="498" y="500" font-size="13" font-weight="bold" fill="#dc2626">터미널을 새로 열면 사라진다</text>
+<text x="498" y="522" font-size="12" fill="#334155">셸을 새로 열 때마다 다시 지정하거나</text>
+<text x="498" y="540" font-size="12" fill="#334155">`~/.bashrc` 에 적어 둔다.</text>
+</svg>

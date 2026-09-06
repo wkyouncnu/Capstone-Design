@@ -126,6 +126,9 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 
 ## 1-2. 노드와 토픽
 
+![노드와 토픽의 구조](../assets/w02-node-topic-anatomy.svg)
+
+
 ![노드와 토픽](../assets/w02-pubsub.svg)
 
 ### 용어
@@ -192,6 +195,9 @@ std_msgs/Header header
 ---
 
 ## 1-4. DDS 와 Domain ID
+
+![DDS 자동 발견과 ROS_DOMAIN_ID](../assets/w02-dds-domain.svg)
+
 
 ### 문제 상황
 
@@ -528,12 +534,105 @@ ros2 topic pub /chatter std_msgs/msg/String "{data: 'from CLI'}" -r 1
 
 ### 노드 그래프 그림으로 보기
 
+토픽 목록만으로는 **누가 누구에게 보내는지** 알 수 없다. 그림으로 본다.
+
 ```bash
-rqt_graph
+ros2 run rqt_graph rqt_graph
 ```
 
-- 노드(타원)와 토픽(사각형)의 연결이 그림으로 나옴
-- 시스템이 복잡해지면 **이것이 유일한 디버깅 수단**이 됨
+![rqt_graph — 발행자 · 토픽 · 구독자](../assets/w02-rqt-graph.png)
+
+- 위 화면은 아래 두 노드를 실제로 띄우고 캡처한 것이다
+- 읽는 법
+
+| 모양 | 뜻 |
+|---|---|
+| **타원** | 노드 (`/minimal_publisher`, `/minimal_subscriber`) |
+| **사각형** | 토픽 (`/topic`) |
+| **화살표 방향** | 데이터가 흐르는 방향 |
+
+> [!tip] 아무것도 안 보이면 새로고침
+> 왼쪽 위 **파란 회전 화살표** 를 누른다. rqt_graph 는 자동으로 갱신되지 않는다.
+> 그래도 비어 있으면 노드가 죽었거나 `ROS_DOMAIN_ID` 가 다른 것이다.
+
+---
+
+### 실습 — 공식 예제로 확인하기
+
+ROS 2 개발팀이 관리하는 **공식 예제 저장소**를 그대로 받아 쓴다.
+
+```bash
+cd ~
+git clone -b humble https://github.com/ros2/examples.git ros2_examples
+```
+
+- 출처 — [`ros2/examples`](https://github.com/ros2/examples) (Apache License 2.0), 태그 `0.15.5`
+- 이 과목에서는 `rclpy/topics/` 아래의 두 파일만 쓴다
+- 빌드하지 않고 **파이썬 파일을 직접 실행**해도 된다. 의존성이 `rclpy` 와 `std_msgs` 뿐이다
+
+터미널 1 — 발행자
+
+```bash
+python3 ~/ros2_examples/rclpy/topics/minimal_publisher/examples_rclpy_minimal_publisher/publisher_member_function.py
+```
+
+- 정상 출력
+
+```
+[INFO] [1788684118.901490181] [minimal_publisher]: Publishing: "Hello World: 0"
+[INFO] [1788684119.408459082] [minimal_publisher]: Publishing: "Hello World: 1"
+[INFO] [1788684119.903331908] [minimal_publisher]: Publishing: "Hello World: 2"
+```
+
+터미널 2 — 구독자
+
+```bash
+python3 ~/ros2_examples/rclpy/topics/minimal_subscriber/examples_rclpy_minimal_subscriber/subscriber_member_function.py
+```
+
+- 정상 출력
+
+```
+[INFO] [1788684120.397561412] [minimal_subscriber]: I heard: "Hello World: 3"
+[INFO] [1788684120.893497587] [minimal_subscriber]: I heard: "Hello World: 4"
+[INFO] [1788684121.390922502] [minimal_subscriber]: I heard: "Hello World: 5"
+```
+
+> [!note] 구독자의 첫 숫자가 0 이 아닌 이유
+> 발행자를 먼저 켰기 때문이다. 구독자는 **켜진 뒤부터** 받는다.
+> 위 실측에서는 3번부터 받았다. 놓친 0~2번은 되돌아오지 않는다.
+> 이것을 바꾸는 설정이 QoS 의 **Durability** 다 (§1-5).
+
+### 발행자·구독자의 QoS 를 눈으로 확인한다
+
+```bash
+ros2 topic info /topic --verbose
+```
+
+- 정상 출력 (일부)
+
+```
+Type: std_msgs/msg/String
+Publisher count: 1
+
+Node name: minimal_publisher
+Endpoint type: PUBLISHER
+QoS profile:
+  Reliability: RELIABLE
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+```
+
+| 항목 | 이 예제의 값 | 뜻 |
+|---|---|---|
+| `Reliability` | **RELIABLE** | 빠지면 다시 보낸다 |
+| `Durability` | **VOLATILE** | 늦게 들어온 구독자에게 과거 것을 주지 않는다 |
+| `Lifespan` · `Deadline` | Infinite | 제한 없음 |
+
+- **양쪽의 이 표가 서로 호환되어야 연결된다.** 안 맞으면 오류 없이 조용히 끊긴다
+- 실제로 끊어 보는 실험이 §2-6 에 있다
 
 ### 데이터 기록 · 재생
 
