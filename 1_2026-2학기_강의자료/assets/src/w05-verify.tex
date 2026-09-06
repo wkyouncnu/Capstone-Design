@@ -1,0 +1,49 @@
+% assets/w05-verify.svg — 에이전트가 쓴 코드를 검증하는 세 겹
+%
+%   bash _tools/tikz2svg.sh assets/src/w05-verify.tex assets/w05-verify.svg
+%
+% 요점: 세 겹을 다 통과해야 "검증했다"고 말할 수 있다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\BW{40}
+
+% ---- 1겹 ------------------------------------------------------------------
+\node[blk, draw=guid, minimum width=\BW mm, minimum height=34mm] (l1) at (0,0) {};
+\node[font=\small\bfseries, guid] at (0,13) {1겹 · 단위 테스트};
+\node[note, align=center] at (0,4)
+     {함수 하나에 입력을 넣고\\ 답을 아는 출력과 비교};
+\node[note, align=center, ink] at (0,-8)
+     {북쪽 $90^\circ$ 를 넣으면\\ NED 로 $0^\circ$ 가 나오는가};
+
+% ---- 2겹 ------------------------------------------------------------------
+\node[blk, draw=pathc, minimum width=\BW mm, minimum height=34mm] (l2) at (52,0) {};
+\node[font=\small\bfseries, pathc] at (52,13) {2겹 · rosbag 재생};
+\node[note, align=center] at (52,4)
+     {기록한 센서 데이터를\\ 그대로 다시 흘려 보냄};
+\node[note, align=center, ink] at (52,-8)
+     {시뮬레이터를 다시 안 돌려도\\ 같은 조건에서 비교 가능};
+
+% ---- 3겹 ------------------------------------------------------------------
+\node[blk, draw=warn, minimum width=\BW mm, minimum height=34mm] (l3) at (104,0) {};
+\node[font=\small\bfseries, warn] at (104,13) {3겹 · 경계조건};
+\node[note, align=center] at (104,4)
+     {정상 입력이 아니라\\ 극단 · 이상 입력을 넣음};
+\node[note, align=center, ink] at (104,-8)
+     {$179^\circ \rightarrow -180^\circ$ 를 넘을 때\\ 값이 튀지 않는가};
+
+\draw[sig] (l1) -- (l2);
+\draw[sig] (l2) -- (l3);
+
+% ---- 결론 -----------------------------------------------------------------
+\node[font=\small, anchor=north] at (52,-24)
+     {세 겹을 다 통과해야 ``검증했다'' 고 말할 수 있다};
+\node[wnote, anchor=north, text width=120mm, align=center] at (52,-33)
+     {제출물은 코드가 아니라 \textbf{초안과 최종본의 diff + 수정 사유 3가지} 이다};
+
+\end{tikzpicture}
+\end{document}

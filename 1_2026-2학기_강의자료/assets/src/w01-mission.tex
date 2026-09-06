@@ -1,0 +1,51 @@
+% assets/w01-mission.svg — 기말 Term Project 네 구간
+%
+%   bash _tools/tikz2svg.sh assets/src/w01-mission.tex assets/w01-mission.svg
+%
+% 요점: 네 구간을 끊지 않고 이어서 수행한다. 각 구간이 어느 주차에 대응하는지 함께 보인다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\BW{36}
+\def\BH{22}
+
+\node[gblk,  minimum width=\BW mm, minimum height=\BH mm] (a) at (0,0)   {};
+\node[nblk,  minimum width=\BW mm, minimum height=\BH mm] (b) at (48,0)  {};
+\node[cblk,  minimum width=\BW mm, minimum height=\BH mm] (c) at (96,0)  {};
+\node[tblk,  minimum width=\BW mm, minimum height=\BH mm] (d) at (144,0) {};
+
+\node[font=\small\bfseries, guid]  at (0,7)   {1. 이안 · 항주};
+\node[font=\small\bfseries, nav]   at (48,7)  {2. 장애물 회피};
+\node[font=\small\bfseries, ctrl]  at (96,7)  {3. 위치 유지};
+\node[font=\small\bfseries, thr]   at (144,7) {4. 자율 도킹};
+
+\node[note, align=center] at (0,-2)   {부두를 빠져나와\\ 목표 해역까지};
+\node[note, align=center] at (48,-2)  {부표 36개 필드를\\ 부딪히지 않고 통과};
+\node[note, align=center] at (96,-2)  {반경 5\,m 안에서\\ 5초 이상 정지};
+\node[note, align=center] at (144,-2) {3개 도크 중\\ 지정 표식에 접안};
+
+\draw[sig] (a) -- (b);
+\draw[sig] (b) -- (c);
+\draw[sig] (c) -- (d);
+
+% ---- 쓰는 기술 -------------------------------------------------------------
+\node[note, ink] at (0,-17)   {Simulink 제어 + LOS};
+\node[note, ink] at (48,-17)  {LiDAR + VFH};
+\node[note, ink] at (96,-17)  {DP 제어};
+\node[note, ink] at (144,-17) {카메라 + 표식 인식};
+
+% ---- 대응 주차 -------------------------------------------------------------
+\node[note, accent] at (0,-24)   {7 · 8주차};
+\node[note, accent] at (48,-24)  {11 · 12주차};
+\node[note, accent] at (96,-24)  {10주차};
+\node[note, accent] at (144,-24) {13 · 14주차};
+
+\node[wnote, anchor=north] at (72,-33)
+     {네 구간을 \textbf{끊지 않고} 이어서 수행한다. 중간에 사람이 손대면 그 구간은 0점이다};
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,56 @@
+% assets/w02-aliasing.svg — 에일리어싱
+%
+%   bash _tools/tikz2svg.sh assets/src/w02-aliasing.tex assets/w02-aliasing.svg
+%
+% 요점: 9 Hz 신호를 10 Hz 로 표본화하면 1 Hz 로 둔갑한다.
+%       표본점은 두 곡선 위에 동시에 놓인다 — 그래서 구분할 수 없다.
+%
+% 1초 구간을 폭 120 mm 로 그린다. 진폭 12 mm.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\W{120}   % 1 초
+\def\A{12}    % 진폭
+
+% ---- 축 -------------------------------------------------------------------
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (-3,0) -- (\W+6,0);
+\node[font=\small, anchor=west] at (\W+7,0) {$t$};
+\foreach \k in {0,...,10}{
+  \pgfmathsetmacro{\xx}{\k*\W/10}
+  \draw[axis] (\xx,-1.2) -- (\xx,1.2);
+}
+\node[tick, anchor=north] at (0,-2)   {0};
+\node[tick, anchor=north] at (\W,-2)  {1 s};
+
+% ---- 실제 신호 9 Hz --------------------------------------------------------
+\draw[flow, line width=0.7pt, samples=400, domain=0:1, variable=\t]
+      plot ({\t*\W}, {\A*sin(2*pi*9*\t r)});
+\node[note, flow, anchor=west] at (\W+7,\A-2) {실제 신호 9\,Hz};
+
+% ---- 관측 결과 1 Hz --------------------------------------------------------
+\draw[errc, line width=0.9pt, densely dashed, samples=200, domain=0:1, variable=\t]
+      plot ({\t*\W}, {\A*sin(-2*pi*1*\t r)});
+\node[note, errc, anchor=west] at (\W+7,-\A+2) {관측 결과 1\,Hz};
+
+% ---- 표본점 10 Hz ----------------------------------------------------------
+\foreach \k in {0,...,10}{
+  \pgfmathsetmacro{\tt}{\k/10}
+  \pgfmathsetmacro{\yy}{\A*sin(2*pi*9*\tt r)}
+  \fill[ink] ({\tt*\W},{\yy}) circle (1.1);
+}
+\node[note, anchor=west] at (\W+7,0) {표본 10\,Hz};
+
+% ---- 설명 -----------------------------------------------------------------
+\node[note, anchor=west, text width=132mm] at (-3,-24)
+     {검은 점은 두 곡선 위에 \textbf{동시에} 놓인다.
+      표본값만 보면 9\,Hz 인지 1\,Hz 인지 구분할 방법이 없다};
+\node[wnote, anchor=west, text width=132mm] at (-3,-32)
+     {나이퀴스트 조건 — 표본화 주파수는 신호 최고 주파수의 \textbf{2배를 넘어야} 한다.
+      $f_s = 10\,\mathrm{Hz}$ 로 9\,Hz 를 보려면 최소 18\,Hz 가 필요하다};
+
+\end{tikzpicture}
+\end{document}

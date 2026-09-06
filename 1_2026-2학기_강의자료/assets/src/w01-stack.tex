@@ -1,0 +1,46 @@
+% assets/w01-stack.svg — 노트북 한 대에 올라가는 구성
+%
+%   bash _tools/tikz2svg.sh assets/src/w01-stack.tex assets/w01-stack.svg
+%
+% 요점: Windows 와 Ubuntu 가 한 노트북 안에서 동시에 돌고, ROS 2 토픽으로 만난다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- 바깥 상자 : Windows --------------------------------------------------
+\node[draw=soft, line width=0.6pt, minimum width=140mm, minimum height=76mm,
+      rounded corners=1.5mm] (win) at (0,0) {};
+\node[font=\small\bfseries, anchor=north west] at ($(win.north west)+(3mm,-3mm)$)
+     {Windows 11 — 노트북 한 대};
+
+% ---- MATLAB ---------------------------------------------------------------
+\node[cblk, minimum width=54mm, minimum height=24mm] (ml) at (-36,12) {};
+\node[font=\small\bfseries, ctrl] at (-36,19) {MATLAB R2024b};
+\node[note, align=center] at (-36,11) {Simulink + ROS Toolbox\\ 제어기 설계와 튜닝};
+\node[note, ctrl] at (-36,3) {6주차부터};
+
+% ---- VS Code --------------------------------------------------------------
+\node[nblk, minimum width=54mm, minimum height=24mm] (vs) at (-36,-20) {};
+\node[font=\small\bfseries, nav] at (-36,-13) {VS Code + Claude Code};
+\node[note, align=center] at (-36,-21) {WSL Remote 로 접속해\\ Ubuntu 안의 코드를 편집};
+\node[note, nav] at (-36,-29) {5주차부터};
+
+% ---- WSL2 -----------------------------------------------------------------
+\node[pblk, minimum width=56mm, minimum height=54mm] (wsl) at (38,-4) {};
+\node[font=\small\bfseries, plant] at (38,17) {WSL2 — Ubuntu 22.04};
+\node[note, align=center] at (38,6)
+     {ROS 2 Humble\\ Gazebo Garden\\ VRX 시뮬레이터\\ 인지 노드};
+\node[note, plant] at (38,-14) {1 $\sim$ 3주차에 설치};
+
+% ---- 연결 -----------------------------------------------------------------
+\draw[sig] (ml.east)  -- node[sname, above, font=\scriptsize] {ROS 2 토픽} (ml.east -| wsl.west);
+\draw[sig] (vs.east)  -- node[sname, below, font=\scriptsize] {WSL Remote} (vs.east -| wsl.west);
+
+\node[note, anchor=north] at (0,-42)
+     {노트북 한 대 안에서 Windows 와 Ubuntu 가 동시에 돌아간다};
+
+\end{tikzpicture}
+\end{document}

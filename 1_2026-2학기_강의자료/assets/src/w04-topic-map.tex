@@ -1,0 +1,51 @@
+% assets/w04-topic-map.svg — 토픽 맵, 데이터가 도는 한 바퀴
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-topic-map.tex assets/w04-topic-map.svg
+%
+% 요점: Gazebo 와 ROS 2 는 서로 다른 통신망이다. 다리(ros_gz_bridge)가 잇는다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- Gazebo ---------------------------------------------------------------
+\node[pblk, minimum width=40mm, minimum height=30mm] (gz) at (0,0) {};
+\node[font=\small\bfseries, plant] at (0,11) {Gazebo (VRX)};
+\node[note, align=center] at (0,3)
+     {물리 · 센서 시뮬레이션\\ GPS · IMU\\ 3D LiDAR · 카메라\\ 추진기 플러그인};
+
+% ---- 다리 -----------------------------------------------------------------
+\node[nblk, minimum width=32mm, minimum height=10mm] (b1) at (52,12)  {ros\_gz\_bridge};
+\node[nblk, minimum width=32mm, minimum height=10mm] (b2) at (52,-12) {ros\_gz\_bridge};
+\node[note, below=0.6mm of b1] {gz $\rightarrow$ ROS 2};
+\node[note, below=0.6mm of b2] {ROS 2 $\rightarrow$ gz};
+
+\draw[sig] (gz.east) |- (b1.west);
+\draw[sig] (b2.west) -| (gz.east);
+
+% ---- 사용자 노드 -----------------------------------------------------------
+\node[cblk, minimum width=44mm, minimum height=13mm] (my) at (112,0) {내 제어기 · 인지 노드};
+
+\draw[sig] (b1.east) -| (my.north);
+\draw[sig] (my.south) |- (b2.east);
+
+\node[note, anchor=west, align=left] at (74,20)
+     {구독하는 토픽\\
+      \texttt{\scriptsize /wamv/sensors/gps/gps/fix}\\
+      \texttt{\scriptsize /wamv/sensors/imu/imu/data}\\
+      \texttt{\scriptsize /wamv/sensors/lidars/.../points}};
+
+\node[note, anchor=west, align=left] at (74,-20)
+     {발행하는 토픽\\
+      \texttt{\scriptsize /wamv/thrusters/left/thrust}\\
+      \texttt{\scriptsize /wamv/thrusters/right/thrust}};
+
+% ---- 주의 -----------------------------------------------------------------
+\node[wnote, anchor=west, text width=140mm] at (-22,-34)
+     {이 그림의 토픽 이름을 외우지 말 것. 4주차 과제는 \texttt{ros2 topic list} 로
+      직접 조사해 표로 만드는 것이다};
+
+\end{tikzpicture}
+\end{document}

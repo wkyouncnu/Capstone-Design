@@ -1,0 +1,67 @@
+% assets/w07-atan2-vs-los.svg — atan2 유도와 LOS 유도의 차이
+%
+%   bash _tools/tikz2svg.sh assets/src/w07-atan2-vs-los.tex assets/w07-atan2-vs-los.svg
+%
+% 요점: 목표점이 같아도 지나가는 자리가 다르다.
+%       atan2 는 점만 보고, LOS 는 선을 본다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\WA{112}
+
+% =========================== 위 : atan2 ====================================
+\begin{scope}[shift={(0,0)}]
+  \node[font=\small\bfseries, errc, anchor=west] at (0,26) {atan2 유도};
+  \node[note, anchor=west] at (24,26) {다음 웨이포인트를 곧장 겨냥};
+
+  % 계획 경로
+  \draw[pathc, line width=0.8pt] (0,0) -- (\WA,0);
+  \fill[pathc] (0,0) circle (1.2);  \fill[pathc] (\WA,0) circle (1.2);
+  \node[note, pathc, below=1mm of {(0,0)}]     {WP $k$};
+  \node[note, pathc, below=1mm of {(\WA,0)}]   {WP $k{+}1$};
+
+  % 실제 항적 — 경로를 벗어난 채 목표점으로
+  \draw[errc, line width=0.9pt]
+       (0,16) .. controls (34,15) and (74,11) .. (\WA,0);
+  \fill[ink] (0,16) circle (1.3);
+  \node[note, anchor=east] at (-2,16) {출발};
+
+  \node[note, errc, anchor=west] at (18,10) {경로를 벗어난 채로 목표점까지 간다};
+\end{scope}
+
+% =========================== 아래 : LOS ====================================
+\begin{scope}[shift={(0,-52)}]
+  \node[font=\small\bfseries, accent, anchor=west] at (0,26) {LOS 유도};
+  \node[note, anchor=west] at (22,26) {경로 위 $\Delta$ 앞의 한 점을 겨냥};
+
+  \draw[pathc, line width=0.8pt] (0,0) -- (\WA,0);
+  \fill[pathc] (0,0) circle (1.2);  \fill[pathc] (\WA,0) circle (1.2);
+  \node[note, pathc, below=1mm of {(0,0)}]     {WP $k$};
+  \node[note, pathc, below=1mm of {(\WA,0)}]   {WP $k{+}1$};
+
+  % 실제 항적 — 빠르게 경로로 붙는다
+  \draw[accent, line width=0.9pt]
+       (0,16) .. controls (14,14) and (26,2) .. (40,0.6) -- (\WA,0);
+  \fill[ink] (0,16) circle (1.3);
+  \node[note, anchor=east] at (-2,16) {출발};
+
+  \node[note, accent, anchor=west] at (44,6) {빠르게 경로로 붙은 뒤 선을 따라간다};
+\end{scope}
+
+% =========================== 실측 ==========================================
+\node[font=\small, anchor=west] at (0,-84)
+     {오프라인 WAM-V 실측 — 평균 경로 이탈량 (초기 수렴 60초 제외)};
+
+\node[anchor=north west, font=\small] at (0,-90) {
+  \begin{tabular}{lccc}
+    조건 & atan2 & LOS & 배율\\[1pt]
+    \hline
+    조류 없음 & 1.78 m & 0.70 m & 2.5 배\\
+  \end{tabular}};
+
+\end{tikzpicture}
+\end{document}

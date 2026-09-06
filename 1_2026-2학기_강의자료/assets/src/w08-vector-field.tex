@@ -1,0 +1,67 @@
+% assets/w08-vector-field.svg — 벡터필드 로이터링
+%
+%   bash _tools/tikz2svg.sh assets/src/w08-vector-field.tex assets/w08-vector-field.svg
+%
+% 요점: 배가 어디에 있든 그 자리에서 가야 할 방향이 정해진다.
+%       필드 화살표는 실제로 식 (13) 을 계산해서 그린다.
+%
+%   chi_d = theta + atan2(r*thetadot, rdot)
+%   여기서는 rdot ~ -(r - r_d), r*thetadot ~ p_c * r_d  로 두고 방향만 그린다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\R{34}       % 목표 반경 [mm]
+\def\PC{1.1}     % 접선 성분 비중 (그림용)
+
+% ---- 목표 원 --------------------------------------------------------------
+\draw[pathc, line width=0.9pt, densely dashed] (0,0) circle (\R mm);
+\fill[ink] (0,0) circle (1.2);
+\node[note, below=1mm of {(0,0)}] {중심};
+\draw[pathc] (0,0) -- (37:\R mm);
+\node[note, pathc] at (37:20mm) {$r_d$};
+
+% ---- 벡터필드 -------------------------------------------------------------
+% 여러 반경·각도에서 방향을 계산해 짧은 화살표로 그린다
+\foreach \ang in {0,20,...,340}{
+  \foreach \rr in {20,34,47}{
+    % 반경 성분 : 목표 반경으로 끌어당긴다
+    \pgfmathsetmacro{\rd}{-(\rr-\R)/14}
+    % 접선 성분 : 시계 방향
+    \pgfmathsetmacro{\td}{-\PC}   % 음수 = 시계 방향 (p_c > 0)
+    % 방향각 = ang + atan2(tangential, radial), 화면에서는 극좌표 회전
+    \pgfmathsetmacro{\dir}{\ang + atan2(\td,\rd)}
+    \draw[flow, line width=0.45pt, -{Stealth[length=2.8pt,width=2.2pt]}]
+         (\ang:\rr mm) -- ++(\dir:5mm);
+  }
+}
+
+% ---- 세 위치의 배 ---------------------------------------------------------
+\fill[errc] (0:56mm) circle (1.5);
+\node[note, errc, anchor=west] at (0:59mm) {$r > r_d$ — 안쪽으로};
+
+\fill[errc] (150:16mm) circle (1.5);
+\node[note, errc, anchor=east] at (150:19mm) {$r < r_d$ — 바깥으로};
+
+\fill[pathc] (255:\R mm) circle (1.5);
+\node[note, pathc, anchor=north] at (255:38mm) {$r = r_d$ — 순수 접선};
+
+% ---- 식 -------------------------------------------------------------------
+\node[font=\small, anchor=west] at (-58,-52)
+     {$\chi_d = \theta + \operatorname{atan2}\!\left(r\dot{\theta},\ \dot{r}\right)$};
+
+\node[note, anchor=west, text width=62mm] at (-8,-50)
+     {$\dot{r}$ — 반경 방향 (다가갈지 멀어질지)\\
+      $r\dot{\theta}$ — 접선 방향 (돌아가는 힘)\\
+      두 성분의 비율이 곧 접근 각도가 된다};
+
+\node[wnote, anchor=west, text width=120mm] at (-58,-62)
+     {$p_c$ 의 \textbf{부호}가 회전 방향, \textbf{크기}가 반경 정상상태 오차를 정한다.
+      실측 — 목표 25\,m 에서 $p_c$ 0.15 / 0.60 / 1.00 $\rightarrow$ 26.03 / 29.09 / 31.81\,m
+      (오차 $\div\ p_c = 6.82$ 로 일정)};
+
+\end{tikzpicture}
+\end{document}
