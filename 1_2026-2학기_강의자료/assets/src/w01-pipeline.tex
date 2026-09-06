@@ -1,0 +1,54 @@
+% assets/w01-pipeline.svg — 인지 · 판단 · 제어 파이프라인
+%
+%   bash _tools/tikz2svg.sh assets/src/w01-pipeline.tex assets/w01-pipeline.svg
+%
+% 요점: 데이터는 왼쪽에서 오른쪽으로 흐르지만,
+%       본 과목은 오른쪽(제어)부터 배워 왼쪽(인지)으로 간다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\W{38}
+\def\H{40}
+
+% ---- 세 단계 ---------------------------------------------------------------
+\node[draw=nav,   line width=0.7pt, fill=white, minimum width=\W mm,
+      minimum height=\H mm, font=\small] (p) at (0,0)   {};
+\node[draw=guid,  line width=0.7pt, fill=white, minimum width=\W mm,
+      minimum height=\H mm, font=\small] (g) at (52,0)  {};
+\node[draw=ctrl,  line width=0.7pt, fill=white, minimum width=\W mm,
+      minimum height=\H mm, font=\small] (c) at (104,0) {};
+
+\node[font=\small\bfseries, nav]  at ($(p.north)+(0,-5mm)$)  {1. 인지};
+\node[note]                       at ($(p.north)+(0,-9.5mm)$) {무엇이 있나};
+\node[font=\small\bfseries, guid] at ($(g.north)+(0,-5mm)$)  {2. 판단};
+\node[note]                       at ($(g.north)+(0,-9.5mm)$) {어디로 갈까};
+\node[font=\small\bfseries, ctrl] at ($(c.north)+(0,-5mm)$)  {3. 제어};
+\node[note]                       at ($(c.north)+(0,-9.5mm)$) {어떻게 움직일까};
+
+% ---- 각 단계의 내용 --------------------------------------------------------
+\node[font=\scriptsize, align=center] at ($(p.center)+(0,-2mm)$)
+     {LiDAR 포인트클라우드\\ 카메라 영상\\ GNSS · IMU\\ 센서 융합 (EKF)};
+\node[font=\scriptsize, align=center] at ($(g.center)+(0,-2mm)$)
+     {경로 계획\\ 충돌회피\\ LOS 유도\\ 미션 상태기계};
+\node[font=\scriptsize, align=center] at ($(c.center)+(0,-2mm)$)
+     {헤딩 제어기\\ 속도 제어기\\ 추력 배분\\ 위치 유지 (DP)};
+
+% ---- 데이터 흐름 -----------------------------------------------------------
+\draw[sig] (p) -- (g);
+\draw[sig] (g) -- (c);
+
+% ---- 주차 배정 -------------------------------------------------------------
+\node[note, nav]  at ($(p.south)+(0,-4mm)$) {11 $\sim$ 13주차};
+\node[note, guid] at ($(g.south)+(0,-4mm)$) {7 $\sim$ 9 · 12주차};
+\node[note, ctrl] at ($(c.south)+(0,-4mm)$) {6 $\sim$ 10 · 14주차};
+
+% ---- 배우는 순서 -----------------------------------------------------------
+\draw[asig] ($(c.south)+(0,-9mm)$) -- ($(p.south)+(0,-9mm)$);
+\node[note, accent] at (52,-33) {배우는 순서 — 제어부터 시작해 인지로 간다};
+
+\end{tikzpicture}
+\end{document}

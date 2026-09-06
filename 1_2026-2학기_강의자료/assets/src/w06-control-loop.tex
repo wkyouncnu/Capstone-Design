@@ -1,0 +1,65 @@
+% assets/w06-control-loop.svg — 6주차 제어 구조 (속도 루프 + 헤딩 루프)
+%
+%   bash _tools/tikz2svg.sh assets/src/w06-control-loop.tex assets/w06-control-loop.svg
+%
+% 요점: 두 루프가 같은 배를 공유한다. 속도는 PI, 헤딩은 PD.
+%       둘의 출력 X 와 N 이 차동 배분에서 좌·우 추력으로 나뉜다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- 속도 루프 (위) --------------------------------------------------------
+\node[blk]                          (uref) at (0,10)  {목표 속도};
+\node[sum,  right=8mm of uref]      (su)              {};
+\node[cblk, right=8mm of su]        (pi)              {PI};
+\node[note, below=0.8mm of pi]                        {속도 제어기};
+
+\draw[sig] (uref) -- node[sname, above] {$u_{\mathrm{ref}}$} (su);
+\draw[sig] (su)   -- (pi);
+\node[note, below=1.0mm of su] {$-$};
+
+% ---- 헤딩 루프 (아래) ------------------------------------------------------
+\node[blk]                          (pref) at (0,-14) {목표 선수각};
+\node[sum,  right=8mm of pref]      (sp)              {};
+\node[cblk, right=8mm of sp]        (pd)              {PD};
+\node[note, below=0.8mm of pd]                        {헤딩 제어기};
+
+\draw[sig] (pref) -- node[sname, above] {$\psi_{\mathrm{ref}}$} (sp);
+\draw[sig] (sp)   -- (pd);
+\node[note, below=1.0mm of sp] {$-$};
+
+% ---- 배분 · 발행 · 플랜트 --------------------------------------------------
+\node[tblk, minimum height=20mm, minimum width=22mm] (al) at (72,-2) {차동 배분};
+\node[tblk, right=9mm of al, minimum height=13mm]    (pub) {추력 발행};
+\node[pblk, right=9mm of pub, minimum height=13mm]   (gz)  {Gazebo};
+\node[note, below=0.8mm of gz] {WAM-V · 유체력 · 파랑};
+
+\draw[sig] (pi) -- node[sname, above] {$X$} (pi -| al.west);
+\draw[sig] (pd) -- node[sname, above] {$N$} (pd -| al.west);
+\draw[sig] (al) -- node[sname, above, align=center] {$F_L,\ F_R$} (pub);
+\draw[sig] (pub) -- (gz);
+
+\node[note, below=1.5mm of al.south, text width=30mm, align=center]
+     {$F_L = \dfrac{X}{2} + \dfrac{N}{2b}$\\[2pt]
+      $F_R = \dfrac{X}{2} - \dfrac{N}{2b}$};
+
+% ---- 되먹임 ---------------------------------------------------------------
+\coordinate (gzb) at ($(gz.south)+(0,-26mm)$);
+\node[nblk, minimum width=44mm] (odom) at ($(gzb)+(-40mm,0)$) {ground\_truth\_odometry};
+
+\draw[wire] (gz.south) -- (gzb);
+\draw[sig]  (gzb) -- (odom.east);
+\draw[wire] (odom.west) -- ($(odom.west)+(-16mm,0)$);
+\coordinate (fb) at ($(odom.west)+(-16mm,0)$);
+\draw[sig] (fb) |- (su.south);
+\draw[sig] (fb) |- (sp.south);
+
+\node[note, below=1.2mm of odom.south, text width=52mm, align=center]
+     {$u=$ \texttt{twist.linear.x} \quad $\psi=$ 쿼터니언에서 계산\\
+      10\,Hz · 참값이므로 추정 오차가 없다};
+
+\end{tikzpicture}
+\end{document}

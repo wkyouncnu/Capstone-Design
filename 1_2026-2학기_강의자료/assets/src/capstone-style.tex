@@ -1,0 +1,71 @@
+% capstone-style.tex — 이 볼트의 TikZ 그림이 공유하는 스타일
+%
+% 쓰는 법:  \input{capstone-style}   (assets/src/ 안에서)
+% 빌드:     bash _tools/tikz2svg.sh assets/src/w02-node-topic.tex assets/w02-node-topic.svg
+%
+% 왜 TikZ 인가
+%   손으로 SVG 좌표를 쓰면 화살촉·선 굵기·글자 크기가 그림마다 미묘하게 달라진다.
+%   그것이 "자료가 어설퍼 보인다"의 정체다. 스타일을 한 번만 정하고 상대좌표로
+%   배치하면 좌표를 고쳐도 그림이 무너지지 않는다.
+%   수식은 본문과 같은 TeX 글꼴로 나온다.
+%
+% 한글
+%   ko.TeX(DVI 경로)를 쓴다. XeLaTeX 은 TikZ 그래픽을 PDF special 로 내보내는데
+%   dvisvgm 이 그것을 받으려면 Ghostscript < 10.01 이 필요하다. 이 PC 에는
+%   10.07 이 깔려 있어 그 경로가 막힌다. latex -> DVI -> dvisvgm 이 유일하게
+%   동작하는 조합이다.
+
+\usepackage[hangul]{kotex}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usetikzlibrary{arrows.meta, positioning, calc, fit, backgrounds, decorations.pathmorphing}
+
+% ---- 색 --------------------------------------------------------------------
+% 강조는 하나만. 나머지는 검정. 흑백 인쇄에서도 읽혀야 한다.
+\definecolor{ink}{HTML}{1A1A1A}
+\definecolor{soft}{HTML}{666666}
+\definecolor{accent}{HTML}{7C3AED}
+\definecolor{warn}{HTML}{B91C1C}
+
+% 계층 색 — Simulink 모델의 블록 색과 같은 규칙을 쓴다
+\definecolor{guid}{HTML}{1D4ED8}    % 유도
+\definecolor{ctrl}{HTML}{EA580C}    % 제어
+\definecolor{thr}{HTML}{D97706}     % 추진기
+\definecolor{plant}{HTML}{16A34A}   % 운동모델
+\definecolor{nav}{HTML}{7C3AED}     % 항법 · 신호처리
+\definecolor{pathc}{HTML}{0D9488}   % 계획 경로 · 항적
+\definecolor{errc}{HTML}{C2410C}    % 오차
+\definecolor{flow}{HTML}{0369A1}    % 조류 · 바람
+
+% ---- 선과 화살촉 -----------------------------------------------------------
+\tikzset{
+  sig/.style   = {ink, line width=0.5pt, -{Stealth[length=4pt, width=3pt]}},
+  wire/.style  = {ink, line width=0.5pt},
+  fb/.style    = {ink, line width=0.5pt, densely dashed,
+                  -{Stealth[length=4pt, width=3pt]}},
+  asig/.style  = {accent, line width=0.5pt, densely dashed,
+                  -{Stealth[length=4pt, width=3pt]}},
+  % 블록 — 흰 바탕, 직각, 검은 테두리. 색은 테두리에만 준다
+  blk/.style   = {draw=ink, line width=0.55pt, fill=white,
+                  minimum width=18mm, minimum height=8.5mm, inner sep=2pt, font=\small},
+  gblk/.style  = {blk, draw=guid},
+  cblk/.style  = {blk, draw=ctrl},
+  tblk/.style  = {blk, draw=thr},
+  pblk/.style  = {blk, draw=plant},
+  nblk/.style  = {blk, draw=nav},
+  % 합산점 · 분기점
+  sum/.style   = {draw=ink, line width=0.55pt, fill=white, circle,
+                  inner sep=0pt, minimum size=4.6mm, font=\scriptsize},
+  dot/.style   = {ink, fill=ink, circle, inner sep=0pt, minimum size=1.5mm},
+  % 글자
+  sname/.style = {font=\small, inner sep=1.5pt},
+  note/.style  = {font=\scriptsize, soft, inner sep=1.5pt},
+  wnote/.style = {font=\scriptsize, warn, inner sep=1.5pt},
+  anote/.style = {font=\scriptsize, accent, inner sep=1.5pt},
+  axis/.style  = {ink, line width=0.5pt},
+  tick/.style  = {font=\scriptsize, soft},
+  % 묶음 상자 — 서브시스템 표시
+  grp/.style   = {draw=soft, line width=0.4pt, densely dotted, rounded corners=1mm,
+                  inner sep=3mm},
+}

@@ -1,0 +1,51 @@
+% assets/w05-agent-loop.svg — AI 코딩 에이전트가 도는 한 바퀴
+%
+%   bash _tools/tikz2svg.sh assets/src/w05-agent-loop.tex assets/w05-agent-loop.svg
+%
+% 요점: 1~4 는 에이전트가 돌지만, 5(검증)는 사람이 한다.
+%       이 과목에서 채점하는 것은 4번이 아니라 5번이다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- 에이전트의 네 단계 ----------------------------------------------------
+\node[blk, minimum width=24mm] (r) at (0,0)    {1. 읽는다};
+\node[blk, minimum width=24mm] (p) at (34,0)   {2. 계획한다};
+\node[blk, minimum width=24mm] (w) at (68,0)   {3. 쓴다};
+\node[blk, minimum width=24mm] (e) at (102,0)  {4. 실행한다};
+
+\node[note, below=0.8mm of r] {파일 · \texttt{CLAUDE.md}};
+\node[note, below=0.8mm of p] {무엇을 고칠지};
+\node[note, below=0.8mm of w] {생성 · 수정};
+\node[note, below=0.8mm of e] {빌드 · 테스트};
+
+\draw[sig] (r) -- (p);
+\draw[sig] (p) -- (w);
+\draw[sig] (w) -- (e);
+
+% 되돌아가는 화살표
+\draw[fb] (e.north) -- ++(0,10mm) -| (r.north);
+\node[note] at (51,15) {결과를 보고 다시 읽는다 (반복)};
+
+% 에이전트 영역 묶기
+\begin{scope}[on background layer]
+  \node[grp, fit=(r)(e), inner ysep=9mm] (box) {};
+\end{scope}
+\node[note, below left=0mm and 0mm of box.south east] {여기까지는 에이전트가 한다};
+
+% ---- 사람이 하는 검증 ------------------------------------------------------
+\node[blk, draw=warn, minimum width=44mm, minimum height=11mm]
+     (v) at (51,-30) {5. 검증한다 \quad $\leftarrow$ 사람};
+\node[note, below=0.8mm of v] {단위 테스트 · rosbag 재생 · 경계조건};
+
+\draw[sig, warn] (box.south) -- (v.north);
+
+\node[wnote, text width=96mm, align=center] at (51,-42)
+     {에이전트는 그럴듯하게 틀린 코드도 똑같이 자신 있게 내놓는다.\\
+      이 과목에서 채점하는 것은 4번이 아니라 \textbf{5번}이다};
+
+\end{tikzpicture}
+\end{document}

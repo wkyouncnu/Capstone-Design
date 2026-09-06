@@ -1,0 +1,54 @@
+% assets/w10-dp-loop.svg — 동적위치유지(DP) 제어 루프
+%
+%   bash _tools/tikz2svg.sh assets/src/w10-dp-loop.tex assets/w10-dp-loop.svg
+%
+% 요점 세 가지를 한 그림에 담는다.
+%   1) 기준모델이 목표와 제어기 사이에 있다 (계단 목표를 완만하게 만든다)
+%   2) 파랑 필터는 되먹임 경로에 있다 (제어기로 들어가는 신호를 거른다)
+%   3) 외란은 선박에 직접 들어간다 (제어기가 보지 못한다)
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm, node distance=9mm]
+
+% ---- 앞먹임 경로 -----------------------------------------------------------
+\node[blk]                        (ref)  {목표 위치};
+\node[gblk, right=10mm of ref]    (rm)   {기준모델};
+\node[sum,  right=9mm of rm]      (s1)   {};
+\node[cblk, right=9mm of s1]      (dp)   {DP 제어기};
+\node[tblk, right=10mm of dp]     (al)   {추력 배분};
+\node[pblk, right=10mm of al]     (sh)   {선박};
+
+\draw[sig] (ref) -- (rm);
+\draw[sig] (rm)  -- node[sname, above] {$\boldsymbol{\eta}_d$} (s1);
+\draw[sig] (s1)  -- node[sname, above] {$\tilde{\boldsymbol{\eta}}$} (dp);
+\draw[sig] (dp)  -- node[sname, above] {$\boldsymbol{\tau}$} (al);
+\draw[sig] (al)  -- node[sname, above] {$\mathbf{f}$} (sh);
+
+\node[note, below=1.2mm of s1] {$-$};
+
+% ---- 외란 -----------------------------------------------------------------
+\node[blk, draw=warn, above=11mm of sh] (dist) {외란};
+\node[note, right=1.5mm of dist] {바람 · 파랑};
+\draw[sig, warn] (dist) -- (sh);
+
+% ---- 되먹임 경로 -----------------------------------------------------------
+\node[nblk, below=13mm of al]  (nav)  {항법};
+\node[nblk, left=12mm of nav]  (filt) {파랑 필터};
+
+\coordinate (shb) at ($(sh.south)+(0,-13mm)$);
+\draw[wire] (sh.south) -- (shb);
+\draw[sig]  (shb) -| (nav.east);
+\draw[sig]  (nav) -- node[sname, below] {$\boldsymbol{\eta},\ \boldsymbol{\nu}$} (filt);
+\draw[sig]  (filt.west) -| (s1.south);
+
+% ---- 설명 -----------------------------------------------------------------
+\node[note, below=1.5mm of rm.south, text width=26mm, align=center]
+     {계단 목표를\\완만하게};
+\node[note, below=1.5mm of filt.south, text width=28mm, align=center]
+     {파도 성분만 걸러낸다};
+
+\end{tikzpicture}
+\end{document}
