@@ -1,0 +1,68 @@
+% assets/w06-0-blocks-map.svg — 이번 주차에 배우는 블록 지도
+%
+%   bash _tools/tikz2svg.sh assets/src/w06-0-blocks-map.tex assets/w06-0-blocks-map.svg
+%
+% 요점: Simulink 블록은 수백 개지만 실제로 쓰는 것은 이 네 묶음뿐이다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\CW{62}
+\def\CH{46}
+
+% ---- A ---------------------------------------------------------------------
+\node[draw=guid, line width=0.7pt, rounded corners=1.5mm,
+      minimum width=\CW mm, minimum height=\CH mm] (a) at (0,0) {};
+\node[font=\small\bfseries, guid, anchor=north west] at ($(a.north west)+(3mm,-3mm)$)
+     {A · 신호를 만들고 본다};
+\node[anchor=north west, font=\scriptsize, align=left] at ($(a.north west)+(3mm,-9mm)$)
+     {\texttt{Constant} — 고정된 값\\
+      \texttt{Step} — 어느 시각에 뛰는 값\\
+      \texttt{Sine Wave} — 사인파\\
+      \texttt{Digital Clock} — 지금 시각\\
+      \texttt{Scope} / \texttt{Display} — 눈으로 확인};
+
+% ---- B ---------------------------------------------------------------------
+\node[draw=ctrl, line width=0.7pt, rounded corners=1.5mm,
+      minimum width=\CW mm, minimum height=\CH mm] (b) at (70,0) {};
+\node[font=\small\bfseries, ctrl, anchor=north west] at ($(b.north west)+(3mm,-3mm)$)
+     {B · 계산한다};
+\node[anchor=north west, font=\scriptsize, align=left] at ($(b.north west)+(3mm,-9mm)$)
+     {\texttt{Gain} — 곱하기\\
+      \texttt{Sum} — 더하기 / 빼기\\
+      \texttt{Product} — 곱하기 / 나누기\\
+      \texttt{Saturation} — 위아래로 자르기\\
+      \texttt{MATLAB Function} — 코드로};
+
+% ---- C ---------------------------------------------------------------------
+\node[draw=nav, line width=0.7pt, rounded corners=1.5mm,
+      minimum width=\CW mm, minimum height=\CH mm] (c) at (0,-54) {};
+\node[font=\small\bfseries, nav, anchor=north west] at ($(c.north west)+(3mm,-3mm)$)
+     {C · 선을 정리한다};
+\node[anchor=north west, font=\scriptsize, align=left] at ($(c.north west)+(3mm,-9mm)$)
+     {\texttt{Subsystem} — 여러 블록을 한 칸에\\
+      \texttt{In1} / \texttt{Out1} — 그 칸의 입출력\\
+      \texttt{Goto} / \texttt{From} — 선 없이 잇기\\
+      \texttt{Bus Creator} — 여러 개를 한 줄로\\
+      \texttt{Bus Selector} / \texttt{Assignment}};
+
+% ---- D ---------------------------------------------------------------------
+\node[draw=plant, line width=0.7pt, rounded corners=1.5mm,
+      minimum width=\CW mm, minimum height=\CH mm] (d) at (70,-54) {};
+\node[font=\small\bfseries, plant, anchor=north west] at ($(d.north west)+(3mm,-3mm)$)
+     {D · 시간을 기억한다};
+\node[anchor=north west, font=\scriptsize, align=left] at ($(d.north west)+(3mm,-9mm)$)
+     {\texttt{Unit Delay} — 한 스텝 전 값\\
+      \texttt{Discrete-Time Integrator}\\
+      \texttt{Discrete Transfer Fcn}\\[3pt]
+      이 셋이 있어야 \textbf{제어기}가 된다};
+
+\node[note, anchor=north, text width=140mm, align=center] at (35,-82)
+     {Simulink 블록은 수백 개다. 그중 이 과목에서 실제로 쓰는 것만 골랐다.
+      Stateflow 차트와 ROS 2 블록은 이번 주차에 다루지 않는다};
+
+\end{tikzpicture}
+\end{document}

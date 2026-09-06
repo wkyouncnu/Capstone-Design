@@ -1,0 +1,55 @@
+% assets/w06-0-canvas.svg — Simulink 편집기의 네 군데
+%
+%   bash _tools/tikz2svg.sh assets/src/w06-0-canvas.tex assets/w06-0-canvas.svg
+%
+% 요점: 창은 복잡해 보이지만 실제로 쓰는 곳은 네 군데뿐이다.
+%       실제 화면은 6주차 문서의 캡처를 볼 것.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- 창 바깥 --------------------------------------------------------------
+\draw[soft, line width=0.7pt, rounded corners=1mm] (0,0) rectangle (150,96);
+
+% ---- ① 툴스트립 ----------------------------------------------------------
+\draw[guid, line width=0.8pt, fill=guid!6] (0,84) rectangle (150,96);
+\node[font=\small\bfseries, guid, anchor=west] at (3,90) {\textcircled{1} 툴스트립};
+\node[font=\scriptsize, anchor=west] at (40,90)
+     {\textbf{실행} \quad 정지 시간 \fbox{\scriptsize 20} \quad Model Settings};
+
+% ---- ② 라이브러리 --------------------------------------------------------
+\draw[nav, line width=0.8pt, fill=nav!6] (0,0) rectangle (40,84);
+\node[font=\small\bfseries, nav, anchor=north west] at (2.5,80) {\textcircled{2} 라이브러리};
+\node[anchor=north west, font=\scriptsize, align=left] at (2.5,72)
+     {Sources\\ Sinks\\ Math Operations\\ Signal Routing\\ Discrete\\
+      Discontinuities\\ User-Defined\\ Ports \& Subsystems};
+\node[note, nav, anchor=south west, text width=34mm] at (2.5,4)
+     {여기서 블록을 끌어다 캔버스에 놓는다};
+
+% ---- ③ 캔버스 ------------------------------------------------------------
+\draw[ctrl, line width=0.8pt] (40,12) rectangle (150,84);
+\node[font=\small\bfseries, ctrl, anchor=north west] at (42.5,80) {\textcircled{3} 캔버스};
+\node[note, anchor=north west] at (42.5,74) {블록을 놓고 선으로 잇는 곳};
+
+\node[blk, minimum width=17mm, minimum height=8mm] (s)  at (62,50) {Sine};
+\node[blk, minimum width=17mm, minimum height=8mm] (g)  at (95,50) {Gain};
+\node[blk, minimum width=17mm, minimum height=8mm] (sc) at (128,50) {Scope};
+\draw[sig] (s) -- (g);
+\draw[sig] (g) -- (sc);
+\node[note, anchor=north] at (95,40) {블록 = 계산 한 덩어리 \quad 선 = 흘러가는 값};
+
+% ---- ④ 상태 표시줄 -------------------------------------------------------
+\draw[plant, line width=0.8pt, fill=plant!6] (40,0) rectangle (150,12);
+\node[font=\small\bfseries, plant, anchor=west] at (42.5,6) {\textcircled{4} 상태 표시줄};
+\node[font=\scriptsize, anchor=west] at (86,6) {확대율 \quad 솔버 \texttt{ode4}};
+
+% ---- 설명 -----------------------------------------------------------------
+\node[note, anchor=north west, text width=150mm] at (0,-6)
+     {창은 복잡해 보이지만 실제로 쓰는 곳은 이 네 군데뿐이다.
+      \textbf{실제 화면 캡처는 6주차 문서}에 있다 — 이 그림은 어디를 봐야 하는지만 알려 준다};
+
+\end{tikzpicture}
+\end{document}

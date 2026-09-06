@@ -1,0 +1,77 @@
+% assets/w06-0-bus.svg — 버스
+%
+%   bash _tools/tikz2svg.sh assets/src/w06-0-bus.tex assets/w06-0-bus.svg
+%
+% 요점: 묶을 때 이름이 붙고, 풀 때 그 이름으로 꺼낸다.
+%       중첩된 버스는 꺼낼 때 전체 경로를 적어야 한다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===================== 묶기 =====================
+\node[font=\small\bfseries, anchor=west] at (-6,30) {① 묶는다 — Bus Creator};
+
+\node[blk, minimum width=13mm, minimum height=7mm] (s1) at (0,20)  {1};
+\node[blk, minimum width=13mm, minimum height=7mm] (s2) at (0,11)  {2};
+\node[blk, minimum width=13mm, minimum height=7mm] (s3) at (0,2)   {3};
+\node[note, left=1mm of s1] {$x$};
+\node[note, left=1mm of s2] {$y$};
+\node[note, left=1mm of s3] {$z$};
+
+\node[tblk, minimum width=8mm, minimum height=26mm] (bc) at (26,11) {};
+\node[note, rotate=90] at (26,11) {Bus Creator};
+
+\draw[sig] (s1.east) -- (s1.east -| bc.west);
+\draw[sig] (s2.east) -- (s2.east -| bc.west);
+\draw[sig] (s3.east) -- (s3.east -| bc.west);
+
+\node[blk, draw=nav, minimum width=18mm, minimum height=9mm] (inner) at (54,11) {\texttt{Inner}};
+\draw[sig, line width=1.1pt] (bc.east) -- (inner.west);
+\node[note, above] at (40,13) {세 개가 한 줄로};
+
+\node[note, anchor=west, text width=44mm] at (-6,-8)
+     {\textbf{선 이름이 곧 원소 이름이 된다.}
+      이름 없는 선을 묶으면 \texttt{signal1} 같은 이름이 자동으로 붙어
+      나중에 찾기 어렵다};
+
+% ===================== 중첩 =====================
+\node[font=\small\bfseries, anchor=west] at (78,30) {② 다시 묶는다};
+
+\node[blk, minimum width=16mm, minimum height=7mm] (st) at (86,2) {12:34};
+\node[note, left=1mm of st] {\texttt{stamp}};
+
+\node[tblk, minimum width=8mm, minimum height=22mm] (bc2) at (110,11) {};
+\draw[sig, line width=1.1pt] (inner.east) -- ++(6mm,0) |- (104,18) -- (104,18 -| bc2.west);
+\draw[sig] (st.east) -- (st.east -| bc2.west);
+
+\node[blk, draw=accent, minimum width=18mm, minimum height=9mm] (outer) at (136,11) {\texttt{Outer}};
+\draw[sig, line width=1.3pt] (bc2.east) -- (outer.west);
+
+\node[note, anchor=north west, align=left] at (78,-6)
+     {\texttt{Outer} 의 구조\\
+      \quad \texttt{Inner.x = 1}\\
+      \quad \texttt{Inner.y = 2}\\
+      \quad \texttt{Inner.z = 3}\\
+      \quad \texttt{stamp = 12:34}};
+
+% ===================== 풀기 =====================
+\node[font=\small\bfseries, anchor=west] at (-6,-34) {③ 꺼낸다 — Bus Selector};
+
+\node[blk, draw=accent, minimum width=18mm, minimum height=9mm] (o2) at (12,-46) {\texttt{Outer}};
+\node[tblk, minimum width=8mm, minimum height=18mm] (bs) at (46,-46) {};
+\node[note, rotate=90] at (46,-46) {Bus Selector};
+\node[blk, minimum width=13mm, minimum height=7mm] (out) at (76,-46) {2};
+
+\draw[sig, line width=1.3pt] (o2) -- (bs.west);
+\draw[sig] (bs.east) -- (out.west);
+\node[note, above] at (61,-44) {\texttt{Inner.y}};
+
+\node[wnote, anchor=west, text width=76mm] at (94,-46)
+     {꺼낼 때는 \textbf{전체 경로}를 적는다. \texttt{y} 만 쓰면 찾지 못한다.
+      중첩이 깊어질수록 이 규칙이 중요해진다};
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,54 @@
+% assets/w05-vscode-claude.svg — 무엇이 어디에 설치되는가
+%
+%   bash _tools/tikz2svg.sh assets/src/w05-vscode-claude.tex assets/w05-vscode-claude.svg
+%
+% 요점: Claude Code 는 WSL 쪽에 설치한다. PowerShell 에 설치하면 ROS 2 코드를 못 본다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===================== Windows =====================
+\node[draw=soft, line width=0.6pt, rounded corners=1.5mm,
+      minimum width=72mm, minimum height=64mm] (win) at (-40,0) {};
+\node[font=\small\bfseries, anchor=north west] at ($(win.north west)+(3mm,-3mm)$)
+     {Windows 11 쪽};
+
+\node[nblk, minimum width=52mm, minimum height=13mm] (vs) at (-40,16) {VS Code};
+\node[note, below=0.6mm of vs] {편집기 본체 — Windows 에 설치};
+
+\node[nblk, minimum width=52mm, minimum height=13mm] (ext) at (-40,-2) {WSL 확장 (Remote -- WSL)};
+\node[note, below=0.6mm of ext] {두 세계를 잇는 다리};
+
+\node[cblk, minimum width=52mm, minimum height=13mm] (ml) at (-40,-20) {MATLAB R2024b};
+\node[note, below=0.6mm of ml] {Simulink · ROS Toolbox};
+
+% ===================== WSL =====================
+\node[draw=plant, line width=0.7pt, rounded corners=1.5mm,
+      minimum width=72mm, minimum height=64mm] (wsl) at (46,0) {};
+\node[font=\small\bfseries, plant, anchor=north west] at ($(wsl.north west)+(3mm,-3mm)$)
+     {WSL2 — Ubuntu 22.04 쪽};
+
+\node[blk, draw=accent, minimum width=52mm, minimum height=13mm] (cc) at (46,16) {Claude Code};
+\node[note, accent, below=0.6mm of cc] {\textbf{여기에 설치한다}};
+
+\node[pblk, minimum width=52mm, minimum height=13mm] (ros) at (46,-2) {ROS 2 · VRX · 내 코드};
+\node[note, below=0.6mm of ros] {1$\sim$4주차에 만든 것};
+
+\node[tblk, minimum width=52mm, minimum height=13mm] (mcp) at (46,-20) {MATLAB MCP 서버};
+\node[note, below=0.6mm of mcp] {에이전트가 MATLAB 을 부르는 통로};
+
+% ===================== 연결 =====================
+\draw[sig] (ext.east) -- node[sname, above, font=\scriptsize] {접속} (ext -| wsl.west);
+\draw[fb]  (mcp.west) -- (mcp -| win.east);
+
+% ===================== 경고 =====================
+\node[wnote, anchor=north, text width=150mm, align=center] at (3,-40)
+     {\textbf{Claude Code 를 PowerShell 에 설치하면 안 된다.}
+      Windows 쪽에 설치하면 WSL 안의 ROS 2 코드와 빌드 결과를 보지 못한다.
+      설치 전에 \texttt{wsl -d Ubuntu-22.04} 로 들어가 있는지 확인할 것};
+
+\end{tikzpicture}
+\end{document}

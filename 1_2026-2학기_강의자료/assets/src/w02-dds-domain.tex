@@ -1,0 +1,61 @@
+% assets/w02-dds-domain.svg — DDS 자동 발견과 ROS_DOMAIN_ID
+%
+%   bash _tools/tikz2svg.sh assets/src/w02-dds-domain.tex assets/w02-dds-domain.svg
+%
+% 요점: 중앙 서버가 없다. 같은 도메인끼리만 서로를 찾는다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% =========================== 같은 도메인 ====================================
+\begin{scope}[shift={(0,0)}]
+  \node[draw=pathc, line width=0.7pt, rounded corners=1.5mm,
+        minimum width=68mm, minimum height=34mm] (bx) at (0,0) {};
+  \node[font=\small\bfseries, pathc, anchor=north west]
+       at ($(bx.north west)+(2.5mm,-2.5mm)$) {\texttt{ROS\_DOMAIN\_ID = 30} (같은 값)};
+
+  \node[blk, minimum width=22mm] (a) at (-16,-3) {노드 A};
+  \node[blk, minimum width=22mm] (b) at (16,-3)  {노드 B};
+  \draw[pathc, line width=0.7pt,
+        {Stealth[length=4pt,width=3pt]}-{Stealth[length=4pt,width=3pt]}] (a) -- (b);
+  \node[note, pathc, above] at (0,-1) {통신됨};
+\end{scope}
+
+% =========================== 다른 도메인 ====================================
+\begin{scope}[shift={(90,0)}]
+  \node[draw=warn, line width=0.7pt, rounded corners=1.5mm,
+        minimum width=68mm, minimum height=34mm] (bx2) at (0,0) {};
+  \node[font=\small\bfseries, warn, anchor=north west]
+       at ($(bx2.north west)+(2.5mm,-2.5mm)$) {\texttt{ROS\_DOMAIN\_ID} 가 다름};
+
+  \node[blk, minimum width=22mm] (c) at (-16,-3) {노드 C};
+  \node[blk, minimum width=22mm] (d) at (16,-3)  {노드 D};
+  \node[note, below=0.6mm of c] {\texttt{ID = 30}};
+  \node[note, below=0.6mm of d] {\texttt{ID = 31}};
+  \draw[warn, line width=0.7pt, densely dashed] (c) -- (d);
+  \draw[warn, line width=1.1pt] (-3,-6) -- (3,0);
+  \draw[warn, line width=1.1pt] (3,-6) -- (-3,0);
+  \node[note, warn, above] at (0,0.5) {서로 안 보임};
+\end{scope}
+
+% =========================== 설명 ===========================================
+\node[note, anchor=north west, text width=66mm] at (-34,-22)
+     {1. 켜지면 자기 존재를 방송한다\\
+      2. 같은 도메인의 노드가 응답한다\\
+      3. 이름 · 타입 · QoS 가 맞으면 연결한다\\[2pt]
+      \textbf{roscore 같은 중앙 서버가 없다}};
+
+\node[wnote, anchor=north west, text width=66mm] at (56,-22)
+     {증상 — 오류 메시지가 \textbf{전혀 없다}.\\
+      \texttt{ros2 topic list} 에 아무것도 안 나온다.\\[2pt]
+      강의실에서 서로 간섭하지 않게 하는 장치};
+
+% =========================== 쓰는 법 ========================================
+\node[font=\small\ttfamily, anchor=west] at (-34,-44) {export ROS\_DOMAIN\_ID=30};
+\node[note, anchor=west] at (26,-44) {터미널마다. 안 하면 기본값 0. 범위는 0$\sim$101};
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,104 @@
+% assets/w04-sensor-layout.svg — WAM-V 센서 배치 (실측 좌표 + 시야)
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-sensor-layout.tex assets/w04-sensor-layout.svg
+%
+% 요점 두 가지
+%   1) 센서는 전부 앞쪽에 몰려 있다 -> 후방이 사각지대다
+%   2) 좌표는 VRX 실행 중 TF 에서 잰 값이다 (추정 아님)
+%
+% 선체 좌표계 : x 전방, y 좌현, z 상방 (ENU 계열)
+% 화면 : x 오른쪽, y 위쪽.  1 m = 15 mm
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\S{15}   % 1 m
+
+% ===================== 평면도 =====================
+\begin{scope}
+  \node[font=\small\bfseries, anchor=west] at (-46,26) {평면도 — 위에서 본 모습};
+
+  % 시야 : 전방 부채꼴
+  \fill[pathc, opacity=0.10] (0,0) -- (45:34mm) arc (45:-45:34mm) -- cycle;
+  \node[note, pathc, anchor=west] at (26,-13) {카메라 · LiDAR 시야};
+
+  % 사각지대 : 후방 부채꼴
+  \fill[warn, opacity=0.10] (0,0) -- (150:26mm) arc (150:210:26mm) -- cycle;
+  \node[note, warn, align=center] at (-30,0) {후방\\ 사각지대};
+
+  % 선체 두 개 (y = +-1.027 m)
+  \draw[flow, line width=0.7pt, rounded corners=2mm]
+       (-2.374*\S-9,  1.027*\S-3) rectangle (0.9*\S+9,  1.027*\S+3);
+  \draw[flow, line width=0.7pt, rounded corners=2mm]
+       (-2.374*\S-9, -1.027*\S-3) rectangle (0.9*\S+9, -1.027*\S+3);
+  \node[note, flow, anchor=west] at (0.9*\S+11,  1.027*\S) {좌현 $y=+1.03$};
+  \node[note, flow, anchor=west] at (0.9*\S+11, -1.027*\S) {우현 $y=-1.03$};
+
+  % 기준점과 축
+  \fill[ink] (0,0) circle (1.1);
+  \node[note, anchor=north east] at (-1,-1) {\texttt{base\_link}};
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (16,0);
+  \node[note, anchor=north] at (17,-1) {$x$ 선수};
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,12);
+  \node[note, anchor=east] at (-0.5,12) {$y$};
+
+  % 센서
+  \fill[errc] (0.700*\S,0) circle (1.6);
+  \node[note, errc, anchor=south] at (0.700*\S-2,5) {3D LiDAR};
+  \fill[thr]  (0.700*\S,-3.4) circle (1.3);
+  \node[note, thr, anchor=north west] at (0.700*\S+2,-4) {Livox};
+  \fill[pathc] (0.750*\S, 0.100*\S) circle (1.2);
+  \fill[pathc] (0.750*\S,-0.100*\S) circle (1.2);
+  \node[note, pathc, anchor=west] at (0.750*\S+4,0.100*\S+4) {전방 카메라 2};
+  \fill[pathc] (0.500*\S,-0.450*\S) circle (1.2);
+  \node[note, pathc, anchor=north] at (0.500*\S,-0.450*\S-2) {우현 카메라};
+  \fill[flow] (-0.850*\S,0) circle (1.5);
+  \node[note, flow, anchor=south] at (-0.850*\S,2) {GPS};
+  \fill[nav]  (0.300*\S,-0.200*\S) circle (1.3);
+  \node[note, nav, anchor=north east] at (0.300*\S-1,-0.200*\S-1) {IMU};
+
+  % 추진기
+  \draw[thr, line width=0.7pt] (-2.374*\S-4,  1.027*\S-3) rectangle (-2.374*\S+4,  1.027*\S+3);
+  \draw[thr, line width=0.7pt] (-2.374*\S-4, -1.027*\S-3) rectangle (-2.374*\S+4, -1.027*\S+3);
+  \node[note, thr, anchor=east] at (-2.374*\S-6, 1.027*\S) {추진기 $x=-2.37$};
+\end{scope}
+
+% ===================== 측면도 =====================
+\begin{scope}[shift={(0,-70)}]
+  \node[font=\small\bfseries, anchor=west] at (-46,30) {측면도 — 옆에서 본 모습};
+
+  \draw[flow, densely dashed] (-46,0) -- (46,0);
+  \node[note, flow, anchor=west] at (47,0) {수면};
+  \draw[flow, line width=0.7pt, rounded corners=2mm]
+       (-2.374*\S-9,-3) rectangle (0.9*\S+9,3);
+
+  \fill[ink] (0,0) circle (1.1);
+  \node[note, anchor=north] at (0,-2) {\texttt{base\_link}};
+
+  \draw[soft, line width=0.5pt] (0.700*\S,0) -- (0.700*\S,1.800*\S);
+  \fill[errc] (0.700*\S,1.800*\S) circle (1.6);
+  \node[note, errc, anchor=west] at (0.700*\S+3,1.800*\S) {3D LiDAR  $z=1.80$};
+  \fill[pathc] (0.750*\S,1.500*\S) circle (1.2);
+  \node[note, pathc, anchor=west] at (0.750*\S+3,1.500*\S) {카메라  $z=1.50$};
+  \fill[thr] (0.700*\S,0.710*\S) circle (1.3);
+  \node[note, thr, anchor=west] at (0.700*\S+3,0.710*\S) {Livox  $z=0.71$};
+
+  \draw[soft, line width=0.5pt] (-0.850*\S,0) -- (-0.850*\S,1.300*\S);
+  \fill[flow] (-0.850*\S,1.300*\S) circle (1.5);
+  \node[note, flow, anchor=east] at (-0.850*\S-3,1.300*\S) {GPS  $z=1.30$};
+
+  \fill[thr] (-2.652*\S,-0.191*\S) circle (1.3);
+  \node[note, thr, anchor=east] at (-2.652*\S-3,-0.191*\S) {프로펠러 $z=-0.19$};
+\end{scope}
+
+% ===================== 주의 =====================
+\node[wnote, anchor=west, text width=104mm] at (-46,-100)
+     {센서가 전부 앞쪽에 몰려 있어 \textbf{후방이 사각지대}다.
+      좌표는 VRX 실행 중 TF 에서 측정한 값이며(2026-09-06), 4주차에 직접 바꿔 본다.
+      이 그림의 $y$ 는 \textbf{좌현이 양(+)} 이다 — 7주차 이후 NED 수식과 부호가 반대다};
+
+\end{tikzpicture}
+\end{document}
