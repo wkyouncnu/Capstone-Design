@@ -149,12 +149,59 @@ check_svg() {
   return 0
 }
 
+# ── 5. 그림 소스 ──────────────────────────────────────────────────────────
+check_fig() {
+  head2 "9. TikZ 그림 — 빌드 누락"
+  local n=0 t b
+  for t in assets/src/*.tex; do
+    [ -f "$t" ] || continue
+    case "$(basename "$t")" in capstone-style.tex) continue ;; esac
+    b="assets/$(basename "${t%.tex}").svg"
+    if [ ! -f "$b" ]; then
+      echo "     [SVG 없음] $t"; n=$((n+1))
+    elif [ "$t" -nt "$b" ]; then
+      echo "     [소스가 더 최신] $t"; n=$((n+1))
+    fi
+  done
+  note "다시 빌드해야 하는 그림" "$n"
+  [ $n -gt 0 ] && echo "     -> bash _tools/tikz2svg.sh <소스.tex> <출력.svg>"
+  FAIL=$((FAIL+n))
+
+  head2 "10. 그림 안의 금지 표현"
+  # 수작업 SVG 와 TikZ 소스의 글자를 검사한다. 본문만 보면 그림에 남은 것을 놓친다.
+  local words=(여러분 우리 오늘 함정 지뢰 드디어 "★")
+  local bad=0 f w hits
+  for f in assets/*.svg assets/src/*.tex; do
+    [ -f "$f" ] || continue
+    grep -q dvisvgm "$f" 2>/dev/null && continue   # 빌드 산출물은 글자가 path 라 검사 불가
+    for w in "${words[@]}"; do
+      hits=$(grep -o -- "$w" "$f" 2>/dev/null | wc -l)
+      if [ "$hits" -gt 0 ]; then echo "     $f  :  $w ($hits)"; bad=$((bad+hits)); fi
+    done
+  done
+  note "그림 소스의 금지 표현" "$bad"
+  FAIL=$((FAIL+bad))
+
+  head2 "11. MD 수식 구문"
+  local m=0
+  while IFS= read -r f; do
+    # $$ 블록이 짝을 이루는지. 홀수면 수식이 본문으로 새어 나온다.
+    local nn
+    nn=$(grep -o '\$\$' "$f" | wc -l)
+    if [ $((nn % 2)) -ne 0 ]; then echo "     [\$\$ 짝 안 맞음] $f  ($nn 개)"; m=$((m+1)); fi
+  done < <(mds)
+  note "수식 구분자 불일치" "$m"
+  FAIL=$((FAIL+m))
+  return 0
+}
+
 # ── 실행 ──────────────────────────────────────────────────────────────────
 echo "볼트: $ROOT"
 case "$MODE" in
   --style) check_style ;;
   --links) check_links ;;
-  *)       check_pdf; check_links; check_style; check_svg ;;
+  --fig)   check_fig ;;
+  *)       check_pdf; check_links; check_style; check_svg; check_fig ;;
 esac
 
 echo

@@ -1,0 +1,57 @@
+% assets/w09-mission-fsm.svg — 미션 상태기계
+%
+%   bash _tools/tikz2svg.sh assets/src/w09-mission-fsm.tex assets/w09-mission-fsm.svg
+%
+% 요점: 상태 3개와 전이 4개. 7주차 유도와 8주차 로이터링을 하나의 임무로 잇는다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- 상태 -----------------------------------------------------------------
+\node[gblk, minimum width=30mm, minimum height=12mm] (wp)  at (0,0)   {WpFollow};
+\node[blk,  minimum width=30mm, minimum height=12mm, draw=pathc] (lo) at (52,0) {Loiter};
+\node[blk,  minimum width=30mm, minimum height=12mm] (fi)  at (104,0) {Finish};
+
+\node[note, below=0.8mm of wp] {\texttt{mode = 1} · LOS 유도};
+\node[note, below=0.8mm of lo] {\texttt{mode = 2} · 벡터필드};
+\node[note, below=0.8mm of fi] {\texttt{mode = 3} · 정지};
+
+% ---- 전이 -----------------------------------------------------------------
+\draw[sig, accent] (wp.east) -- (lo.west);
+\node[note, accent, above] at (26,3) {\texttt{at\_loiter > 0.5}};
+
+\draw[sig, accent] (lo.south) .. controls +(-12mm,-17mm) and +(12mm,-17mm) .. (wp.south);
+\node[note, accent] at (26,-21) {\texttt{turns >= req\_turns}};
+
+\draw[sig, accent] (wp.north) .. controls +(0,12mm) and +(0,12mm) .. (fi.north);
+\node[note, accent] at (52,14) {\texttt{at\_end > 0.5}};
+
+% ---- 구조 -----------------------------------------------------------------
+\node[gblk, minimum width=32mm] (wm) at (0,-36)  {WpManager};
+\node[blk, draw=pathc, minimum width=32mm] (lv) at (0,-48) {LoiterVF};
+\node[blk, minimum width=32mm] (tc) at (0,-60)  {TurnCount};
+
+\node[blk, draw=accent, minimum width=30mm, minimum height=11mm] (fsm) at (50,-60) {MissionFSM};
+\node[note, below=0.8mm of fsm] {Stateflow};
+
+\node[tblk, minimum width=28mm] (ms) at (52,-42) {ModeSwitch};
+\node[cblk, minimum width=28mm] (il) at (96,-42) {내부 루프};
+
+\draw[wire] (wm.east) -- (ms.west);
+\draw[wire] (lv.east) -- (ms.west);
+\draw[wire] (tc.east) -- (fsm.west);
+\draw[sig, accent] (fsm.north) -- node[sname, right, font=\scriptsize] {\texttt{mode}} (ms.south);
+\draw[sig] (ms) -- (il);
+
+% ---- 유의 사항 -------------------------------------------------------------
+\node[wnote, anchor=west, text width=60mm] at (72,-56)
+     {\textbf{만들면서 실제로 밟은 문제}\\[2pt]
+      \textcircled{1} 로이터 중에도 웨이포인트 번호가 올라감\\
+      \textcircled{2} 로이터 중심이 배를 따라 움직임\\
+      \textcircled{3} \texttt{mode} 되먹임으로 대수 루프};
+
+\end{tikzpicture}
+\end{document}

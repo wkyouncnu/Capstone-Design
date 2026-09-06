@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="470" viewBox="0 0 900 470" font-family="Malgun Gothic, sans-serif">
   <rect width="900" height="470" fill="#ffffff"/>
 
-  <text x="20" y="28" font-size="18" font-weight="bold" fill="#1e293b">오늘 배우는 블록 — 이것이 전부다</text>
+  <text x="20" y="28" font-size="18" font-weight="bold" fill="#1e293b">이번 주차에 배우는 블록 — 이것이 전부다</text>
   <text x="20" y="52" font-size="15" fill="#64748b">Simulink 블록은 수백 개다. 그중 실제로 쓰는 것만 골랐다</text>
 
   <!-- A -->
@@ -52,6 +52,6 @@
   <text x="614" y="344" font-size="15" fill="#334155">신호 로깅 — 선에 이름 붙이기</text>
   <text x="614" y="368" font-size="15" fill="#334155">Data Inspector — 겹쳐 보기</text>
 
-  <text x="20" y="428" font-size="15" fill="#1e293b">Stateflow 차트는 오늘 다루지 않는다. 미션 상태기계는 13주차에 기존 모델로 배운다</text>
-  <text x="20" y="452" font-size="15" fill="#1e293b">ROS 2 블록(Subscribe / Publish)도 오늘은 없다. 6주차에 이 블록들 위에 얹는다</text>
+  <text x="20" y="428" font-size="15" fill="#1e293b">Stateflow 차트는 이번 주차에 다루지 않는다. 미션 상태기계는 13주차에 기존 모델로 배운다</text>
+  <text x="20" y="452" font-size="15" fill="#1e293b">ROS 2 블록(Subscribe / Publish)도 이번 주차에는 없다. 6주차에 이 블록들 위에 얹는다</text>
 </svg>

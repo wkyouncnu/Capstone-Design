@@ -1,0 +1,64 @@
+% assets/w03-frames.svg — ENU 와 NED
+%
+%   bash _tools/tikz2svg.sh assets/src/w03-frames.tex assets/w03-frames.svg
+%
+% 요점: 같은 장소를 두 규약이 다르게 부른다. 섞으면 오류 없이 조용히 틀린다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% =========================== ENU ===========================================
+\begin{scope}[shift={(0,0)}]
+  \node[font=\small\bfseries, flow, anchor=west] at (-4,40) {ENU};
+  \node[note, anchor=west] at (12,40) {ROS · Gazebo 가 쓰는 것};
+
+  \draw[axis, flow, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (28,0);
+  \draw[axis, flow, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,28);
+  \node[font=\small, flow, anchor=north] at (29,-1) {$x =$ 동};
+  \node[font=\small, flow, anchor=east]  at (-1,28) {$y =$ 북};
+  \fill[flow] (0,0) circle (0.9);
+  \node[note, flow, anchor=north east] at (-1,-1) {$z =$ 위 (화면 밖)};
+
+  % 각도 방향 — 반시계
+  \draw[flow, -{Stealth[length=3.5pt,width=2.5pt]}] (14,0) arc (0:70:14mm);
+  \node[note, flow] at (13,10) {$+$};
+
+  \node[note, anchor=west, text width=44mm] at (-4,-9)
+       {각도는 동쪽 기준 \textbf{반시계}방향\\ 수학 교과서의 $xy$ 평면과 같다};
+\end{scope}
+
+% =========================== NED ===========================================
+\begin{scope}[shift={(72,0)}]
+  \node[font=\small\bfseries, errc, anchor=west] at (-4,40) {NED};
+  \node[note, anchor=west] at (12,40) {선박 · 제어 이론이 쓰는 것};
+
+  \draw[axis, errc, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (28,0);
+  \draw[axis, errc, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,28);
+  \node[font=\small, errc, anchor=north] at (29,-1) {$y =$ 동};
+  \node[font=\small, errc, anchor=east]  at (-1,28) {$x =$ 북};
+  \fill[errc] (0,0) circle (0.9);
+  \node[note, errc, anchor=north east] at (-1,-1) {$z =$ 아래 (화면 안)};
+
+  % 각도 방향 — 시계 (북에서 동으로)
+  \draw[errc, -{Stealth[length=3.5pt,width=2.5pt]}] (0,14) arc (90:20:14mm);
+  \node[note, errc] at (11,12) {$+$};
+
+  \node[note, anchor=west, text width=44mm] at (-4,-9)
+       {각도는 북쪽 기준 \textbf{시계}방향\\ 나침반 · 해도와 같다};
+\end{scope}
+
+% =========================== 변환식 =========================================
+\node[font=\small, anchor=west] at (0,-26)
+     {$N = y_{\mathrm{ENU}}, \qquad E = x_{\mathrm{ENU}}, \qquad D = -z_{\mathrm{ENU}}$};
+\node[font=\small, anchor=west] at (0,-35)
+     {$\psi_{\mathrm{NED}} = 90^{\circ} - \psi_{\mathrm{ENU}}$};
+
+\node[wnote, anchor=west, text width=112mm] at (0,-45)
+     {두 규약을 섞으면 오류 메시지 없이 배가 엉뚱한 방향으로 간다.
+      변환하는 지점을 한 곳으로 모으고 그 자리에 검사를 둔다};
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,51 @@
+% assets/w07-course-crab.svg — 선수각 · 침로각 · 크랩각
+%
+%   bash _tools/tikz2svg.sh assets/src/w07-course-crab.tex assets/w07-course-crab.svg
+%
+% 요점: 조류가 있으면 뱃머리가 향한 방향과 배가 실제로 가는 방향이 어긋난다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\coordinate (o) at (0,0);
+
+% ---- 북 기준선 -------------------------------------------------------------
+\draw[axis, densely dashed, -{Stealth[length=4pt,width=3pt]}] (o) -- (0,44);
+\node[font=\small, anchor=south] at (0,45) {$N$};
+
+% ---- 선수각 psi ------------------------------------------------------------
+\draw[sig, line width=0.7pt] (o) -- (24,38);
+\node[font=\small, anchor=south west] at (24,38) {$\psi$};
+\node[note, anchor=west] at (26,35) {선수각 — 뱃머리가 향한 방향};
+\draw[axis] (o) ++(0,14) arc (90:58:14mm);
+\node[note] at (5.5,15.5) {$\psi$};
+
+% ---- 침로각 chi ------------------------------------------------------------
+\draw[sig, flow, line width=0.7pt] (o) -- (40,30);
+\node[font=\small, flow, anchor=south west] at (40,30) {$\chi$};
+\node[note, flow, anchor=west] at (42,27) {침로각 — 배가 실제로 가는 방향};
+\draw[axis] (o) ++(20,0) arc (0:36.9:20mm) ;
+
+% ---- 크랩각 beta -----------------------------------------------------------
+\draw[axis, errc] (o) ++(30,0) arc (0:36.9:30mm);
+\node[note, errc] at (28,10) {$\beta$};
+\node[note, errc, anchor=west] at (30,6) {크랩각};
+
+% ---- 조류 ------------------------------------------------------------------
+\draw[sig, flow, densely dashed] (16,26) -- ++(16,-6);
+\node[note, flow, anchor=north] at (26,20) {조류};
+
+% ---- 식 --------------------------------------------------------------------
+\node[font=\small, anchor=west] at (0,-12) {$\chi = \psi + \beta$};
+\node[font=\small, anchor=west] at (26,-12) {$\beta = \operatorname{atan2}(v,\ u)$};
+\node[note, anchor=west] at (72,-12) {$u,\ v$ = 선체 기준 전후 · 좌우 속도};
+
+\node[wnote, anchor=west, text width=118mm] at (0,-22)
+     {선수각 $\psi$ 만 제어하면 배는 경로에서 옆으로 밀린 채 나아간다.
+      조류에서 경로 이탈이 남는 이유다};
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,45 @@
+% assets/w02-pubsub.svg — 발행과 구독
+%
+%   bash _tools/tikz2svg.sh assets/src/w02-pubsub.tex assets/w02-pubsub.svg
+%
+% 요점: 하나가 보내고 여럿이 받는다. 서로를 모르는 채로.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- 발행자 ---------------------------------------------------------------
+\node[nblk, minimum width=26mm, minimum height=11mm] (gps) at (0,0) {GPS 노드};
+\node[note, below=0.8mm of gps] {발행자 (publisher)};
+
+% ---- 토픽 -----------------------------------------------------------------
+\node[tblk, minimum width=44mm, minimum height=11mm] (top) at (52,0) {};
+\node[font=\small\ttfamily] at (52,1.6) {/wamv/.../gps/fix};
+\node[note] at (52,-2.6) {sensor\_msgs/NavSatFix};
+\node[note, above=0.8mm of top] {토픽};
+
+\draw[sig] (gps) -- node[sname, above] {발행} (top);
+
+% ---- 구독자 둘 -------------------------------------------------------------
+\node[gblk, minimum width=30mm, minimum height=11mm] (est) at (108,10) {상태추정 노드};
+\node[blk,  minimum width=30mm, minimum height=11mm] (log) at (108,-12) {로깅 노드};
+\node[note, below=0.8mm of est] {구독자};
+\node[note, below=0.8mm of log] {구독자};
+
+\draw[sig] (top.east) -- ++(5mm,0) |- (est.west);
+\draw[sig] (top.east) -- ++(5mm,0) |- (log.west);
+\node[sname] at (84,4) {구독};
+
+% ---- 핵심 세 가지 ----------------------------------------------------------
+\node[note, anchor=west, text width=124mm] at (-14,-27)
+     {\textbf{1}\quad 발행자는 누가 듣는지 모른다. 구독자도 누가 보내는지 모른다};
+\node[note, anchor=west, text width=124mm] at (-14,-33)
+     {\textbf{2}\quad 한 토픽을 여러 노드가 동시에 구독할 수 있다};
+\node[wnote, anchor=west, text width=124mm] at (-14,-39)
+     {\textbf{3}\quad 토픽 이름 · 메시지 타입 · QoS 가 모두 맞아야 연결된다.
+      하나라도 다르면 오류 없이 조용히 끊긴다};
+
+\end{tikzpicture}
+\end{document}

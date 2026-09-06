@@ -1,0 +1,70 @@
+% assets/w07-los-geometry.svg — LOS 유도의 기하
+%
+%   bash _tools/tikz2svg.sh assets/src/w07-los-geometry.tex assets/w07-los-geometry.svg
+%
+% 요점: 배는 "가장 가까운 점"이 아니라 그보다 Delta 앞의 조준점을 겨냥한다.
+% 화면 규약: N(북) 위, E(동) 오른쪽.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- 좌표축 ---------------------------------------------------------------
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,16);
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (16,0);
+\node[font=\small, anchor=east]  at (-1.2,15) {$N$};
+\node[font=\small, anchor=north] at (15,-1.2) {$E$};
+
+% ---- 계획 경로 -------------------------------------------------------------
+\coordinate (wk)  at (18,14);
+\coordinate (wk1) at (104,54);
+\draw[pathc, line width=0.8pt] (wk) -- (wk1);
+\fill[pathc] (wk)  circle (1.1);
+\fill[pathc] (wk1) circle (1.1);
+\node[note, pathc, below right=0.5mm and 0mm of wk]  {웨이포인트 $k$};
+\node[note, pathc, above left=0.5mm and 0mm of wk1] {$k+1$};
+\node[note, pathc] at (56,38) {계획 경로};
+
+% 수락반경
+\draw[pathc, densely dotted] (wk1) circle (9mm);
+\node[note, pathc, right=9.5mm of wk1] {수락반경 $R$};
+
+% 경로 방위각
+\draw[axis, densely dashed] (wk) -- ++(30,0);
+\draw[axis] (wk) ++(16,0) arc (0:25:16mm);
+\node[note] at (40,18.5) {$\pi_p$};
+\node[note, right=1mm] at (44,17) {경로 방위각};
+
+% ---- 배 -------------------------------------------------------------------
+\coordinate (sh) at (52,10);
+\fill[ink] (sh) circle (1.3);
+\node[note, below=1mm of sh] {배};
+
+% 발 (경로 위 가장 가까운 점)
+\coordinate (ft) at (60.6,33.8);
+\fill[errc] (ft) circle (1.0);
+\draw[errc, line width=0.6pt] (sh) -- (ft);
+\node[note, errc] at (52.5,23) {$y_e$};
+
+% 조준점 = 발에서 Delta 앞
+\coordinate (lp) at (81,43.5);
+\fill[accent] (lp) circle (1.2);
+\draw[accent, densely dashed, line width=0.6pt] (ft) -- (lp);
+\node[note, accent, above left=0mm and 1mm of lp] {조준점};
+\node[note, accent] at (71,35) {$\Delta$};
+
+% 유도 지령
+\draw[sig, accent] (sh) -- (lp);
+\node[note, accent] at (72,20) {$\psi_{\mathrm{ref}}$};
+\node[note, accent] at (78,16) {유도 지령};
+
+% ---- 식 -------------------------------------------------------------------
+\node[font=\small, anchor=west] at (2,-12)
+     {$\psi_{\mathrm{ref}} = \pi_p - \arctan\!\left(\dfrac{y_e}{\Delta}\right)$};
+\node[note, anchor=west, text width=76mm] at (46,-12)
+     {경로 위의 한 점을 겨냥한다. 그 점은 가장 가까운 지점보다 $\Delta$ 만큼 앞이다};
+
+\end{tikzpicture}
+\end{document}

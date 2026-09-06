@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" width="900" height="470" font-family="Malgun Gothic, sans-serif">
   <rect width="900" height="470" fill="#ffffff"/>
-  <text x="450" y="30" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">오늘 만들 개발 환경 - 무엇이 어디에 설치되는가</text>
+  <text x="450" y="30" font-size="19" font-weight="700" fill="#1e293b" text-anchor="middle">이번 주차에 만들 개발 환경 - 무엇이 어디에 설치되는가</text>
   <rect x="14" y="54" width="872" height="200" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8 6"/>
   <text x="32" y="80" font-size="16" font-weight="700" fill="#475569">Windows 11 쪽</text>
   <rect x="44" y="96" width="240" height="88" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
