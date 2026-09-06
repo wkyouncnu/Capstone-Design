@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="600" viewBox="0 0 940 600" font-family="Malgun Gothic, sans-serif">
+<rect width="940" height="600" fill="#ffffff"/>
+<defs>
+  <marker id="a1" markerWidth="10" markerHeight="10" refX="8" refY="3.5" orient="auto">
+    <polygon points="0,0 9,3.5 0,7" fill="#7c3aed"/>
+  </marker>
+</defs>
+
+<text x="20" y="32" font-size="19" font-weight="bold" fill="#1e293b">Stateflow 미션 — 언제 무엇을 할지 정하는 층</text>
+<text x="20" y="54" font-size="14" fill="#64748b">7주차 웨이포인트와 8주차 로이터링을 하나의 임무로 잇는다</text>
+
+<!-- ===== 상태 전이도 ===== -->
+<text x="20" y="96" font-size="16" font-weight="bold" fill="#334155">상태 3개 · 전이 4개</text>
+
+<rect x="60" y="120" width="190" height="80" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2.5"/>
+<text x="155" y="152" font-size="16" font-weight="bold" fill="#1d4ed8" text-anchor="middle">WpFollow</text>
+<text x="155" y="176" font-size="12" fill="#64748b" text-anchor="middle">mode = 1 · LOS 유도</text>
+
+<rect x="375" y="120" width="190" height="80" rx="12" fill="#f0fdfa" stroke="#0d9488" stroke-width="2.5"/>
+<text x="470" y="152" font-size="16" font-weight="bold" fill="#0d9488" text-anchor="middle">Loiter</text>
+<text x="470" y="176" font-size="12" fill="#64748b" text-anchor="middle">mode = 2 · 벡터필드</text>
+
+<rect x="690" y="120" width="190" height="80" rx="12" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+<text x="785" y="152" font-size="16" font-weight="bold" fill="#334155" text-anchor="middle">Finish</text>
+<text x="785" y="176" font-size="12" fill="#64748b" text-anchor="middle">mode = 3 · 정지</text>
+
+<!-- 전이 -->
+<line x1="250" y1="146" x2="367" y2="146" stroke="#7c3aed" stroke-width="2.2" marker-end="url(#a1)"/>
+<text x="308" y="136" font-size="12" font-family="Consolas, monospace" fill="#7c3aed" text-anchor="middle">at_loiter &gt; 0.5</text>
+
+<path d="M 375 182 Q 312 224 250 182" fill="none" stroke="#7c3aed" stroke-width="2.2" marker-end="url(#a1)"/>
+<text x="312" y="238" font-size="12" font-family="Consolas, monospace" fill="#7c3aed" text-anchor="middle">turns &gt;= req_turns</text>
+
+<path d="M 250 128 Q 470 60 690 128" fill="none" stroke="#7c3aed" stroke-width="2.2" marker-end="url(#a1)"/>
+<text x="470" y="76" font-size="12" font-family="Consolas, monospace" fill="#7c3aed" text-anchor="middle">at_end &gt; 0.5</text>
+
+<!-- ===== 구조 ===== -->
+<text x="20" y="292" font-size="16" font-weight="bold" fill="#334155">모델 구조 — 판단층이 하나 더 생긴다</text>
+
+<rect x="40" y="310" width="180" height="52" rx="8" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="130" y="342" font-size="13" fill="#1d4ed8" text-anchor="middle">WpManager (LOS)</text>
+<rect x="40" y="372" width="180" height="52" rx="8" fill="#f0fdfa" stroke="#0d9488"/>
+<text x="130" y="404" font-size="13" fill="#0d9488" text-anchor="middle">LoiterVF (벡터필드)</text>
+<rect x="40" y="434" width="180" height="52" rx="8" fill="#f8fafc" stroke="#94a3b8"/>
+<text x="130" y="466" font-size="13" fill="#334155" text-anchor="middle">TurnCount</text>
+
+<rect x="266" y="438" width="158" height="54" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="345" y="462" font-size="13" font-weight="bold" fill="#7c3aed" text-anchor="middle">MissionFSM</text>
+<text x="345" y="481" font-size="11" fill="#64748b" text-anchor="middle">Stateflow</text>
+
+<rect x="470" y="342" width="140" height="52" rx="8" fill="#fffbeb" stroke="#d97706"/>
+<text x="540" y="374" font-size="13" fill="#d97706" text-anchor="middle">ModeSwitch</text>
+
+<rect x="660" y="342" width="140" height="52" rx="8" fill="#fff7ed" stroke="#ea580c"/>
+<text x="730" y="374" font-size="13" fill="#ea580c" text-anchor="middle">내부 루프</text>
+
+<line x1="220" y1="336" x2="464" y2="354" stroke="#94a3b8" stroke-width="1.6"/>
+<line x1="220" y1="398" x2="464" y2="370" stroke="#94a3b8" stroke-width="1.6"/>
+<line x1="220" y1="460" x2="262" y2="463" stroke="#94a3b8" stroke-width="1.6"/>
+<line x1="424" y1="458" x2="470" y2="392" stroke="#7c3aed" stroke-width="2"/>
+<text x="432" y="432" font-size="11" fill="#7c3aed">mode</text>
+<line x1="610" y1="368" x2="654" y2="368" stroke="#94a3b8" stroke-width="1.6"/>
+
+<!-- ===== 함정 ===== -->
+<rect x="470" y="418" width="440" height="166" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.4"/>
+<text x="490" y="444" font-size="14" font-weight="bold" fill="#dc2626">만들면서 실제로 밟은 문제 세 가지</text>
+<text x="490" y="472" font-size="12" fill="#334155">① 로이터 중에도 웨이포인트 번호가 계속 올라감</text>
+<text x="504" y="492" font-size="12" fill="#64748b">→ mode &lt; 1.5 일 때만 올리도록 잠근다</text>
+<text x="490" y="516" font-size="12" fill="#334155">② 로이터 중심이 배를 따라 움직임</text>
+<text x="504" y="536" font-size="12" fill="#64748b">→ 진입 시점의 값으로 고정한다</text>
+<text x="490" y="560" font-size="12" fill="#334155">③ 대수 루프 (mode 가 자기 자신에게 되먹임)</text>
+<text x="504" y="578" font-size="12" fill="#64748b">→ Unit Delay 를 하나 끼워 끊는다</text>
+
+<!-- 실측 -->
+<rect x="40" y="510" width="400" height="70" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="58" y="534" font-size="13" font-weight="bold" fill="#334155">실측 — 오프라인 모델</text>
+<text x="58" y="556" font-size="12" font-family="Consolas, monospace" fill="#334155">로이터 진입 74.7 s → 종료 248.8 s (2.00 바퀴)</text>
+<text x="58" y="574" font-size="12" font-family="Consolas, monospace" fill="#334155">임무 종료 315.0 s · WP 구간 평균 |y_e| 2.66 m</text>
+</svg>

@@ -21,6 +21,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | 사용자가 이렇게 말하면 | 첫 동작 | 읽을 것 |
 |---|---|---|
 | "N주차 자료 만들어줘" | `_templates/주차자료.md` 복사. **골격을 바꾸지 않는다** | `references/lecture-md.md` |
+| "주차 자료 보강해줘" · "다른 주차도 비슷하게" | 합격선 5항목으로 진단부터 한다 | `references/week-quality-bar.md` |
 | "이 부분 설명 보강해줘" | 대상 독자를 먼저 정한다 — 기본은 **리눅스·ROS 무경험 4학년** | `references/lecture-md.md` |
 | "문체 고쳐줘 / AI 같아" | `scripts/vault_check.sh --style` 로 금지 표현부터 센다 | `references/lecture-md.md` §문체 |
 | "수식 넣어줘 / 보기 좋게" | LaTeX 으로 쓴다. MathType 이미지 불필요 | `references/pdf-and-math.md` |
@@ -71,6 +72,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | 파일 | 읽을 때 |
 |---|---|
 | `references/lecture-md.md` | 주차 자료를 쓰거나 고칠 때마다. 골격·문체·과제 배점 |
+| `references/week-quality-bar.md` | **주차 자료의 합격선.** 다이어그램·정상출력·캡처·외부코드 인용 |
 | `references/pdf-and-math.md` | 수식을 넣을 때, PDF 가 안 나올 때 |
 | `references/figures-svg.md` | 그림을 그릴 때 |
 | `references/vrx-runbook.md` | VRX 를 띄우고 수치를 뽑을 때 |

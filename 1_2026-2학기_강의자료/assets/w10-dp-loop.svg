@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="560" viewBox="0 0 940 560" font-family="Malgun Gothic, sans-serif">
+<rect width="940" height="560" fill="#ffffff"/>
+<defs>
+  <marker id="d1" markerWidth="10" markerHeight="10" refX="8" refY="3.5" orient="auto">
+    <polygon points="0,0 9,3.5 0,7" fill="#334155"/>
+  </marker>
+</defs>
+
+<text x="20" y="32" font-size="19" font-weight="bold" fill="#1e293b">동적위치유지(DP) 제어 루프</text>
+<text x="20" y="54" font-size="14" fill="#64748b">외란이 밀어내도 제자리를 지킨다. 블록 색은 Simulink 모델과 같다</text>
+
+<!-- 블록들 -->
+<rect x="24" y="150" width="112" height="64" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.8"/>
+<text x="80" y="176" font-size="12" fill="#334155" text-anchor="middle">목표 위치</text>
+<text x="80" y="196" font-size="12" font-family="Consolas, monospace" fill="#64748b" text-anchor="middle">η_raw</text>
+
+<rect x="164" y="150" width="118" height="64" rx="8" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.8"/>
+<text x="223" y="172" font-size="12" font-weight="bold" fill="#1d4ed8" text-anchor="middle">기준모델</text>
+<text x="223" y="190" font-size="11" fill="#64748b" text-anchor="middle">속도를 제한해</text>
+<text x="223" y="206" font-size="11" fill="#64748b" text-anchor="middle">완만하게 만든다</text>
+
+<circle cx="330" cy="182" r="20" fill="#ffffff" stroke="#334155" stroke-width="1.8"/>
+<text x="330" y="188" font-size="17" fill="#334155" text-anchor="middle">−</text>
+
+<rect x="382" y="150" width="130" height="64" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="1.8"/>
+<text x="447" y="172" font-size="12" font-weight="bold" fill="#ea580c" text-anchor="middle">DP 제어기</text>
+<text x="447" y="192" font-size="11" font-family="Consolas, monospace" fill="#64748b" text-anchor="middle">PID (3자유도)</text>
+<text x="447" y="208" font-size="11" fill="#64748b" text-anchor="middle">τ 를 만든다</text>
+
+<rect x="560" y="150" width="126" height="64" rx="8" fill="#fef9c3" stroke="#d97706" stroke-width="1.8"/>
+<text x="623" y="172" font-size="12" font-weight="bold" fill="#d97706" text-anchor="middle">추력 배분</text>
+<text x="623" y="192" font-size="11" font-family="Consolas, monospace" fill="#64748b" text-anchor="middle">f = pinv(T_e)·τ</text>
+<text x="623" y="208" font-size="11" fill="#64748b" text-anchor="middle">±45° 매핑</text>
+
+<rect x="734" y="150" width="112" height="64" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.8"/>
+<text x="790" y="176" font-size="12" font-weight="bold" fill="#16a34a" text-anchor="middle">선박</text>
+<text x="790" y="196" font-size="11" fill="#64748b" text-anchor="middle">운동방정식</text>
+
+<rect x="734" y="60" width="112" height="56" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.8"/>
+<text x="790" y="82" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="middle">외란</text>
+<text x="790" y="102" font-size="11" fill="#64748b" text-anchor="middle">바람 · 파랑</text>
+
+<rect x="420" y="300" width="150" height="60" rx="8" fill="#e0e7ff" stroke="#4f46e5" stroke-width="1.8"/>
+<text x="495" y="324" font-size="12" font-weight="bold" fill="#4f46e5" text-anchor="middle">파랑 필터</text>
+<text x="495" y="344" font-size="11" fill="#64748b" text-anchor="middle">파도 성분만 걸러낸다</text>
+
+<rect x="640" y="300" width="140" height="60" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.8"/>
+<text x="710" y="324" font-size="12" font-weight="bold" fill="#7c3aed" text-anchor="middle">항법</text>
+<text x="710" y="344" font-size="11" fill="#64748b" text-anchor="middle">위치 · 선수각 측정</text>
+
+<!-- 연결선 -->
+<line x1="136" y1="182" x2="158" y2="182" stroke="#334155" stroke-width="1.8" marker-end="url(#d1)"/>
+<line x1="282" y1="182" x2="304" y2="182" stroke="#334155" stroke-width="1.8" marker-end="url(#d1)"/>
+<text x="293" y="170" font-size="11" font-family="Consolas, monospace" fill="#1d4ed8">η_d</text>
+<line x1="350" y1="182" x2="376" y2="182" stroke="#334155" stroke-width="1.8" marker-end="url(#d1)"/>
+<text x="363" y="170" font-size="11" fill="#dc2626">오차</text>
+<line x1="512" y1="182" x2="554" y2="182" stroke="#334155" stroke-width="1.8" marker-end="url(#d1)"/>
+<text x="533" y="170" font-size="11" font-family="Consolas, monospace" fill="#ea580c">τ</text>
+<line x1="686" y1="182" x2="728" y2="182" stroke="#334155" stroke-width="1.8" marker-end="url(#d1)"/>
+<text x="707" y="170" font-size="11" font-family="Consolas, monospace" fill="#d97706">f</text>
+<line x1="790" y1="116" x2="790" y2="144" stroke="#dc2626" stroke-width="1.8" marker-end="url(#d1)"/>
+
+<!-- 되먹임 -->
+<line x1="790" y1="214" x2="790" y2="330" stroke="#334155" stroke-width="1.8"/>
+<line x1="790" y1="330" x2="786" y2="330" stroke="#334155" stroke-width="1.8" marker-end="url(#d1)"/>
+<line x1="640" y1="330" x2="576" y2="330" stroke="#334155" stroke-width="1.8" marker-end="url(#d1)"/>
+<line x1="420" y1="330" x2="330" y2="330" stroke="#334155" stroke-width="1.8"/>
+<line x1="330" y1="330" x2="330" y2="206" stroke="#334155" stroke-width="1.8" marker-end="url(#d1)"/>
+<text x="360" y="322" font-size="11" font-family="Consolas, monospace" fill="#334155">η, ν</text>
+
+<!-- 설명 상자 -->
+<rect x="24" y="392" width="290" height="150" rx="8" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="42" y="418" font-size="13" font-weight="bold" fill="#1d4ed8">기준모델이 왜 필요한가</text>
+<text x="42" y="442" font-size="12" fill="#334155">목표를 갑자기 15 m 옆으로 옮기면</text>
+<text x="42" y="460" font-size="12" fill="#334155">오차가 커져 추진기가 포화한다.</text>
+<text x="42" y="478" font-size="12" fill="#334155">속도를 제한해 목표를 서서히 옮긴다.</text>
+<text x="42" y="504" font-size="12" font-weight="bold" fill="#1d4ed8">실측 (게인 동일)</text>
+<text x="42" y="524" font-size="12" font-family="Consolas, monospace" fill="#334155">최대 오차 18.1 m → 2.0 m</text>
+
+<rect x="330" y="392" width="290" height="150" rx="8" fill="#eef2ff" stroke="#4f46e5"/>
+<text x="348" y="418" font-size="13" font-weight="bold" fill="#4f46e5">파랑 필터가 왜 필요한가</text>
+<text x="348" y="442" font-size="12" fill="#334155">파도로 배가 앞뒤로 흔들리는 것까지</text>
+<text x="348" y="460" font-size="12" fill="#334155">따라가려 하면 추진기만 혹사한다.</text>
+<text x="348" y="478" font-size="12" fill="#334155">평균 위치만 남기고 파도는 뺀다.</text>
+<text x="348" y="504" font-size="12" font-weight="bold" fill="#4f46e5">실측 (on/off)</text>
+<text x="348" y="524" font-size="12" font-family="Consolas, monospace" fill="#334155">추력 변화율 34.0 → 16.4 N/s (−52 %)</text>
+
+<rect x="636" y="392" width="278" height="150" rx="8" fill="#fef2f2" stroke="#dc2626"/>
+<text x="654" y="418" font-size="13" font-weight="bold" fill="#dc2626">차단주파수를 잘못 잡으면</text>
+<text x="654" y="442" font-size="12" fill="#334155">필터가 DP 대역폭보다 느리면</text>
+<text x="654" y="460" font-size="12" fill="#334155">제어기가 자기 꼬리를 문다.</text>
+<text x="654" y="484" font-size="12" font-weight="bold" fill="#dc2626">실제로 겪은 증상</text>
+<text x="654" y="504" font-size="12" fill="#334155">선수각이 진폭 40°, 주기 40 s 로</text>
+<text x="654" y="522" font-size="12" fill="#334155">끝없이 흔들렸다 (한계주기).</text>
+<text x="654" y="538" font-size="11" font-family="Consolas, monospace" fill="#64748b">조건: ω_n,DP &lt; ω_f &lt; ω_0</text>
+</svg>

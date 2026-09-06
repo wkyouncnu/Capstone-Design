@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="620" viewBox="0 0 940 620" font-family="Malgun Gothic, sans-serif">
+<rect width="940" height="620" fill="#ffffff"/>
+<defs>
+  <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+    <polygon points="0,0 8,3 0,6" fill="#1d4ed8"/>
+  </marker>
+  <marker id="ahr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+    <polygon points="0,0 8,3 0,6" fill="#dc2626"/>
+  </marker>
+</defs>
+
+<text x="20" y="32" font-size="19" font-weight="bold" fill="#1e293b">벡터필드 로이터링 — 한 점을 중심으로 도는 법</text>
+<text x="20" y="54" font-size="14" fill="#64748b">배가 어디에 있든, 그 자리에서 가야 할 방향을 계산해 준다</text>
+
+<!-- ===== 왼쪽: 필드 ===== -->
+<circle cx="300" cy="330" r="130" fill="none" stroke="#0d9488" stroke-width="2.5" stroke-dasharray="9 6"/>
+<circle cx="300" cy="330" r="5" fill="#dc2626"/>
+<text x="300" y="352" font-size="13" font-weight="bold" fill="#dc2626" text-anchor="middle">중심</text>
+<line x1="300" y1="330" x2="392" y2="238" stroke="#0d9488" stroke-width="1.6"/>
+<text x="352" y="272" font-size="13" font-weight="bold" fill="#0d9488">r_d</text>
+<text x="240" y="180" font-size="13" fill="#0d9488">목표 반경</text>
+
+<!-- 바깥쪽 배 -->
+<circle cx="510" cy="330" r="7" fill="#1d4ed8"/>
+<text x="514" y="312" font-size="12" fill="#1d4ed8">배 (바깥)</text>
+<line x1="300" y1="330" x2="503" y2="330" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="410" y="348" font-size="12" fill="#64748b">r &gt; r_d</text>
+<line x1="510" y1="330" x2="466" y2="286" stroke="#1d4ed8" stroke-width="3" marker-end="url(#ah)"/>
+<text x="452" y="272" font-size="12" font-weight="bold" fill="#1d4ed8">안쪽 + 접선</text>
+
+<!-- 안쪽 배 -->
+<circle cx="300" cy="270" r="7" fill="#1d4ed8"/>
+<text x="196" y="262" font-size="12" fill="#1d4ed8">배 (안쪽)  r &lt; r_d</text>
+<line x1="300" y1="270" x2="342" y2="228" stroke="#1d4ed8" stroke-width="3" marker-end="url(#ah)"/>
+<text x="336" y="216" font-size="12" font-weight="bold" fill="#1d4ed8">바깥 + 접선</text>
+
+<!-- 원 위의 배 -->
+<circle cx="300" cy="460" r="7" fill="#0d9488"/>
+<text x="176" y="486" font-size="12" fill="#0d9488">배 (원 위)  r = r_d</text>
+<line x1="300" y1="460" x2="360" y2="460" stroke="#0d9488" stroke-width="3" marker-end="url(#ah)"/>
+<text x="330" y="482" font-size="12" font-weight="bold" fill="#0d9488">순수 접선</text>
+
+<!-- 회전 방향 -->
+<path d="M 210 210 A 128 128 0 0 1 420 240" fill="none" stroke="#d97706" stroke-width="2" marker-end="url(#ah)" opacity="0.55"/>
+<text x="300" y="152" font-size="12" fill="#d97706" text-anchor="middle">시계 방향 (p_c &gt; 0)</text>
+
+<!-- ===== 오른쪽: 식 분해 ===== -->
+<text x="580" y="110" font-size="16" font-weight="bold" fill="#334155">명령 침로는 두 성분의 합이다</text>
+
+<rect x="580" y="126" width="330" height="112" rx="8" fill="#eff6ff" stroke="#1d4ed8"/>
+<text x="600" y="152" font-size="13" font-weight="bold" fill="#1d4ed8">χ_d = θ + atan2( r·θ̇ , ṙ )</text>
+<text x="600" y="178" font-size="12" fill="#334155">θ  — 중심에서 배를 본 각도</text>
+<text x="600" y="198" font-size="12" fill="#334155">ṙ  — 반경 방향 성분 (다가갈지 멀어질지)</text>
+<text x="600" y="218" font-size="12" fill="#334155">r·θ̇ — 접선 방향 성분 (돌아가는 힘)</text>
+
+<rect x="580" y="254" width="330" height="96" rx="8" fill="#f0fdfa" stroke="#0d9488"/>
+<text x="600" y="280" font-size="13" font-weight="bold" fill="#0d9488">두 성분의 비율이 곧 접근 각도</text>
+<text x="600" y="304" font-size="12" fill="#334155">멀리 있으면 반경 성분이 커져 안쪽으로,</text>
+<text x="600" y="324" font-size="12" fill="#334155">가까워질수록 접선 성분이 커져</text>
+<text x="600" y="342" font-size="12" fill="#334155">자연스럽게 원을 따라 돈다.</text>
+
+<rect x="580" y="366" width="330" height="86" rx="8" fill="#fffbeb" stroke="#d97706"/>
+<text x="600" y="392" font-size="13" font-weight="bold" fill="#d97706">p_c 의 부호가 회전 방향이다</text>
+<text x="600" y="416" font-size="12" fill="#334155">p_c &gt; 0 → 시계 방향</text>
+<text x="600" y="436" font-size="12" fill="#334155">p_c &lt; 0 → 반시계 방향</text>
+
+<rect x="580" y="468" width="330" height="126" rx="8" fill="#fef2f2" stroke="#dc2626"/>
+<text x="600" y="494" font-size="13" font-weight="bold" fill="#dc2626">크기는 반경 오차를 만든다 (실측)</text>
+<text x="600" y="516" font-size="12" fill="#334155">목표 반경 25 m 로 두고 p_c 만 바꾼 결과</text>
+<text x="600" y="540" font-size="12" font-family="Consolas, monospace" fill="#334155">p_c 0.15 → 26.03 m   (+1.03)</text>
+<text x="600" y="558" font-size="12" font-family="Consolas, monospace" fill="#334155">p_c 0.60 → 29.09 m   (+4.09)</text>
+<text x="600" y="576" font-size="12" font-family="Consolas, monospace" fill="#334155">p_c 1.00 → 31.81 m   (+6.81)</text>
+<text x="600" y="592" font-size="11" fill="#dc2626">오차 ÷ p_c = 6.82 로 일정 → 비례</text>
+
+<!-- 아래 왼쪽 요약 -->
+<rect x="30" y="524" width="500" height="70" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="48" y="548" font-size="13" font-weight="bold" fill="#334155">웨이포인트 추종(7주차)과 무엇이 다른가</text>
+<text x="48" y="570" font-size="12" fill="#334155">7주차 — 다음 점에 도착하면 그 점을 버리고 다음으로 넘어간다</text>
+<text x="48" y="588" font-size="12" fill="#334155">8주차 — 버릴 점이 없다. 계속 돌기 때문에 <tspan font-weight="bold">끝나는 조건을 따로 준다</tspan> (바퀴 수)</text>
+</svg>
