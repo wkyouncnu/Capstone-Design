@@ -181,6 +181,24 @@ F_R = X/2 - N / (2 x 1.027)
 
 ## 1-3. 센서 배치가 인지 성능을 결정한다
 
+![WAM-V 센서 장착 위치](../assets/w04-wamv-sensor-layout.svg)
+
+| 센서 | x [m] | y [m] | z [m] | 비고 |
+|---|---|---|---|---|
+| 3D LiDAR | +0.700 | 0.000 | **1.800** | 가장 높다. 시야 확보 |
+| Livox Mid-360 | +0.700 | 0.000 | 0.710 | 근거리 보조 |
+| 전방 좌현 카메라 | +0.750 | +0.100 | 1.500 | |
+| 전방 우현 카메라 | +0.750 | −0.100 | 1.500 | 좌우 0.2 m 간격 = 스테레오 기선 |
+| 중앙 우현 카메라 | +0.500 | −0.450 | 1.500 | **yaw −90°** (우현을 본다) |
+| GPS | −0.850 | 0.000 | 1.300 | 선미 쪽 |
+| IMU | +0.300 | −0.200 | 1.300 | |
+| 좌 추진기 | −2.374 | **+1.027** | 0.318 | |
+| 우 추진기 | −2.374 | **−1.027** | 0.318 | 반폭 1.027 m |
+
+- 위 값은 **VRX 실행 중 TF 에서 측정**한 것이다 (2026-09-06). 추정치가 아니다
+- 측정 방법은 §2-3 에 있다
+
+
 ![WAM-V 센서 배치](../assets/w04-sensor-layout.svg)
 
 ### 그림 읽는 법
@@ -407,7 +425,285 @@ done | tee topics_type.txt
 
 ---
 
-## 2-3. 센서를 직접 옮겨 본다
+## 2-3. 센서별 실행 결과 확인 — 무엇이 나와야 정상인가
+
+> [!important] 이 절의 모든 출력은 실제로 받은 것이다
+> 아래 표와 화면은 기준 환경(VRX 2.4.1 · Gazebo Garden 7.9.0 · ROS 2 Humble)에서
+> `sydney_regatta` 월드를 띄우고 직접 실행해 기록한 것이다. 값이 다르면 그 차이가 곧 단서다.
+
+### 준비 — 시뮬레이터를 띄운 상태에서 시작한다
+
+```bash
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta ground_truth_enabled:=True
+```
+
+- 새 터미널을 하나 더 열고, 그 터미널에서 아래 명령들을 실행한다
+- 시뮬레이터 터미널은 그대로 둔다. 닫으면 토픽이 전부 사라진다
+
+---
+
+### 2-3-1. 먼저 살아 있는지 본다
+
+```bash
+ros2 topic list | wc -l
+```
+
+- 기준 환경 결과: **44개**
+- 10개 미만이면 시뮬레이터가 아직 로딩 중이거나 `ROS_DOMAIN_ID` 가 다른 것이다
+
+---
+
+### 2-3-2. GPS
+
+```bash
+ros2 topic echo --once /wamv/sensors/gps/gps/fix
+```
+
+- 정상 출력
+
+```
+header:
+  stamp:
+    sec: 215
+    nanosec: 152000000
+  frame_id: wamv/wamv/gps_wamv_link/navsat
+status:
+  status: 0
+  service: 0
+latitude: -33.72242651051122
+longitude: 150.67398709806955
+altitude: 1.2479525180533528
+position_covariance:
+- 0.0
+  ...
+```
+
+| 읽는 법 | 뜻 |
+|---|---|
+| `latitude −33.72`, `longitude 150.67` | **시드니**. 월드가 `sydney_regatta` 임을 확인하는 가장 빠른 방법 |
+| `altitude 1.248` | 수면 위 1.25 m. GPS 안테나가 `z = 1.30 m` 에 달려 있는 것과 일치 |
+| `status: 0` | `STATUS_FIX` — 측위 성공 |
+| `position_covariance` 전부 0 | 이 시뮬레이터의 GPS 에는 **잡음이 없다**. 실선과 가장 크게 다른 점 |
+
+> [!warning] 위경도를 그대로 제어에 쓰지 않는다
+> 위경도는 각도이고 미터가 아니다. 제어에는 **지역 직교좌표(m)** 가 필요하다.
+> 본 과목은 6주차부터 `ground_truth_odometry` 의 미터 좌표를 쓴다.
+
+---
+
+### 2-3-3. IMU
+
+```bash
+ros2 topic echo --once /wamv/sensors/imu/imu/data
+```
+
+- 정상 출력
+
+```
+header:
+  frame_id: wamv/wamv/imu_wamv_link/imu_wamv_sensor
+orientation:
+  x: -0.002985170390113125
+  y: 0.0052473626483582015
+  z: 0.4794804920417796
+  w: 0.8775317724700065
+orientation_covariance:
+- 0.0
+  ...
+```
+
+- `orientation` 은 **쿼터니언**이다. 오일러각(roll·pitch·yaw)이 아니다
+- 위 값을 yaw 로 바꾸면 약 **57.3°** — 배가 스폰 직후 향하는 방향이다
+
+```python
+# 쿼터니언 -> yaw [deg]
+import math
+z, w = 0.4794804920417796, 0.8775317724700065
+print(math.degrees(math.atan2(2*w*z, 1 - 2*z*z)))   # 57.32
+```
+
+> [!note] `x` 와 `y` 가 거의 0 인 이유
+> 잔잔한 물에서는 롤·피치가 거의 없다. 파도가 있는 월드로 바꾸면 이 값이 흔들린다.
+> 3주차의 [[ENU와-NED를-섞으면-조용히-틀린다]] 를 함께 볼 것.
+
+---
+
+### 2-3-4. 3D LiDAR
+
+```bash
+ros2 topic echo --once /wamv/sensors/lidars/lidar_wamv_sensor/points | head -20
+```
+
+- 정상 출력
+
+```
+header:
+  frame_id: wamv/wamv/base_link/lidar_wamv_sensor
+height: 16
+width: 1875
+fields:
+- name: x
+  offset: 0
+  datatype: 7
+  ...
+```
+
+| 항목 | 값 | 뜻 |
+|---|---|---|
+| `height` | **16** | 세로 채널 수. 16층짜리 LiDAR |
+| `width` | **1875** | 한 층당 점 개수 |
+| 한 스캔의 점 수 | 16 × 1875 = **30,000** | |
+| `datatype: 7` | `FLOAT32` | 좌표가 32비트 실수 |
+
+> [!important] 점 내용을 `echo` 로 보려 하지 않는다
+> `data` 필드는 30,000개 점의 바이트 배열이라 터미널이 멈춘다.
+> **머리말(header·height·width·fields)까지만** 보고, 점 자체는 RViz2 로 본다.
+
+Livox Mid-360 도 같은 방식으로 확인한다.
+
+```bash
+ros2 topic echo --once /livox/lidar | head -12
+```
+
+- `height: 22`, `width: 900` → 한 스캔 **19,800점**, `frame_id: livox_frame`
+
+---
+
+### 2-3-5. 카메라
+
+이미지 자체는 터미널에 찍지 않는다. **규격 정보**만 확인한다.
+
+```bash
+ros2 topic echo --once /wamv/sensors/cameras/front_left_camera_sensor/camera_info | head -16
+```
+
+- 정상 출력
+
+```
+height: 720
+width: 1280
+distortion_model: plumb_bob
+d:
+- 0.0
+- 0.0
+...
+k:
+- 762.7223205566406
+```
+
+| 항목 | 값 | 뜻 |
+|---|---|---|
+| 해상도 | **1280 × 720** | |
+| `distortion_model` | `plumb_bob` | 표준 렌즈 왜곡 모델 |
+| `d` 전부 0 | 왜곡이 없다 | 시뮬레이터라서 이상적인 렌즈다 |
+| `k[0]` = 762.72 | 초점거리 $f_x$ [px] | 12주차 영상처리에서 쓴다 |
+
+- 영상은 RViz2 나 `rqt_image_view` 로 본다
+
+```bash
+ros2 run rqt_image_view rqt_image_view
+```
+
+---
+
+### 2-3-6. 음향 핑거 · 임무 정보 · 바람
+
+```bash
+ros2 topic echo --once /wamv/sensors/acoustics/receiver/range_bearing | head -14
+```
+
+```
+frame_id: pinger
+params:
+- name: elevation
+  value:
+    double_value: -0.18678687617093456
+```
+
+- 타입이 `sensor_msgs` 가 아니라 **`ros_gz_interfaces/msg/ParamVec`** 이다. VRX 전용 메시지
+- 이름-값 쌍(`elevation`, `bearing`, `range`)으로 들어온다
+
+```bash
+ros2 topic echo --once /vrx/debug/wind/speed
+ros2 topic echo --once /vrx/debug/wind/direction
+```
+
+- 기준 환경 결과: **`data: 0.0`** / **`data: 240.0`**
+- `sydney_regatta` 는 **바람이 꺼져 있다**. 풍향값은 있지만 풍속이 0이라 힘이 생기지 않는다
+- 바람을 켜려면 월드를 바꾼다 → 8주차 `practice_2023_wayfinding2_task`
+
+---
+
+### 2-3-7. 발행 주기 — `ros2 topic hz` 를 읽는 법
+
+```bash
+ros2 topic hz /wamv/sensors/imu/imu/data
+```
+
+- 기준 환경 결과
+
+| 토픽 | 실측 rate | 설계값 | 비고 |
+|---|---|---|---|
+| IMU | **36.2 Hz** | 100 Hz | |
+| GPS | **7.3 Hz** | 20 Hz | |
+| camera_info | **11.1 Hz** | 30 Hz | |
+| 3D LiDAR | **0.70 Hz** | 10 Hz | 점이 많아 특히 느리다 |
+| 바람 | **7.6 Hz** | 20 Hz | |
+
+> [!warning] 설계값보다 느리게 나오는 것이 정상이다
+> `ros2 topic hz` 는 **벽시계 기준**으로 센다. 시뮬레이터가 실시간의 37 %(RTF ≈ 0.37) 속도로
+> 돌고 있으면 100 Hz 센서는 벽시계로 약 37 Hz 로 보인다.
+> **센서가 고장 난 것이 아니라 시뮬레이터가 느린 것이다.**
+>
+> - 확인법 — Gazebo 창 오른쪽 아래의 RTF 표시를 본다
+> - 실측: RTF 36~39 % 일 때 위 표의 값이 나왔다
+> - 6주차에서 Simulink 페이싱을 이 RTF 에 맞추는 이유가 여기 있다
+
+---
+
+### 2-3-8. RViz2 로 눈으로 확인하기
+
+숫자만으로는 LiDAR 가 제대로 도는지 알 수 없다. 그림으로 본다.
+
+```bash
+ros2 run rviz2 rviz2
+```
+
+RViz2 가 뜨면 아래 순서로 설정한다.
+
+1. 왼쪽 **Displays** 패널 → **Global Options** → **Fixed Frame** 을 `wamv/wamv/base_link` 로
+2. 왼쪽 아래 **Add** → **By topic** → LiDAR 토픽의 **PointCloud2** 선택
+3. 추가된 항목의 **Reliability Policy** 를 **Best Effort** 로 (기본 Reliable 이면 아무것도 안 보인다)
+4. **Add** → **TF**, **Add** → **By topic** → 카메라의 **Image**
+
+![RViz2 — LiDAR 포인트클라우드와 전방 카메라](../assets/w04-rviz-lidar.png)
+
+- 정상이면 이렇게 보인다
+  - **붉은 동심원** — LiDAR 빔이 수면에 닿아 생기는 고리. 배를 중심으로 퍼진다
+  - 멀리 가로지르는 선 — **해안선**과 부두
+  - 왼쪽 위 작은 창 — 전방 좌현 카메라 영상. 아래에 **선체 두 개**가 보이면 정상
+- 아무것도 안 보이면 → §2-3-9 의 표를 볼 것
+
+![RViz2 — TF 프레임](../assets/w04-rviz-tf-frames.png)
+
+- **TF** 를 켜면 센서마다 작은 좌표축(빨강 x · 초록 y · 파랑 z)이 뜬다
+- 뒤쪽에 떨어져 있는 네 개가 **좌·우 추진기와 프로펠러**다. 쌍동선 폭이 눈에 보인다
+
+---
+
+### 2-3-9. 화면이 비어 있을 때
+
+| 증상 | 원인 | 조치 |
+|---|---|---|
+| PointCloud2 를 추가했는데 아무것도 없음 | QoS 불일치 — LiDAR 는 **Best Effort** 로 발행 | Display 의 Reliability Policy 를 Best Effort 로 |
+| `Global Status: Error` · `Fixed Frame [map] does not exist` | 기본 Fixed Frame 이 `map` 인데 그런 프레임이 없음 | `wamv/wamv/base_link` 로 변경 |
+| 점이 한 번 뜨고 멈춤 | 시뮬레이터 일시정지 | Gazebo 창 왼쪽 아래 재생 버튼 |
+| 이미지 창이 회색 | 토픽 이름 오타 | `ros2 topic list \| grep image_raw` 로 확인 |
+| 전부 정상인데 너무 느림 | RTF 가 낮음 | §2-3-7 참고. 노트북 성능 문제이지 오류가 아님 |
+
+---
+
+## 2-4. 센서를 직접 옮겨 본다
 
 > [!warning] 원본 파일은 수정하지 않는다
 > upstream 파일을 고치면 나중에 `git pull` 할 때 충돌함.
@@ -509,7 +805,7 @@ rviz2
 
 ---
 
-## 2-4. Mapviz — 위성지도에 항적 그리기
+## 2-5. Mapviz — 위성지도에 항적 그리기
 
 ### 왜 쓰는가
 
