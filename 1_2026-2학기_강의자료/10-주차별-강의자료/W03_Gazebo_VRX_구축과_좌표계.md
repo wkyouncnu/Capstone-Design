@@ -487,6 +487,11 @@ cd ~/vrx_ws/src/vrx
 git checkout humble
 ```
 
+![VRX 저장소 — 기본 브랜치가 `jazzy` 로 되어 있다](../assets/w03-github-vrx.png)
+
+- 저장소 <https://github.com/osrf/vrx> 를 열면 왼쪽 위 브랜치 표시가 **`jazzy`** 다.
+  내려받은 직후의 상태가 바로 이것이므로, 그대로 빌드하면 안 된다
+
 > [!caution] 생략할 수 없는 단계
 > - VRX의 기본 브랜치는 **최신 조합(ROS 2 Jazzy + Gazebo Harmonic)** 을 따라감
 > - 본 과목에서는 **Humble + Garden** 이므로 브랜치를 바꿔야 함

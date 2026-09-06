@@ -114,6 +114,38 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 
 - 저장 위치 — `assets/wNN-<내용>.png`. 실제 화면이므로 PNG 가 맞다
 
+### 설치·다운로드 단계
+
+| 대상 | 넣을 것 |
+|---|---|
+| 내려받기 페이지 | Chrome 헤드리스로 **파일로 저장**한다 (아래) |
+| 설치 확인 명령 | 실제 출력을 코드블록으로. 버전 숫자까지 |
+| 설치 실패 | **재현해서 받은 진짜 메시지**. 지어내지 않는다 |
+
+```bash
+"/c/Program Files/Google/Chrome/Application/chrome.exe" --headless --disable-gpu \
+  --hide-scrollbars --window-size=1280,860 --virtual-time-budget=9000 \
+  --screenshot="$(cygpath -w out.png)" "https://example.com"
+```
+
+> [!warning] 봇 차단이 걸린 사이트는 캡처하지 않는다
+> ROS 2 공식 문서(docs.ros.org)는 Anubis 로 헤드리스 접근을 막는다.
+> 우회하지 말고 **링크만** 싣는다.
+
+### 오류 메시지는 재현해서 받는다
+
+- 기억이나 추측으로 적지 않는다. 학생이 검색할 문자열이 한 글자라도 다르면 소용없다
+- 재현 방법의 예
+
+| 오류 | 재현 |
+|---|---|
+| `command not found` | `env -i bash -c 'ros2 topic list'` |
+| `bad interpreter: ^M` | `printf '#!/bin/bash\r\n' > x.sh` 후 실행 |
+| `Permission denied` (apt) | `sudo` 없이 `apt install` |
+| 토픽이 안 보임 | `ROS_DOMAIN_ID=77 ros2 topic list` |
+
+- 받은 메시지에 **원인 한 줄 + 조치 명령**을 붙여 표로 만든다
+
 ### 캡처 뒤에는 반드시 판정표를 단다
 
 ```markdown

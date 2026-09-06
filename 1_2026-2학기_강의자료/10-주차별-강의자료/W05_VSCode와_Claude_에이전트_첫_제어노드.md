@@ -221,9 +221,16 @@ ros2 bag play run1
 
 ### A-1. 내려받기
 
-1. 브라우저에서 https://code.visualstudio.com 접속
-2. 파란 **Download for Windows** 버튼 클릭
+1. 브라우저에서 <https://code.visualstudio.com/download> 접속
+
+![VS Code 다운로드 페이지](../assets/w05-download-vscode.png)
+
+2. **Windows** 칸의 파란 버튼을 누른다. 화면이 현재 OS 를 알아서 골라 준다 (`YOUR OS` 표시)
 3. 받아진 `VSCodeUserSetup-x64-*.exe` 실행
+
+> [!tip] `Other downloads` 에서 User / System Installer 를 고를 수 있다
+> **User Installer** 를 쓴다 — 관리자 권한이 필요 없어 실습실 PC 에서도 통과한다.
+> System Installer 는 관리자 권한을 요구해 막히는 경우가 있다.
 
 ### A-2. 설치 옵션
 
@@ -312,10 +319,32 @@ code .
 - VS Code 왼쪽 아래 초록/파랑 표시가 **`WSL: Ubuntu-22.04`** 인지 확인
 - 상단 메뉴 **터미널 → 새 터미널** → 프롬프트가 `사용자명@컴퓨터:~$` 형태면 정상
 
+- 확장이 제대로 깔렸는지는 명령으로도 확인한다
+
+```powershell
+code --list-extensions
+```
+
+- 아래 두 개가 목록에 있어야 한다
+
+```
+anthropic.claude-code
+ms-vscode-remote.remote-wsl
+```
+
+| 확장 | 역할 |
+|---|---|
+| `ms-vscode-remote.remote-wsl` | VS Code 를 WSL 안으로 접속시킨다. **이것이 먼저다** |
+| `anthropic.claude-code` | 편집기 안에서 에이전트를 부른다 |
+
+- 정상적으로 연결되면 이런 화면이 된다
+
+![VS Code — 탐색기 · 편집기 · 에이전트 패널](../assets/w05-vscode-vault.png)
+
 > [!caution] 좌측 하단 표시를 항상 확인한다
 > - 표시가 없으면 **Windows 쪽 파일**을 편집하고 있는 것
 > - 그 상태로 ROS 코드를 고치면 **아무 반영도 안 됨**
-> - 매년 가장 많이 헤매는 지점
+> - 매 학기 가장 많이 헤매는 지점
 
 ### B-4. WSL 안에서 쓸 확장 설치
 
@@ -339,18 +368,16 @@ code .
 
 ### C-1. 설치
 
-- VS Code 의 WSL 터미널(또는 terminator)에서
+- 공식 문서 — <https://docs.claude.com/en/docs/claude-code/overview>
 
-```bash
-curl -fsSL https://claude.ai/install.sh | bash
-```
+![Claude Code 공식 문서](../assets/w05-claudecode-docs.png)
 
-- 정상 진행 시 마지막에 설치 완료 안내가 나옴
-- 터미널을 **새로 열거나** 아래를 실행해 PATH 를 적용
+- 설치 방법이 **Terminal · VS Code · Desktop app · Web · JetBrains** 탭으로 나뉜다.
+  본 과목은 **Terminal**(WSL) 과 **VS Code** 두 가지를 쓴다
 
-```bash
-source ~/.bashrc
-```
+> [!caution] Windows 쪽 PowerShell 에 설치하지 않는다
+> **WSL 안**에 설치해야 한다. Windows 쪽에 설치하면 WSL 안의 ROS 2 코드와 빌드 결과를 보지 못한다.
+> 설치 전에 프롬프트가 `사용자명@컴퓨터:~$` 형태인지 확인한다.
 
 ### C-2. 설치 확인
 
@@ -358,11 +385,24 @@ source ~/.bashrc
 claude --version
 ```
 
-- 정상 출력 예
+- 정상 출력 (기준 환경 실측)
 
 ```
-2.1.211 (Claude Code)
+2.1.237 (Claude Code)
 ```
+
+```bash
+which claude
+```
+
+- 정상 출력
+
+```
+/home/wkyoun/.local/bin/claude
+```
+
+> [!important] 경로가 `/home/...` 로 시작해야 한다
+> `/mnt/c/...` 로 나오면 **Windows 쪽 설치본**을 보고 있는 것이다. WSL 안에 다시 설치한다.
 
 - `command not found` 가 나오면
 
@@ -485,7 +525,7 @@ CLAUDE.md 를 읽고, 본 프로젝트의 좌표계 규약을 한 문장으로 �
 
 ## E. 에이전트로 첫 제어 노드 만들기 — 핵심 항목
 
-### E-1. 요구사항을 먼저 종이에 적는다
+### G-1. 요구사항을 먼저 종이에 적는다
 
 > [!important] 프롬프트를 치기 전에 할 일
 > 무엇을 만들지 **내가 먼저 정해야** 에이전트가 만든 것을 검증할 수 있다.
@@ -499,7 +539,7 @@ CLAUDE.md 를 읽고, 본 프로젝트의 좌표계 규약을 한 문장으로 �
 | 종료 조건 | 목표까지 7 m 이내면 다음 웨이포인트 |
 | 안전 | 추력 포화, 각도 wrap |
 
-### E-2. 프롬프트 작성
+### G-2. 프롬프트 작성
 
 - `claude` 실행 후 아래처럼 **구체적으로** 요청
 
@@ -531,7 +571,7 @@ ROS 2 Humble 용 파이썬 노드를 만들어줘.
 - 게인은 ROS 파라미터로 노출
 ```
 
-### E-3. 나온 코드를 **읽는다**
+### G-3. 나온 코드를 **읽는다**
 
 > [!caution] 즉시 실행하지 않는다
 > 먼저 읽고, 아래 체크리스트로 훑는다.
@@ -546,7 +586,7 @@ ROS 2 Humble 용 파이썬 노드를 만들어줘.
 | 0 나눗셈 | 목표에 도착했을 때 안전한가? |
 | 단위 | 도/라디안이 섞이지 않았는가? |
 
-### E-4. 빌드하고 돌려 본다
+### G-4. 빌드하고 돌려 본다
 
 ```bash
 cd ~/capstone_ws
@@ -560,7 +600,7 @@ source install/setup.bash
 ros2 run team_usv waypoint_pid
 ```
 
-### E-5. 세 겹 검증
+### G-5. 세 겹 검증
 
 **1겹 — 단위 테스트**
 
@@ -600,7 +640,7 @@ ros2 bag play wp_run
 | 도착 상태 | 현재 위치를 목표로 지정 | 진동하지 않고 정지 |
 | 포화 | 게인을 크게 | 추력이 ±500 을 안 넘음 |
 
-### E-6. 정답지와 비교
+### G-6. 정답지와 비교
 
 - 조교가 배포하는 `wamv_pid_control_v2.py` 와 비교해 볼 것
 - 연구실이 실제로 KABOAT 에서 쓴 코드다
@@ -818,6 +858,171 @@ open_system('my_unberthing_test')
 > - 에이전트가 블록을 연결했다고 **맞게 연결한 것은 아님**
 > - 시뮬레이션을 돌려 **결과 그래프를 눈으로 확인**할 것
 > - 게인 값은 `model_resolve_params` 로 **실제 숫자를 확인**할 것
+
+---
+
+## G. 설치가 안 될 때 — 실제 오류 메시지
+
+> [!important] 아래는 전부 기준 환경에서 **직접 재현해 받은** 메시지다
+> 오류는 대부분 이 여섯 가지 중 하나다. 검색하기 전에 이 표에서 먼저 찾는다.
+
+### G-1. `ros2: command not found`
+
+```
+bash: line 1: ros2: command not found
+```
+
+- 원인 — 환경 설정 파일을 읽지 않았다. **터미널을 새로 열 때마다** 필요하다
+- 조치
+
+```bash
+source /opt/ros/humble/setup.bash
+source ~/vrx_ws/install/setup.bash
+```
+
+- 매번 치기 싫으면 `~/.bashrc` 끝에 두 줄을 넣는다
+
+### G-2. `bad interpreter: /bin/bash^M`
+
+```
+/tmp/crlf_demo.sh: /bin/bash^M: bad interpreter: No such file or directory
+```
+
+- 원인 — Windows 에서 편집해 줄바꿈이 **CRLF** 가 되었다. `^M` 이 그 흔적이다
+- 조치
+
+```bash
+sed -i 's/\r$//' 파일이름.sh
+```
+
+- 예방 — VS Code 오른쪽 아래 상태 표시줄의 `CRLF` 를 눌러 **`LF`** 로 바꾼다
+
+### G-3. `Permission denied` — apt
+
+```
+E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)
+E: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), are you root?
+```
+
+- 원인 — `sudo` 를 빼먹었다
+- 조치 — 명령 앞에 `sudo` 를 붙인다.
+  비밀번호를 입력해도 **화면에 아무것도 안 보이는 것이 정상**이다
+
+### G-4. `WSL_E_DISTRO_NOT_FOUND`
+
+```
+Wsl/Service/WSL_E_DISTRO_NOT_FOUND
+```
+
+- 원인 — 배포판 이름이 틀렸다. 본 과목은 **`Ubuntu-22.04`** 를 쓴다
+- 조치 — 설치된 이름을 먼저 확인한다
+
+```powershell
+wsl --list --verbose
+```
+
+### G-5. `No executable found`
+
+```
+No executable found
+```
+
+- 원인 — 패키지는 있는데 그 안에 그 이름의 실행 파일이 없다. 대개 오타다
+- 조치 — 패키지 안의 실행 파일 목록을 본다
+
+```bash
+ros2 pkg executables vrx_gz
+```
+
+### G-6. 토픽이 두 개만 보인다
+
+```
+/parameter_events
+/rosout
+```
+
+- ROS 는 살아 있는데 **시뮬레이터가 안 보이는 것**이다. 둘은 항상 있는 기본 토픽이다
+- 원인 두 가지
+
+| 원인 | 확인 |
+|---|---|
+| `ROS_DOMAIN_ID` 가 다르다 | 두 터미널에서 `echo $ROS_DOMAIN_ID` 비교 |
+| 시뮬레이터가 안 떠 있다 | 시뮬레이터 터미널의 오류 메시지 확인 |
+
+### G-7. VS Code 에서 Claude 명령이 안 보인다
+
+![Restricted Mode — 확장이 동작하지 않는다](../assets/w05-restricted-mode.png)
+
+- 증상 — 명령 팔레트(`Ctrl` + `Shift` + `P`)에서 `Claude` 를 쳐도 **`No matching commands`**
+- 원인 — 위쪽 노란 띠의 **Restricted Mode**. 신뢰하지 않은 폴더에서는 확장이 전부 꺼진다
+- 조치 — 띠의 **Manage** → **Trust** 를 누른다. **내가 만든 폴더일 때만** 푼다
+
+---
+
+## H. 설치가 끝났는지 한 번에 확인하기
+
+아래를 순서대로 실행한다. 하나라도 다르면 그 줄에서 멈추고 §G 를 본다.
+
+```bash
+lsb_release -a
+```
+
+```
+Distributor ID: Ubuntu
+Description:    Ubuntu 22.04.5 LTS
+Release:        22.04
+Codename:       jammy
+```
+
+```bash
+source /opt/ros/humble/setup.bash && printenv ROS_DISTRO && ros2 pkg list | wc -l
+```
+
+```
+humble
+288
+```
+
+```bash
+gz sim --versions
+```
+
+```
+7.9.0
+```
+
+```bash
+source ~/vrx_ws/install/setup.bash && ros2 pkg list | grep vrx
+```
+
+```
+vrx_control
+vrx_eval
+vrx_gazebo
+vrx_gz
+vrx_llm_dock
+vrx_ros
+```
+
+```bash
+claude --version && which claude
+```
+
+```
+2.1.237 (Claude Code)
+/home/wkyoun/.local/bin/claude
+```
+
+| 확인 항목 | 기준 환경 값 | 다르면 |
+|---|---|---|
+| 우분투 | `22.04.5 LTS jammy` | 배포판을 잘못 설치. 3주차 §2-2 |
+| `ROS_DISTRO` | `humble` | `source` 안 함 → E-1 |
+| 패키지 수 | 288 | 크게 적으면 설치 미완 |
+| Gazebo | `7.9.0` (Garden) | 버전이 섞였을 수 있다 |
+| VRX 패키지 | 6개 | 빌드 실패 → 3주차 §2-2 |
+| Claude Code | `2.1.x` · `/home/...` | `/mnt/c/...` 면 Windows 설치본 |
+
+- 패키지 수와 버전은 설치 시점에 따라 조금 다를 수 있다. **자릿수가 맞으면 정상**이다
 
 ---
 
