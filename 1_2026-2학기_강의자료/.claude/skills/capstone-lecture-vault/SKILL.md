@@ -28,6 +28,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | "PDF 다시 뽑아줘" | `bash _tools/md2pdf.sh <파일>` — 쪽수까지 확인 | `references/pdf-and-math.md` |
 | "그림 그려줘" | `assets/` 에 SVG. **한 번의 Bash 호출에 하나씩** | `references/figures-svg.md` |
 | "화면 캡처 넣어줘" · "따라 할 수 있게" | 도구를 **실제로 띄우고** 창을 찍는다. WSLg 창은 WSL 안에서 | `references/screenshots.md` |
+| "자료대로 되는지 확인해줘" · 자료를 고친 **직후** | `_tools/verify_wNN.sh` 를 돌린다. **FAIL 0 이 합격선** | `references/doc-verification.md` |
 | "모델 만들어줘 / 선 정리해줘" | `build_wXX_models.m` 작성 → `tidy_layout` 2회 | 스킬 `simulink-gnc-models` |
 | "VRX 로 돌려서 확인해줘" | WSL 배포판 `Ubuntu-22.04` 확인부터 | `references/vrx-runbook.md` |
 | "오프라인이랑 대조해줘" | 겹치는 시간 구간만. 이격은 **위상 오차인 경우가 많다** | `references/vrx-runbook.md` |
@@ -40,7 +41,8 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 
 1. **수치는 실행 결과다.** 오차·시간·반경·RMS 를 추정으로 쓰지 않는다.
    반드시 **구간을 명시**한다 ("전 구간" 과 "초기 5초 제외" 는 다른 숫자다).
-2. **MD 를 고쳤으면 PDF 를 다시 뽑는다.** 두 파일이 어긋나면 학생이 혼란스러워한다.
+2. **MD 를 고쳤으면 PDF 를 다시 뽑고, 자료대로 한 번 돌려 본다.**
+   `_tools/verify_wNN.sh` → **FAIL 0**. 두 파일이 어긋나거나 명령이 안 되면 학생이 막힌다.
 3. **`10-주차별-강의자료/` 와 `80-과제/` 에 내부용 메모를 쓰지 않는다.** 그건 `00-운영/`.
 4. **HTML 슬라이드 덱을 만들지 않는다.** 요청받지 않는 한 `html-slide-deck` 스킬 금지.
 5. **개조식·정식 교재 어조.** 1·2인칭 금지, 시점 표현("오늘") 금지, 장식 기호 금지.
@@ -77,6 +79,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | `references/pdf-and-math.md` | 수식을 넣을 때, PDF 가 안 나올 때 |
 | `references/figures-svg.md` | 그림을 그릴 때 |
 | `references/screenshots.md` | **도구 화면을 캡처할 때.** 캡처 스크립트와 이미 밟은 지뢰 |
+| `references/doc-verification.md` | **문서대로 되는지 기계로 확인할 때.** 검사식 작성법과 함정 |
 | `references/vrx-runbook.md` | VRX 를 띄우고 수치를 뽑을 때 |
 | `references/vault-upkeep.md` | 문서를 추가·이동·개편할 때, 지식카드를 만들 때 |
 

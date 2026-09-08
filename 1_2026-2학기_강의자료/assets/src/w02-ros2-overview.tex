@@ -1,0 +1,63 @@
+% assets/w02-ros2-overview.svg — ROS 2 전체 그림 한 장
+%
+%   bash _tools/tikz2svg.sh assets/src/w02-ros2-overview.tex assets/w02-ros2-overview.svg
+%
+% 요점: 노드가 기본 단위이고, 노드끼리 잇는 방법이 네 가지다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===================== 1층 — 노드 =====================
+\node[font=\small\bfseries, anchor=west] at (0,44)
+     {① 기본 단위는 \textbf{노드} — 하나의 일을 하는 프로그램};
+
+\node[nblk, minimum width=32mm, minimum height=11mm] (n1) at (22,32) {센서 노드};
+\node[gblk, minimum width=32mm, minimum height=11mm] (n2) at (68,32) {판단 노드};
+\node[cblk, minimum width=32mm, minimum height=11mm] (n3) at (114,32) {제어 노드};
+
+\node[note, below=0.7mm of n1] {드라이버};
+\node[note, below=0.7mm of n2] {알고리즘};
+\node[note, below=0.7mm of n3] {추진기 명령};
+
+\draw[sig] (n1) -- node[sname, above, font=\scriptsize] {토픽} (n2);
+\draw[sig] (n2) -- node[sname, above, font=\scriptsize] {토픽} (n3);
+
+% ===================== 2층 — 잇는 네 가지 =====================
+\node[font=\small\bfseries, anchor=west] at (0,18)
+     {② 노드끼리 잇는 방법은 \textbf{네 가지}};
+
+\node[blk, draw=guid, minimum width=58mm, minimum height=9mm] (t) at (33,8)
+     {\textbf{토픽} Topic};
+\node[note, below=0.8mm of t, text width=58mm, align=center]
+     {계속 흐르는 데이터 · 단방향 · 여럿이 구독\\ 센서값 · 명령 — \textbf{본 과목의 90\%}};
+
+\node[blk, draw=plant, minimum width=58mm, minimum height=9mm] (s) at (103,8)
+     {\textbf{서비스} Service};
+\node[note, below=0.8mm of s, text width=58mm, align=center]
+     {요청 $\rightarrow$ 응답 · 1회성 · 끝나면 닫힘\\ ``지금 거북이 한 마리 더 만들어줘''};
+
+\node[blk, draw=thr, minimum width=58mm, minimum height=9mm] (a) at (33,-14)
+     {\textbf{액션} Action};
+\node[note, below=0.8mm of a, text width=58mm, align=center]
+     {목표 $\rightarrow$ 피드백 $\rightarrow$ 결과 · 중간 취소 가능\\ ``저 각도까지 돌아라''};
+
+\node[blk, draw=nav, minimum width=58mm, minimum height=9mm] (p) at (103,-14)
+     {\textbf{파라미터} Parameter};
+\node[note, below=0.8mm of p, text width=58mm, align=center]
+     {노드의 설정값 · 실행 중에도 바꿀 수 있다\\ PID 게인 · 배경색};
+
+% ===================== 3층 — DDS =====================
+\node[font=\small\bfseries, anchor=west] at (0,-32)
+     {③ 그 밑을 받치는 것이 \textbf{DDS}};
+
+\node[blk, draw=soft, minimum width=126mm, minimum height=10mm] (dds) at (68,-42)
+     {DDS — 노드끼리 서로 찾아 준다. \texttt{ROS\_DOMAIN\_ID} 로 구역을 나눈다};
+
+\node[anote, anchor=north, text width=130mm, align=center] at (68,-50)
+     {ROS 1 의 \texttt{roscore} 같은 중앙 관리자가 없다. 노드가 서로를 직접 찾는다};
+
+\end{tikzpicture}
+\end{document}

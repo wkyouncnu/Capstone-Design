@@ -3,6 +3,7 @@
 %   bash _tools/tikz2svg.sh assets/src/w02-build-flow.tex assets/w02-build-flow.svg
 %
 % 요점: 빌드와 source 를 건너뛰면 ros2 run 이 그 노드를 못 찾는다.
+% 폭 주의 — 한 줄로 늘어놓으면 A4 본문 폭을 넘어 오른쪽이 잘린다. 두 줄로 접는다.
 
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
@@ -10,43 +11,48 @@
 \begin{document}
 \begin{tikzpicture}[x=1mm, y=1mm]
 
-\node[blk, minimum width=34mm, minimum height=11mm] (edit) at (0,0)
+% ---------------- 윗줄 ①②③ ----------------
+\node[blk, minimum width=32mm, minimum height=11mm] (edit) at (0,0)
      {① 파일 작성};
-\node[note, below=0.6mm of edit, text width=34mm, align=center]
+\node[note, below=0.7mm of edit, text width=34mm, align=center]
      {VS Code 로 \texttt{simple\_talker.py}};
 
-\node[blk, draw=accent, minimum width=34mm, minimum height=11mm] (reg) at (42,0)
+\node[blk, draw=accent, minimum width=32mm, minimum height=11mm] (reg) at (42,0)
      {② \texttt{setup.py} 등록};
-\node[note, accent, below=0.6mm of reg, text width=36mm, align=center]
+\node[note, accent, below=0.7mm of reg, text width=36mm, align=center]
      {\texttt{console\_scripts} 한 줄};
 
-\node[cblk, minimum width=34mm, minimum height=11mm] (build) at (84,0)
+\node[cblk, minimum width=32mm, minimum height=11mm] (build) at (84,0)
      {③ \texttt{colcon build}};
-\node[note, below=0.6mm of build, text width=36mm, align=center]
-     {\texttt{install/} 이 만들어진다};
-
-\node[gblk, minimum width=34mm, minimum height=11mm] (src) at (126,0)
-     {④ \texttt{source}};
-\node[note, below=0.6mm of src, text width=38mm, align=center]
-     {\texttt{install/setup.bash}};
-
-\node[pblk, minimum width=34mm, minimum height=11mm] (run) at (168,0)
-     {⑤ \texttt{ros2 run}};
-\node[note, below=0.6mm of run, text width=36mm, align=center]
-     {노드가 실행된다};
+\node[note, below=0.7mm of build, text width=30mm, align=center]
+     {\texttt{install/} 생성};
 
 \draw[sig] (edit) -- (reg);
 \draw[sig] (reg)  -- (build);
-\draw[sig] (build)-- (src);
-\draw[sig] (src)  -- (run);
 
-% ---- 건너뛰면 무슨 오류가 나는가 ----
-\node[wnote, anchor=north, text width=44mm, align=center] at (42,-19)
-     {②를 빼먹으면\\ \texttt{No executable found}};
-\node[wnote, anchor=north, text width=44mm, align=center] at (126,-19)
-     {④를 빼먹으면\\ \texttt{Package not found}};
+% ---------------- 아랫줄 ④⑤ ----------------
+\node[gblk, minimum width=32mm, minimum height=11mm] (src) at (0,-28)
+     {④ \texttt{source}};
+\node[note, below=0.7mm of src, text width=38mm, align=center]
+     {\texttt{install/setup.bash}};
 
-\node[anote, anchor=north, text width=170mm, align=center] at (84,-32)
+\node[pblk, minimum width=32mm, minimum height=11mm] (run) at (42,-28)
+     {⑤ \texttt{ros2 run}};
+\node[note, below=0.7mm of run, text width=36mm, align=center]
+     {노드가 실행된다};
+
+\draw[sig] (src) -- (run);
+
+% ---------------- 줄바꿈 화살표 (③ → ④) ----------------
+\draw[sig] (build.south) -- ++(0,-8) -| (-22,-28) -- (src.west);
+
+% ---------------- 건너뛰면 무슨 오류가 나는가 ----------------
+\node[wnote, anchor=west, text width=44mm] at (64,-26)
+     {②를 빼먹으면 \texttt{No executable found}};
+\node[wnote, anchor=west, text width=44mm] at (64,-32)
+     {④를 빼먹으면 \texttt{Package not found}};
+
+\node[anote, anchor=north, text width=116mm, align=center] at (42,-42)
      {\texttt{--symlink-install} 로 빌드하면 ①만 고쳤을 때 ③을 다시 하지 않아도 된다.
       단 ②를 고쳤으면 반드시 다시 빌드한다};
 

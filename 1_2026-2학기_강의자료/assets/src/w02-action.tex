@@ -1,0 +1,43 @@
+% assets/w02-action.svg — 액션: 목표를 주고, 진행을 받고, 결과를 받는다
+%
+%   bash _tools/tikz2svg.sh assets/src/w02-action.tex assets/w02-action.svg
+%
+% 요점: 서비스는 한 번 묻고 한 번 답한다. 액션은 오래 걸리는 일을 맡기고 중간 보고를 받는다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[nblk, minimum width=36mm, minimum height=44mm] (cl) at (0,0)
+     {액션 \textbf{클라이언트}};
+\node[note, below=1.2mm of cl, text width=42mm, align=center]
+     {\texttt{ros2 action send\_goal}};
+
+\node[tblk, minimum width=36mm, minimum height=44mm] (sv) at (104,0)
+     {액션 \textbf{서버}};
+\node[note, below=1.2mm of sv, text width=42mm, align=center]
+     {\texttt{/turtle1/rotate\_absolute}};
+
+% ---- 보내는 쪽 (파랑) ----
+\draw[sig, guid] ($(cl.east)+(0,18)$) -- node[sname, above, font=\scriptsize]
+      {\textbf{goal} 목표 — ``각도 1.57 까지''} ($(sv.west)+(0,18)$);
+\draw[sig, guid] ($(cl.east)+(0,10)$) -- node[sname, above, font=\scriptsize]
+      {\textbf{cancel} 취소 — 중간에 그만} ($(sv.west)+(0,10)$);
+
+% ---- 돌아오는 쪽 (주황) ----
+\draw[sig, thr] ($(sv.west)+(0,0)$) -- node[sname, above, font=\scriptsize]
+      {\textbf{status} 상태} ($(cl.east)+(0,0)$);
+\draw[sig, thr] ($(sv.west)+(0,-9)$) -- node[sname, above, font=\scriptsize]
+      {\textbf{feedback} 진행 — ``남은 각도 0.03''} ($(cl.east)+(0,-9)$);
+\draw[sig, thr] ($(sv.west)+(0,-18)$) -- node[sname, above, font=\scriptsize]
+      {\textbf{result} 결과 — ``SUCCEEDED''} ($(cl.east)+(0,-18)$);
+
+% ---- 세 가지 비교 ----
+\node[anote, anchor=north, text width=146mm, align=center] at (52,-32)
+     {\textbf{토픽}은 보내고 잊는다 · \textbf{서비스}는 한 번 묻고 한 번 답한다 ·
+      \textbf{액션}은 맡기고 \textbf{중간 보고}를 받으며 \textbf{취소}할 수 있다};
+
+\end{tikzpicture}
+\end{document}

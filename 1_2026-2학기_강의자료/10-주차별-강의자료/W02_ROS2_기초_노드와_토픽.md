@@ -41,14 +41,16 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 ## 이 주차를 마치면 할 수 있어야 하는 것
 
 1. ROS 2가 **왜 필요한지**, ROS 1과 무엇이 다른지 설명
-2. **노드 · 토픽 · 메시지**가 각각 무엇인지 설명
+2. **노드 · 토픽 · 서비스 · 액션 · 파라미터**가 각각 무엇이고 언제 쓰는지 설명
 3. **워크스페이스 · 패키지 · 노드**의 3층 구조를 설명
 4. **VS Code 를 WSL 에 연결**해서 우분투 안의 코드를 편집·빌드·실행
-5. `ros2` 명령어로 실행 중인 노드와 토픽을 조사
-6. **rqt_graph · Topic Monitor · rqt_console · RViz2** 를 띄워 상태를 눈으로 확인
-7. **내 손으로 노드를 작성**해서 데이터를 주고받기
-8. **QoS 불일치**를 재현하고 원인을 진단
-9. **표본화 주기**가 왜 중요한지 설명
+5. **Windows 탐색기로 WSL 폴더**를 열고 파일을 주고받기
+6. **turtlesim** 으로 네 가지 통신을 직접 조작
+7. `ros2` 명령어로 실행 중인 노드와 토픽을 조사
+8. **rqt_graph · Topic Monitor · rqt_console · RViz2** 를 띄워 상태를 눈으로 확인
+9. **내 손으로 노드를 작성**해서 데이터를 주고받기
+10. **QoS 불일치**를 재현하고 원인을 진단
+11. **표본화 주기**가 왜 중요한지 설명
 
 ---
 
@@ -160,10 +162,28 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 
 ---
 
-## 1-2. 노드와 토픽
+## 1-2. 노드와 통신 — 토픽 · 서비스 · 액션 · 파라미터
 
+### 전체 그림 먼저
 
+![ROS 2 의 뼈대 — 노드와 네 가지 통신](../assets/w02-ros2-overview.svg)
 
+| 층 | 무엇인가 | 이번 주차에서 |
+|---|---|---|
+| **노드** | 실행되는 프로그램 하나 | §2-8 에서 직접 만든다 |
+| **토픽** | 계속 흐르는 데이터 | §2-3 · §2-4 · §2-8 |
+| **서비스** | 한 번 요청하고 한 번 응답 | §2-4 turtlesim |
+| **액션** | 오래 걸리는 일 + 중간 보고 | §2-4 turtlesim |
+| **파라미터** | 노드의 설정값 | §2-4 turtlesim |
+| **DDS** | 노드끼리 서로 찾는 계층 | §1-5 Domain ID |
+
+> [!important] 본 과목의 90%는 토픽이다
+> 나머지 셋은 "이런 것이 있고, 언제 쓰는지" 를 알아 두는 수준으로 충분하다.
+> 다만 **9주차 미션 상태기계**에서 액션이, **7주차 게인 튜닝**에서 파라미터가 다시 나온다.
+
+---
+
+### 토픽 — 흘려보내고 잊는다
 
 ![노드와 토픽](../assets/w02-pubsub.svg)
 
@@ -195,14 +215,67 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 2. **한 토픽을 여러 노드가 동시에 구독** 가능
 3. **토픽 이름 + 메시지 타입 + QoS** 가 전부 맞아야 연결됨
 
-### 토픽 외의 통신 방식 (참고)
+---
 
-| 방식 | 쓰임 | 예 |
+### 서비스 — 부르고 답을 기다린다
+
+![서비스 — 요청과 응답, 서버는 하나](../assets/w02-service.svg)
+
+| 항목 | 토픽 | 서비스 |
 |---|---|---|
-| **토픽** | 계속 흐르는 데이터 | 센서 값 ← **본 과목의 90%** |
-| 서비스 | 1회성 요청–응답 | "지금 상태를 초기화해줘" |
-| 액션 | 오래 걸리고 취소 가능한 작업 | "저 지점까지 가라" |
-| 파라미터 | 노드의 설정값 | PID 게인 |
+| 방향 | 한 방향 | **요청 ↔ 응답 양방향** |
+| 횟수 | 계속 흐름 | **한 번 부르고 끝** |
+| 기다림 | 안 기다림 | **답이 올 때까지 기다림** |
+| 개수 | 발행자·구독자 여럿 가능 | **서버는 하나**, 클라이언트는 여럿 |
+
+- 쓰는 곳 — "지금 이것 한 번만 해 줘"
+
+| 예 | 서비스 |
+|---|---|
+| 거북이 한 마리 추가 | `/spawn` |
+| 화면 지우기 | `/clear` |
+| 상태 초기화 | `/reset` |
+| VRX 에서 배 위치 되돌리기 | 3주차 이후 |
+
+- 실제 조작은 §2-4 에서 한다
+
+---
+
+### 액션 — 맡기고 중간 보고를 받는다
+
+![액션 — 목표 · 피드백 · 결과](../assets/w02-action.svg)
+
+- 서비스로 "저 지점까지 가라" 를 시키면 **도착할 때까지 아무 소식이 없다.** 취소도 못 한다
+- 액션은 그 문제를 푼다
+
+| 주고받는 것 | 뜻 |
+|---|---|
+| **goal** | 목표를 준다 |
+| **feedback** | 진행 상황을 계속 받는다 |
+| **result** | 끝났을 때 결과를 받는다 |
+| **cancel** | 중간에 그만두게 한다 |
+
+- 쓰는 곳 — 이동, 도킹, 탐색처럼 **오래 걸리는 일**
+- **9주차 미션 상태기계**가 정확히 이 형태다
+
+---
+
+### 파라미터 — 노드의 설정값
+
+- 코드에 숫자를 박아 두면 바꿀 때마다 **다시 빌드**해야 한다
+- 파라미터로 빼 두면 **실행 중에** 바꿀 수 있다
+
+| 명령 | 하는 일 |
+|---|---|
+| `ros2 param list` | 어떤 설정값이 있는가 |
+| `ros2 param get <노드> <이름>` | 현재 값 |
+| `ros2 param set <노드> <이름> <값>` | 값 변경 |
+| `ros2 param dump <노드>` | 전체를 YAML 로 저장 |
+
+- 7주차 이후 **PID 게인**을 이렇게 다룬다
+
+> [!note] 네 가지를 한 문장으로
+> **토픽**은 방송, **서비스**는 전화, **액션**은 택배 배송 조회, **파라미터**는 설정 화면이다.
 
 ---
 
@@ -444,7 +517,7 @@ echo $ROS_DOMAIN_ID
 > - 종료 코드도 정상이고 예외도 없다. 자기 콜백 코드를 의심하며 시간을 버리게 된다
 
 - 다만 Humble 은 **경고 한 줄**을 찍어 준다. 이 문장을 알아보는 것이 이번 절의 목표다
-- 아래는 §2-8 실습에서 실제로 받은 출력이다
+- 아래는 §2-9 실습에서 실제로 받은 출력이다
 
 ```
 [WARN] [1788862828.210407869] [qos_test_sub]: New publisher discovered on topic 'qos_topic',
@@ -597,17 +670,77 @@ sudo apt install -y ros-humble-desktop
 sudo apt install -y python3-colcon-common-extensions python3-rosdep
 ```
 
-### 4단계 — 자동 적용 설정
+### 4단계 — 자동 적용 설정 (매번 터미널에서 다시 치지 않도록)
 
-- 매번 손으로 설정하지 않도록 `.bashrc` 에 등록
+> [!important] 이 단계를 건너뛰면 **터미널을 열 때마다** `source` 를 쳐야 한다
+> 새 터미널에서 `ros2` 를 치면 `bash: ros2: command not found` 가 난다.
+> 매 학기 가장 자주 나오는 질문이 이것이다.
+
+- `~/.bashrc` 는 **터미널을 열 때마다 자동으로 실행되는 파일**이다. 여기에 넣어 두면 된다
 
 ```bash
 echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 echo "export ROS_DOMAIN_ID=7" >> ~/.bashrc
-source ~/.bashrc
 ```
 
 > [!important] `7` 을 **자기 팀 번호**로 바꿀 것
+
+- 지금 열려 있는 터미널에도 즉시 반영하려면
+
+```bash
+source ~/.bashrc
+```
+
+#### 제대로 들어갔는지 확인한다
+
+```bash
+tail -3 ~/.bashrc
+```
+
+- 정상 출력 (기준 환경 실측) — 마지막 두 줄이 방금 넣은 것이다
+
+```
+fi
+source /opt/ros/humble/setup.bash
+export ROS_DOMAIN_ID=7
+```
+
+```bash
+printenv ROS_DISTRO ROS_VERSION ROS_DOMAIN_ID
+```
+
+- 정상 출력
+
+```
+humble
+2
+7
+```
+
+> [!warning] `>>` 를 `>` 로 잘못 치면 `.bashrc` 가 통째로 날아간다
+> `>>` 는 **덧붙이기**, `>` 는 **덮어쓰기**다. 화살표 개수를 반드시 확인할 것.
+> 날렸다면 `cp /etc/skel/.bashrc ~/.bashrc` 로 기본값을 복구한 뒤 두 줄을 다시 넣는다.
+
+> [!note] 같은 줄이 두 번 들어가면
+> 명령을 두 번 실행했다면 `.bashrc` 에 같은 줄이 두 개 생긴다.
+> 동작에는 문제가 없지만 지저분하므로 VS Code 로 열어 지운다.
+>
+> ```bash
+> code ~/.bashrc
+> ```
+>
+> - 중복 확인 — 각각 **1** 이 나와야 한다
+>
+> ```bash
+> grep -c "opt/ros/humble/setup.bash" ~/.bashrc
+> grep -c "ROS_DOMAIN_ID" ~/.bashrc
+> ```
+
+- 워크스페이스를 만든 뒤에는 **한 줄을 더** 넣는다 (§2-7 에서 다시 나온다)
+
+```bash
+echo "source ~/capstone_ws/install/setup.bash" >> ~/.bashrc
+```
 
 ### 5단계 — rosdep 초기화
 
@@ -799,7 +932,7 @@ cnu@DESKTOP-XXXXXX:~/capstone_ws$
 
 ![VS Code 통합 터미널 — 왼쪽 발행자 · 오른쪽 구독자](../assets/w02-vscode-terminal.png)
 
-- 위 화면은 §2-7 을 끝낸 뒤의 실제 모습이다. 이번 주차 실습의 **목표 화면**이다
+- 위 화면은 §2-8 을 끝낸 뒤의 실제 모습이다. 이번 주차 실습의 **목표 화면**이다
 
 | 화면에서 보이는 것 | 뜻 |
 |---|---|
@@ -810,6 +943,74 @@ cnu@DESKTOP-XXXXXX:~/capstone_ws$
 > [!tip] 편집기와 터미널을 한 화면에 두는 것이 이번 주차의 요령이다
 > 코드를 고치고(`Ctrl + S`), 아래 터미널에서 바로 빌드·실행한다.
 > 창을 오가지 않으므로 "어느 창에서 뭘 쳤더라" 가 사라진다.
+
+---
+
+### 7단계 — WSL 안의 파일을 Windows 탐색기로 열기
+
+> [!important] WSL 폴더는 Windows 탐색기에서 **그대로 열린다**
+> 별도 설치가 필요 없다. 주소창에 아래를 그대로 붙여 넣으면 된다.
+
+```
+\\wsl.localhost\Ubuntu-22.04\home\사용자명
+```
+
+- 예 — 사용자명이 `cnu` 이고 워크스페이스를 열려면
+
+```
+\\wsl.localhost\Ubuntu-22.04\home\cnu\capstone_ws
+```
+
+![Windows 탐색기로 연 WSL 워크스페이스](../assets/w02-wsl-explorer.png)
+
+| 확인 항목 | 화면에서 |
+|---|---|
+| 주소창이 `\\wsl.localhost\Ubuntu-22.04\home\cnu\capstone_ws` | WSL 안을 보고 있다 |
+| `build` `install` `log` `src` | `colcon build` 가 만든 폴더 |
+| 파일을 **끌어다 놓기**로 복사 가능 | 바탕화면 ↔ WSL 양방향 |
+
+- 우분투 터미널에서 **탐색기를 바로 여는 명령**도 있다
+
+```bash
+explorer.exe .
+```
+
+- 현재 폴더가 탐색기 창으로 열린다. 마지막의 **점(`.`)을 빠뜨리지 말 것**
+
+#### 바탕화면의 파일을 WSL 로 넣기
+
+1. 탐색기 창을 두 개 연다 — 하나는 **바탕화면**, 하나는 위 WSL 경로
+2. 파일을 **끌어다 놓는다**. 일반 폴더처럼 복사된다
+3. 우분투 터미널에서 확인한다
+
+```bash
+ls ~/capstone_ws
+```
+
+- 반대 방향(WSL → 바탕화면)도 똑같이 된다
+
+#### 경로 대응표
+
+| Windows 에서 보는 경로 | 우분투 안에서의 경로 |
+|---|---|
+| `\\wsl.localhost\Ubuntu-22.04\home\cnu` | `/home/cnu` (또는 `~`) |
+| `\\wsl.localhost\Ubuntu-22.04\home\cnu\capstone_ws` | `~/capstone_ws` |
+| `C:\Users\사용자\Desktop` | `/mnt/c/Users/사용자/Desktop` |
+
+- 우분투 터미널에서 Windows 쪽 파일을 보려면 `/mnt/c/...` 를 쓴다
+
+```bash
+ls /mnt/c/Users/$USER/Desktop
+```
+
+> [!caution] ROS 2 소스는 `/mnt/c/...` 에 두지 않는다
+> `/mnt/c` 는 Windows 디스크를 빌려 쓰는 것이라 **파일 접근이 매우 느리다.**
+> `colcon build` 가 몇 배로 오래 걸리고, 파일 권한 문제도 생긴다.
+> **코드는 반드시 `~/capstone_ws` (우분투 안)** 에 둔다.
+
+> [!warning] 탐색기에서 WSL 파일을 편집하지 않는다
+> 메모장으로 열어 저장하면 줄바꿈이 **CRLF** 로 바뀌어 스크립트가 실행되지 않는다.
+> 증상은 `/bin/bash^M: bad interpreter`. 편집은 **VS Code** 로 한다.
 
 ---
 
@@ -865,7 +1066,341 @@ ros2 run demo_nodes_py listener
 
 ---
 
-## 2-4. 조사 명령어 익히기
+## 2-4. turtlesim — 네 가지 통신을 눈으로 확인한다
+
+> [!important] 이 절이 ROS 2 를 처음 배울 때 가장 빠른 길이다
+> 배도 센서도 없이 **거북이 한 마리**로 토픽 · 서비스 · 액션 · 파라미터를 전부 만져 본다.
+> `ros-humble-desktop` 에 이미 들어 있으므로 따로 설치하지 않는다.
+
+### 1단계 — 띄운다
+
+```bash
+ros2 run turtlesim turtlesim_node
+```
+
+![turtlesim 첫 화면](../assets/w02-turtlesim-start.png)
+
+| 확인 항목 | 화면에서 |
+|---|---|
+| 파란 정사각형 창이 뜬다 | 정상 |
+| 가운데에 거북이 한 마리 | 이름은 `turtle1` |
+| 창이 안 뜬다 | GUI 문제. 1주차 2-4절 `xeyes` 로 복귀 |
+
+- **다른 터미널**에서 무엇이 생겼는지 본다
+
+```bash
+ros2 node list
+```
+
+```
+/turtlesim
+```
+
+```bash
+ros2 topic list -t
+```
+
+```
+/parameter_events [rcl_interfaces/msg/ParameterEvent]
+/rosout [rcl_interfaces/msg/Log]
+/turtle1/cmd_vel [geometry_msgs/msg/Twist]
+/turtle1/color_sensor [turtlesim/msg/Color]
+/turtle1/pose [turtlesim/msg/Pose]
+```
+
+---
+
+### 2단계 — 토픽으로 움직인다
+
+```bash
+ros2 topic pub /turtle1/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 2.0}, angular: {z: 1.8}}" -r 10
+```
+
+- `Ctrl + C` 로 멈춘다. 멈추면 거북이도 선다
+
+![토픽으로 움직인 뒤 — 원형 궤적](../assets/w02-turtlesim-topic.png)
+
+| 값 | 뜻 |
+|---|---|
+| `linear.x` | 앞으로 가는 속도 (m/s) |
+| `angular.z` | 도는 속도 (rad/s) |
+| 둘 다 주면 | **원을 그린다** — 위 화면의 궤적 |
+
+> [!note] 이것이 3주차 이후 배를 움직이는 방식과 같다
+> WAM-V 도 결국 `/wamv/thrusters/...` 토픽에 숫자를 넣어 움직인다.
+> 거북이의 `cmd_vel` 이 배의 추력 명령에 해당한다.
+
+- 키보드로 몰아 보려면 **또 다른 터미널**에서
+
+```bash
+ros2 run turtlesim turtle_teleop_key
+```
+
+- 이 터미널에 **포커스를 둔 채로** 방향키를 누른다. 다른 창을 클릭하면 안 먹는다
+
+### 노드 그래프로 확인
+
+```bash
+ros2 run rqt_graph rqt_graph
+```
+
+![turtlesim 과 teleop 의 연결](../assets/w02-turtlesim-rqtgraph.png)
+
+| 그림에서 | 뜻 |
+|---|---|
+| `/teleop_turtle` → `/turtle1/cmd_vel` → `/turtlesim` | **토픽** 연결 |
+| `/turtle1/rotate_absolute/_action/feedback` · `.../status` | **액션**도 내부적으로 토픽을 쓴다 |
+
+---
+
+### 3단계 — 서비스로 거북이를 하나 더 만든다
+
+![서비스 — 요청과 응답](../assets/w02-service.svg)
+
+```bash
+ros2 service list
+```
+
+- 정상 출력 (앞부분)
+
+```
+/clear
+/kill
+/reset
+/spawn
+/turtle1/set_pen
+/turtle1/teleport_absolute
+/turtle1/teleport_relative
+```
+
+- 어떤 형식으로 불러야 하는지 확인한다
+
+```bash
+ros2 service type /spawn
+```
+
+```
+turtlesim/srv/Spawn
+```
+
+```bash
+ros2 interface show turtlesim/srv/Spawn
+```
+
+- 정상 출력 — `---` 위가 **요청**, 아래가 **응답**이다
+
+```
+float32 x
+float32 y
+float32 theta
+string name # Optional.  A unique name will be created and returned if this is empty
+---
+string name
+```
+
+- 실제로 부른다
+
+```bash
+ros2 service call /spawn turtlesim/srv/Spawn "{x: 2.0, y: 8.0, theta: 0.0, name: 'turtle2'}"
+```
+
+- 정상 출력 (기준 환경 실측)
+
+```
+requester: making request: turtlesim.srv.Spawn_Request(x=2.0, y=8.0, theta=0.0, name='turtle2')
+
+response:
+turtlesim.srv.Spawn_Response(name='turtle2')
+```
+
+![서비스로 추가된 두 번째 거북이](../assets/w02-turtlesim-spawn.png)
+
+| 확인 항목 | 화면에서 |
+|---|---|
+| 왼쪽 위에 **노란 거북이** | `turtle2` 가 생겼다 |
+| 가운데 원형 궤적과 초록 거북이 | 2단계에서 움직인 `turtle1` |
+
+- 위치를 바로 옮기는 서비스도 있다
+
+```bash
+ros2 service call /turtle1/teleport_absolute turtlesim/srv/TeleportAbsolute "{x: 8.0, y: 8.0, theta: 1.57}"
+```
+
+```
+response:
+turtlesim.srv.TeleportAbsolute_Response()
+```
+
+> [!note] 응답이 비어 있어도 정상이다
+> `TeleportAbsolute` 는 돌려줄 값이 없다. `---` 아래가 비어 있는 것이 그 뜻이다.
+
+> [!warning] `ros2 service call` 이 응답 없이 멈춰 있으면
+> **서버 노드가 안 떠 있는 것**이다. `turtlesim_node` 를 껐는지 확인한다.
+> 서비스는 답이 올 때까지 기다리므로, 아무 메시지 없이 멈춘 것처럼 보인다.
+
+---
+
+### 4단계 — 파라미터로 설정을 바꾼다
+
+```bash
+ros2 param list
+```
+
+- 정상 출력
+
+```
+/turtlesim:
+  background_b
+  background_g
+  background_r
+  qos_overrides./parameter_events.publisher.depth
+  qos_overrides./parameter_events.publisher.durability
+  qos_overrides./parameter_events.publisher.history
+  qos_overrides./parameter_events.publisher.reliability
+  use_sim_time
+```
+
+```bash
+ros2 param get /turtlesim background_b
+```
+
+```
+Integer value is: 255
+```
+
+```bash
+ros2 param set /turtlesim background_r 40
+ros2 param set /turtlesim background_g 140
+ros2 param set /turtlesim background_b 60
+```
+
+```
+Set parameter successful
+```
+
+> [!important] 여기서 화면은 **아직 안 바뀐다**
+> turtlesim 은 배경색을 **다시 그릴 때** 반영한다.
+> `/clear` 서비스를 불러야 눈에 보인다 — **파라미터와 서비스를 같이 쓰는 예**다.
+
+```bash
+ros2 service call /clear std_srvs/srv/Empty {}
+```
+
+![파라미터 변경 후 /clear 를 부른 결과](../assets/w02-turtlesim-param.png)
+
+- 배경이 초록으로 바뀐다. 궤적은 지워진다
+
+- 현재 설정을 파일로 저장할 수 있다
+
+```bash
+ros2 param dump /turtlesim
+```
+
+- 정상 출력
+
+```yaml
+/turtlesim:
+  ros__parameters:
+    background_b: 60
+    background_g: 140
+    background_r: 40
+    qos_overrides:
+      /parameter_events:
+        publisher:
+          depth: 1000
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+    use_sim_time: false
+```
+
+> [!note] 7주차 이후 PID 게인을 이렇게 다룬다
+> 코드를 고쳐 다시 빌드하는 대신 **파라미터로 빼 두면 실행 중에 바꿔 가며 튜닝**할 수 있다.
+
+---
+
+### 5단계 — 액션으로 목표를 준다
+
+![액션 — 목표 · 피드백 · 결과](../assets/w02-action.svg)
+
+```bash
+ros2 action list
+```
+
+```
+/turtle1/rotate_absolute
+```
+
+```bash
+ros2 interface show turtlesim/action/RotateAbsolute
+```
+
+- 정상 출력 — `---` 로 **목표 / 결과 / 피드백** 세 부분으로 나뉜다
+
+```
+# The desired heading in radians
+float32 theta
+---
+# The angular displacement in radians to the starting position
+float32 delta
+---
+# The remaining rotation in radians
+float32 remaining
+```
+
+```bash
+ros2 action send_goal /turtle1/rotate_absolute turtlesim/action/RotateAbsolute "{theta: 1.57}" --feedback
+```
+
+- 정상 출력 (기준 환경 실측, 뒷부분)
+
+```
+Feedback:
+    remaining: 0.030385255813598633
+
+Feedback:
+    remaining: 0.014385342597961426
+
+Result:
+    delta: -2.7360000610351562
+
+Goal finished with status: SUCCEEDED
+```
+
+| 나오는 것 | 뜻 |
+|---|---|
+| `Feedback: remaining` | **진행 중** 보고. 남은 각도가 줄어든다 |
+| `Result: delta` | 결과. 실제로 돌아간 각도 |
+| `Goal finished with status: SUCCEEDED` | 성공 종료 |
+
+> [!important] 액션을 쓰는 이유가 여기 있다
+> 서비스였다면 다 돌 때까지 **아무 소식이 없다.**
+> 액션은 **남은 각도를 계속 알려 주고**, 중간에 취소할 수도 있다.
+> 9주차 미션 상태기계에서 "저 웨이포인트까지 가라" 가 정확히 이 형태다.
+
+---
+
+### 정리 — 네 가지를 언제 쓰는가
+
+| 상황 | 쓰는 것 | turtlesim 예 |
+|---|---|---|
+| 계속 흐르는 값 | **토픽** | `/turtle1/cmd_vel` · `/turtle1/pose` |
+| 한 번 시키고 답을 받음 | **서비스** | `/spawn` · `/clear` |
+| 오래 걸리고 중간 보고가 필요 | **액션** | `/turtle1/rotate_absolute` |
+| 노드의 설정값 | **파라미터** | `background_r` |
+
+### 정리하고 끝내기
+
+```bash
+ros2 service call /reset std_srvs/srv/Empty {}
+```
+
+- 거북이와 궤적이 처음 상태로 돌아간다
+- 창은 `Ctrl + C` 로 닫는다
+
+---
+
+## 2-5. 조사 명령어 익히기
 
 - `talker` 를 켜 둔 채로 **새 분할**에서 실행
 
@@ -1012,7 +1547,7 @@ Subscription count: 1
 ```
 
 > [!important] 이 출력의 `Reliability` 두 개를 비교하는 것이 QoS 진단이다
-> 발행자와 구독자의 `Reliability` 가 다르면 §2-8 의 유의 사항이 발생한다.
+> 발행자와 구독자의 `Reliability` 가 다르면 §2-9 의 유의 사항이 발생한다.
 
 ### 메시지 구조 확인
 
@@ -1174,7 +1709,7 @@ QoS profile:
 | `Lifespan` · `Deadline` | Infinite | 제한 없음 |
 
 - **양쪽의 이 표가 서로 호환되어야 연결된다.** 안 맞으면 오류 없이 조용히 끊긴다
-- 실제로 끊어 보는 실험이 §2-8 에 있다
+- 실제로 끊어 보는 실험이 §2-9 에 있다
 
 ### 데이터 기록 · 재생
 
@@ -1193,7 +1728,7 @@ ros2 bag play rosbag2_2026_09_10-14_30_00
 
 ---
 
-## 2-5. 화면으로 보는 도구 — rqt 와 RViz2
+## 2-6. 화면으로 보는 도구 — rqt 와 RViz2
 
 > [!important] 명령줄만으로는 "누가 누구에게" 를 못 본다
 > `ros2 topic list` 는 토픽 **이름**만 준다. 연결 관계·값의 변화·경고 로그는
@@ -1212,7 +1747,7 @@ ros2 bag play rosbag2_2026_09_10-14_30_00
 
 ### 준비 — 노드를 두 개 띄워 둔다
 
-- 아래 실습은 §2-7 에서 만든 노드를 켠 상태를 가정한다. 아직이면 데모 노드로 대신한다
+- 아래 실습은 §2-8 에서 만든 노드를 켠 상태를 가정한다. 아직이면 데모 노드로 대신한다
 
 ```bash
 ros2 run demo_nodes_cpp talker
@@ -1232,7 +1767,7 @@ ros2 run rqt_graph rqt_graph
 
 ![rqt_graph — 발행자 · 토픽 · 구독자](../assets/w02-rqt-graph.png)
 
-- 위 화면은 §2-7 의 `simple_talker` · `simple_listener` 를 실제로 띄우고 캡처한 것이다
+- 위 화면은 §2-8 의 `simple_talker` · `simple_listener` 를 실제로 띄우고 캡처한 것이다
 
 | 모양 | 뜻 |
 |---|---|
@@ -1299,7 +1834,7 @@ ros2 run rqt_console rqt_console
 - 가운데 **Exclude Messages** 에서 `Info` 를 눌러 끄면 **경고만** 남는다
 
 > [!important] QoS 경고를 찾는 가장 확실한 방법이다
-> §2-8 의 QoS 불일치 경고는 `[INFO]` 홍수에 묻혀 터미널에서 놓치기 쉽다.
+> §2-9 의 QoS 불일치 경고는 `[INFO]` 홍수에 묻혀 터미널에서 놓치기 쉽다.
 > 여기서 `Severity` 를 `Warn` 으로 걸러 보면 한눈에 보인다.
 
 ---
@@ -1343,7 +1878,7 @@ rviz2
 
 ---
 
-## 2-6. 내 패키지 만들기
+## 2-7. 내 패키지 만들기
 
 > [!important] 두 가지 길이 있다. **수업에서는 ①로 진행한다**
 > | 길 | 무엇을 하는가 | 언제 |
@@ -1433,7 +1968,7 @@ code .
 
 > [!note] 저장소의 `qos_test_sub.py` 는 **정상 상태**로 배포한다
 > 받자마자 `qos_test_pub` ↔ `qos_test_sub` 가 서로 통한다.
-> §2-8 의 불일치를 재현하려면 `ReliabilityPolicy.BEST_EFFORT` 를
+> §2-9 의 불일치를 재현하려면 `ReliabilityPolicy.BEST_EFFORT` 를
 > **`ReliabilityPolicy.RELIABLE` 로 직접 바꿔** 보면 된다. 고치는 방향이 반대일 뿐 실험은 같다.
 
 ### 워크스페이스 생성
@@ -1529,7 +2064,7 @@ echo "source ~/capstone_ws/install/setup.bash" >> ~/.bashrc
 
 ---
 
-## 2-7. 첫 노드 작성
+## 2-8. 첫 노드 작성
 
 > [!important] 이 절부터는 VS Code 로 파일을 만든다
 > §2-2 에서 `code .` 로 `~/capstone_ws` 를 열어 둔 상태여야 한다.
@@ -1666,7 +2201,7 @@ if __name__ == '__main__':
 > [!important] 이 표의 마지막 줄이 이번 절의 핵심이다
 > - **발행자의 `on_timer`** 는 **시계**가 부른다. 아무도 안 들어도 계속 돈다
 > - **구독자의 `on_msg`** 는 **메시지**가 부른다. 안 오면 한 번도 안 돈다
-> - 그래서 §2-8 의 QoS 불일치에서 **구독자 화면만 조용**해진다
+> - 그래서 §2-9 의 QoS 불일치에서 **구독자 화면만 조용**해진다
 
 - `create_publisher` 와 `create_subscription` 의 인자 순서
 
@@ -1844,7 +2379,7 @@ average rate: 2.000
 
 ---
 
-## 2-8. QoS 불일치 재현 실험
+## 2-9. QoS 불일치 재현 실험
 
 > [!important] 이번 주차 실습에서 가장 중요한 부분
 > 이 유의 사항을 지금 손으로 만들어 봐야, 3주차에 VRX LiDAR에서 만났을 때 스스로 알아챔.
@@ -1975,7 +2510,7 @@ ros2 run usv_basics qos_test_sub
 | **경고 한 줄이 맨 위에 있다** | 이것을 못 보고 지나가는 것이 문제다 |
 
 > [!tip] 경고를 놓쳤다면 `rqt_console` 로 본다
-> §2-5 의 `rqt_console` 에서 **Exclude Messages → `Info` 를 끄면** 경고만 남는다.
+> §2-6 의 `rqt_console` 에서 **Exclude Messages → `Info` 를 끄면** 경고만 남는다.
 
 **2. 진단**
 
@@ -2030,11 +2565,12 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 | 2 | Domain ID 설정 | `echo $ROS_DOMAIN_ID` → 팀 번호 |
 | 3 | **VS Code 설치와 WSL 연결** | 왼쪽 아래 `WSL: Ubuntu-22.04` |
 | 4 | talker / listener 통신 | `I heard: [Hello World: N]` |
-| 5 | 조사 명령어 사용 | `ros2 topic list` / `hz` / `info --verbose` |
-| 6 | **rqt_graph · Topic Monitor · rqt_console · RViz2** | 창 4개가 뜬다 |
-| 7 | 워크스페이스와 패키지 생성 | `colcon build` → `1 package finished` |
-| 8 | 내 노드 작성 및 통신 | `received: USV alive: 0` |
-| 9 | QoS 불일치 재현 · 진단 · 해결 | 수신 0건 → 35건 |
+| 5 | **turtlesim — 토픽·서비스·액션·파라미터** | 거북이 2마리 · 초록 배경 · `SUCCEEDED` |
+| 6 | 조사 명령어 사용 | `ros2 topic list` / `hz` / `info --verbose` |
+| 7 | **rqt_graph · Topic Monitor · rqt_console · RViz2** | 창 4개가 뜬다 |
+| 8 | 워크스페이스와 패키지 생성 | `colcon build` → `1 package finished` |
+| 9 | 내 노드 작성 및 통신 | `received: USV alive: 0` |
+| 10 | QoS 불일치 재현 · 진단 · 해결 | 수신 0건 → 35건 |
 
 ---
 
@@ -2047,6 +2583,8 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 - [ ] ROS 2가 무엇을 해결하는지 설명할 수 있다
 - [ ] `roscore` · `rospy` · `catkin_make` 가 나오면 **ROS 1 예제**임을 안다
 - [ ] 노드 · 토픽 · 발행 · 구독 · 메시지를 각각 설명할 수 있다
+- [ ] **토픽 · 서비스 · 액션 · 파라미터**를 언제 쓰는지 하나씩 예를 들 수 있다
+- [ ] 서비스는 **답이 올 때까지 기다린다**는 것을 안다
 - [ ] **워크스페이스 · 패키지 · 노드**의 차이를 설명할 수 있다
 - [ ] `setup.py` 의 `console_scripts` 한 줄이 무엇을 정하는지 안다
 - [ ] `header.stamp` 와 `frame_id` 가 왜 필요한지 안다
@@ -2063,10 +2601,17 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 - [ ] `code --remote wsl+Ubuntu-22.04 --list-extensions` 에 `ms-python.python` 이 있다
 - [ ] VS Code 통합 터미널의 프롬프트가 `사용자명@컴퓨터:~/capstone_ws$` 형태다
 - [ ] 통합 터미널을 **좌우로 나눠** 두 노드를 동시에 실행해 봤다
+- [ ] `tail -3 ~/.bashrc` 에 `source /opt/ros/humble/setup.bash` 와 `ROS_DOMAIN_ID` 가 있다
+- [ ] **새 터미널을 열자마자** `ros2 topic list` 가 바로 동작한다
+- [ ] Windows 탐색기에서 `\\wsl.localhost\Ubuntu-22.04\home\사용자명` 이 열린다
 
 ### 실습 완료
 
 - [ ] `ros2 run demo_nodes_cpp talker` / `demo_nodes_py listener` 통신 성공
+- [ ] **turtlesim** 을 띄우고 `cmd_vel` 토픽으로 움직였다
+- [ ] **서비스** `/spawn` 으로 거북이를 하나 더 만들었다
+- [ ] **파라미터**로 배경색을 바꾸고 `/clear` 로 반영시켰다
+- [ ] **액션** `rotate_absolute` 를 보내 `SUCCEEDED` 를 확인했다
 - [ ] `ros2 topic list` / `echo` / `hz` / `info --verbose` 를 모두 써 봤다
 - [ ] `rqt_graph` 로 노드 그래프를 확인했다
 - [ ] `rqt_topic` 에서 `/usv_chatter` 의 `Hz` 가 **2.00** 인 것을 확인했다
@@ -2163,7 +2708,7 @@ w_z(t) = 0.5 * sin(2*pi*0.5*t)    저주파  0.5 Hz  (실제 선회 운동)
 | 내 토픽만 목록에 없음 | **`ROS_DOMAIN_ID` 불일치** | 두 터미널에서 `echo $ROS_DOMAIN_ID` 비교 |
 | 옆자리 학생의 토픽이 보임 | Domain ID 가 같음 | 팀 번호로 변경 후 `source ~/.bashrc` |
 | **토픽은 보이는데 데이터를 못 받음** | **QoS 불일치** | `ros2 topic info <토픽> --verbose` 로 `Reliability` 비교 |
-| `incompatible QoS ... Last incompatible policy: RELIABILITY` | 위와 같음 | §2-8 참조 |
+| `incompatible QoS ... Last incompatible policy: RELIABILITY` | 위와 같음 | §2-9 참조 |
 
 - Domain ID 차이는 이렇게 눈으로 확인할 수 있다 (실측)
 
@@ -2181,13 +2726,68 @@ ROS_DOMAIN_ID=42 ros2 topic list      # /parameter_events 와 /rosout 만 보인
 | 위쪽에 노란 `Restricted Mode` 띠 | 폴더를 아직 신뢰하지 않음 | **Manage → Trust** |
 | 저장했는데 빌드에 반영 안 됨 | 저장이 안 됐거나 Windows 쪽 파일 | 탭 이름의 **흰 점(●)** 이 사라졌는지 확인 |
 | `/bin/bash^M: bad interpreter` | 파일이 **CRLF** 로 저장됨 | 상태 표시줄의 `CRLF` 를 눌러 `LF` 로 바꾼 뒤 저장 |
-| 우분투에서 `code .` 실행 시 `Exec format error` | WSL 의 Windows 실행 파일 연동(interop)이 꺼져 있음 | PowerShell 에서 `code --remote wsl+Ubuntu-22.04 /home/사용자명/capstone_ws` 로 대신 연다 |
+| 우분투에서 `code .` · `explorer.exe .` 가 `Exec format error` | WSL 의 **Windows 프로그램 연동(interop)** 이 꺼져 있음 | 아래 "interop 켜기" 참조 |
+
+#### interop 켜기 — 우분투에서 Windows 프로그램을 못 부를 때
+
+- 증상 확인
+
+```bash
+cat /proc/sys/fs/binfmt_misc/WSLInterop
+```
+
+- 정상이면 첫 줄이 `enabled` 다. **파일이 없다고 나오면 꺼진 것**이다
+
+- 고치는 법 — `/etc/wsl.conf` 에 아래 세 줄을 넣는다
+
+```bash
+sudo tee -a /etc/wsl.conf > /dev/null <<'EOF'
+
+[interop]
+enabled=true
+appendWindowsPath=true
+EOF
+```
+
+- **PowerShell** 에서 WSL 을 완전히 껐다 켠다
+
+```powershell
+wsl --shutdown
+```
+
+- 다시 우분투를 열고 확인한다
+
+```bash
+cat /proc/sys/fs/binfmt_misc/WSLInterop
+```
+
+```
+enabled
+interpreter /init
+```
+
+```bash
+which code
+```
+
+```
+/mnt/c/Users/<사용자>/AppData/Local/Programs/Microsoft VS Code/bin/code
+```
+
+> [!note] 그래도 안 되면 Windows 쪽에서 직접 연다
+> ```powershell
+> code --remote wsl+Ubuntu-22.04 /home/사용자명/capstone_ws
+> ```
 
 ### GUI 도구
 
 | 증상 | 원인 | 해결 |
 |---|---|---|
 | `rqt_graph` · `rviz2` 창이 안 뜸 | WSLg 문제 | 1주차 2-4절 `xeyes` 확인으로 복귀 |
+| `ros2 node list` 에 **죽은 노드**가 계속 보임 | ROS 2 데몬이 옛 정보를 들고 있음 | `ros2 daemon stop` 후 다시 명령 실행 |
+| `turtlesim` 창이 안 뜸 | WSLg 문제 | 위와 같음 |
+| `turtle_teleop_key` 로 방향키를 눌러도 안 움직임 | **그 터미널에 포커스가 없음** | 터미널 창을 클릭한 뒤 방향키 |
+| `ros2 param set` 했는데 화면이 그대로 | turtlesim 은 다시 그릴 때 반영 | `ros2 service call /clear std_srvs/srv/Empty {}` |
 | `rqt_graph` 가 비어 있음 | 자동 갱신 안 됨 | 왼쪽 위 **파란 회전 화살표** |
 | `QStandardPaths: wrong permissions on runtime directory` | WSLg 의 알려진 경고 | **무시해도 된다.** 창은 정상적으로 뜬다 |
 | Topic Monitor 가 `not monitored` | 체크박스를 안 켬 | 토픽 왼쪽 **체크박스**를 켠다 |
@@ -2208,13 +2808,17 @@ ROS_DOMAIN_ID=42 ros2 topic list      # /parameter_events 와 /rosout 만 보인
 
 - **`usv_basics` 패키지** — <https://github.com/wkyouncnu/usv_basics>
   - 이번 주차에 만드는 노드 4개가 그대로 들어 있다
-  - 받는 법은 §2-6 "저장소에서 받기"
+  - 받는 법은 §2-7 "저장소에서 받기"
   - 라이선스 Apache-2.0. 자유롭게 고쳐 써도 된다
 
 ### 공식 문서 (북마크 권장)
 
 - ROS 2 Humble 문서 — https://docs.ros.org/en/humble/
 - 초급 튜토리얼 (CLI) — https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools.html
+- **turtlesim 으로 시작하기** — https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Introducing-Turtlesim/Introducing-Turtlesim.html
+- **서비스 이해하기** — https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Services/Understanding-ROS2-Services.html
+- **파라미터 이해하기** — https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Parameters/Understanding-ROS2-Parameters.html
+- **액션 이해하기** — https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Understanding-ROS2-Actions/Understanding-ROS2-Actions.html
 - 초급 튜토리얼 (노드 작성) — https://docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries.html
 - **QoS 설정 상세** — https://docs.ros.org/en/humble/Concepts/Intermediate/About-Quality-of-Service-Settings.html
 - 표준 메시지 정의 — https://github.com/ros2/common_interfaces
