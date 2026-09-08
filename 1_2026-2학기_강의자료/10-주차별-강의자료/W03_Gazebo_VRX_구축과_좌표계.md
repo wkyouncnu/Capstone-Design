@@ -44,9 +44,10 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 1. **SDF · URDF · Xacro** 의 역할 차이 설명
 2. **Gazebo Garden + VRX** 설치하고 WAM-V를 물에 띄우기
 3. 명령어로 **배를 직진 · 선회**시키기
-4. 선박 **6자유도**와 **ENU / NED / Body** 좌표계 구분
-5. **쿼터니언 ↔ 오일러각** 변환 이해
-6. **TF2 트리** 읽기
+4. **차동 추진**이 무엇인지 설명하고, **키보드로 배를 조종**하기
+5. 선박 **6자유도**와 **ENU / NED / Body** 좌표계 구분
+6. **쿼터니언 ↔ 오일러각** 변환 이해
+7. **TF2 트리** 읽기
 
 ---
 
@@ -55,9 +56,10 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 | 항목 | 내용 |
 |---|---|
 | 환경 | 2주차에 만든 **ROS 2 Humble** (`ros2 topic list` 가 동작해야 함) |
-| 저장공간 | **20 GB 이상** — Gazebo Garden + VRX 빌드에 필요 |
-| 전원 | **충전기 지참**. VRX 빌드가 30~60분 걸린다 |
+| 저장공간 | **20 GB 이상** — Gazebo Garden + VRX 빌드에 필요 (실측 `vrx_ws` 904 MB + 의존 패키지) |
+| 전원 | **충전기 지참**. 노트북에서는 빌드가 10분 이상 걸릴 수 있다 |
 | 그래픽 | GUI 가 뜨는지 1주차 2-4절로 미리 확인 |
+| 실습 코드 | 2주차 `usv_basics` 저장소 — <https://github.com/wkyouncnu/usv_basics> |
 
 > [!caution] 이번 주차에는 빌드 시간이 길다
 > `colcon build` 를 걸어 놓고 그동안 1부 이론(좌표계)을 듣는 순서로 진행한다.
@@ -506,6 +508,26 @@ git branch --show-current
 
 - 정상 출력: `humble`
 
+- 버전도 함께 확인해 둔다
+
+```bash
+git describe --tags
+```
+
+- 기준 환경 실측 — VRX **2.4.0-2** (2.4.1 준비 커밋 `dc30ed8d`)
+
+```
+2.4.0-2-gdc30ed8d
+```
+
+> [!note] 기본 브랜치가 `jazzy` 라는 것은 이렇게 확인한다
+> ```bash
+> git branch -r | grep 'origin/HEAD'
+> ```
+> ```
+> origin/HEAD -> origin/jazzy
+> ```
+
 ### 3단계 — 의존성 설치
 
 ```bash
@@ -520,18 +542,53 @@ source /opt/ros/humble/setup.bash
 colcon build --merge-install
 ```
 
-> [!warning] 30~60분이 소요된다
-> - 노트북을 절전 모드로 두지 말 것
-> - 빌드 도중 프로세스가 죽으면 **메모리 부족**임. 아래로 다시 시도
+> [!warning] 빌드 도중 프로세스가 죽으면 **메모리 부족**이다
+> 아래처럼 동시 작업 수를 줄여 다시 시도한다. 노트북을 절전 모드로 두지 말 것.
 
 ```bash
 colcon build --merge-install --parallel-workers 2
 ```
 
-- 정상 완료 출력
+- 정상 완료 출력 (기준 환경 실측, `--parallel-workers 2`)
 
 ```
-Summary: 12 packages finished [43min 21s]
+Starting >>> vrx_gazebo
+Starting >>> vrx_ros
+Finished <<< vrx_gazebo [1.58s]
+Starting >>> wamv_description
+Finished <<< wamv_description [1.45s]
+Starting >>> wamv_gazebo
+Finished <<< wamv_gazebo [1.30s]
+Finished <<< vrx_ros [16.5s]
+Starting >>> vrx_gz
+Finished <<< vrx_gz [23.0s]
+
+Summary: 5 packages finished [39.7s]
+```
+
+| 항목 | 기준 환경 실측 |
+|---|---|
+| 패키지 수 | **5개** (`vrx_gazebo` · `vrx_ros` · `wamv_description` · `wamv_gazebo` · `vrx_gz`) |
+| 빌드 시간 | **39.7초** |
+| 만들어진 플러그인 | `install/lib/` 아래 **`.so` 21개** |
+| 워크스페이스 용량 | **904 MB** |
+
+> [!note] 빌드 시간은 노트북마다 크게 다르다
+> 위는 최근 사양의 데스크톱 실측이다. 오래된 노트북에서는 **10분 이상** 걸릴 수 있다.
+> 중요한 것은 시간이 아니라 마지막 줄이 **`5 packages finished`** 인지다.
+
+- 플러그인이 실제로 만들어졌는지 확인한다
+
+```bash
+ls ~/vrx_ws/install/lib/*.so | head -5
+```
+
+```
+/home/cnu/vrx_ws/install/lib/libAcousticPerceptionScoringPlugin.so
+/home/cnu/vrx_ws/install/lib/libAcousticPingerPlugin.so
+/home/cnu/vrx_ws/install/lib/libAcousticTrackingScoringPlugin.so
+/home/cnu/vrx_ws/install/lib/libBallShooterPlugin.so
+/home/cnu/vrx_ws/install/lib/libGymkhanaScoringPlugin.so
 ```
 
 ### 5단계 — 환경 자동 적용
@@ -727,7 +784,232 @@ ros2 topic pub --rate 10 /wamv/thrusters/right/thrust std_msgs/msg/Float64 "{dat
 
 ---
 
-## 2-6. TF2 확인
+## 2-6. 키보드로 배를 몬다 — `wamv_teleop_key`
+
+> [!important] 앞 절의 방식은 실습용으로 불편하다
+> `ros2 topic pub` 를 터미널 두 개에 띄워 놓고 값을 바꿔 치면
+> **한 손으로 두 창을 오가야** 한다. 노드 하나로 묶는다.
+
+### 차동 추진 — 두 숫자로 배를 움직인다
+
+![차동 추진 — 좌·우 추력 조합](../assets/w03-diff-thrust.svg)
+
+| 키 | 왼쪽 추력 | 오른쪽 추력 | 배의 움직임 |
+|---|---|---|---|
+| `w` | $+200$ | $+200$ | 전진 |
+| `s` | $-200$ | $-200$ | 후진 |
+| `a` | $-200$ | $+200$ | **좌선회** (제자리에서 왼쪽으로) |
+| `d` | $+200$ | $-200$ | **우선회** |
+| 스페이스 | $0$ | $0$ | 정지 |
+
+- 자동차와 다르다. **조향타가 없다.** 좌·우 추력의 **차이**가 곧 선회다
+- 10주차에서 이 두 숫자를 **추력 배분(thrust allocation)** 으로 자동 계산하게 된다
+
+### 1단계 — 코드 받기
+
+- 2주차에 받은 저장소에 노드가 추가되어 있다. **최신으로 갱신**한다
+
+```bash
+cd ~/capstone_ws/src/usv_basics
+git pull
+```
+
+- 정상 출력 (기준 환경 실측)
+
+```
+Fast-forward
+ README.md                     |  69 ++++++++++++++++++---
+ setup.py                      |   1 +
+ usv_basics/wamv_teleop_key.py | 138 ++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 200 insertions(+), 8 deletions(-)
+ create mode 100644 usv_basics/wamv_teleop_key.py
+```
+
+> [!note] 2주차 실습을 안 했으면 새로 받는다
+> ```bash
+> mkdir -p ~/capstone_ws/src && cd ~/capstone_ws/src
+> git clone https://github.com/wkyouncnu/usv_basics.git
+> ```
+
+### 2단계 — 빌드
+
+```bash
+cd ~/capstone_ws
+colcon build --symlink-install
+source install/setup.bash
+ros2 pkg executables usv_basics
+```
+
+- 정상 출력 — **`wamv_teleop_key` 가 목록에 있어야 한다**
+
+```
+usv_basics qos_test_pub
+usv_basics qos_test_sub
+usv_basics simple_listener
+usv_basics simple_talker
+usv_basics wamv_teleop_key
+```
+
+### 3단계 — 코드 읽기
+
+![VS Code 로 연 `wamv_teleop_key.py`](../assets/w03-vscode-teleop.png)
+
+- 핵심은 **딕셔너리 하나**다. 키 → (왼쪽 비율, 오른쪽 비율)
+
+```python
+KEYMAP = {
+    'w': (1.0, 1.0),
+    's': (-1.0, -1.0),
+    'a': (-1.0, 1.0),
+    'd': (1.0, -1.0),
+    ' ': (0.0, 0.0),
+}
+```
+
+- 그 비율에 추력을 곱해 **10 Hz 로 계속** 내보낸다
+
+```python
+def on_timer(self):
+    left = Float64()
+    right = Float64()
+    left.data = self.ratio[0] * self.thrust
+    right.data = self.ratio[1] * self.thrust
+    self.pub_left.publish(left)
+    self.pub_right.publish(right)
+```
+
+| 왜 이렇게 했는가 | 이유 |
+|---|---|
+| 키를 눌러도 **계속 발행**한다 | 추진기 플러그인은 마지막 값을 유지한다. 한 번만 보내면 계속 간다 |
+| 종료(`q`) 할 때 **0 을 보낸다** | 안 보내면 창을 닫아도 배가 계속 나아간다 |
+| 토픽 이름을 **파라미터**로 뺐다 | 4주차에서 배 이름이 바뀌어도 코드를 안 고친다 |
+
+- 엔터 없이 키 한 글자를 받기 위해 터미널을 **cbreak 모드**로 바꾼다
+
+```python
+tty.setcbreak(sys.stdin.fileno())
+```
+
+> [!warning] 그래서 **이 터미널에 포커스가 있어야** 키가 먹는다
+> Gazebo 창을 클릭한 상태로 방향키를 눌러도 배는 움직이지 않는다.
+> 2주차 `turtle_teleop_key` 와 같은 이유다.
+
+### 4단계 — 실행
+
+- **VRX 가 떠 있는 상태**에서 새 터미널을 연다
+
+```bash
+ros2 run usv_basics wamv_teleop_key
+```
+
+- 정상 출력 (기준 환경 실측)
+
+```
+[INFO] [wamv_teleop_key]: left  -> /wamv/thrusters/left/thrust
+[INFO] [wamv_teleop_key]: right -> /wamv/thrusters/right/thrust
+[INFO] [wamv_teleop_key]: thrust = 200 N
+
+------------------------------------------------
+  WAM-V 키보드 조종
+------------------------------------------------
+   w : 전진        s : 후진
+   a : 좌선회      d : 우선회
+   스페이스 : 정지
+   + / - : 추력 조절      q : 종료
+------------------------------------------------
+```
+
+- 키를 누를 때마다 좌·우 추력이 찍힌다
+
+```
+[INFO] [wamv_teleop_key]: left   200.0 N   right   200.0 N
+[INFO] [wamv_teleop_key]: left  -200.0 N   right   200.0 N
+[INFO] [wamv_teleop_key]: left     0.0 N   right     0.0 N
+[INFO] [wamv_teleop_key]: 정지 명령을 보내고 종료함
+```
+
+### 화면으로 확인 — 실제로 이렇게 움직인다
+
+- 카메라를 배에 붙여 두면 따라다닌다 (아래 §카메라 고정 참조)
+
+**출발 상태**
+
+![VRX 기동 직후 — 계류 중인 WAM-V](../assets/w03-vrx-start.png)
+
+**`w` 전진 10초 뒤**
+
+![전진 — 넓은 수면으로 나왔다](../assets/w03-teleop-forward.png)
+
+**`a` 좌선회 8초 뒤**
+
+![좌선회 — 선수 방향이 바뀌었다](../assets/w03-teleop-turn.png)
+
+| 확인 항목 | 화면에서 |
+|---|---|
+| 배가 앞으로 나아간다 | 계류장이 멀어진다 |
+| 선수 방향이 돌아간다 | 배가 카메라에 대해 비스듬해진다 |
+| 왼쪽 아래 실시간 계수 | `35~50 %` — 실제 시간보다 느리게 도는 것이 정상 |
+
+> [!note] 실시간 계수(RTF)가 100 % 가 아니어도 정상이다
+> 파랑·부력 계산이 무겁다. 6주차 Simulink 연동에서 이 값을 **직접 재서** 페이싱을 맞춘다.
+
+### 카메라를 배에 고정하기
+
+- 손으로 마우스를 끌면 매번 화면이 달라진다. **명령으로 고정**하면 재현된다
+
+```bash
+gz service -s /gui/follow --reqtype gz.msgs.StringMsg --reptype gz.msgs.Boolean \
+  --timeout 4000 --req 'data: "wamv"'
+```
+
+```bash
+gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Boolean \
+  --timeout 4000 --req 'x: -14, y: 0, z: 7'
+```
+
+- 정상 출력
+
+```
+data: true
+```
+
+| 인자 | 뜻 |
+|---|---|
+| `x: -14` | 배 뒤쪽 14 m |
+| `y: 0` | 좌우 치우침 없음 |
+| `z: 7` | 위로 7 m |
+
+### 추력 크기 바꾸기
+
+- 실행 중에는 `+` / `-` 로 50 N 씩 조절한다
+- 처음부터 다른 값으로 띄우려면
+
+```bash
+ros2 run usv_basics wamv_teleop_key --ros-args -p thrust:=400.0
+```
+
+- 다른 배(4주차에서 이름을 바꾼 경우)에 붙이려면
+
+```bash
+ros2 run usv_basics wamv_teleop_key --ros-args \
+  -p left_topic:=/my_wamv/thrusters/left/thrust \
+  -p right_topic:=/my_wamv/thrusters/right/thrust
+```
+
+### 관찰 과제 (필수) — 앞 절의 세 가지를 이 노드로 다시 본다
+
+| 관찰 | 어떻게 |
+|---|---|
+| 1 | `w` 로 가다가 **스페이스**. 몇 초, 몇 미터를 더 나아가는가 |
+| 2 | `a` 를 누른 **순간**과 배가 돌기 시작하는 순간의 시간차 |
+| 3 | `w` 만 눌렀는데 옆으로 흐르는가 (`ros2 topic echo /wamv/sensors/gps/gps/fix` 로 위치 확인) |
+
+> [!important] 과제 3 에서 쓸 숫자가 여기서 나온다
+> 눈으로만 보지 말고 **`ros2 topic echo` 로 값을 받아 적을 것.**
+
+---
+
+## 2-7. TF2 확인
 
 - VRX가 실행 중인 상태에서
 
@@ -772,11 +1054,12 @@ rviz2
 |---|---|---|
 | 1 | Gazebo Garden 설치 | `gz sim shapes.sdf` |
 | 2 | VRX 내려받기 + **브랜치 변경** | `git branch --show-current` → `humble` |
-| 3 | VRX 빌드 | `colcon build --merge-install` 완료 |
+| 3 | VRX 빌드 | `Summary: 5 packages finished` |
 | 4 | WAM-V 스폰 | 시드니 레가타에 배가 떠 있음 |
 | 5 | 토픽 조사 | GPS / IMU / LiDAR 확인 |
-| 6 | 배 조종 | 직진 · 선회 성공 |
-| 7 | TF 트리 확인 | `frames_*.pdf` 생성 |
+| 6 | 명령어로 배 조종 | 직진 · 선회 성공 |
+| 7 | **키보드로 배 조종** | `wamv_teleop_key` 로 `w a s d` 동작 |
+| 8 | TF 트리 확인 | `frames_*.pdf` 생성 |
 
 ---
 
@@ -806,6 +1089,11 @@ rviz2
 - [ ] LiDAR 토픽의 QoS `Reliability` 를 확인하고 적어 두었다
 - [ ] `ros2 topic pub` 으로 배를 **직진**시켰다
 - [ ] `ros2 topic pub` 으로 배를 **선회**시켰다
+- [ ] `git pull` 로 `usv_basics` 를 갱신하고 빌드했다
+- [ ] `ros2 pkg executables usv_basics` 에 **`wamv_teleop_key`** 가 보인다
+- [ ] **키보드 `w a s d`** 로 배를 몰았다
+- [ ] `gz service` 로 카메라를 배에 고정해 봤다
+- [ ] `q` 로 종료하면 배가 **선다**는 것을 확인했다
 - [ ] `view_frames` 로 TF 트리 PDF 를 생성했다
 - [ ] RViz2 에서 TF 를 표시했다
 
@@ -900,9 +1188,27 @@ rviz2
 | `view_frames` 가 빈 PDF 생성 | TF 발행 노드 미실행 | VRX 실행 확인, 몇 초 더 대기 |
 | 모델 다운로드가 멈춤 | 네트워크 | 재시도. 캐시는 `~/.gz/fuel/` |
 
+### 키보드 조종 (`wamv_teleop_key`)
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| `No executable found` | `git pull` 후 **다시 빌드하지 않음** | `cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash` |
+| 키를 눌러도 아무 반응 없음 | **터미널에 포커스가 없음** | teleop 을 띄운 터미널 창을 클릭한 뒤 누른다 |
+| 로그는 찍히는데 배가 안 움직임 | 토픽 이름 불일치 | `ros2 topic list \| grep thrust` 로 확인 후 `-p left_topic:=...` 로 지정 |
+| 로그는 찍히는데 배가 안 움직임 (2) | VRX 가 **일시정지** 상태 | Gazebo 왼쪽 아래 재생(▶) 버튼 |
+| 창을 닫았는데 배가 계속 감 | `q` 가 아니라 창을 강제로 닫음 | `q` 로 종료한다. 이미 갔으면 `ros2 topic pub --once` 로 0 을 보낸다 |
+| 배가 너무 느리다 / 빠르다 | 추력 기본값 | 실행 중 `+` / `-`, 또는 `-p thrust:=400.0` |
+| `termios.error: (25, 'Inappropriate ioctl for device')` | 터미널이 아닌 곳에서 실행 (파이프·스크립트) | **터미널에서 직접** 실행한다 |
+
 ---
 
 ## 참고 자료
+
+### 이번 주차 실습 코드
+
+- **`usv_basics` 패키지** — <https://github.com/wkyouncnu/usv_basics>
+  - `wamv_teleop_key` — 이번 주차 §2-6 의 키보드 조종 노드
+  - 갱신은 `cd ~/capstone_ws/src/usv_basics && git pull` 후 재빌드
 
 ### 공식 문서
 

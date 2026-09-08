@@ -203,7 +203,7 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 |---|---|---|---|
 | W01 | 3 | 4 | 충족 |
 | W02 | **26** | **50** | 충족 — turtlesim 4종 통신·개념도 4장·실화면 19장. `verify_w02.sh` PASS 35 / FAIL 0 (2026-09-08) |
-| W03 | 4 | 2 | 충족 |
+| W03 | **10** | **15** | 충족 — VRX 실측 빌드값·키보드 조종 절 신설·차동추진 개념도. `verify_w03.sh` PASS 18 / FAIL 0 (2026-09-08) |
 | W04 | 5 | 7 | 충족 |
 | W05 | 4 | 2 | 충족 — VS Code 실제 화면 추가 |
 | W06_0 | 15 | 2 | 충족 |
