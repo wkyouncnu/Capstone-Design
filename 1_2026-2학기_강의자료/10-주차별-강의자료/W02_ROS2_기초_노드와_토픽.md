@@ -1345,6 +1345,52 @@ rviz2
 
 ## 2-6. 내 패키지 만들기
 
+> [!important] 두 가지 길이 있다. **수업에서는 ①로 진행한다**
+> | 길 | 무엇을 하는가 | 언제 |
+> |---|---|---|
+> | ① **직접 만든다** | `ros2 pkg create` 부터 손으로 | **수업 시간.** 구조를 알아야 4주차부터 스스로 만든다 |
+> | ② **저장소에서 받는다** | `git clone` 한 줄 | 복습할 때 · 실습이 밀렸을 때 · 코드가 꼬였을 때 |
+>
+> ②는 아래 "저장소에서 받기" 를 보면 된다. **①을 건너뛰지 말 것.**
+
+### 저장소에서 받기 (복습·복구용)
+
+- 강의에서 만드는 패키지와 **똑같은 것**을 아래 저장소에 올려 두었다
+
+```bash
+mkdir -p ~/capstone_ws/src
+cd ~/capstone_ws/src
+git clone https://github.com/wkyouncnu/usv_basics.git
+```
+
+- `git` 이 없으면 먼저 설치한다
+
+```bash
+sudo apt update && sudo apt install -y git
+```
+
+- 받은 뒤 빌드까지
+
+```bash
+cd ~/capstone_ws
+colcon build --symlink-install
+source install/setup.bash
+ros2 pkg executables usv_basics
+```
+
+- 정상 출력
+
+```
+usv_basics qos_test_pub
+usv_basics qos_test_sub
+usv_basics simple_listener
+usv_basics simple_talker
+```
+
+> [!warning] `qos_test_sub.py` 는 **일부러 어긋난 상태**로 배포한다
+> 저장소의 구독자는 `RELIABLE` 로 되어 있어 §2-8 에서 데이터를 받지 못한다.
+> 그것을 진단하고 고치는 것이 이번 주차 과제의 일부다. 받자마자 고쳐 두지 말 것.
+
 ### 워크스페이스 생성
 
 ```bash
@@ -1553,6 +1599,55 @@ if __name__ == '__main__':
     main()
 ```
 
+### 발행자와 구독자, 무엇이 다른가 — 나란히 놓고 본다
+
+- VS Code 에서 **편집기를 좌우로 나누면** 두 파일을 나란히 볼 수 있다
+  - 왼쪽 파일을 연 상태에서 오른쪽 위 **편집기 분할** 아이콘(네모 두 개)을 누른다
+  - 오른쪽 칸에서 `Ctrl + P` → `simple_listener.py` → `Enter`
+
+![발행자(왼쪽)와 구독자(오른쪽) 코드 비교](../assets/w02-code-pub-sub.png)
+
+- **1~3행은 완전히 같다.** 두 노드 모두 `rclpy` · `Node` · `String` 을 쓴다
+
+| 줄 | 발행자 `simple_talker.py` | 구독자 `simple_listener.py` | 무엇이 다른가 |
+|---|---|---|---|
+| 6 | `class SimpleTalker(Node)` | `class SimpleListener(Node)` | 클래스 이름만 다르다. **둘 다 `Node` 를 상속**한다 |
+| 8 | `super().__init__('simple_talker')` | `super().__init__('simple_listener')` | **노드 이름.** `ros2 node list` 에 이 이름이 뜬다 |
+| 9~10 | `self.create_publisher(String, 'usv_chatter', 10)` | `self.create_subscription(String, 'usv_chatter', self.on_msg, 10)` | **핵심 차이.** 구독자는 인자가 하나 더 있다 |
+| 11 | `self.create_timer(0.5, self.on_timer)` | (없음) | 발행자만 **스스로 주기적으로** 움직인다 |
+| 12 | `self.count = 0` | (없음) | 발행자만 셀 것이 있다 |
+| 14~19 | `def on_timer(self)` — 0.5초마다 호출 | `def on_msg(self, msg)` — **메시지가 올 때마다** 호출 | **누가 부르는가가 다르다** |
+
+> [!important] 이 표의 마지막 줄이 이번 절의 핵심이다
+> - **발행자의 `on_timer`** 는 **시계**가 부른다. 아무도 안 들어도 계속 돈다
+> - **구독자의 `on_msg`** 는 **메시지**가 부른다. 안 오면 한 번도 안 돈다
+> - 그래서 §2-8 의 QoS 불일치에서 **구독자 화면만 조용**해진다
+
+- `create_publisher` 와 `create_subscription` 의 인자 순서
+
+| 순서 | 발행자 | 구독자 |
+|---|---|---|
+| 1 | 메시지 타입 `String` | 메시지 타입 `String` |
+| 2 | 토픽 이름 `'usv_chatter'` | 토픽 이름 `'usv_chatter'` |
+| 3 | 큐 크기 `10` | **콜백 함수** `self.on_msg` |
+| 4 | — | 큐 크기 `10` |
+
+> [!warning] 콜백을 `self.on_msg()` 로 쓰면 안 된다
+> 괄호를 붙이면 **지금 한 번 실행**해서 그 결과를 넘긴다.
+> 괄호 없이 `self.on_msg` 로 써야 **함수 자체**를 넘긴다. 초보자가 가장 많이 틀리는 한 글자다.
+
+- 두 파일에 공통으로 들어가는 `main()` 의 뼈대
+
+| 줄 | 하는 일 |
+|---|---|
+| `rclpy.init(args=args)` | ROS 2 통신 시작 |
+| `node = SimpleTalker()` | 노드 객체를 만든다 (`__init__` 이 여기서 돈다) |
+| `rclpy.spin(node)` | **여기서 멈춰 서서** 타이머·콜백을 처리한다 |
+| `except KeyboardInterrupt` | `Ctrl + C` 를 눌렀을 때 조용히 빠져나온다 |
+| `node.destroy_node()` / `rclpy.shutdown()` | 뒷정리 |
+
+- `rclpy.spin()` 이 없으면 프로그램이 **즉시 끝난다.** 콜백이 한 번도 안 불린다
+
 ### 실행파일 등록
 
 - VS Code 탐색기에서 `src/usv_basics/setup.py` 를 **클릭해서 연다**
@@ -1567,6 +1662,54 @@ entry_points={
     ],
 },
 ```
+
+- 네 개를 모두 등록한 뒤의 실제 화면이다 (오른쪽은 `package.xml`)
+
+![setup.py 의 entry_points 와 package.xml](../assets/w02-code-setup.png)
+
+### 두 설정 파일이 하는 일
+
+| 파일 | 누가 읽는가 | 무엇을 정하는가 |
+|---|---|---|
+| **`package.xml`** | **ROS 2 / colcon** | 패키지 이름 · 의존성 · 라이선스 · 빌드 타입 |
+| **`setup.py`** | **파이썬(setuptools)** | 어떤 `.py` 가 **실행파일**이 되는가, 어디에 설치되는가 |
+
+- `package.xml` 을 읽는 법 (위 화면 오른쪽)
+
+| 줄 | 태그 | 뜻 |
+|---|---|---|
+| 3 | `<package format="3">` | ROS 2 의 패키지 명세 **3판**. ROS 1은 2판 |
+| 4 | `<name>usv_basics</name>` | **`ros2 run` 의 첫 인자.** 폴더 이름과 같아야 한다 |
+| 8 | `<license>Apache-2.0</license>` | 비우면 빌드 경고 |
+| 10~13 | `<test_depend>` | 자동 생성된 검사 도구. 지우지 않는다 |
+| 15~17 | `<build_type>ament_python</build_type>` | **파이썬 패키지**라는 선언. C++ 이면 `ament_cmake` |
+
+- `setup.py` 를 읽는 법 (위 화면 왼쪽)
+
+| 줄 | 항목 | 뜻 |
+|---|---|---|
+| 3 | `package_name = 'usv_basics'` | 아래에서 계속 쓰이는 이름 |
+| 8 | `packages=find_packages(exclude=['test'])` | 어떤 폴더를 파이썬 모듈로 볼지 |
+| 10~12 | `data_files=[...]` | `resource/` 표식과 `package.xml` 을 설치 경로로 복사 |
+| 19 | `license='Apache-2.0'` | `package.xml` 과 **같게** 맞춘다 |
+| 25~31 | **`entry_points`** | **여기가 핵심.** 실행파일 목록 |
+
+- `entry_points` 한 줄의 구조
+
+```
+'simple_talker = usv_basics.simple_talker:main'
+ └─ 실행 이름     └─ 패키지  └─ 파일    └─ 함수
+```
+
+| 조각 | 대응하는 것 | 틀리면 |
+|---|---|---|
+| `simple_talker` (등호 왼쪽) | `ros2 run usv_basics **simple_talker**` | `No executable found` |
+| `usv_basics.simple_talker` | `usv_basics/simple_talker.py` (`.py` 없이) | `ModuleNotFoundError` |
+| `:main` | 그 파일의 `def main()` | `AttributeError` |
+
+> [!caution] 쉼표와 따옴표를 빠뜨리면 빌드가 통째로 실패한다
+> `console_scripts` 목록은 파이썬 리스트다. **각 줄 끝에 쉼표**가 있어야 한다.
+> 저장 후 VS Code 왼쪽 아래의 `✕ 0` 을 확인하고 빌드할 것.
 
 ### 빌드 및 실행
 
@@ -2015,6 +2158,13 @@ ROS_DOMAIN_ID=42 ros2 topic list      # /parameter_events 와 /rosout 만 보인
 ---
 
 ## 참고 자료
+
+### 이번 주차 실습 코드
+
+- **`usv_basics` 패키지** — <https://github.com/wkyouncnu/usv_basics>
+  - 이번 주차에 만드는 노드 4개가 그대로 들어 있다
+  - 받는 법은 §2-6 "저장소에서 받기"
+  - 라이선스 Apache-2.0. 자유롭게 고쳐 써도 된다
 
 ### 공식 문서 (북마크 권장)
 
