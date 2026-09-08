@@ -46,6 +46,8 @@ summary: WAM-V URDF·Xacro 구조, 센서 배치 수정, Mapviz 위성지도, �
 4. 센서 배치가 인지 성능에 미치는 영향(FOV · 폐색 · 사각지대)을 설명
 5. **토픽 전수조사표**를 만들어 팀 공용 문서로 남기기
 6. **Mapviz**로 위성지도 위에 항적 표시
+7. **VRX 과제 월드**를 띄우고 `/vrx/task/info` 로 채점 정보를 읽기
+8. **`ros2 bag`** 으로 실험을 기록하고 재생하기
 
 ## 준비물
 
@@ -896,6 +898,248 @@ http://localhost:8080/wmts/gm_layer/gm_grid/{level}/{x}/{y}.png
 
 # 마무리
 
+## 2-6. VRX 과제 월드 — 15주 뒤 무엇을 하게 되는가
+
+> [!important] VRX 에는 **채점까지 되는 과제 월드 12종**이 들어 있다
+> 지금까지 쓴 `sydney_regatta` 는 아무 과제도 없는 **연습용 수면**이다.
+> 아래 월드들은 각각 목표·제한시간·점수 계산이 붙어 있다. **본 과목의 주차 구성이 여기에서 나왔다.**
+
+### 들어 있는 월드
+
+```bash
+ls ~/vrx_ws/src/vrx/vrx_gz/worlds/
+```
+
+- 정상 출력 (기준 환경 실측)
+
+```
+2023_practice                 navigation_task.sdf         stationkeeping_task.sdf
+acoustic_perception_task.sdf  nbpark.sdf                  sydney_regatta.sdf
+acoustic_tracking_task.sdf    perception_task.sdf         wayfinding_task.sdf
+follow_path_task.sdf          scan_dock_deliver_task.sdf  wildlife_task.sdf
+gymkhana_task.sdf
+```
+
+| 월드 | 과제 | 본 과목에서 |
+|---|---|---|
+| `stationkeeping_task` | 한 지점에 **버티기** | **10주차** 동적위치유지(DP) |
+| `wayfinding_task` | 여러 **웨이포인트** 순서대로 통과 | **7주차** LOS 유도 |
+| `follow_path_task` | 정해진 **경로 따라가기** | 7~8주차 |
+| `navigation_task` | 부표 사이 **좁은 수로 통과** | **Term Project 1구간** |
+| `perception_task` | 물체 **인식하고 보고** | 11~13주차 |
+| `scan_dock_deliver_task` | 표식 읽고 **도킹** | **Term Project 마지막 구간** |
+| `gymkhana_task` | 위 셋을 **한 번에** | 종합 |
+| `wildlife_task` | 동물 주위를 규칙대로 회항 | (본 과목 미사용) |
+| `acoustic_*` | 음향 신호원 추적 | (본 과목 미사용) |
+
+### 띄워 본다
+
+```bash
+ros2 launch vrx_gz competition.launch.py world:=stationkeeping_task
+```
+
+![정지 유지 과제 월드 — WAM-V 와 표식 부표](../assets/w04-task-stationkeeping.png)
+
+| 확인 항목 | 화면에서 |
+|---|---|
+| WAM-V 가 떠 있다 | 가운데 쌍동선 |
+| 색색의 표식 부표 | 오른쪽 위 |
+| 물가의 원통 부표 | 왼쪽 |
+
+### 채점 인터페이스 — `/vrx/task/info`
+
+> [!important] 이 토픽이 **Term Project 평가의 근거**다
+> 사람이 눈으로 보고 매기는 것이 아니라, 시뮬레이터가 **숫자로** 준다.
+
+```bash
+ros2 topic list | grep '^/vrx'
+```
+
+- 정상 출력 (`stationkeeping_task` 기준, 실측)
+
+```
+/vrx/contacts
+/vrx/debug/wind/direction
+/vrx/debug/wind/speed
+/vrx/stationkeeping/goal
+/vrx/stationkeeping/mean_pose_error
+/vrx/stationkeeping/pose_error
+/vrx/task/info
+```
+
+```bash
+ros2 topic echo --once /vrx/task/info
+```
+
+- 실측 출력에서 **이름과 값만** 추린 것이다
+
+```
+- name: name              string_value: stationkeeping
+- name: state             string_value: running
+- name: ready_time        double_value: 10.0
+- name: running_time      double_value: 20.0
+- name: remaining_time    double_value: 125.0
+- name: elapsed_time      double_value: 175.0
+- name: score             double_value: 0.0
+- name: num_collisions    integer_value: 53
+- name: timed_out         double_value: 0.0
+```
+
+| 항목 | 뜻 |
+|---|---|
+| `name` | 지금 돌고 있는 과제 이름 |
+| `state` | **`initial` → `ready` → `running` → `finished`** 로 바뀐다 |
+| `ready_time` · `running_time` | 준비·시작 시각 (시뮬레이션 시각) |
+| `remaining_time` | 남은 제한시간 |
+| `score` | **점수.** 과제마다 계산 방식이 다르다 |
+| `num_collisions` | **충돌 횟수.** 부표를 치면 올라간다 |
+| `timed_out` | 시간 초과 여부 |
+
+> [!warning] `num_collisions` 가 이미 올라가 있을 수 있다
+> 위 실측에서 **53** 이 찍혀 있다. 배가 가만히 있어도 파랑에 밀려 접촉하면 센다.
+> Term Project 에서 이 값이 평가에 들어가므로, **출발 전 값을 먼저 확인**할 것.
+
+### 바람 — 외란이 이미 켜져 있다
+
+```bash
+ros2 topic echo --once /vrx/debug/wind/speed
+ros2 topic echo --once /vrx/debug/wind/direction
+```
+
+- 정상 출력 (실측)
+
+```
+data: 0.0
+---
+data: 240.0
+---
+```
+
+- `speed` 는 순간값이라 0 이 나올 수 있다. `direction` 은 도(°) 단위
+- 10주차 DP 실습에서 이 두 값을 **바꿔 가며** 제어기를 시험한다
+
+> [!note] `competition_mode:=True` 로 띄우면 이 디버그 토픽이 사라진다
+> 대회 상황을 흉내 내는 옵션이다. 수업에서는 **기본값(False)** 그대로 쓴다.
+
+### 과제 토픽이 조용할 때
+
+- `goal` · `pose_error` 는 **과제가 `running` 이 된 뒤**에만 나온다
+- 게다가 **Durability 가 `VOLATILE`** 이라, 늦게 붙은 구독자는 지나간 값을 못 받는다
+
+```bash
+ros2 topic info /vrx/stationkeeping/goal --verbose
+```
+
+```
+QoS profile:
+  Reliability: RELIABLE
+  Durability: VOLATILE
+```
+
+> [!important] 2주차 QoS 가 여기서 다시 나온다
+> **먼저 구독해 두고 과제가 시작되기를 기다려야** 한다.
+> `transient_local` 로 받으려 하면 오히려 아래 경고가 뜨고 **한 건도 못 받는다** (실측).
+>
+> ```
+> [WARN] New publisher discovered on topic '/vrx/stationkeeping/goal',
+> offering incompatible QoS. No messages will be received from it.
+> Last incompatible policy: DURABILITY
+> ```
+
+---
+
+## 2-7. `ros2 bag` — 실험을 기록하고 다시 돌린다
+
+> [!important] 이 수업에서 "잘 됐다" 는 인정되지 않는다
+> 기록이 있어야 검증이다. `ros2 bag` 은 **토픽을 그대로 파일에 담았다가 재생**한다.
+> 시뮬레이터 없이도 같은 데이터로 알고리즘을 반복 시험할 수 있다.
+
+### 기록
+
+- VRX 가 도는 상태에서 **새 터미널**을 연다
+
+```bash
+ros2 bag record -o ~/w04_bag \
+  /wamv/sensors/gps/gps/fix \
+  /wamv/sensors/imu/imu/data \
+  /wamv/thrusters/left/thrust \
+  /wamv/thrusters/right/thrust
+```
+
+- 정상 출력
+
+```
+[INFO] [rosbag2_recorder]: Recording...
+[INFO] [rosbag2_recorder]: Subscribed to topic '/wamv/sensors/gps/gps/fix'
+[INFO] [rosbag2_recorder]: Subscribed to topic '/wamv/sensors/imu/imu/data'
+```
+
+- 멈추려면 `Ctrl + C`
+
+```
+[INFO] [rosbag2_cpp]: Writing remaining messages from cache to the bag. It may take a while
+[INFO] [rosbag2_recorder]: Recording stopped
+```
+
+> [!note] 발행자가 없는 토픽은 `Subscribed` 줄이 안 나온다
+> 위 실측에서 추진기 토픽 두 개는 구독되지 않았다. **아무도 명령을 보내지 않고 있었기 때문**이다.
+> 3주차 `wamv_teleop_key` 를 함께 띄우면 네 개 모두 기록된다.
+
+### 무엇이 담겼는지 확인
+
+```bash
+ros2 bag info ~/w04_bag
+```
+
+- 정상 출력 (기준 환경 실측, 19초 기록)
+
+```
+Files:             w04_bag_0.db3
+Bag size:          1.3 MiB
+Storage id:        sqlite3
+Duration:          19.144692000s
+Messages:          3532
+Topic information: Topic: /wamv/sensors/imu/imu/data | Type: sensor_msgs/msg/Imu | Count: 2938
+                   Topic: /wamv/sensors/gps/gps/fix | Type: sensor_msgs/msg/NavSatFix | Count: 594
+```
+
+| 읽는 법 | 뜻 |
+|---|---|
+| `Storage id: sqlite3` | ROS 1 의 `.bag` 과 달리 **SQLite 데이터베이스**다 |
+| `Messages: 3532` | 19초 동안 3532건 |
+| IMU 2938 / GPS 594 | 약 **5 : 1**. IMU 가 그만큼 빠르다 |
+| `Bag size: 1.3 MiB` | LiDAR·카메라를 넣으면 **수백 MB** 로 뛴다. 주의 |
+
+### 재생
+
+- **시뮬레이터를 꺼도 된다.** 기록된 토픽이 그대로 다시 흐른다
+
+```bash
+ros2 bag play ~/w04_bag
+```
+
+- 다른 터미널에서 확인
+
+```bash
+ros2 topic echo /wamv/sensors/gps/gps/fix
+```
+
+| 옵션 | 하는 일 |
+|---|---|
+| `--loop` | 끝나면 처음부터 반복 |
+| `-r 2.0` | 2배속 재생 |
+| `--topics /a /b` | 일부 토픽만 재생 |
+
+> [!important] 5주차 에이전트 검증의 2겹이 이것이다
+> 노드를 고칠 때마다 시뮬레이터를 다시 띄우면 **조건이 매번 달라진다.**
+> 같은 bag 을 재생하면 **입력이 완전히 같으므로**, 출력의 차이는 오직 코드 변경 때문이다.
+
+> [!caution] 큰 토픽을 무심코 기록하지 않는다
+> `-a` (전체 기록) 로 LiDAR·카메라까지 담으면 **1분에 수 GB** 가 쌓인다.
+> 필요한 토픽만 이름으로 지정한다.
+
+---
+
 ## 이번 주차 요약
 
 | 순서 | 한 일 | 확인 방법 |
@@ -906,6 +1150,8 @@ http://localhost:8080/wmts/gm_layer/gm_grid/{level}/{x}/{y}.png
 | 4 | 센서 위치 변경 | `my_wamv.urdf.xacro` + `urdf:=` 실행 |
 | 5 | LiDAR 높이 변경 결과 관찰 | RViz2 점군 비교 |
 | 6 | Mapviz + mapproxy 설정 | 위성지도에 항적 표시 |
+| 7 | **과제 월드 실행** | `/vrx/task/info` 에 `state: running` |
+| 8 | **`ros2 bag` 기록·재생** | `ros2 bag info` 에 메시지 수 표시 |
 
 ---
 
@@ -933,6 +1179,18 @@ http://localhost:8080/wmts/gm_layer/gm_grid/{level}/{x}/{y}.png
 - [ ] `config_file` 이 아니라 `urdf` 가 모델 지정 인자라는 것을 안다
 - [ ] RViz2 에서 변경 전후 점군을 비교했다
 - [ ] Mapviz + mapproxy 로 위성지도 위 항적을 확인했다
+
+### 과제 월드와 기록
+
+- [ ] `ls ~/vrx_ws/src/vrx/vrx_gz/worlds/` 로 과제 월드 12종을 확인했다
+- [ ] `world:=stationkeeping_task` 로 과제 월드를 띄웠다
+- [ ] `/vrx/task/info` 에서 `name` · `state` · `score` · `num_collisions` 를 읽었다
+- [ ] `state` 가 `initial → ready → running` 으로 바뀌는 것을 보았다
+- [ ] `/vrx/debug/wind/direction` 값을 확인했다
+- [ ] `ros2 bag record` 로 GPS·IMU 를 기록했다
+- [ ] `ros2 bag info` 로 메시지 수와 용량을 확인했다
+- [ ] `ros2 bag play` 로 **시뮬레이터 없이** 같은 데이터를 재생했다
+- [ ] `Publisher count` 가 **1** 인지 확인하는 습관을 들였다
 
 ### 팀 작업
 
@@ -1004,6 +1262,78 @@ http://localhost:8080/wmts/gm_layer/gm_grid/{level}/{x}/{y}.png
 | `docker: Cannot connect to the Docker daemon` | 데몬 미실행 | `sudo service docker start` |
 | Mapviz 지도가 회색 | mapproxy 미실행 / 인터넷 끊김 | `docker ps` 확인, 브라우저로 `localhost:8080` 확인 |
 | RViz2 에서 점군이 안 보임 | Fixed Frame 오류 | `view_frames` 로 실제 프레임 이름 확인 후 설정 |
+
+### 값이 이상할 때 — 먼저 발행자 수를 센다
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| `hz` 가 사양보다 **몇 배로** 나옴 | **이전 실행이 안 죽어서 브리지가 여러 개** | `ros2 topic info <토픽> --verbose` 의 `Publisher count` 확인 |
+| `ros2 node list` 에 `/ros_gz_bridge` 가 여러 개 | 위와 같음 | 아래 정리 명령 |
+| 죽은 노드가 계속 목록에 보임 | ROS 2 데몬 캐시 | `ros2 daemon stop` 후 다시 실행 |
+
+- 실측 예 — 이전 실행이 남아 LiDAR 토픽의 발행자가 **5개**로 늘어 있었다
+
+```
+Type: sensor_msgs/msg/LaserScan
+
+Publisher count: 5
+```
+
+> [!important] `Publisher count` 는 **1이어야 한다**
+> 1이 아니면 그 상태에서 잰 `hz` 는 전부 틀린 값이다. 정리하고 다시 잰다.
+
+```bash
+pkill -9 -f vrx_gz
+```
+
+```bash
+ros2 daemon stop
+```
+
+- 그런 다음 VRX 를 다시 띄운다
+
+> [!caution] `pkill -f` 패턴에 자기 명령줄이 걸리지 않게 한다
+> `pkill -f 'vrx_gz'` 라고 쳐도 **그 명령줄 자체에 `vrx_gz` 가 들어 있어** 자기 셸이 먼저 죽는다.
+> 대괄호를 한 글자 씌우면 정규식이 자기 자신과 일치하지 않는다.
+>
+> ```bash
+> pkill -9 -f '[c]ompetition.launch'
+> ```
+
+### 강제 종료 뒤에 통신이 아예 안 될 때
+
+- `kill -9` 로 끊으면 DDS 가 쓰던 **공유메모리 파일이 남는다**
+- 그 상태로 다시 띄우면 아래 오류가 나면서 토픽이 하나도 안 보인다 (실측)
+
+```
+[RTPS_TRANSPORT_SHM Error] Failed init_port fastrtps_port9161:
+open_and_lock_file failed -> Function open_port_internal
+```
+
+- 남은 파일을 지운다
+
+```bash
+ls /dev/shm | wc -l
+```
+
+- 실측에서 **263개**가 쌓여 있었다
+
+```bash
+rm -f /dev/shm/fastrtps_* /dev/shm/sem.fastrtps_*
+```
+
+> [!note] 정상 종료(`Ctrl + C`) 하면 이 문제가 안 생긴다
+> 급할 때만 `kill -9` 를 쓰고, 쓴 뒤에는 위 한 줄을 함께 실행하는 습관을 들인다.
+
+### 과제 월드 · 기록
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| `/vrx/task/info` 가 안 나옴 | 과제 월드가 아닌 `sydney_regatta` | `world:=stationkeeping_task` 등으로 실행 |
+| `goal` · `pose_error` 가 조용함 | 과제가 아직 `running` 이 아니거나, **VOLATILE 이라 놓쳤다** | 미리 구독해 두고 `state` 가 `running` 이 되기를 기다린다 |
+| `ros2 bag record` 에 `Subscribed` 줄이 없음 | 그 토픽에 **발행자가 없다** | 발행하는 노드를 먼저 띄운다 |
+| bag 파일이 너무 커짐 | `-a` 로 전체 기록 | 필요한 토픽만 이름으로 지정 |
+| `ros2 bag play` 했는데 아무것도 안 옴 | 다른 터미널이 `ROS_DOMAIN_ID` 가 다름 | 두 터미널에서 `echo $ROS_DOMAIN_ID` 비교 |
 
 ---
 

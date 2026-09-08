@@ -16,12 +16,17 @@ ok()   { PASS=$((PASS+1)); RESULTS="$RESULTS\n  [PASS] $1"; echo "  [PASS] $1"; 
 ng()   { FAIL=$((FAIL+1)); RESULTS="$RESULTS\n  [FAIL] $1  -- $2"; echo "  [FAIL] $1  -- $2"; }
 skip() { SKIP=$((SKIP+1)); RESULTS="$RESULTS\n  [SKIP] $1  -- $2"; echo "  [SKIP] $1  -- $2"; }
 
+#  ROS 2 는 명령을 띄운 뒤 발행자를 '발견'하는 데 시간이 걸린다.
+#  한 번 실패했다고 문서가 틀린 것이 아니므로 세 번까지 다시 본다.
 expect() {
   local name=$1 want=$2; shift 2
-  local out
-  out=$("$@" 2>&1)
-  if printf '%s' "$out" | grep -q -- "$want"; then ok "$name"
-  else ng "$name" "기대: '$want' / 실제 앞부분: $(printf '%s' "$out" | head -1)"; fi
+  local out i
+  for i in 1 2 3; do
+    out=$("$@" 2>&1)
+    if printf '%s' "$out" | grep -q -- "$want"; then ok "$name"; return; fi
+    sleep 6
+  done
+  ng "$name" "기대: '$want' / 실제 앞부분: $(printf '%s' "$out" | head -1)"
 }
 
 echo "==================== W03 문서 검증 ===================="
@@ -73,7 +78,7 @@ echo
 # ---------- §2-3 ~ §2-6 VRX 실행 ----------
 echo "[§2-3~2-6] VRX 실행과 조종"
 if [ -n "${DISPLAY:-}" ] && [ -d "$HOME/vrx_ws/install" ]; then
-  pkill -9 -f 'vrx_gz' 2>/dev/null; sleep 3
+  pkill -9 -f '[c]ompetition.launch' 2>/dev/null; pkill -9 -f '[g]z-sim' 2>/dev/null; pkill -9 -f '[p]arameter_bridge' 2>/dev/null; rm -f /dev/shm/fastrtps_* /dev/shm/sem.fastrtps_* 2>/dev/null; sleep 3
   setsid nohup ros2 launch vrx_gz competition.launch.py world:=sydney_regatta \
       > /tmp/v3_vrx.log 2>&1 < /dev/null & disown
   echo "  VRX 기동 대기 90초..."
@@ -93,7 +98,7 @@ if [ -n "${DISPLAY:-}" ] && [ -d "$HOME/vrx_ws/install" ]; then
     expect "추력 명령 수신" "200" bash -c 'timeout 12 ros2 topic echo --once /wamv/thrusters/left/thrust'
     sleep 8
   fi
-  pkill -9 -f 'vrx_gz' 2>/dev/null
+  pkill -9 -f '[c]ompetition.launch' 2>/dev/null; pkill -9 -f '[g]z-sim' 2>/dev/null; pkill -9 -f '[p]arameter_bridge' 2>/dev/null
   sleep 3
 else
   skip "VRX 실행 전체" "DISPLAY 가 없거나 vrx_ws 미빌드"

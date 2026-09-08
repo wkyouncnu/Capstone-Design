@@ -50,7 +50,7 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | 1 | [[W01_개발환경_구축과_USV_자율운항_개관]] | 3장 · PDF 19쪽 | 인지·판단·제어 · KABOAT/VRX 임무 · WSL2 · 리눅스 기본기 |
 | 2 | [[W02_ROS2_기초_노드와_토픽]] | 30장 | VS Code+WSL · 노드·토픽·**서비스·액션·파라미터** · **turtlesim** · rqt와 RViz2 · QoS |
 | 3 | [[W03_Gazebo_VRX_구축과_좌표계]] | 10장 | Gazebo·VRX 설치 · 6자유도 · ENU/NED · TF2 · **키보드 조종(차동 추진)** |
-| 4 | [[W04_VRX_심화_모델구조와_토픽조사]] | 2장 · PDF 16쪽 | WAM-V URDF·Xacro · 센서 배치 수정 · 토픽 전수조사 · Mapviz |
+| 4 | [[W04_VRX_심화_모델구조와_토픽조사]] | 5장 | WAM-V URDF·Xacro · 센서 배치 · 토픽 전수조사 · Mapviz · **과제 월드와 채점** · **ros2 bag** |
 | 5 | [[W05_VSCode와_Claude_에이전트_첫_제어노드]] | 3장 · PDF 21쪽 | VS Code 설치 · Claude Code 연동 · 첫 제어 노드 · **MATLAB MCP** 연동 |
 | 6 전 | [[W06_0_Simulink_기초]] | 12장 · PDF 42쪽 | **Simulink 속성 입문 (3시간 x 2회)** · 1일차 블록·솔버·MATLAB Function·Subsystem·버스·PID·로깅 · 2일차 Mux·Unit Delay·Integrator·Switch·Enabled·Mask · **모델 24개 배포** |
 | 6 | [[W06_Simulink_ROS2_연동과_첫_제어기]] | 7장 · PDF 21쪽 | Simulink↔ROS 2 연동 · 직진·선회·헤딩·속도 제어 · **오프라인 WAM-V** · **모델 5개 배포** |
@@ -125,7 +125,7 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | `tidy_all.m` | 22개 모델 일괄 점검 — 겹침 쌍과 꺾인 선 수를 표로 보고 |
 | `tikz2svg.sh` | TikZ `.tex` → SVG(+PNG). TinyTeX 을 계정 무관하게 찾는다 |
 | `winshot.ps1` | Windows 창 캡처 + 클릭·키 입력. `-Match` 로 창 지정 |
-| `verify_w02.sh` · `verify_w03.sh` | **문서대로 처음부터 실행해 검증.** FAIL 0 이 합격선 |
+| `verify_w02.sh` · `verify_w03.sh` · `verify_w04.sh` | **문서대로 처음부터 실행해 검증.** FAIL 0 이 합격선 |
 | `xshot.sh` · `xclick.sh` | **WSLg 창** 캡처·클릭. Windows 쪽에서 찍으면 안 되는 창용 |
 
 ## 🖼 그림 — `assets/`
@@ -152,6 +152,7 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | `w03-diff-thrust.svg` | **차동 추진** — 키 4개와 좌·우 추력 조합 |
 | `w03-vrx-start.png` · `w03-teleop-*.png` | VRX 기동 · 전진 · 좌선회 실화면 |
 | `w03-vscode-teleop.png` | VS Code 로 연 `wamv_teleop_key.py` |
+| `w04-task-stationkeeping.png` | VRX 정지유지 과제 월드 |
 | `w04-sensor-layout.svg` | WAM-V 센서 배치와 사각지대 |
 | `w04-topic-map.svg` | 토픽 흐름 한 바퀴 |
 | `w05-agent-loop.svg` | AI 에이전트 동작 루프와 사람의 몫 |

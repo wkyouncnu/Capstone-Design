@@ -1009,6 +1009,47 @@ ros2 run usv_basics wamv_teleop_key --ros-args \
 
 ---
 
+### 참고 — 다른 조종 방법 두 가지
+
+| 방법 | 명령 | 언제 |
+|---|---|---|
+| 명령줄 직접 발행 | `ros2 topic pub ...` (§2-5) | 값 하나만 빠르게 시험할 때 |
+| **키보드 노드** | `ros2 run usv_basics wamv_teleop_key` | **본 과목 기본** |
+| 조이스틱 | VRX 가 제공하는 `usv_joy_teleop.py` | 게임패드가 있을 때 |
+
+- VRX 쪽 조이스틱 스크립트의 위치는 아래에서 확인할 수 있다
+
+```bash
+ls ~/vrx_ws/src/vrx/vrx_gz/launch/
+```
+
+```
+competition.launch.py  spawn_config.launch.py  spawn.launch.py
+usv_joy_teleop.py      vrx_environment.launch.py
+```
+
+- 게임패드가 없으면 쓸 수 없다. **수업에서는 키보드 노드를 쓴다**
+
+### 다음에 만날 월드 — 지금 미리 본다
+
+- 지금까지 쓴 `sydney_regatta` 는 **아무 과제도 없는 연습용 수면**이다
+- VRX 에는 **채점까지 되는 과제 월드**가 함께 들어 있다
+
+```bash
+ls ~/vrx_ws/src/vrx/vrx_gz/worlds/ | head
+```
+
+| 월드 | 본 과목에서 |
+|---|---|
+| `stationkeeping_task` | 10주차 동적위치유지 |
+| `wayfinding_task` | 7주차 웨이포인트 유도 |
+| `navigation_task` | Term Project 1구간 |
+| `scan_dock_deliver_task` | Term Project 마지막 구간 |
+
+- 자세한 내용과 채점 토픽은 **4주차 §2-6** 에서 다룬다
+
+---
+
 ## 2-7. TF2 확인
 
 - VRX가 실행 중인 상태에서
