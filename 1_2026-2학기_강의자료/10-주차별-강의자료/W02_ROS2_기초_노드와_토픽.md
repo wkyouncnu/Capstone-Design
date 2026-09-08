@@ -1356,6 +1356,18 @@ rviz2
 ### 저장소에서 받기 (복습·복구용)
 
 - 강의에서 만드는 패키지와 **똑같은 것**을 아래 저장소에 올려 두었다
+  - <https://github.com/wkyouncnu/usv_basics> · Apache-2.0 · **로그인 불필요**
+
+> [!important] 순서가 중요하다 — **우분투 안에서 받고, 그 다음 VS Code 로 연다**
+> | 순서 | 어디서 | 무엇을 |
+> |---|---|---|
+> | 1 | **WSL 우분투 터미널** | `git clone` |
+> | 2 | **WSL 우분투 터미널** | `colcon build` |
+> | 3 | VS Code | `code .` 로 열어서 편집 |
+>
+> Windows 쪽(`C:\`)에 받으면 **빌드가 되지 않는다.** `colcon` 은 우분투 안에만 있다.
+
+**1단계 — 받는다**
 
 ```bash
 mkdir -p ~/capstone_ws/src
@@ -1369,7 +1381,20 @@ git clone https://github.com/wkyouncnu/usv_basics.git
 sudo apt update && sudo apt install -y git
 ```
 
-- 받은 뒤 빌드까지
+![VS Code 통합 터미널에서 git clone](../assets/w02-git-clone.png)
+
+| 화면에서 확인할 것 | 무엇 |
+|---|---|
+| 프롬프트가 `~/capstone_ws/src$` | **받는 위치가 맞다** |
+| `Cloning into 'usv_basics'...` | 내려받기 시작 |
+| `Receiving objects: 100% (19/19)` | 파일 19개 수신 완료 |
+| `ls usv_basics` 결과에 `package.xml` `setup.py` | 제대로 받아졌다 |
+| **왼쪽 탐색기에 `src/usv_basics` 가 생김** | VS Code 가 자동으로 알아본다 |
+| 맨 아래 `main` | git 저장소로 인식됨 |
+
+- 아이디·비밀번호를 묻지 않는다. **공개 저장소**이므로 그냥 받아진다
+
+**2단계 — 빌드한다**
 
 ```bash
 cd ~/capstone_ws
@@ -1378,18 +1403,38 @@ source install/setup.bash
 ros2 pkg executables usv_basics
 ```
 
-- 정상 출력
+![clone 한 패키지 빌드](../assets/w02-colcon-build.png)
 
-```
-usv_basics qos_test_pub
-usv_basics qos_test_sub
-usv_basics simple_listener
-usv_basics simple_talker
+| 화면에서 확인할 것 | 무엇 |
+|---|---|
+| 프롬프트가 `~/capstone_ws$` | **`src` 가 아니라 한 단계 위**에서 빌드한다 |
+| `Finished <<< usv_basics [0.61s]` | 빌드 성공 |
+| `Summary: 1 package finished` | 패키지 1개 |
+| 탐색기에 `build` `install` `log` 가 생김 | colcon 이 만든 것 |
+| 실행파일 4개가 나열됨 | 등록 완료 |
+
+> [!warning] `src` 안에서 `colcon build` 를 하면 안 된다
+> `src/` 안에 또 `build/` `install/` `log/` 가 생겨 버린다.
+> 그렇게 되면 세 폴더를 지우고 **한 단계 위에서 다시** 빌드한다.
+>
+> ```bash
+> rm -rf ~/capstone_ws/src/build ~/capstone_ws/src/install ~/capstone_ws/src/log
+> cd ~/capstone_ws && colcon build --symlink-install
+> ```
+
+**3단계 — VS Code 로 연다**
+
+```bash
+cd ~/capstone_ws
+code .
 ```
 
-> [!warning] `qos_test_sub.py` 는 **일부러 어긋난 상태**로 배포한다
-> 저장소의 구독자는 `RELIABLE` 로 되어 있어 §2-8 에서 데이터를 받지 못한다.
-> 그것을 진단하고 고치는 것이 이번 주차 과제의 일부다. 받자마자 고쳐 두지 말 것.
+- 이후 편집·실행은 §2-2 의 통합 터미널에서 그대로 한다
+
+> [!note] 저장소의 `qos_test_sub.py` 는 **정상 상태**로 배포한다
+> 받자마자 `qos_test_pub` ↔ `qos_test_sub` 가 서로 통한다.
+> §2-8 의 불일치를 재현하려면 `ReliabilityPolicy.BEST_EFFORT` 를
+> **`ReliabilityPolicy.RELIABLE` 로 직접 바꿔** 보면 된다. 고치는 방향이 반대일 뿐 실험은 같다.
 
 ### 워크스페이스 생성
 

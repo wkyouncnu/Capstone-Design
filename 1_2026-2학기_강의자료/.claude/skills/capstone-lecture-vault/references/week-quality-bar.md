@@ -202,7 +202,7 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | 주차 | 그림 | 정상출력 | 상태 |
 |---|---|---|---|
 | W01 | 3 | 4 | 충족 |
-| W02 | **15** | **35** | 충족 — VS Code·rqt·RViz2 실화면 9장 추가 (2026-09-08) |
+| W02 | **19** | **35** | 충족 — VS Code·rqt·RViz2·코드비교·clone·빌드 실화면 13장 (2026-09-08) |
 | W03 | 4 | 2 | 충족 |
 | W04 | 5 | 7 | 충족 |
 | W05 | 4 | 2 | 충족 — VS Code 실제 화면 추가 |
