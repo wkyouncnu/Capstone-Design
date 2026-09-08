@@ -1,0 +1,54 @@
+% assets/w02-where-installed.svg — 무엇이 Windows 에 있고 무엇이 WSL 에 있는가
+%
+%   bash _tools/tikz2svg.sh assets/src/w02-where-installed.tex assets/w02-where-installed.svg
+%
+% 요점: 편집기는 Windows, ROS 2 와 내 코드는 WSL. 둘을 잇는 것이 WSL 확장이다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===================== Windows =====================
+\node[draw=soft, line width=0.6pt, rounded corners=1.5mm,
+      minimum width=74mm, minimum height=62mm] (win) at (-42,0) {};
+\node[font=\small\bfseries, anchor=north west] at ($(win.north west)+(3mm,-3mm)$)
+     {Windows 11 쪽};
+
+\node[nblk, minimum width=54mm, minimum height=12mm] (vs) at (-42,15) {VS Code};
+\node[note, below=0.6mm of vs] {편집기 본체 — \texttt{code --version} 으로 확인};
+
+\node[blk, draw=accent, minimum width=54mm, minimum height=12mm] (ext) at (-42,-3)
+     {WSL 확장 (Microsoft)};
+\node[note, accent, below=0.6mm of ext] {\textbf{두 세계를 잇는 다리}};
+
+\node[blk, minimum width=54mm, minimum height=12mm] (ps) at (-42,-21) {PowerShell};
+\node[note, below=0.6mm of ps] {\texttt{wsl -l -v} · \texttt{code --list-extensions}};
+
+% ===================== WSL =====================
+\node[draw=plant, line width=0.7pt, rounded corners=1.5mm,
+      minimum width=74mm, minimum height=62mm] (wsl) at (44,0) {};
+\node[font=\small\bfseries, plant, anchor=north west] at ($(wsl.north west)+(3mm,-3mm)$)
+     {WSL2 — Ubuntu 22.04 쪽};
+
+\node[pblk, minimum width=54mm, minimum height=12mm] (ros) at (44,15) {ROS 2 Humble};
+\node[note, below=0.6mm of ros] {\texttt{/opt/ros/humble} — apt 로 설치};
+
+\node[gblk, minimum width=54mm, minimum height=12mm] (ws) at (44,-3)
+     {\textasciitilde/capstone\_ws — 내 코드};
+\node[note, below=0.6mm of ws] {\textbf{여기를 VS Code 로 연다}};
+
+\node[tblk, minimum width=54mm, minimum height=12mm] (gui) at (44,-21) {rqt · RViz2 (WSLg)};
+\node[note, below=0.6mm of gui] {창은 Windows 에 뜨지만 실행은 우분투};
+
+% ===================== 연결 =====================
+\draw[sig] (ext.east) -- node[sname, above, font=\scriptsize] {\texttt{code .}} (ext -| wsl.west);
+
+% ===================== 경고 =====================
+\node[wnote, anchor=north, text width=152mm, align=center] at (1,-38)
+     {\textbf{왼쪽 아래에 \texttt{WSL: Ubuntu-22.04} 가 보이지 않으면 Windows 쪽 파일을 고치고 있는 것이다.}
+      그 상태로 저장하면 \texttt{colcon build} 에 아무것도 반영되지 않는다};
+
+\end{tikzpicture}
+\end{document}

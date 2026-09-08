@@ -3,9 +3,9 @@ type: week
 week: 2
 title: 2주차 — ROS 2 기초, 노드와 토픽
 date: 2026-09-03
-tags: [week, ros2, qos]
+tags: [week, ros2, vscode, qos]
 status: done
-summary: 노드·토픽·메시지, DDS와 Domain ID, QoS 불일치 재현, 표본화 정리와 에일리어싱
+summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불일치 재현, 표본화
 ---
 
 # 2주차 · ROS 2 기초 — 노드와 토픽
@@ -29,7 +29,7 @@ summary: 노드·토픽·메시지, DDS와 Domain ID, QoS 불일치 재현, 표�
 > | Simulink | [Simulink Onramp](https://matlabacademy.mathworks.com/kr/details/simulink-onramp/simulink) · 담당 교수 Simulink 강의 [1부](https://youtu.be/a-afHg_fSaU) · [2부](https://youtu.be/070Yn0Hw5a0) |
 
 - **과목**: 캡스톤디자인 (2026-2) · 충남대학교 자율운항시스템공학과
-- **이번 주차 학습 내용**: ① ROS 2 설치 ② 두 프로그램이 서로 데이터를 주고받게 만들기
+- **이번 주차 학습 내용**: ① ROS 2 설치 ② **VS Code 로 WSL 안의 코드 편집** ③ 두 프로그램이 서로 데이터를 주고받게 만들기 ④ **화면 도구(rqt · RViz2)로 눈으로 확인**
 
 > [!important] 시작 전 확인
 > - 1주차 WSL 설치가 끝나 있어야 함
@@ -40,12 +40,15 @@ summary: 노드·토픽·메시지, DDS와 Domain ID, QoS 불일치 재현, 표�
 
 ## 이 주차를 마치면 할 수 있어야 하는 것
 
-1. ROS 2가 **왜 필요한지** 설명
+1. ROS 2가 **왜 필요한지**, ROS 1과 무엇이 다른지 설명
 2. **노드 · 토픽 · 메시지**가 각각 무엇인지 설명
-3. `ros2` 명령어로 실행 중인 노드와 토픽을 조사
-4. **내 손으로 노드를 작성**해서 데이터를 주고받기
-5. **QoS 불일치**를 재현하고 원인을 진단
-6. **표본화 주기**가 왜 중요한지 설명
+3. **워크스페이스 · 패키지 · 노드**의 3층 구조를 설명
+4. **VS Code 를 WSL 에 연결**해서 우분투 안의 코드를 편집·빌드·실행
+5. `ros2` 명령어로 실행 중인 노드와 토픽을 조사
+6. **rqt_graph · Topic Monitor · rqt_console · RViz2** 를 띄워 상태를 눈으로 확인
+7. **내 손으로 노드를 작성**해서 데이터를 주고받기
+8. **QoS 불일치**를 재현하고 원인을 진단
+9. **표본화 주기**가 왜 중요한지 설명
 
 ---
 
@@ -55,8 +58,14 @@ summary: 노드·토픽·메시지, DDS와 Domain ID, QoS 불일치 재현, 표�
 |---|---|
 | 환경 | 1주차에 만든 **WSL2 + Ubuntu 22.04** (`wsl -l -v` 로 확인) |
 | 저장공간 | **20 GB 이상** — ROS 2 설치에 필요 |
-| 터미널 | `terminator` (1주차 2-6절). 창을 두 개 이상 띄워 쓴다 |
+| 편집기 | **VS Code** (Windows 에 설치). 이번 주차 2-2절에서 함께 설치한다 |
+| 터미널 | VS Code 통합 터미널을 기본으로 쓴다. `terminator`(1주차 2-6절)도 그대로 사용 가능 |
 | 인터넷 | 패키지 내려받기. 학교 와이파이면 시간이 더 걸린다 |
+
+> [!note] 이번 주차부터 편집기가 바뀐다
+> 1주차에서는 `nano` 로 파일을 만들었다. 이번 주차부터는 **VS Code** 를 쓴다.
+> `nano` 는 저장(`Ctrl+O`)과 종료(`Ctrl+X`)를 외워야 하고, 파이썬 들여쓰기가 틀려도
+> 알려 주지 않는다. VS Code 는 오타·들여쓰기 오류를 **빨간 밑줄로 즉시 표시**한다.
 
 > [!warning] 1주차 설치를 완료하지 못한 경우
 > 이번 주차 실습은 **전부 WSL 안에서** 이뤄진다. 설치부터 하면 따라올 수 없다.
@@ -113,14 +122,41 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 
 ### ROS 1과 ROS 2
 
-| 항목 | ROS 1 | ROS 2 |
-|---|---|---|
-| 통신 | 중앙 관리자(`roscore`) 필요 | **관리자 없이 서로 자동 발견** |
-| 실시간성 | 약함 | 지원 |
-| 통신 품질(QoS) | 없음 | **선택 가능** |
-| 상태 | 지원 종료 | **현재 표준** |
+> [!note] 인터넷 예제가 ROS 1인지 ROS 2인지 구분하는 것이 실전 능력이다
+> 검색으로 찾은 코드가 `rospy` · `catkin_make` · `roscore` 를 쓰면 **ROS 1 예제**다.
+> 그대로 붙여 넣으면 동작하지 않는다. 아래 표의 왼쪽 칸이 곧 "ROS 1 판별 단어" 목록이다.
 
-- 본 과목에서 사용할 것: **ROS 2 Humble Hawksbill** (장기 지원 버전, 2027년 5월까지)
+| 항목 | ROS 1 (Noetic) | ROS 2 (Humble) |
+|---|---|---|
+| 중앙 관리자 | **`roscore` 를 먼저 띄워야 함** | **없음.** 노드끼리 DDS 로 자동 발견 |
+| 통신 미들웨어 | 자체 TCPROS/UDPROS | **DDS** (산업 표준, `rmw` 로 교체 가능) |
+| 파이썬 라이브러리 | `rospy` | **`rclpy`** |
+| C++ 라이브러리 | `roscpp` | **`rclcpp`** |
+| 빌드 도구 | `catkin_make` · `catkin build` | **`colcon build`** |
+| 패키지 명세 | `package.xml` format 2 | `package.xml` **format 3** |
+| 노드 실행 | `rosrun <패키지> <실행파일>` | **`ros2 run <패키지> <실행파일>`** |
+| 여러 노드 동시 실행 | `roslaunch`, **XML 만** | **`ros2 launch`, Python · XML · YAML** |
+| 조사 명령 | `rostopic` · `rosnode` | **`ros2 topic` · `ros2 node`** (하위 명령 방식) |
+| 파라미터 | **중앙 파라미터 서버** 하나 | **노드마다 각자** 보유 |
+| 통신 품질(QoS) | 없음 (사실상 TCP 고정) | **정책으로 선택** — §1-6 |
+| 기록·재생 | `rosbag` (`.bag`) | **`ros2 bag`** (`.db3` = SQLite) |
+| 실시간성 | 약함 | 지원 (DDS 계층에서) |
+| 운영체제 | 사실상 리눅스 | 리눅스 · Windows · macOS |
+| 지원 상태 | **2025-05-31 지원 종료** | Humble 은 **2027년 5월까지** |
+
+- 본 과목에서 사용할 것: **ROS 2 Humble Hawksbill** (Ubuntu 22.04 용 장기 지원 버전)
+- 출처 — ROS 1 Noetic 종료일은 Open Robotics 공지 (<https://discourse.openrobotics.org/t/ros-noetic-end-of-life-may-31-2025/43160>)
+
+> [!warning] 명령어를 바꿔 쓰는 표
+> ROS 1 예제를 ROS 2 로 옮길 때 가장 자주 고치는 다섯 줄이다.
+>
+> | ROS 1 | ROS 2 |
+> |---|---|
+> | `import rospy` | `import rclpy` |
+> | `rospy.init_node('x')` | `rclpy.init()` 후 `Node('x')` |
+> | `rospy.Publisher('t', String, queue_size=10)` | `node.create_publisher(String, 't', 10)` |
+> | `rospy.spin()` | `rclpy.spin(node)` |
+> | `rostopic echo /t` | `ros2 topic echo /t` |
 
 ---
 
@@ -170,7 +206,130 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 
 ---
 
-## 1-3. 메시지 타입
+## 1-3. 패키지와 워크스페이스 — ROS 2 코드가 사는 곳
+
+### 3층 구조
+
+- ROS 2 코드는 **세 겹**으로 담긴다. 이 구분을 못 하면 빌드가 계속 실패한다
+
+```
+capstone_ws/                  ← ① 워크스페이스 (작업 상자)
+├── src/                        내가 쓴 코드만 여기에 둔다
+│   └── usv_basics/           ← ② 패키지 (배포 단위)
+│       ├── package.xml         이름·의존성·라이선스
+│       ├── setup.py            실행파일 등록
+│       └── usv_basics/
+│           ├── simple_talker.py    ← ③ 노드 (실행 단위)
+│           └── simple_listener.py  ← ③ 노드
+├── build/                      colcon 이 만든 중간 산출물
+├── install/                    colcon 이 만든 결과물. ros2 run 이 여기를 본다
+└── log/                        빌드 기록
+```
+
+| 층 | 이름 | 무엇인가 | 만드는 명령 |
+|---|---|---|---|
+| ① | **워크스페이스** | 패키지를 모아 한 번에 빌드하는 폴더 | `mkdir -p ~/capstone_ws/src` |
+| ② | **패키지** | 배포·재사용 단위. 이름이 곧 `ros2 run` 의 첫 인자 | `ros2 pkg create` |
+| ③ | **노드** | 실제로 실행되는 프로그램 하나 | 파이썬 파일 작성 |
+
+> [!important] `build/` · `install/` · `log/` 는 손으로 만들지 않는다
+> `colcon build` 가 만든다. **지워도 다시 빌드하면 생긴다.**
+> 반대로 `src/` 안의 내용은 지우면 복구되지 않는다.
+
+### 두 가지 빌드 타입
+
+| 빌드 타입 | 언어 | 본 과목에서 |
+|---|---|---|
+| `ament_python` | 파이썬 | **이번 주차에 쓸 것** |
+| `ament_cmake` | C++ | 4주차 이후 참고용 |
+
+### `package.xml` — 패키지의 신분증
+
+- `ros2 pkg create` 가 만들어 준 실제 파일이다
+
+```xml
+<package format="3">
+  <name>usv_basics</name>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="cnu@todo.todo">cnu</maintainer>
+  <license>Apache-2.0</license>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
+```
+
+| 태그 | 뜻 |
+|---|---|
+| `<name>` | 패키지 이름. **`ros2 run` 의 첫 인자와 같아야 한다** |
+| `<license>` | 라이선스. 비우면 빌드 경고가 난다 |
+| `<build_type>` | `ament_python` 인지 `ament_cmake` 인지 |
+| `<depend>` | 이 패키지가 필요로 하는 다른 패키지 (직접 추가) |
+
+- `rclpy` 와 `std_msgs` 를 쓰므로 아래 두 줄을 `<license>` 아래에 넣어 두면 좋다
+
+```xml
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+```
+
+> [!note] 지금은 없어도 빌드된다
+> 파이썬은 실행 시점에 `import` 하므로 `<depend>` 가 없어도 돌아간다.
+> 그러나 남이 이 패키지를 받아 `rosdep` 으로 의존성을 깔 때 **빠진 것을 알 수 없다.**
+> 팀 저장소에 올릴 패키지에는 반드시 적는다.
+
+### `setup.py` — 어떤 파이썬 파일이 실행파일이 되는지
+
+- `entry_points` 의 `console_scripts` 한 줄이 곧 `ros2 run` 으로 부를 이름이다
+
+```python
+entry_points={
+    'console_scripts': [
+        'simple_talker = usv_basics.simple_talker:main',
+    ],
+},
+```
+
+| 조각 | 뜻 |
+|---|---|
+| `simple_talker` (등호 왼쪽) | `ros2 run usv_basics simple_talker` 의 마지막 인자 |
+| `usv_basics.simple_talker` | 패키지 폴더 안의 파이썬 파일 경로 (`.py` 없이) |
+| `:main` | 그 파일 안에서 호출할 함수 이름 |
+
+> [!warning] 이 한 줄을 빼먹으면 `No executable found` 가 난다
+> 파일을 아무리 잘 써도 `setup.py` 에 등록하지 않으면 `ros2 run` 이 찾지 못한다.
+> **매 학기 가장 많이 나오는 오류**다.
+
+### 왜 `source install/setup.bash` 를 해야 하는가
+
+- `ros2 run` 은 **환경변수에 등록된 경로**에서만 패키지를 찾는다
+
+![파일 작성부터 ros2 run 까지](../assets/w02-build-flow.svg)
+
+| 단계 | 빼먹었을 때 나오는 메시지 |
+|---|---|
+| ② `setup.py` 등록 | `No executable found` |
+| ③ `colcon build` | 고친 내용이 반영되지 않음 |
+| ④ `source install/setup.bash` | `Package 'usv_basics' not found` |
+
+| 명령 | 무엇을 등록하는가 |
+|---|---|
+| `source /opt/ros/humble/setup.bash` | ROS 2 가 기본 제공하는 패키지 (`demo_nodes_cpp` 등) |
+| `source ~/capstone_ws/install/setup.bash` | **내가 만든 패키지** |
+
+- 두 줄을 `~/.bashrc` 에 넣어 두면 터미널을 새로 열 때마다 자동 적용된다
+- 새 터미널에서 내 패키지가 안 보이면 **두 번째 줄을 안 한 것**이다
+
+---
+
+## 1-4. 메시지 타입
 
 ### 자주 쓰는 것
 
@@ -206,7 +365,7 @@ std_msgs/Header header
 
 ---
 
-## 1-4. DDS 와 Domain ID
+## 1-5. DDS 와 Domain ID
 
 ![DDS 자동 발견과 ROS_DOMAIN_ID](../assets/w02-dds-domain.svg)
 
@@ -245,7 +404,7 @@ echo $ROS_DOMAIN_ID
 
 ---
 
-## 1-5. QoS — 통신 품질 정책
+## 1-6. QoS — 통신 품질 정책
 
 ### 무엇인가
 
@@ -278,11 +437,38 @@ echo $ROS_DOMAIN_ID
 
 - 규칙: **구독자의 요구가 발행자가 제공하는 것보다 엄격하면 실패**
 
-> [!caution] 오류 메시지 없이 잘못된 결과가 나온다
-> - `ros2 topic list` → 토픽이 보임
-> - `ros2 topic hz` → 데이터가 흐른다고 나옴
-> - **내 노드만** 콜백이 한 번도 안 불림
-> - 학생은 자기 콜백 코드를 의심하며 한 시간을 씀
+> [!caution] 프로그램은 죽지 않는다. 조용히 아무것도 안 받는다
+> - `ros2 topic list` → 토픽이 **보인다**
+> - `ros2 topic hz` → 데이터가 **흐른다고 나온다**
+> - **내 노드만** 콜백이 한 번도 안 불린다
+> - 종료 코드도 정상이고 예외도 없다. 자기 콜백 코드를 의심하며 시간을 버리게 된다
+
+- 다만 Humble 은 **경고 한 줄**을 찍어 준다. 이 문장을 알아보는 것이 이번 절의 목표다
+- 아래는 §2-8 실습에서 실제로 받은 출력이다
+
+```
+[WARN] [1788862828.210407869] [qos_test_sub]: New publisher discovered on topic 'qos_topic',
+offering incompatible QoS. No messages will be received from it.
+Last incompatible policy: RELIABILITY
+```
+
+- 발행자 쪽에도 짝이 되는 경고가 뜬다
+
+```
+[WARN] [1788862828.210020463] [qos_test_pub]: New subscription discovered on topic 'qos_topic',
+requesting incompatible QoS. No messages will be sent to it.
+Last incompatible policy: RELIABILITY
+```
+
+| 읽는 법 | 뜻 |
+|---|---|
+| `incompatible QoS` | QoS 가 맞지 않는다 |
+| `No messages will be received` | **연결 자체가 안 됐다.** 유실이 아니라 0건 |
+| `Last incompatible policy: RELIABILITY` | 어긋난 항목이 **Reliability** 라는 뜻 |
+
+> [!warning] 이 경고는 터미널을 위로 올려야 보인다
+> 발행자·구독자가 계속 `[INFO]` 를 찍으면 경고가 **화면 위로 밀려 올라간다.**
+> 노드를 켠 **첫 화면**을 확인하거나, `rqt_console` 에서 Severity 를 `Warn` 으로 걸러 볼 것.
 
 - 진단 명령어 (한 줄)
 
@@ -294,7 +480,7 @@ ros2 topic info /토픽이름 --verbose
 
 ---
 
-## 1-6. 표본화 — 왜 신호처리를 알아야 하는가
+## 1-7. 표본화 — 왜 신호처리를 알아야 하는가
 
 ### 센서는 연속 신호를 잘라서 준다
 
@@ -434,12 +620,206 @@ rosdep update
 
 ---
 
-## 2-2. 설치 확인 — 첫 통신
+## 2-2. VS Code 설치와 WSL 연결
+
+> [!important] 무엇이 어디에 설치되는지 먼저 이해할 것
+> - **VS Code** → **Windows** 에 설치한다
+> - **ROS 2 · 내 코드** → **WSL 안(Ubuntu)** 에 있다
+> - 둘을 잇는 것이 **WSL 확장**이다. 이 확장이 없으면 Windows 쪽 파일만 편집하게 된다
+
+![무엇이 Windows 에 있고 무엇이 WSL 에 있는가](../assets/w02-where-installed.svg)
+
+| 그림에서 | 확인 명령 |
+|---|---|
+| Windows 쪽 VS Code | PowerShell 에서 `code --version` |
+| WSL 확장 | PowerShell 에서 `code --list-extensions` |
+| WSL 쪽 ROS 2 | 우분투에서 `printenv ROS_DISTRO` → `humble` |
+| WSL 쪽 내 코드 | 우분투에서 `ls ~/capstone_ws` |
+
+- 앞 절의 `apt install` 이 도는 동안 **동시에 진행해도 된다**. 서로 방해하지 않는다
+
+### 1단계 — VS Code 내려받기
+
+1. 브라우저에서 <https://code.visualstudio.com/download> 접속
+
+![VS Code 내려받기 페이지](../assets/w02-download-vscode.png)
+
+2. 왼쪽 **Windows** 칸의 파란 버튼(`Windows / Windows 10, 11`)을 누른다
+3. 받아진 `VSCodeUserSetup-x64-*.exe` 실행
+
+| 화면의 위치 | 무엇을 고르는가 |
+|---|---|
+| 왼쪽 큰 파란 버튼 **Windows** | **이것을 누른다.** 기본이 User Installer 다 |
+| 그 아래 `User Installer` / `x64` | 직접 고를 때 쓴다 |
+| 가운데 펭귄(리눅스) · 오른쪽 사과(맥) | **누르지 않는다.** 우분투 안에는 설치하지 않는다 |
+
+> [!tip] User Installer 를 쓴다
+> 관리자 권한이 필요 없어 실습실 PC 에서도 통과한다.
+> System Installer 는 관리자 권한을 요구해 막히는 경우가 있다.
+
+- 설치 중 **"추가 작업 선택"** 화면에서 아래를 **반드시 체크**
+
+| 체크할 항목 | 이유 |
+|---|---|
+| `PATH에 추가` | 터미널에서 `code` 명령을 쓸 수 있음 |
+| `Code로 열기` — 파일 상황에 맞는 메뉴 | 우클릭으로 파일을 열 수 있음 |
+| `Code로 열기` — 디렉터리 상황에 맞는 메뉴 | 폴더째로 열 수 있음 |
+
+- 설치 확인 — **PowerShell** 에서 실행
+
+```powershell
+code --version
+```
+
+- 정상 출력 (기준 환경 실측)
+
+```
+1.132.0
+df53daabb18cd157bdb08c7f01c34df936cf12f4
+x64
+```
+
+### 2단계 — WSL 확장 설치
+
+1. VS Code 를 실행한다
+2. 왼쪽 세로 막대(활동 표시줄)에서 **블록 4개 아이콘**(확장)을 누른다 — 단축키 `Ctrl + Shift + X`
+3. 검색창에 `WSL` 입력
+4. 맨 위 **WSL** (게시자: **Microsoft**) 의 **Install** 을 누른다
+
+![VS Code 확장 검색 — WSL](../assets/w02-vscode-ext-wsl.png)
+
+> [!warning] 비슷한 이름이 여럿 나온다
+> 게시자가 **Microsoft** 이고 설치 수가 가장 많은 것(4천만 회 이상)이 정답이다.
+> `WSL workspaceFolder` · `Linux/Unix/WSL paths` · `wsl-split` 은 **다른 확장**이다.
+
+- 설치 확인 — PowerShell 에서
+
+```powershell
+code --list-extensions
+```
+
+- 정상 출력
+
+```
+ms-vscode-remote.remote-wsl
+```
+
+### 3단계 — WSL 에 연결
+
+- **방법 1 — 우분투 터미널에서 (권장)**
+
+```bash
+cd ~/capstone_ws
+code .
+```
+
+- 처음 실행하면 VS Code 서버가 WSL 안에 자동 설치된다 (1~2분)
+
+- **방법 2 — VS Code 안에서**
+
+1. 창 **왼쪽 맨 아래 모서리**의 파란 `><` 버튼을 누른다 (단축키 `Ctrl + Alt + O`)
+2. 위에 목록이 내려온다
+
+![원격 표시기 — Connect to WSL](../assets/w02-vscode-connect-wsl.png)
+
+3. 맨 위 **Connect to WSL** 을 선택한다
+   - 배포판이 여러 개면 **Connect to WSL using Distro...** 에서 `Ubuntu-22.04` 를 고른다
+   - `Tunnel` · `SSH` · `Dev Container` 는 **이번 과목에서 쓰지 않는다**
+4. 새 창이 뜨면 **File → Open Folder** 로 `/home/사용자명/capstone_ws` 를 연다
+
+- 연결에 성공하면 **왼쪽 아래**가 이렇게 바뀐다
+
+```
+WSL: Ubuntu-22.04
+```
+
+### 4단계 — 연결된 화면 읽는 법
+
+![VS Code 가 WSL 에 연결된 화면](../assets/w02-vscode-wsl-editor.png)
+
+| # | 화면의 위치 | 무엇인가 |
+|---|---|---|
+| 1 | **왼쪽 아래 파란 칸** `WSL: Ubuntu-22.04` | **가장 중요.** 우분투 안을 편집 중이라는 표시 |
+| 2 | 왼쪽 세로 막대 | 활동 표시줄 — 탐색기 · 검색 · 소스 제어 · 실행 · 확장 |
+| 3 | 왼쪽 넓은 칸 | **탐색기.** `build` `install` `log` `src` 가 보인다 |
+| 4 | 가운데 | **편집기.** 파이썬 문법이 색으로 구분된다 |
+| 5 | 맨 아래 오른쪽 | 줄·열 번호, 인코딩(`UTF-8`), 줄바꿈(`LF`), 언어(`Python`) |
+
+> [!caution] 왼쪽 아래 표시가 없으면 Windows 쪽 파일을 고치고 있는 것이다
+> 그 상태로 ROS 코드를 고치면 **아무리 저장해도 빌드에 반영되지 않는다.**
+> 매 학기 가장 많이 헤매는 지점이다. **파일을 고치기 전에 항상 이 칸을 본다.**
+
+> [!warning] 위쪽에 노란 띠로 "Restricted Mode" 가 뜨면
+> VS Code 가 **처음 여는 폴더를 신뢰하지 않는 상태**다. 이 상태에서는 작업 실행이 막힌다.
+> 띠의 **Manage** → **Trust** 를 눌러 신뢰하도록 바꾼다. 내 폴더일 때만 푼다.
+
+> [!note] 상태 표시줄의 `LF` / `CRLF`
+> 리눅스 스크립트가 `CRLF` 로 저장되면 WSL 에서 실행되지 않는다.
+> 증상은 `/bin/bash^M: bad interpreter`. 상태 표시줄에서 `LF` 로 바꾸면 해결된다.
+
+### 5단계 — WSL 쪽 확장 설치
+
+> [!important] WSL 에 연결한 상태에서 설치해야 WSL 쪽에 깔린다
+> Windows 쪽에만 깔면 파이썬 자동완성이 동작하지 않는다.
+> 확장 이름 옆에 **"Install in WSL: Ubuntu-22.04"** 버튼이 보이면 그것을 누른다.
+
+| 확장 | 게시자 | 용도 |
+|---|---|---|
+| **Python** | Microsoft | 문법 검사 · 자동완성 · 들여쓰기 오류 표시 |
+| **XML** | Red Hat | 3주차 이후 URDF · Xacro · SDF 편집 |
+| **YAML** | Red Hat | 설정 파일 편집 |
+
+- 설치 확인 — PowerShell 에서
+
+```powershell
+code --remote wsl+Ubuntu-22.04 --list-extensions
+```
+
+- 정상 출력 (Python 확장은 부속 확장 3개를 함께 설치한다)
+
+```
+ms-python.debugpy
+ms-python.python
+ms-python.vscode-pylance
+ms-python.vscode-python-envs
+ms-vscode-remote.remote-wsl
+```
+
+### 6단계 — 통합 터미널 열기
+
+- 단축키 `` Ctrl + ` `` (백틱, `Esc` 아래 키) 또는 상단 메뉴 **Terminal → New Terminal**
+- 프롬프트가 아래 형태면 **우분투 안의 터미널**이다
+
+```
+cnu@DESKTOP-XXXXXX:~/capstone_ws$
+```
+
+- 터미널을 **좌우로 나누는** 버튼이 터미널 패널 오른쪽 위에 있다 (네모 두 개 아이콘)
+- 이 분할이 `terminator` 의 `Ctrl + Shift + E` 를 대신한다
+
+![VS Code 통합 터미널 — 왼쪽 발행자 · 오른쪽 구독자](../assets/w02-vscode-terminal.png)
+
+- 위 화면은 §2-7 을 끝낸 뒤의 실제 모습이다. 이번 주차 실습의 **목표 화면**이다
+
+| 화면에서 보이는 것 | 뜻 |
+|---|---|
+| 왼쪽 터미널 `published: USV alive: 146` | 발행자가 2 Hz 로 보내는 중 |
+| 오른쪽 터미널 `received: USV alive: 148` | 구독자가 같은 값을 받는 중 |
+| 두 숫자가 나란히 올라감 | **연결 성공** |
+
+> [!tip] 편집기와 터미널을 한 화면에 두는 것이 이번 주차의 요령이다
+> 코드를 고치고(`Ctrl + S`), 아래 터미널에서 바로 빌드·실행한다.
+> 창을 오가지 않으므로 "어느 창에서 뭘 쳤더라" 가 사라진다.
+
+---
+
+## 2-3. 설치 확인 — 첫 통신
 
 ### 실행
 
-1. `terminator` 실행
-2. `Ctrl + Shift + E` 로 좌우 분할
+1. VS Code 통합 터미널을 연다 — `` Ctrl + ` ``
+2. 터미널 패널 오른쪽 위의 **분할 버튼**으로 좌우로 나눈다
+   - `terminator` 를 쓰는 경우 `Ctrl + Shift + E`
 
 **왼쪽 칸**
 
@@ -447,11 +827,12 @@ rosdep update
 ros2 run demo_nodes_cpp talker
 ```
 
-- 정상 출력
+- 정상 출력 (기준 환경 실측)
 
 ```
-[INFO] [1789000000.123456789] [talker]: Publishing: 'Hello World: 1'
-[INFO] [1789000001.123456789] [talker]: Publishing: 'Hello World: 2'
+[INFO] [1788862636.484848636] [talker]: Publishing: 'Hello World: 1'
+[INFO] [1788862637.466627284] [talker]: Publishing: 'Hello World: 2'
+[INFO] [1788862638.466612785] [talker]: Publishing: 'Hello World: 3'
 ```
 
 **오른쪽 칸**
@@ -460,12 +841,19 @@ ros2 run demo_nodes_cpp talker
 ros2 run demo_nodes_py listener
 ```
 
-- 정상 출력
+- 정상 출력 (기준 환경 실측)
 
 ```
-[INFO] [1789000001.223456789] [listener]: I heard: [Hello World: 1]
-[INFO] [1789000002.223456789] [listener]: I heard: [Hello World: 2]
+[INFO] [1788862636.495295736] [listener]: I heard: [Hello World: 1]
+[INFO] [1788862637.467678514] [listener]: I heard: [Hello World: 2]
+[INFO] [1788862638.467464411] [listener]: I heard: [Hello World: 3]
 ```
+
+| 확인 항목 | 화면에서 |
+|---|---|
+| 두 칸의 숫자가 **같이** 올라간다 | 연결 성공 |
+| 대괄호 안 숫자가 **초 단위 시각** | 두 로그의 시각 차이가 약 0.001 s → 지연이 1 ms 수준 |
+| 왼쪽은 `Publishing`, 오른쪽은 `I heard` | 발행·구독이 각각 동작 |
 
 > [!tip] 위 과정에서 일어난 일
 > - **C++로 짠 노드**와 **Python으로 짠 노드**가
@@ -477,9 +865,13 @@ ros2 run demo_nodes_py listener
 
 ---
 
-## 2-3. 조사 명령어 익히기
+## 2-4. 조사 명령어 익히기
 
 - `talker` 를 켜 둔 채로 **새 분할**에서 실행
+
+> [!tip] 명령어 다섯 개면 대부분의 문제를 진단할 수 있다
+> `node list` → `topic list -t` → `topic hz` → `topic echo` → `topic info --verbose`.
+> **위에서 아래로 순서대로** 좁혀 나가는 것이 요령이다.
 
 ### 노드 조사
 
@@ -487,7 +879,10 @@ ros2 run demo_nodes_py listener
 ros2 node list
 ```
 
+- 정상 출력 (talker 와 listener 를 둘 다 켠 상태)
+
 ```
+/listener
 /talker
 ```
 
@@ -495,7 +890,26 @@ ros2 node list
 ros2 node info /talker
 ```
 
-- 이 노드가 무엇을 발행·구독하는지 나옴
+- 정상 출력 (앞부분)
+
+```
+/talker
+  Subscribers:
+    /parameter_events: rcl_interfaces/msg/ParameterEvent
+  Publishers:
+    /chatter: std_msgs/msg/String
+    /parameter_events: rcl_interfaces/msg/ParameterEvent
+    /rosout: rcl_interfaces/msg/Log
+  Service Servers:
+    /talker/describe_parameters: rcl_interfaces/srv/DescribeParameters
+    ...
+```
+
+| 읽는 법 | 뜻 |
+|---|---|
+| `Publishers:` 에 `/chatter` | 이 노드가 `/chatter` 로 내보낸다 |
+| `/rosout` 이 항상 있다 | 모든 노드가 로그를 이리로 보낸다. `rqt_console` 이 이것을 본다 |
+| `/talker/set_parameters` 등 | 파라미터 서비스는 **자동으로** 생긴다. 직접 만든 것이 아니다 |
 
 ### 토픽 조사
 
@@ -503,34 +917,102 @@ ros2 node info /talker
 ros2 topic list
 ```
 
+- 정상 출력
+
+```
+/chatter
+/parameter_events
+/rosout
+```
+
 ```bash
 ros2 topic list -t
 ```
 
-- `-t` 를 붙이면 메시지 타입까지 표시
+- `-t` 를 붙이면 **메시지 타입까지** 표시된다
+
+```
+/chatter [std_msgs/msg/String]
+/parameter_events [rcl_interfaces/msg/ParameterEvent]
+/rosout [rcl_interfaces/msg/Log]
+```
 
 ```bash
 ros2 topic echo /chatter
 ```
 
-- 실제 데이터가 흘러나옴. 종료는 `Ctrl + C`
+- 실제 데이터가 흘러나온다. 종료는 `Ctrl + C`
+
+```
+data: 'Hello World: 12'
+---
+data: 'Hello World: 13'
+---
+```
+
+- 한 개만 보고 끝내려면 `--once` 를 붙인다
+
+```bash
+ros2 topic echo --once /chatter
+```
 
 ```bash
 ros2 topic hz /chatter
 ```
 
 - 발행 주기 측정. **가장 자주 쓰는 명령어**
+- 정상 출력 (기준 환경 실측, `demo_nodes_cpp talker` 는 1 Hz)
 
 ```
-average rate: 1.000
-  min: 0.999s max: 1.001s std dev: 0.00050s window: 10
+average rate: 1.018
+	min: 0.978s max: 1.000s std dev: 0.00745s window: 7
 ```
+
+| 읽는 법 | 뜻 |
+|---|---|
+| `average rate` | 초당 몇 번 오는가 |
+| `min` / `max` | 간격의 최소·최대. 벌어지면 **주기가 흔들린다는 뜻** |
+| `std dev` | 간격의 표준편차. 클수록 불안정 |
+| `window` | 몇 개를 보고 계산했는가 |
+
+```bash
+ros2 topic bw /chatter
+```
+
+- 대역폭 측정. 3주차 이후 카메라·LiDAR 토픽에서 쓴다
 
 ```bash
 ros2 topic info /chatter --verbose
 ```
 
 - **QoS 를 포함한 상세 정보.** 문제 진단의 핵심
+- 정상 출력 (발행자 부분만)
+
+```
+Type: std_msgs/msg/String
+
+Publisher count: 1
+
+Node name: talker
+Node namespace: /
+Topic type: std_msgs/msg/String
+Endpoint type: PUBLISHER
+GID: 01.0f.89.6f.1e.00.c3.66.00.00.00.00.00.00.12.03.00.00.00.00.00.00.00.00
+QoS profile:
+  Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  Lifespan: Infinite
+  Deadline: Infinite
+  Liveliness: AUTOMATIC
+  Liveliness lease duration: Infinite
+
+Subscription count: 1
+...
+```
+
+> [!important] 이 출력의 `Reliability` 두 개를 비교하는 것이 QoS 진단이다
+> 발행자와 구독자의 `Reliability` 가 다르면 §2-8 의 유의 사항이 발생한다.
 
 ### 메시지 구조 확인
 
@@ -538,34 +1020,82 @@ ros2 topic info /chatter --verbose
 ros2 interface show std_msgs/msg/String
 ```
 
+- 정상 출력
+
+```
+# This was originally provided as an example message.
+# It is deprecated as of Foxy
+# It is recommended to create your own semantically meaningful message.
+# However if you would like to continue using this please use the equivalent in example_msgs.
+
+string data
+```
+
+- 센서 메시지의 공통 앞부분인 `Header` 도 같은 방법으로 본다
+
+```bash
+ros2 interface show std_msgs/msg/Header
+```
+
+```
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data
+# in a particular coordinate frame.
+
+# Two-integer timestamp that is expressed as seconds and nanoseconds.
+builtin_interfaces/Time stamp
+	int32 sec
+	uint32 nanosec
+
+# Transform frame with which this data is associated.
+string frame_id
+```
+
 ### 명령줄에서 직접 발행
+
+- 노드를 만들지 않고도 토픽을 쏴 볼 수 있다. **구독자 쪽을 시험할 때** 쓴다
 
 ```bash
 ros2 topic pub /chatter std_msgs/msg/String "{data: 'from CLI'}" -r 1
 ```
 
-### 노드 그래프 그림으로 보기
+| 옵션 | 뜻 |
+|---|---|
+| `-r 1` | 1 Hz 로 반복 발행 |
+| `--once` | 한 번만 보내고 종료 |
 
-토픽 목록만으로는 **누가 누구에게 보내는지** 알 수 없다. 그림으로 본다.
+### 설치·환경을 한 번에 점검하는 명령
 
 ```bash
-ros2 run rqt_graph rqt_graph
+ros2 doctor
 ```
 
-![rqt_graph — 발행자 · 토픽 · 구독자](../assets/w02-rqt-graph.png)
+- ROS 2 설치 상태, 네트워크, `rmw` 구현, 패키지 버전을 한꺼번에 점검한다
+- 중간에 `UserWarning: ... has been updated to a new version` 이 여러 줄 나오는 것은 정상이다
+- **마지막 줄**만 확인한다
 
-- 위 화면은 아래 두 노드를 실제로 띄우고 캡처한 것이다
-- 읽는 법
+```
+All 5 checks passed
+```
 
-| 모양 | 뜻 |
-|---|---|
-| **타원** | 노드 (`/minimal_publisher`, `/minimal_subscriber`) |
-| **사각형** | 토픽 (`/topic`) |
-| **화살표 방향** | 데이터가 흐르는 방향 |
+### 패키지가 어떤 실행파일을 갖고 있는지
 
-> [!tip] 아무것도 안 보이면 새로고침
-> 왼쪽 위 **파란 회전 화살표** 를 누른다. rqt_graph 는 자동으로 갱신되지 않는다.
-> 그래도 비어 있으면 노드가 죽었거나 `ROS_DOMAIN_ID` 가 다른 것이다.
+```bash
+ros2 pkg executables demo_nodes_cpp
+```
+
+- 정상 출력 (앞부분)
+
+```
+demo_nodes_cpp add_two_ints_client
+demo_nodes_cpp add_two_ints_client_async
+demo_nodes_cpp add_two_ints_server
+demo_nodes_cpp allocator_tutorial
+demo_nodes_cpp content_filtering_publisher
+demo_nodes_cpp content_filtering_subscriber
+```
+
+- **`ros2 run` 의 두 번째 인자로 무엇을 써야 하는지** 이 명령으로 확인한다
 
 ---
 
@@ -613,7 +1143,7 @@ python3 ~/ros2_examples/rclpy/topics/minimal_subscriber/examples_rclpy_minimal_s
 > [!note] 구독자의 첫 숫자가 0 이 아닌 이유
 > 발행자를 먼저 켰기 때문이다. 구독자는 **켜진 뒤부터** 받는다.
 > 위 실측에서는 3번부터 받았다. 놓친 0~2번은 되돌아오지 않는다.
-> 이것을 바꾸는 설정이 QoS 의 **Durability** 다 (§1-5).
+> 이것을 바꾸는 설정이 QoS 의 **Durability** 다 (§1-6).
 
 ### 발행자·구독자의 QoS 를 눈으로 확인한다
 
@@ -644,7 +1174,7 @@ QoS profile:
 | `Lifespan` · `Deadline` | Infinite | 제한 없음 |
 
 - **양쪽의 이 표가 서로 호환되어야 연결된다.** 안 맞으면 오류 없이 조용히 끊긴다
-- 실제로 끊어 보는 실험이 §2-6 에 있다
+- 실제로 끊어 보는 실험이 §2-8 에 있다
 
 ### 데이터 기록 · 재생
 
@@ -663,7 +1193,157 @@ ros2 bag play rosbag2_2026_09_10-14_30_00
 
 ---
 
-## 2-4. 내 패키지 만들기
+## 2-5. 화면으로 보는 도구 — rqt 와 RViz2
+
+> [!important] 명령줄만으로는 "누가 누구에게" 를 못 본다
+> `ros2 topic list` 는 토픽 **이름**만 준다. 연결 관계·값의 변화·경고 로그는
+> 아래 네 도구로 본다. 전부 `ros-humble-desktop` 에 이미 들어 있다.
+
+| 도구 | 무엇을 보는가 | 실행 명령 |
+|---|---|---|
+| **rqt_graph** | 노드–토픽 연결 관계 | `ros2 run rqt_graph rqt_graph` |
+| **Topic Monitor** | 토픽의 주기·대역폭·**현재 값** | `ros2 run rqt_topic rqt_topic` |
+| **rqt_console** | 모든 노드의 로그를 한곳에서 | `ros2 run rqt_console rqt_console` |
+| **RViz2** | 좌표계·센서 데이터의 **3차원 시각화** | `rviz2` |
+
+> [!note] 창은 Windows 에 뜨지만 실행되는 곳은 우분투다
+> WSLg 가 우분투의 창을 Windows 화면에 그려 준다. 1주차에서 `xeyes` 로 확인한 그 기능이다.
+> 창이 안 뜨면 GUI 문제이지 ROS 문제가 아니다 — 1주차 2-4절로 돌아간다.
+
+### 준비 — 노드를 두 개 띄워 둔다
+
+- 아래 실습은 §2-7 에서 만든 노드를 켠 상태를 가정한다. 아직이면 데모 노드로 대신한다
+
+```bash
+ros2 run demo_nodes_cpp talker
+```
+
+```bash
+ros2 run demo_nodes_py listener
+```
+
+---
+
+### ① rqt_graph — 연결 관계
+
+```bash
+ros2 run rqt_graph rqt_graph
+```
+
+![rqt_graph — 발행자 · 토픽 · 구독자](../assets/w02-rqt-graph.png)
+
+- 위 화면은 §2-7 의 `simple_talker` · `simple_listener` 를 실제로 띄우고 캡처한 것이다
+
+| 모양 | 뜻 |
+|---|---|
+| **타원** | 노드 (`/simple_talker`, `/simple_listener`) |
+| **화살표 위의 글자** | 토픽 (`/usv_chatter`) |
+| **화살표 방향** | 데이터가 흐르는 방향 |
+
+- 화면 위쪽 조작
+
+| 위치 | 하는 일 |
+|---|---|
+| 왼쪽 위 **파란 회전 화살표** | 새로고침. **자동 갱신되지 않는다** |
+| `Nodes only` 드롭다운 | `Nodes/Topics (all)` 로 바꾸면 토픽이 사각형으로 따로 보인다 |
+| `Hide:` 체크박스들 | `Debug`·`Params` 를 끄면 화면이 단순해진다 |
+
+> [!tip] 비어 있으면 세 가지를 의심한다
+> 1. 노드가 죽었다 → `ros2 node list` 로 확인
+> 2. 새로고침을 안 눌렀다 → 파란 화살표
+> 3. `ROS_DOMAIN_ID` 가 다르다 → `echo $ROS_DOMAIN_ID`
+
+---
+
+### ② Topic Monitor — 값이 실제로 바뀌는지
+
+```bash
+ros2 run rqt_topic rqt_topic
+```
+
+![Topic Monitor — 주기와 현재 값](../assets/w02-rqt-topic.png)
+
+- **왼쪽 체크박스를 켜야** 측정이 시작된다. 켜지 않으면 `not monitored` 로 남는다
+- 토픽 이름 왼쪽 **삼각형**을 누르면 메시지 내부 필드까지 펼쳐진다
+
+| 열 | 뜻 | 위 화면의 값 |
+|---|---|---|
+| `Type` | 메시지 타입 | `std_msgs/msg/String` |
+| `Hz` | 초당 수신 횟수 | **2.00** — `simple_talker` 가 0.5 s 주기이므로 일치 |
+| `Value` | 현재 값 | `'USV alive: 356'` |
+
+> [!important] `ros2 topic hz` 와 같은 값이 나와야 한다
+> 두 값이 다르면 **발행자가 둘 이상** 켜져 있는 것이다.
+> 실제로 `simple_talker` 를 두 번 실행하면 `Hz` 가 약 4.0 으로 찍힌다.
+
+---
+
+### ③ rqt_console — 로그를 한곳에서
+
+```bash
+ros2 run rqt_console rqt_console
+```
+
+![rqt_console — 모든 노드의 로그](../assets/w02-rqt-console.png)
+
+- 모든 노드가 `/rosout` 으로 보낸 로그가 여기에 모인다
+
+| 열 | 뜻 |
+|---|---|
+| `#` | 도착 순서 |
+| `Message` | 로그 내용 |
+| `Severity` | `Debug` · `Info` · `Warn` · `Error` · `Fatal` |
+| `Node` | 어느 노드가 찍었는가 |
+| `Stamp` | 시각 |
+
+- 가운데 **Exclude Messages** 에서 `Info` 를 눌러 끄면 **경고만** 남는다
+
+> [!important] QoS 경고를 찾는 가장 확실한 방법이다
+> §2-8 의 QoS 불일치 경고는 `[INFO]` 홍수에 묻혀 터미널에서 놓치기 쉽다.
+> 여기서 `Severity` 를 `Warn` 으로 걸러 보면 한눈에 보인다.
+
+---
+
+### ④ RViz2 — 3차원으로 보는 도구
+
+```bash
+rviz2
+```
+
+![RViz2 첫 실행 화면](../assets/w02-rviz2.png)
+
+- 처음 켜면 **격자(Grid)만** 있는 빈 화면이 정상이다. 아직 보여 줄 데이터가 없다
+
+| 화면의 위치 | 이름 | 하는 일 |
+|---|---|---|
+| 왼쪽 위 | **Displays** | 무엇을 그릴지 목록. `Add` 로 추가 |
+| 가운데 | **3D 뷰** | 마우스 왼쪽 드래그 = 회전, 휠 = 확대 |
+| 오른쪽 | **Views** | 카메라 종류와 거리 |
+| 아래 | **Time** | ROS 시각과 실제 시각 |
+| 맨 아래 왼쪽 | 상태 문구 | `RViz is ready.` 가 나오면 정상 |
+
+- 왼쪽 `Global Status: Warn` 과 `Fixed Frame` 의 `No tf data` 는 **지금은 정상**이다
+  - 좌표계(TF)를 발행하는 노드가 아직 없기 때문이다
+  - 3주차에서 VRX 를 띄우면 이 경고가 사라진다
+
+> [!note] 이번 주차에는 띄워 보는 것까지가 목표다
+> RViz2 를 제대로 쓰는 것은 **3주차(좌표계·TF)** 와 **4주차(센서 토픽)** 의 내용이다.
+> 지금은 "이런 도구가 있고, 실행하면 이런 화면이 나온다" 를 확인한다.
+
+---
+
+### 네 도구를 한 번에 확인하는 순서
+
+1. `ros2 run demo_nodes_cpp talker` 를 켠다
+2. `rqt_graph` → 타원 하나가 보인다
+3. `ros2 run demo_nodes_py listener` 를 켠다 → **새로고침** → 타원 둘과 화살표
+4. `rqt_topic` → `/chatter` 체크 → `Hz` 가 약 1.0
+5. `rqt_console` → `Publishing:` 로그가 쌓인다
+6. `rviz2` → 격자 화면과 `RViz is ready.`
+
+---
+
+## 2-6. 내 패키지 만들기
 
 ### 워크스페이스 생성
 
@@ -678,17 +1358,55 @@ cd ~/capstone_ws/src
 ros2 pkg create --build-type ament_python --license Apache-2.0 usv_basics
 ```
 
-- 생성된 구조
+- 정상 출력 (기준 환경 실측)
+
+```
+going to create a new package
+package name: usv_basics
+destination directory: /home/cnu/capstone_ws/src
+package format: 3
+version: 0.0.0
+description: TODO: Package description
+maintainer: ['cnu <cnu@todo.todo>']
+licenses: ['Apache-2.0']
+build type: ament_python
+dependencies: []
+creating folder ./usv_basics
+creating ./usv_basics/package.xml
+creating source folder
+creating folder ./usv_basics/usv_basics
+creating ./usv_basics/setup.py
+creating ./usv_basics/setup.cfg
+creating folder ./usv_basics/resource
+creating ./usv_basics/resource/usv_basics
+creating ./usv_basics/usv_basics/__init__.py
+creating folder ./usv_basics/test
+creating ./usv_basics/test/test_copyright.py
+creating ./usv_basics/test/test_flake8.py
+creating ./usv_basics/test/test_pep257.py
+```
+
+- 실제로 만들어진 구조 — `find` 로 확인한 결과다
 
 ```
 usv_basics/
-├── package.xml          패키지 정보, 의존성
-├── setup.py             빌드 설정, 실행파일 등록
-├── setup.cfg
-├── resource/usv_basics
-└── usv_basics/          <- 여기에 .py 파일을 넣는다
+├── LICENSE                  Apache-2.0 전문
+├── package.xml              패키지 정보, 의존성
+├── setup.py                 빌드 설정, 실행파일 등록
+├── setup.cfg                실행파일이 깔릴 경로
+├── resource/usv_basics      ROS 2 가 패키지를 찾는 표식 파일 (비어 있음)
+├── test/                    자동 생성된 검사 3종
+│   ├── test_copyright.py
+│   ├── test_flake8.py
+│   └── test_pep257.py
+└── usv_basics/              <- 여기에 .py 파일을 넣는다
     └── __init__.py
 ```
+
+> [!note] `--license` 를 빼면 경고가 난다
+> 라이선스가 없으면 `colcon build` 가 경고를 낸다. 팀 저장소에 올릴 것이므로 붙여 둔다.
+
+- VS Code 탐색기에서도 같은 구조가 보인다 (§2-2 의 화면)
 
 ### 빌드
 
@@ -697,6 +1415,17 @@ cd ~/capstone_ws
 colcon build --symlink-install
 source install/setup.bash
 ```
+
+- 정상 출력 (기준 환경 실측, 패키지가 비어 있을 때)
+
+```
+Starting >>> usv_basics
+Finished <<< usv_basics [0.77s]
+
+Summary: 1 package finished [1.04s]
+```
+
+- 빌드 후 `~/capstone_ws` 에 **`build/` · `install/` · `log/`** 세 폴더가 새로 생긴다
 
 > [!tip] `--symlink-install` 사용을 권장한다
 > Python 파일이 링크로 연결되어 **코드를 고칠 때마다 다시 빌드할 필요가 없음**.
@@ -709,19 +1438,40 @@ echo "source ~/capstone_ws/install/setup.bash" >> ~/.bashrc
 
 ---
 
-## 2-5. 첫 노드 작성
+## 2-7. 첫 노드 작성
+
+> [!important] 이 절부터는 VS Code 로 파일을 만든다
+> §2-2 에서 `code .` 로 `~/capstone_ws` 를 열어 둔 상태여야 한다.
+> 왼쪽 아래에 **`WSL: Ubuntu-22.04`** 가 보이는지 먼저 확인할 것.
+
+### VS Code 에서 새 파일을 만드는 방법
+
+1. 왼쪽 **탐색기**에서 `src` → `usv_basics` → `usv_basics` 폴더를 펼친다
+2. 그 **폴더 이름 위에 마우스를 올리면** 오른쪽에 아이콘 네 개가 나타난다
+3. 맨 왼쪽 **새 파일** 아이콘(문서에 `+`)을 누른다
+4. 파일 이름을 입력하고 `Enter`
+
+- 만들 위치를 헷갈리지 않도록 **전체 경로**를 적어 둔다
+
+```
+~/capstone_ws/src/usv_basics/usv_basics/
+```
+
+> [!warning] `usv_basics` 폴더가 두 번 나온다
+> 바깥쪽은 **패키지 폴더**, 안쪽은 **파이썬 모듈 폴더**다.
+> `.py` 파일은 **안쪽**에 넣는다. 바깥쪽에 넣으면 `colcon build` 가 무시한다.
+
+| 동작 | 단축키 |
+|---|---|
+| 저장 | `Ctrl + S` |
+| 붙여넣기 | `Ctrl + V` (터미널에서는 `Ctrl + Shift + V`) |
+| 파일 찾기 | `Ctrl + P` 후 파일명 입력 |
+| 통합 터미널 열기·닫기 | `` Ctrl + ` `` |
 
 ### 발행자
 
 - 파일 위치: `~/capstone_ws/src/usv_basics/usv_basics/simple_talker.py`
-- 만드는 방법
-
-```bash
-cd ~/capstone_ws/src/usv_basics/usv_basics
-nano simple_talker.py
-```
-
-- 아래 내용을 붙여넣기 (`Ctrl + Shift + V`)
+- 위 방법으로 `simple_talker.py` 를 만들고 아래 내용을 붙여넣는다 (`Ctrl + V`)
 
 ```python
 import rclpy
@@ -761,13 +1511,15 @@ if __name__ == '__main__':
     main()
 ```
 
-- 저장: `Ctrl + O` → `Enter` → 종료: `Ctrl + X`
+- **저장**: `Ctrl + S`. 탭 이름 옆의 **흰 점(●)이 사라지면** 저장된 것이다
+
+> [!tip] 빨간 밑줄이 뜨면 저장 전에 고친다
+> Python 확장이 오타·들여쓰기 오류를 즉시 표시한다.
+> 화면 왼쪽 아래 `✕ 0  ⚠ 0` 이 **둘 다 0** 이어야 정상이다.
 
 ### 구독자
 
-```bash
-nano simple_listener.py
-```
+- 같은 폴더에 `simple_listener.py` 를 새로 만든다
 
 ```python
 import rclpy
@@ -803,12 +1555,9 @@ if __name__ == '__main__':
 
 ### 실행파일 등록
 
-```bash
-cd ~/capstone_ws/src/usv_basics
-nano setup.py
-```
-
-- `entry_points` 부분을 아래로 수정
+- VS Code 탐색기에서 `src/usv_basics/setup.py` 를 **클릭해서 연다**
+  - 단축키로 열려면 `Ctrl + P` → `setup.py` 입력 → `Enter`
+- 파일 아래쪽의 `entry_points` 부분을 아래로 수정한다
 
 ```python
 entry_points={
@@ -827,42 +1576,94 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-- 정상 출력
+- 정상 출력 (기준 환경 실측)
 
 ```
 Starting >>> usv_basics
-Finished <<< usv_basics [1.23s]
+Finished <<< usv_basics [0.77s]
 
-Summary: 1 package finished [1.45s]
+Summary: 1 package finished [1.04s]
 ```
 
-- **터미널 A**
+- 등록이 제대로 됐는지 확인한다
+
+```bash
+ros2 pkg executables usv_basics
+```
+
+- 정상 출력
+
+```
+usv_basics qos_test_pub
+usv_basics qos_test_sub
+usv_basics simple_listener
+usv_basics simple_talker
+```
+
+- VS Code 통합 터미널을 **좌우로 나눈다** (터미널 패널 오른쪽 위 분할 버튼)
+
+- **왼쪽 터미널**
 
 ```bash
 ros2 run usv_basics simple_talker
 ```
 
-- **터미널 B**
+- 정상 출력 (기준 환경 실측)
+
+```
+[INFO] [1788862815.369895386] [simple_talker]: published: USV alive: 0
+[INFO] [1788862815.860327737] [simple_talker]: published: USV alive: 1
+[INFO] [1788862816.361112878] [simple_talker]: published: USV alive: 2
+```
+
+- **오른쪽 터미널**
 
 ```bash
 ros2 run usv_basics simple_listener
 ```
 
-- B에 `received: USV alive: 0` 이 흐르면 성공
+- 정상 출력 (기준 환경 실측)
+
+```
+[INFO] [1788862815.370363776] [simple_listener]: received: USV alive: 0
+[INFO] [1788862815.860455555] [simple_listener]: received: USV alive: 1
+[INFO] [1788862816.361306687] [simple_listener]: received: USV alive: 2
+```
+
+![VS Code 통합 터미널 — 왼쪽 발행자 · 오른쪽 구독자](../assets/w02-vscode-terminal.png)
+
+> [!important] 이 화면이 이번 주차의 통과 기준이다
+> 두 터미널의 숫자가 **같은 값으로 나란히** 올라가야 한다.
+
+- 주기를 수치로 확인한다 (세 번째 터미널)
+
+```bash
+ros2 topic hz /usv_chatter
+```
+
+- 정상 출력 (기준 환경 실측) — 코드의 `create_timer(0.5, ...)` 와 일치한다
+
+```
+average rate: 2.000
+	min: 0.500s max: 0.500s std dev: 0.00022s window: 8
+```
+
+| 확인 항목 | 기대값 | 실측 |
+|---|---|---|
+| 발행 주기 | 2 Hz (`0.5 s`) | `average rate: 2.000` |
+| 간격 흔들림 | 작을수록 좋음 | `std dev: 0.00022 s` |
+| 발행–수신 지연 | 1 ms 수준 | 로그 시각 차 `0.0001~0.0005 s` |
 
 ---
 
-## 2-6. QoS 불일치 재현 실험
+## 2-8. QoS 불일치 재현 실험
 
 > [!important] 이번 주차 실습에서 가장 중요한 부분
 > 이 유의 사항을 지금 손으로 만들어 봐야, 3주차에 VRX LiDAR에서 만났을 때 스스로 알아챔.
 
 ### 발행자 — BEST_EFFORT
 
-```bash
-cd ~/capstone_ws/src/usv_basics/usv_basics
-nano qos_test_pub.py
-```
+- VS Code 탐색기에서 `src/usv_basics/usv_basics/` 에 `qos_test_pub.py` 를 새로 만든다
 
 ```python
 import rclpy
@@ -903,9 +1704,7 @@ def main():
 
 ### 구독자 — RELIABLE (더 엄격)
 
-```bash
-nano qos_test_sub.py
-```
+- 같은 폴더에 `qos_test_sub.py` 를 새로 만든다
 
 ```python
 import rclpy
@@ -956,18 +1755,39 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 
 ### 관찰 순서
 
-**1. 두 노드를 각각 실행**
+**1. 두 노드를 각각 실행** — VS Code 통합 터미널을 좌우로 나눈다
 
 ```bash
 ros2 run usv_basics qos_test_pub
+```
+
+- 발행자 쪽 출력 (기준 환경 실측) — **첫 줄이 경고**다
+
+```
+[WARN] [1788862828.210020463] [qos_test_pub]: New subscription discovered on topic 'qos_topic', requesting incompatible QoS. No messages will be sent to it. Last incompatible policy: RELIABILITY
+[INFO] [1788862828.697631209] [qos_test_pub]: published
+[INFO] [1788862829.197384841] [qos_test_pub]: published
 ```
 
 ```bash
 ros2 run usv_basics qos_test_sub
 ```
 
-- 관찰: 발행자는 계속 `published` 를 찍는데 **구독자는 아무것도 안 나옴**
-- 관찰: **에러 메시지가 하나도 없음** ← 이것이 이 유의 사항이 위험한 이유
+- 구독자 쪽 출력 (기준 환경 실측) — **경고 한 줄뿐이고 그 뒤가 없다**
+
+```
+[WARN] [1788862828.210407869] [qos_test_sub]: New publisher discovered on topic 'qos_topic', offering incompatible QoS. No messages will be received from it. Last incompatible policy: RELIABILITY
+```
+
+| 관찰 | 사실 |
+|---|---|
+| 발행자는 계속 `published` 를 찍는다 | 보내는 쪽은 정상 동작한다 |
+| 구독자는 `received` 가 **한 줄도 없다** | 8초 실행 중 수신 **0건** (실측) |
+| 프로그램이 죽지 않는다 | 예외도 없고 종료도 안 한다 |
+| **경고 한 줄이 맨 위에 있다** | 이것을 못 보고 지나가는 것이 문제다 |
+
+> [!tip] 경고를 놓쳤다면 `rqt_console` 로 본다
+> §2-5 의 `rqt_console` 에서 **Exclude Messages → `Info` 를 끄면** 경고만 남는다.
 
 **2. 진단**
 
@@ -975,13 +1795,36 @@ ros2 run usv_basics qos_test_sub
 ros2 topic info /qos_topic --verbose
 ```
 
-- 출력에서 `Publishers:` 와 `Subscriptions:` 각각의 `Reliability` 를 비교
-- 서로 다른 것이 확인됨
+- 출력에서 `Endpoint type: PUBLISHER` 와 `SUBSCRIPTION` 각각의 `Reliability` 를 비교한다
+- 실측에서는 발행자가 `BEST_EFFORT`, 구독자가 `RELIABLE` 로 서로 다르게 나온다
 
 **3. 수정**
 
-- `qos_test_sub.py` 의 `ReliabilityPolicy.RELIABLE` 을 `ReliabilityPolicy.BEST_EFFORT` 로 변경
-- 다시 빌드 후 실행 → **정상 수신**
+1. VS Code 에서 `qos_test_sub.py` 를 연다
+2. `ReliabilityPolicy.RELIABLE` 을 `ReliabilityPolicy.BEST_EFFORT` 로 바꾼다
+3. `Ctrl + S` 로 저장
+
+```bash
+cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
+```
+
+4. 두 노드를 다시 실행한다
+
+- 고친 뒤 구독자 출력 (기준 환경 실측)
+
+```
+[INFO] [1788862838.706155006] [qos_test_sub]: received: best effort message
+[INFO] [1788862838.950216507] [qos_test_sub]: received: best effort message
+[INFO] [1788862839.197985143] [qos_test_sub]: received: best effort message
+```
+
+| 상태 | 8초 동안 구독자가 받은 줄 수 (실측) |
+|---|---|
+| 불일치 (`BEST_EFFORT` ← `RELIABLE`) | **0** |
+| 일치 (`BEST_EFFORT` ← `BEST_EFFORT`) | **35** |
+
+> [!important] 0 과 35 의 차이를 만든 것은 코드 한 단어다
+> 알고리즘도 배선도 바뀌지 않았다. QoS 정책 이름 하나만 바뀌었다.
 
 > [!warning] 3주차에서 다시 다룬다
 > Gazebo의 센서 토픽 상당수가 `BEST_EFFORT` 로 발행됨.
@@ -995,13 +1838,15 @@ ros2 topic info /qos_topic --verbose
 
 | 순서 | 한 일 | 확인 방법 |
 |---|---|---|
-| 1 | ROS 2 Humble 설치 | `ros2 --help` |
-| 2 | Domain ID 설정 | `echo $ROS_DOMAIN_ID` |
-| 3 | talker / listener 통신 | `I heard: [Hello World: N]` |
-| 4 | 조사 명령어 사용 | `ros2 topic list` / `hz` / `info` |
-| 5 | 워크스페이스와 패키지 생성 | `colcon build` 성공 |
-| 6 | 내 노드 작성 및 통신 | `received: USV alive: 0` |
-| 7 | QoS 불일치 재현 · 진단 · 해결 | `ros2 topic info --verbose` |
+| 1 | ROS 2 Humble 설치 | `ros2 doctor` → `All 5 checks passed` |
+| 2 | Domain ID 설정 | `echo $ROS_DOMAIN_ID` → 팀 번호 |
+| 3 | **VS Code 설치와 WSL 연결** | 왼쪽 아래 `WSL: Ubuntu-22.04` |
+| 4 | talker / listener 통신 | `I heard: [Hello World: N]` |
+| 5 | 조사 명령어 사용 | `ros2 topic list` / `hz` / `info --verbose` |
+| 6 | **rqt_graph · Topic Monitor · rqt_console · RViz2** | 창 4개가 뜬다 |
+| 7 | 워크스페이스와 패키지 생성 | `colcon build` → `1 package finished` |
+| 8 | 내 노드 작성 및 통신 | `received: USV alive: 0` |
+| 9 | QoS 불일치 재현 · 진단 · 해결 | 수신 0건 → 35건 |
 
 ---
 
@@ -1012,20 +1857,36 @@ ros2 topic info /qos_topic --verbose
 ### 이론 이해
 
 - [ ] ROS 2가 무엇을 해결하는지 설명할 수 있다
+- [ ] `roscore` · `rospy` · `catkin_make` 가 나오면 **ROS 1 예제**임을 안다
 - [ ] 노드 · 토픽 · 발행 · 구독 · 메시지를 각각 설명할 수 있다
+- [ ] **워크스페이스 · 패키지 · 노드**의 차이를 설명할 수 있다
+- [ ] `setup.py` 의 `console_scripts` 한 줄이 무엇을 정하는지 안다
 - [ ] `header.stamp` 와 `frame_id` 가 왜 필요한지 안다
 - [ ] `ROS_DOMAIN_ID` 를 왜 팀별로 나누는지 안다
-- [ ] QoS 불일치가 **에러 없이** 실패한다는 것을 안다
+- [ ] QoS 불일치가 **프로그램을 죽이지 않고** 실패한다는 것을 안다
 - [ ] 에일리어싱이 무엇인지 그림으로 설명할 수 있다
+
+### 환경 구축
+
+- [ ] `ros2 doctor` 가 `All 5 checks passed` 로 끝난다
+- [ ] PowerShell 에서 `code --version` 이 버전을 출력한다
+- [ ] `code --list-extensions` 에 `ms-vscode-remote.remote-wsl` 이 있다
+- [ ] VS Code 왼쪽 아래에 **`WSL: Ubuntu-22.04`** 가 보인다
+- [ ] `code --remote wsl+Ubuntu-22.04 --list-extensions` 에 `ms-python.python` 이 있다
+- [ ] VS Code 통합 터미널의 프롬프트가 `사용자명@컴퓨터:~/capstone_ws$` 형태다
+- [ ] 통합 터미널을 **좌우로 나눠** 두 노드를 동시에 실행해 봤다
 
 ### 실습 완료
 
 - [ ] `ros2 run demo_nodes_cpp talker` / `demo_nodes_py listener` 통신 성공
 - [ ] `ros2 topic list` / `echo` / `hz` / `info --verbose` 를 모두 써 봤다
 - [ ] `rqt_graph` 로 노드 그래프를 확인했다
+- [ ] `rqt_topic` 에서 `/usv_chatter` 의 `Hz` 가 **2.00** 인 것을 확인했다
+- [ ] `rqt_console` 에서 로그를 확인했다
+- [ ] `rviz2` 를 띄워 `RViz is ready.` 를 확인했다
 - [ ] `~/capstone_ws` 워크스페이스 생성 및 빌드 성공
 - [ ] 직접 만든 `simple_talker` ↔ `simple_listener` 통신 성공
-- [ ] **QoS 불일치를 재현하고 진단한 뒤 해결했다**
+- [ ] **QoS 불일치를 재현하고 진단한 뒤 해결했다** (수신 0건 → 정상 수신)
 - [ ] `~/.bashrc` 에 `ROS_DOMAIN_ID` 를 팀 번호로 설정했다
 
 ### 다음 주 준비
@@ -1091,16 +1952,65 @@ w_z(t) = 0.5 * sin(2*pi*0.5*t)    저주파  0.5 Hz  (실제 선회 운동)
 
 ## 막혔을 때
 
+> [!note] 아래 메시지는 전부 **기준 환경에서 재현해 받은 실제 출력**이다
+> 검색할 때는 대괄호 안의 시각을 빼고 메시지 본문만 넣는다.
+
+### ROS 2 실행
+
+| 화면에 나오는 것 | 원인 | 해결 |
+|---|---|---|
+| `bash: ros2: command not found` | 환경 미적용 | `source /opt/ros/humble/setup.bash` |
+| `Package 'usv_basics' not found` | **워크스페이스 미적용** | `source ~/capstone_ws/install/setup.bash` |
+| `Package 'usv_basic' not found` | 패키지 **이름 오타** | `ros2 pkg list \| grep usv` 로 확인 |
+| `No executable found` | `setup.py` 의 `console_scripts` 미등록 또는 실행파일 이름 오타 | `ros2 pkg executables usv_basics` 로 확인 |
+| 코드를 고쳤는데 반영 안 됨 | `--symlink-install` 없이 빌드 | 옵션 붙여 재빌드 |
+| `colcon build` 에서 `setup.py` 오류 | `entry_points` 오타 | `패키지명.파일명:main` 형식 확인 |
+| `WARNING: Be aware that there are nodes in the graph that share an exact name` | **같은 노드를 두 번 실행** | 하나를 `Ctrl + C` 로 끈다. `ros2 topic hz` 값이 배로 뛰는 것이 신호 |
+| `sudo rosdep init` 이 실패 | 이미 초기화됨 | 무시하고 `rosdep update` 진행 |
+
+### 토픽이 안 보이거나 데이터가 안 온다
+
 | 증상 | 원인 | 해결 |
 |---|---|---|
-| `ros2: command not found` | 환경 미적용 | `source /opt/ros/humble/setup.bash` |
-| 내 패키지가 `ros2 run` 에 안 보임 | 워크스페이스 미적용 | `source ~/capstone_ws/install/setup.bash` |
-| 코드를 고쳤는데 반영 안 됨 | `--symlink-install` 없이 빌드 | 옵션 붙여 재빌드 |
-| `colcon build` 에서 setup.py 오류 | `entry_points` 오타 | `패키지명.파일명:main` 형식 확인 |
-| 옆자리 학생의 토픽이 보임 | Domain ID 같음 | 팀 번호로 변경 후 `source ~/.bashrc` |
-| **토픽은 보이는데 데이터를 못 받음** | **QoS 불일치** | `ros2 topic info <토픽> --verbose` |
-| `rqt_graph` 창이 안 뜸 | WSLg 문제 | 1주차 `xeyes` 확인으로 복귀 |
-| `sudo rosdep init` 이 실패 | 이미 초기화됨 | 무시하고 `rosdep update` 진행 |
+| 내 토픽만 목록에 없음 | **`ROS_DOMAIN_ID` 불일치** | 두 터미널에서 `echo $ROS_DOMAIN_ID` 비교 |
+| 옆자리 학생의 토픽이 보임 | Domain ID 가 같음 | 팀 번호로 변경 후 `source ~/.bashrc` |
+| **토픽은 보이는데 데이터를 못 받음** | **QoS 불일치** | `ros2 topic info <토픽> --verbose` 로 `Reliability` 비교 |
+| `incompatible QoS ... Last incompatible policy: RELIABILITY` | 위와 같음 | §2-8 참조 |
+
+- Domain ID 차이는 이렇게 눈으로 확인할 수 있다 (실측)
+
+```bash
+ROS_DOMAIN_ID=7  ros2 topic list      # /usv_chatter 가 보인다
+ROS_DOMAIN_ID=42 ros2 topic list      # /parameter_events 와 /rosout 만 보인다
+```
+
+### VS Code
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| 왼쪽 아래에 `WSL: Ubuntu-22.04` 가 없음 | Windows 쪽 폴더를 연 것 | `><` → **Connect to WSL** 후 폴더를 다시 연다 |
+| 파이썬 자동완성이 안 됨 | Python 확장이 **Windows 쪽에만** 설치됨 | WSL 에 연결한 상태에서 **Install in WSL** 을 누른다 |
+| 위쪽에 노란 `Restricted Mode` 띠 | 폴더를 아직 신뢰하지 않음 | **Manage → Trust** |
+| 저장했는데 빌드에 반영 안 됨 | 저장이 안 됐거나 Windows 쪽 파일 | 탭 이름의 **흰 점(●)** 이 사라졌는지 확인 |
+| `/bin/bash^M: bad interpreter` | 파일이 **CRLF** 로 저장됨 | 상태 표시줄의 `CRLF` 를 눌러 `LF` 로 바꾼 뒤 저장 |
+| 우분투에서 `code .` 실행 시 `Exec format error` | WSL 의 Windows 실행 파일 연동(interop)이 꺼져 있음 | PowerShell 에서 `code --remote wsl+Ubuntu-22.04 /home/사용자명/capstone_ws` 로 대신 연다 |
+
+### GUI 도구
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| `rqt_graph` · `rviz2` 창이 안 뜸 | WSLg 문제 | 1주차 2-4절 `xeyes` 확인으로 복귀 |
+| `rqt_graph` 가 비어 있음 | 자동 갱신 안 됨 | 왼쪽 위 **파란 회전 화살표** |
+| `QStandardPaths: wrong permissions on runtime directory` | WSLg 의 알려진 경고 | **무시해도 된다.** 창은 정상적으로 뜬다 |
+| Topic Monitor 가 `not monitored` | 체크박스를 안 켬 | 토픽 왼쪽 **체크박스**를 켠다 |
+| RViz2 에 `Global Status: Warn` / `No tf data` | TF 발행 노드가 없음 | **이번 주차에는 정상**. 3주차에 해결된다 |
+
+### apt · 권한
+
+| 화면에 나오는 것 | 원인 | 해결 |
+|---|---|---|
+| `E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)` | `sudo` 없이 `apt` 실행 | 명령 앞에 `sudo` 를 붙인다 |
+| `E: Unable to acquire the dpkg frontend lock ... are you root?` | 위와 같음 | 위와 같음 |
 
 ---
 

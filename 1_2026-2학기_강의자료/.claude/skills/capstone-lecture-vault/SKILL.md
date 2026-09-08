@@ -27,6 +27,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | "수식 넣어줘 / 보기 좋게" | LaTeX 으로 쓴다. MathType 이미지 불필요 | `references/pdf-and-math.md` |
 | "PDF 다시 뽑아줘" | `bash _tools/md2pdf.sh <파일>` — 쪽수까지 확인 | `references/pdf-and-math.md` |
 | "그림 그려줘" | `assets/` 에 SVG. **한 번의 Bash 호출에 하나씩** | `references/figures-svg.md` |
+| "화면 캡처 넣어줘" · "따라 할 수 있게" | 도구를 **실제로 띄우고** 창을 찍는다. WSLg 창은 WSL 안에서 | `references/screenshots.md` |
 | "모델 만들어줘 / 선 정리해줘" | `build_wXX_models.m` 작성 → `tidy_layout` 2회 | 스킬 `simulink-gnc-models` |
 | "VRX 로 돌려서 확인해줘" | WSL 배포판 `Ubuntu-22.04` 확인부터 | `references/vrx-runbook.md` |
 | "오프라인이랑 대조해줘" | 겹치는 시간 구간만. 이격은 **위상 오차인 경우가 많다** | `references/vrx-runbook.md` |
@@ -75,6 +76,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | `references/week-quality-bar.md` | **주차 자료의 합격선.** 다이어그램·정상출력·캡처·외부코드 인용 |
 | `references/pdf-and-math.md` | 수식을 넣을 때, PDF 가 안 나올 때 |
 | `references/figures-svg.md` | 그림을 그릴 때 |
+| `references/screenshots.md` | **도구 화면을 캡처할 때.** 캡처 스크립트와 이미 밟은 지뢰 |
 | `references/vrx-runbook.md` | VRX 를 띄우고 수치를 뽑을 때 |
 | `references/vault-upkeep.md` | 문서를 추가·이동·개편할 때, 지식카드를 만들 때 |
 

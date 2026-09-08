@@ -87,6 +87,10 @@ altitude: 1.2479525180533528
 
 ### 캡처 방법 (Windows · WSL GUI 공통)
 
+> [!important] 스크립트와 상세 절차는 `references/screenshots.md` 에 있다
+> `_tools/winshot.ps1` (Windows 창) · `_tools/xshot.sh` · `_tools/xclick.sh` (WSLg 창).
+> **WSLg 창은 Windows 쪽에서 찍으면 엉뚱한 창이 찍힌다.** WSL 안에서 `import` 로 찍는다.
+
 
 1. 창 제목으로 프로세스를 찾는다. WSLg 창은 `msrdc` 프로세스로 뜬다
 2. `ShowWindow(9)` 로 복원하고 `MoveWindow(0,0,W,H)` 로 위치·크기를 정한다
@@ -198,7 +202,7 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | 주차 | 그림 | 정상출력 | 상태 |
 |---|---|---|---|
 | W01 | 3 | 4 | 충족 |
-| W02 | 5 | 8 | 충족 |
+| W02 | **15** | **35** | 충족 — VS Code·rqt·RViz2 실화면 9장 추가 (2026-09-08) |
 | W03 | 4 | 2 | 충족 |
 | W04 | 5 | 7 | 충족 |
 | W05 | 4 | 2 | 충족 — VS Code 실제 화면 추가 |

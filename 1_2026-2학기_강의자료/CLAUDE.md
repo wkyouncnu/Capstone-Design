@@ -58,7 +58,7 @@ bash _tools/md2pdf.sh 10-주차별-강의자료/W0*.md
 | `80-과제/` | Term Project 명세, 루브릭 | **학생 배포본** |
 | `assets/` | 그림 (SVG) | 문서 아님 |
 | `_templates/` | 새 문서 출발점 | 문서 아님 |
-| `_tools/` | PDF 변환 · 인쇄 템플릿 · marked.js · **MathJax** · Simulink 배치 정리(`tidy_layout.m`, `tidy_all.m`) | 문서 아님 |
+| `_tools/` | PDF 변환 · 인쇄 템플릿 · marked.js · **MathJax** · TikZ→SVG(`tikz2svg.sh`) · **화면 캡처**(`winshot.ps1`, `xshot.sh`, `xclick.sh`) · Simulink 배치 정리(`tidy_layout.m`, `tidy_all.m`) | 문서 아님 |
 | `README.md` | 진입점 MOC | 손으로 관리 |
 
 `[2025] ROS2_VRX_Gazebo_Simulink/` 와 `slprj/` 는 코드·빌드 산출물. 볼트 문서가 아니며

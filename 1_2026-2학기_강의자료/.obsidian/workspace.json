@@ -1,0 +1,203 @@
+{
+  "main": {
+    "id": "722625e01cdcbc02",
+    "type": "split",
+    "children": [
+      {
+        "id": "3d7d680045200342",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ccf5da29ee1ae7a9",
+            "type": "leaf",
+            "state": {
+              "type": "pdf",
+              "state": {
+                "file": "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.pdf"
+              },
+              "icon": "lucide-file-text",
+              "title": "W02_ROS2_기초_노드와_토픽"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "d5b05eb77d7c7207",
+    "type": "split",
+    "children": [
+      {
+        "id": "33cfd84c0b74e740",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a45d49b5c9df4fa8",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "파일 탐색기"
+            }
+          },
+          {
+            "id": "da571de1497afd3f",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "검색"
+            }
+          },
+          {
+            "id": "3bd57fc2d54f94c8",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "북마크"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 315.5
+  },
+  "right": {
+    "id": "b04069189c77fc87",
+    "type": "split",
+    "children": [
+      {
+        "id": "448ae62d298b51d8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f036c7cea91bfedd",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.pdf",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "백링크"
+            }
+          },
+          {
+            "id": "46081623514ff5a9",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.pdf",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "나가는 링크"
+            }
+          },
+          {
+            "id": "6d2eb78f3f5f5c22",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "태그"
+            }
+          },
+          {
+            "id": "0f7e9392a4a55930",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "모든 속성"
+            }
+          },
+          {
+            "id": "0700a25a7d2614e6",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.pdf",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "개요"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:빠른 전환기 열기": false,
+      "graph:그래프 뷰 열기": false,
+      "canvas:새 캔버스 만들기": false,
+      "daily-notes:오늘의 일일 노트 열기": false,
+      "templates:템플릿 삽입": false,
+      "command-palette:명령어 팔레트 열기": false,
+      "bases:새 베이스 생성하기": false
+    }
+  },
+  "active": "ccf5da29ee1ae7a9",
+  "lastOpenFiles": [
+    "10-주차별-강의자료/W09_Stateflow_미션_웨이포인트와_로이터링.pdf",
+    "10-주차별-강의자료/W01_개발환경_구축과_USV_자율운항_개관.pdf",
+    "10-주차별-강의자료/W01_개발환경_구축과_USV_자율운항_개관.md",
+    "10-주차별-강의자료/W08_한점을_중심으로_도는_로이터링.pdf",
+    "10-주차별-강의자료/W07_웨이포인트_유도_atan2와_LOS.pdf",
+    "10-주차별-강의자료/W06_Simulink_ROS2_연동과_첫_제어기.pdf",
+    "10-주차별-강의자료/W05_VSCode와_Claude_에이전트_첫_제어노드.pdf",
+    "10-주차별-강의자료/W04_VRX_심화_모델구조와_토픽조사.pdf",
+    "10-주차별-강의자료/W03_Gazebo_VRX_구축과_좌표계.pdf",
+    "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.pdf",
+    "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.md"
+  ]
+}

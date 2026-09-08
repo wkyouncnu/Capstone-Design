@@ -24,9 +24,13 @@ SRC="$1"
 OUT="${2:-${SRC%.tex}.svg}"
 [ -f "$SRC" ] || { echo "no such file: $SRC" >&2; exit 1; }
 
-for d in "/c/Users/admin/AppData/Roaming/TinyTeX/bin/windows" \
+#  TinyTeX 은 사용자마다 %APPDATA% 아래에 깔리므로 계정 이름을 박지 않는다.
+#  현재 사용자 → 다른 계정 → 시스템 TeX Live 순으로 찾는다.
+for d in "${APPDATA:+$(cygpath -u "$APPDATA" 2>/dev/null)/TinyTeX/bin/windows}" \
+         "$HOME/AppData/Roaming/TinyTeX/bin/windows" \
+         /c/Users/*/AppData/Roaming/TinyTeX/bin/windows \
          "/c/texlive/2026/bin/windows" "/c/texlive/2025/bin/windows"; do
-  [ -d "$d" ] && PATH="$d:$PATH"
+  [ -n "$d" ] && [ -d "$d" ] && PATH="$d:$PATH"
 done
 export PATH
 command -v latex   >/dev/null || { echo "latex not found — TinyTeX 설치 확인" >&2; exit 1; }
