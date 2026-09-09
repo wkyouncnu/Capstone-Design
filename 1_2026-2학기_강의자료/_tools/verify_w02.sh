@@ -42,7 +42,9 @@ expect "ros2 명령 존재"            "ros2"     bash -c 'which ros2'
 expect "ROS_DISTRO = humble"       "humble"   bash -ic 'printenv ROS_DISTRO'
 expect "ROS_DOMAIN_ID 설정됨"      ""         bash -ic 'printenv ROS_DOMAIN_ID'
 expect ".bashrc 자동 적용"          "opt/ros/humble/setup.bash" bash -c 'grep opt/ros/humble/setup.bash ~/.bashrc'
-expect "ros2 doctor 통과"          "checks passed" bash -c 'timeout 60 ros2 doctor 2>&1 | tail -3'
+# ros2 doctor 는 apt 판과 rosdistro 색인의 판 차이를 UserWarning 으로 수십 줄 쏟는다.
+# tail -3 으로 자르면 결과 줄이 밀려 나간다. 결과 줄만 집어낸다.
+expect "ros2 doctor 통과"          "checks passed" bash -c 'timeout 90 ros2 doctor 2>&1 | grep -E "checks? passed|check failed"'
 expect "colcon 존재"               "colcon"   bash -c 'which colcon'
 expect "rviz2 존재"                "rviz2"    bash -c 'which rviz2'
 expect "rqt 존재"                  "rqt"      bash -c 'which rqt'
@@ -70,8 +72,10 @@ expect "listener 수신" "I heard"    bash -c 'cat /tmp/v_listener.log'
 expect "노드 2개 보임" "/talker"    bash -c 'timeout 10 ros2 node list'
 expect "hz 측정"       "average rate" bash -c 'timeout 12 ros2 topic hz /chatter 2>&1 | tail -3'
 expect "info --verbose" "Reliability" bash -c 'timeout 10 ros2 topic info /chatter --verbose'
-pkill -f 'demo_nodes_cpp talker'   2>/dev/null
-pkill -f 'demo_nodes_py listener'  2>/dev/null
+# ros2 run 은 래퍼를 거쳐 .../lib/demo_nodes_cpp/talker 로 exec 한다.
+# 'demo_nodes_cpp talker' 만 지우면 실제 노드가 살아남아 다음 실행에서 이름이 겹친다.
+pkill -f 'demo_nodes_cpp[ /]talker'   2>/dev/null
+pkill -f 'demo_nodes_py[ /]listener'  2>/dev/null
 sleep 2
 echo
 
