@@ -375,6 +375,32 @@ ms-vscode-remote.remote-wsl
 - 설치 방법이 **Terminal · VS Code · Desktop app · Web · JetBrains** 탭으로 나뉜다.
   본 과목은 **Terminal**(WSL) 과 **VS Code** 두 가지를 쓴다
 
+- **Ubuntu 터미널**에서 아래 한 줄로 설치한다
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+- 정상 출력 끝부분 (2026-09-15 실측)
+
+```
+  Location: ~/.local/bin/claude
+
+  Next: Run claude --help to get started
+
+✅ Installation complete!
+```
+
+- VS Code 확장은 **Windows 쪽**에서 설치한다. PowerShell 에서 한 줄로도 된다
+
+```powershell
+code --install-extension anthropic.claude-code
+```
+
+```
+Extension 'anthropic.claude-code' v2.1.272 was successfully installed.
+```
+
 > [!caution] Windows 쪽 PowerShell 에 설치하지 않는다
 > **WSL 안**에 설치해야 한다. Windows 쪽에 설치하면 WSL 안의 ROS 2 코드와 빌드 결과를 보지 못한다.
 > 설치 전에 프롬프트가 `사용자명@컴퓨터:~$` 형태인지 확인한다.
@@ -385,10 +411,10 @@ ms-vscode-remote.remote-wsl
 claude --version
 ```
 
-- 정상 출력 (기준 환경 실측)
+- 정상 출력 (기준 환경 실측. 버전 숫자는 갱신되므로 `2.1.x` 면 정상)
 
 ```
-2.1.237 (Claude Code)
+2.1.272 (Claude Code)
 ```
 
 ```bash
@@ -494,7 +520,8 @@ nano CLAUDE.md
 | `/wamv/thrusters/left/thrust` | `std_msgs/Float64` | 발행 |
 | `/wamv/thrusters/right/thrust` | `std_msgs/Float64` | 발행 |
 
-- 센서 토픽은 QoS 가 **BEST_EFFORT** 인 것이 있다. 구독자 QoS 를 맞출 것
+- VRX 브리지의 센서 토픽은 전부 **RELIABLE** (2026-09-15 실측). 구독자 QoS 를 기본값으로 두면 맞음
+- 다만 토픽을 추가할 때는 `ros2 topic info <토픽> --verbose` 로 **직접 확인**할 것
 
 ## 코딩 규칙
 - 노드는 `rclpy.node.Node` 상속
@@ -642,7 +669,8 @@ ros2 bag play wp_run
 
 ### G-6. 정답지와 비교
 
-- 조교가 배포하는 `wamv_pid_control_v2.py` 와 비교해 볼 것
+- 정답지는 배포 폴더 안에 있다
+  - `[2025] ROS2_VRX_Gazebo_Simulink/src/vrx_control/vrx_control/wamv_pid_control_v2.py`
 - 연구실이 실제로 KABOAT 에서 쓴 코드다
 
 | 항목 | 정답지의 값 |
@@ -723,25 +751,83 @@ https://github.com/matlab/simulink-agentic-toolkit/releases/latest/download/agen
 setupAgenticToolkit("install")
 ```
 
-- 어떤 스킬 그룹을 설치할지 물어봄
-- **본 과목에 필요한 것만** 고를 것 (많이 깔면 오히려 잘 안 골라짐)
+- 이 한 줄이 세 가지를 한다 (2026-09-15 실측 출력)
 
-| 스킬 그룹 | 필요 여부 |
+```
+  Downloading MATLAB MCP Server v0.13.0 for Windows x86_64...
+  MCP server binary installed to: C:\Users\<사용자>\.matlab\agentic-toolkits\bin\matlab-mcp-server.exe
+  MATLAB Agentic Toolkit installed to: C:\Users\<사용자>\.matlab\agentic-toolkits\matlab
+  Simulink Agentic Toolkit installed to: C:\Users\<사용자>\.matlab\agentic-toolkits\simulink
+```
+
+| 설치되는 것 | 역할 |
 |---|---|
-| MATLAB Core | **필요** — 코드 작성·디버그·테스트 |
-| Control Systems | **필요** — 선형화, 주파수응답, 모터 제어 |
-| Model-Based Design Core | **필요** — Simulink 모델 작성·시뮬레이션 |
-| Verification & Test | 권장 — 모델 테스트 |
-| 그 외 (RF, 무선, 금융 등) | 불필요 |
+| **MATLAB MCP Server** (`.exe`) | Claude 와 MATLAB 사이의 중계기 |
+| **MATLAB MCP Server Toolbox** (애드온) | **`shareMATLABSession` 함수가 여기 들어 있다** |
+| MATLAB · Simulink Agentic Toolkit | `model_*` 도구와 작업 절차(스킬) |
 
-**4단계 — MATLAB 세션 공유**
+**4단계 — 에이전트에 연결**
 
 ```matlab
+setupAgenticToolkit("configure")
+```
+
+- 어떤 에이전트에 연결할지, 어떤 스킬 그룹을 켤지 물어봄
+- 본 과목은 **Claude Code** 를 고른다
+- 대화 없이 지정하려면
+
+```matlab
+setupAgenticToolkit("configure", Scope="global", Agents="claude-code", Prompt=false)
+```
+
+- 정상 출력
+
+```
+  Writing MCP config:
+    Claude Code: C:\Users\<사용자>\.claude.json
+  Configure complete!
+```
+
+> [!note] 스킬 그룹을 고르지 않으면 전부 켜진다
+> 비대화식으로 돌리면 스킬 183개가 등록된다. 본 과목에 필요한 것만 켜려면
+> `SkillGroups=["matlab-core","control-systems","model-based-design-core","simulink-simulation"]` 처럼 지정한다.
+
+**5단계 — MATLAB 세션 공유**
+
+- MATLAB 을 켤 때마다 아래 세 줄을 실행한다
+
+```matlab
+addpath("C:\Users\<사용자>\.matlab\agentic-toolkits\simulink")
+satk_initialize
 shareMATLABSession()
 ```
 
-- 이 명령이 현재 MATLAB 세션을 에이전트에게 열어 줌
-- **MATLAB 을 새로 켤 때마다 다시 실행**해야 함
+| 줄 | 하는 일 |
+|---|---|
+| `addpath` + `satk_initialize` | **Simulink 도구(`model_*`)를 켠다.** 빠뜨리면 MATLAB 명령 실행만 되고 모델을 못 읽음 |
+| `shareMATLABSession()` | 지금 이 MATLAB 세션을 에이전트에게 연다 |
+
+> [!caution] `shareMATLABSession` 을 **찾을 수 없다**고 나오면 3단계를 안 한 것이다
+> - 이 함수는 MCP 서버 실행 파일이 아니라 **MATLAB MCP Server Toolbox 애드온**에 들어 있다
+> - 서버만 내려받아 등록한 경우 이 애드온이 없으므로 아래 오류가 난다
+>
+> ```
+> 함수 또는 변수 'shareMATLABSession'을(를) 인식할 수 없습니다.
+> ```
+>
+> - 조치 — 3단계를 실행하거나, 서버 실행 파일로 애드온만 따로 설치한다
+>
+> ```powershell
+> matlab-mcp-server-windows-x64.exe --setup-matlab --matlab-root="C:\Program Files\MATLAB\R2024b"
+> ```
+>
+> - 성공하면 `Successfully setup MATLAB.` 한 줄이 나온다. **그 뒤 MATLAB 을 껐다 켜야** 함수가 잡힌다
+> - 확인: `which shareMATLABSession` 이 애드온 폴더 경로를 출력하면 정상
+
+> [!important] 본 과목 설정은 **실행 중인 MATLAB 에 붙는 방식**이다
+> `configure` 가 써 넣는 설정은 `--matlab-session-mode=existing` 이다.
+> 즉 **MATLAB 을 먼저 켜고 `shareMATLABSession()` 을 실행해 두어야** 에이전트가 연결된다.
+> 매번 치기 번거로우면 `edit(fullfile(userpath,'startup.m'))` 으로 startup.m 에 위 세 줄을 넣는다.
 
 ### F-4. 연결 확인
 
@@ -817,6 +903,8 @@ open_system('VRX_tilt4_controller_unberthing')
 
 - MCP 서버가 열어 주는 도구 목록. **외우지 말고, 이런 게 있다는 것만 알 것**
 
+- 2026-09-15 실측으로 **도구 14개**가 열린다
+
 | 도구 | 하는 일 |
 |---|---|
 | `detect_matlab_toolboxes` | MATLAB 버전·설치 툴박스 조회 |
@@ -828,8 +916,13 @@ open_system('VRX_tilt4_controller_unberthing')
 | `model_read` | 블록 · 연결 · 파라미터 읽기 |
 | `model_edit` | 블록 추가 · 연결 · 파라미터 변경 |
 | `model_check` | 미연결 포트 · 끊어진 신호선 검사 |
+| `model_scan` | 폴더 안의 모델 훑기 |
+| `model_query_params` | 모델 파라미터 조회 |
 | `model_resolve_params` | 변수 이름 → 실제 숫자 값 |
 | `model_read_diagnostics` | 컴파일·시뮬레이션 오류 메시지 읽기 |
+| `model_test` | 모델 테스트 실행 (Simulink Test 필요) |
+
+- `model_` 로 시작하는 도구는 **`satk_initialize` 를 실행한 세션**에서만 동작한다
 
 > [!note] 스킬(skill)도 함께 설치된다
 > `setupAgenticToolkit` 에서 고른 스킬 그룹에 따라
@@ -980,7 +1073,7 @@ source /opt/ros/humble/setup.bash && printenv ROS_DISTRO && ros2 pkg list | wc -
 
 ```
 humble
-288
+307
 ```
 
 ```bash
@@ -996,13 +1089,13 @@ source ~/vrx_ws/install/setup.bash && ros2 pkg list | grep vrx
 ```
 
 ```
-vrx_control
-vrx_eval
 vrx_gazebo
 vrx_gz
-vrx_llm_dock
 vrx_ros
 ```
+
+- 3주차 절차대로 설치했으면 **이 세 개**다 (`wamv_description` · `wamv_gazebo` 를 합쳐 빌드 패키지는 5개)
+- 연구실 워크스페이스에는 `vrx_control` · `vrx_eval` 등이 더 있으나 본 과목 설치본에는 없다
 
 ```bash
 claude --version && which claude
@@ -1017,9 +1110,9 @@ claude --version && which claude
 |---|---|---|
 | 우분투 | `22.04.5 LTS jammy` | 배포판을 잘못 설치. 3주차 §2-2 |
 | `ROS_DISTRO` | `humble` | `source` 안 함 → E-1 |
-| 패키지 수 | 288 | 크게 적으면 설치 미완 |
+| 패키지 수 | 307 | 크게 적으면 설치 미완 |
 | Gazebo | `7.9.0` (Garden) | 버전이 섞였을 수 있다 |
-| VRX 패키지 | 6개 | 빌드 실패 → 3주차 §2-2 |
+| VRX 패키지 | 3개 (`vrx_gazebo` · `vrx_gz` · `vrx_ros`) | 빌드 실패 → 3주차 §2-2 |
 | Claude Code | `2.1.x` · `/home/...` | `/mnt/c/...` 면 Windows 설치본 |
 
 - 패키지 수와 버전은 설치 시점에 따라 조금 다를 수 있다. **자릿수가 맞으면 정상**이다
@@ -1170,6 +1263,9 @@ diff -u waypoint_pid_draft.py waypoint_pid.py > agent_diff.txt
 | 에이전트가 규약을 무시함 | `CLAUDE.md` 가 모호함 | 금지 문장과 정확한 이름으로 다시 작성 |
 | MATLAB 연동이 안 됨 | 세션 미공유 | MATLAB 에서 `shareMATLABSession()` 재실행 |
 | MATLAB 을 껐다 켠 뒤 안 됨 | 세션이 끊김 | `shareMATLABSession()` 다시 실행 |
+| `shareMATLABSession` 을 **인식할 수 없음** | MCP Server **Toolbox 애드온** 미설치 | `setupAgenticToolkit("install")` 또는 `--setup-matlab` (§F-3 5단계) 후 MATLAB 재시작 |
+| MATLAB 명령은 되는데 **모델을 못 읽음** | `satk_initialize` 미실행 | `addpath(...\agentic-toolkits\simulink)` 후 `satk_initialize` |
+| 에이전트에 MATLAB 도구가 안 보임 | 설정 후 세션을 다시 시작하지 않음 | Claude Code 를 **새로 시작**한다 (MCP 는 시작 시 연결됨) |
 
 ---
 

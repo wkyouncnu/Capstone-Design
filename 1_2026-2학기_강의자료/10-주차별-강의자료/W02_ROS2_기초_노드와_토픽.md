@@ -3238,6 +3238,10 @@ S = W02_plot(out, 'turtlesim')
 
 ![turtlesim 창 — 목표 자세에 도착](../assets/w02-turtlesim-goto.png)
 
+![turtlesim 실행 중 MATLAB 실시간 그림](W02_simulink/img/W02_3_turtlesim_anim.png)
+
+- MATLAB 쪽 실시간 그림은 **turtlesim 이 실제로 보낸 자세**를 그린 것이다. turtlesim 창의 흰 선과 같은 궤적이 나와야 한다
+
 | 화면에서 확인할 것 | 무엇 |
 |---|---|
 | 흰 선이 가운데에서 오른쪽 아래로 | 거북이가 지나간 길. 결과 그림 왼쪽의 파란 항적과 같은 모양 |

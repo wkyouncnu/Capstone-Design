@@ -48,7 +48,7 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | 주차 | 문서 | 그림 | 주제 |
 |---|---|---|---|
 | 1 | [[W01_개발환경_구축과_USV_자율운항_개관]] | 3장 · PDF 19쪽 | 인지·판단·제어 · KABOAT/VRX 임무 · WSL2 · 리눅스 기본기 |
-| 2 | [[W02_ROS2_기초_노드와_토픽]] | 30장 | VS Code+WSL · 노드·토픽·**서비스·액션·파라미터** · **turtlesim** · rqt와 RViz2 · QoS |
+| 2 | [[W02_ROS2_기초_노드와_토픽]] | 46장 | VS Code+WSL · 노드·토픽·**서비스·액션·파라미터** · **turtlesim** · rqt와 RViz2 · QoS · **중계 노드와 Simulink 목표 자세 제어** · **모델 3개 배포** |
 | 3 | [[W03_Gazebo_VRX_구축과_좌표계]] | 10장 | Gazebo·VRX 설치 · 6자유도 · ENU/NED · TF2 · **키보드 조종(차동 추진)** |
 | 4 | [[W04_VRX_심화_모델구조와_토픽조사]] | 5장 | WAM-V URDF·Xacro · 센서 배치 · 토픽 전수조사 · Mapviz · **과제 월드와 채점** · **ros2 bag** |
 | 5 | [[W05_VSCode와_Claude_에이전트_첫_제어노드]] | 3장 · PDF 21쪽 | VS Code 설치 · Claude Code 연동 · 첫 제어 노드 · **MATLAB MCP** 연동 |
@@ -145,6 +145,10 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | `w02-build-flow.svg` | 작성 → 등록 → 빌드 → source → 실행 |
 | `w02-vscode-*.png` | VS Code 확장 검색 · WSL 연결 · 편집기 · 통합 터미널 (4장) |
 | `w02-code-pub-sub.png` · `w02-code-setup.png` | 발행자↔구독자 · `setup.py`↔`package.xml` 대비 |
+| `w02-relay-flow.svg` | turtlesim ↔ 중계 노드 ↔ Simulink 토픽 흐름 |
+| `w02-goto-modes.svg` | 목표 자세 제어의 기하와 모드 3개 |
+| `w02-relay-code-*.png` (3장) · `w02-relay-setup.png` | 중계 노드 코드 · `setup.py` 등록 |
+| `w02-simulink-turtlesim-window.png` · `w02-turtlesim-goto.png` | Simulink 모델 창 · 목표 자세에 도착한 turtlesim |
 | `w02-git-clone.png` · `w02-colcon-build.png` | 실습 패키지 clone 과 빌드 화면 |
 | `w02-rqt-*.png` · `w02-rviz2.png` | rqt_graph · Topic Monitor · rqt_console · RViz2 |
 | `w03-frames.svg` | ENU vs NED |

@@ -202,7 +202,7 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | 주차 | 그림 | 정상출력 | 상태 |
 |---|---|---|---|
 | W01 | 3 | 4 | 충족 |
-| W02 | **26** | **50** | 충족 — turtlesim 4종 통신·개념도 4장·실화면 19장. `verify_w02.sh` PASS 35 / FAIL 0 (2026-09-08) |
+| W02 | **46** | **50** | 충족 — turtlesim 4종 통신 + **중계 노드·Simulink 목표 자세 제어**. `verify_w02.sh` PASS 42 / FAIL 0 (2026-09-15) |
 | W03 | **10** | **15** | 충족 — VRX 실측 빌드값·키보드 조종 절 신설·차동추진 개념도. `verify_w03.sh` PASS 18 / FAIL 0 (2026-09-08) |
 | W04 | **5** | **20** | 충족 — 과제 월드 12종·채점 토픽·rosbag 절 신설. `verify_w04.sh` PASS 22 / FAIL 0 (2026-09-08) |
 | W05 | 4 | 2 | 충족 — VS Code 실제 화면 추가 |

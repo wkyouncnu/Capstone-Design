@@ -18,7 +18,7 @@ summary: 학생 배포용 주차별 자료의 읽는 법과 환경 요약
 | 주차 | 문서 | 슬라이드 | 주제 |
 |---|---|---|---|
 | 1 | [[W01_개발환경_구축과_USV_자율운항_개관]] | `W01_슬라이드.html` | 자율운항 개관 · KABOAT/VRX 임무 · WSL2 설치 · 리눅스 기본기 |
-| 2 | [[W02_ROS2_기초_노드와_토픽]] | — | ROS 2 설치 · 노드/토픽/메시지 · DDS와 QoS · 표본화와 에일리어싱 |
+| 2 | [[W02_ROS2_기초_노드와_토픽]] | `W02_simulink/` | ROS 2 설치 · 노드/토픽/메시지 · DDS와 QoS · 표본화와 에일리어싱 · 중계 노드 · Simulink 목표 자세 제어 |
 | 3 | [[W03_Gazebo_VRX_구축과_좌표계]] | — | Gazebo Garden · VRX 설치와 실행 · 6자유도 · ENU/NED · 쿼터니언 · TF2 |
 | 4 | [[W04_VRX_심화_모델구조와_토픽조사]] | — | WAM-V URDF·Xacro · 센서 배치 수정 · 토픽 전수조사 · Mapviz |
 | 5 | [[W05_VSCode와_Claude_에이전트_첫_제어노드]] | — | VS Code · Claude Code · 첫 제어 노드 · MATLAB 연동 |

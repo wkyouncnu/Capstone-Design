@@ -121,7 +121,13 @@ if timeout 90 git clone -q https://github.com/wkyouncnu/usv_basics.git "$WS/src/
   sleep 8
   expect "내 발행자"  "published: USV alive" bash -c 'cat /tmp/v_mytalker.log'
   expect "내 구독자"  "received: USV alive"  bash -c 'cat /tmp/v_mylistener.log'
-  expect "주기 2 Hz"  "average rate: 2"      bash -c 'timeout 12 ros2 topic hz /usv_chatter 2>&1 | tail -3'
+  # 측정값은 2.000 근처에서 흔들린다. 1.999 도 정상이므로 문자열이 아니라 범위로 본다
+  HZ=$(timeout 12 ros2 topic hz /usv_chatter 2>&1 | grep -o 'average rate: [0-9.]*' | tail -1 | awk '{print $3}')
+  if [ -n "$HZ" ] && awk "BEGIN{exit !($HZ > 1.9 && $HZ < 2.1)}"; then
+    ok "주기 2 Hz (실측 $HZ)"
+  else
+    ng "주기 2 Hz" "실측 '${HZ:-없음}'"
+  fi
   pkill -f 'usv_basics/simple_talker'   2>/dev/null
   pkill -f 'usv_basics/simple_listener' 2>/dev/null
   sleep 2
