@@ -62,11 +62,13 @@ tidy_layout('W07_0_offline')     % 한 번 더 부르면 결과가 더 좋아진
 **`references/build-models.md`** 에 관용구가 전부 있다 — `fresh`/`setFcn`/`C`/`F`/`G`/`note`
 헬퍼, Stateflow 프로그래밍 API, 대수 루프 끊는 법, 실시간 페이싱.
 
-절대 규칙 세 가지만 여기 적는다.
+절대 규칙 네 가지만 여기 적는다.
 
 1. **GNC 순서를 왼쪽에서 오른쪽으로** — 유도 → 제어 → 추진기 → 운동모델 → 로깅
 2. **되먹임은 Goto/From 태그** — 화면을 가로지르는 선을 만들지 않는다
 3. **오프라인 모델의 계수는 시뮬레이터와 같아야 한다** — 안 그러면 게인이 옮겨가지 않는다
+4. **최상위는 역할별 서브시스템만** — 블록 20개가 넘으면 묶는다. 로깅·그림은 포트 없는 서브시스템으로.
+   관용구·색 이름표·지뢰는 **`references/subsystems.md`**
 
 ---
 
@@ -101,5 +103,6 @@ pkill -f "vrx_gz|vrx_ros|ros_gz_bridge|gz sim|ruby|parameter_bridge"
 |---|---|
 | `references/layout.md` | 배치가 마음에 안 들 때. `tidy_layout` 을 고치기 전에 |
 | `references/build-models.md` | 새 모델을 만들 때마다 |
+| `references/subsystems.md` | **선이 겹치거나 최상위가 복잡할 때.** 서브시스템 관용구·색 이름표 |
 | `references/gnc-conventions.md` | 제어기·유도법칙을 쓸 때 |
 | `references/verify.md` | 수치를 문서에 싣기 전에 |

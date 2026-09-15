@@ -154,6 +154,28 @@ if timeout 90 git clone -q https://github.com/wkyouncnu/usv_basics.git "$WS/src/
     ng "불일치 시 수신 0건" "실제로 ${GOT}줄 받았다"
   fi
   pkill -f qos_test_pub 2>/dev/null; pkill -f qos_test_sub 2>/dev/null
+  sleep 2
+
+  # ---------- §2-10 중계 노드 ----------
+  echo
+  echo "[§2-10] turtle_pose_relay"
+  expect "중계 노드 실행파일 등록" "turtle_pose_relay" bash -c 'timeout 10 ros2 pkg executables usv_basics'
+  expect "turtlesim/msg/Pose 필드" "angular_velocity" bash -c 'ros2 interface show turtlesim/msg/Pose'
+  if [ -n "${DISPLAY:-}" ] && xdotool getdisplaygeometry >/dev/null 2>&1; then
+    ros2 run turtlesim turtlesim_node        > /tmp/v_turtle2.log 2>&1 &
+    sleep 6
+    ros2 run usv_basics turtle_pose_relay    > /tmp/v_relay.log   2>&1 &
+    sleep 6
+    expect "중계 첫 메시지 로그"     "first relay: x=5.544" bash -c 'cat /tmp/v_relay.log'
+    expect "pose2d 토픽 형식"        "/turtle1/pose2d \[geometry_msgs/msg/Pose2D\]" bash -c 'timeout 10 ros2 topic list -t'
+    expect "vel 토픽 형식"           "/turtle1/vel \[geometry_msgs/msg/Twist\]"     bash -c 'timeout 10 ros2 topic list -t'
+    expect "pose2d 값 = 시작 자세"   "x: 5.5444"            bash -c 'timeout 10 ros2 topic echo --once /turtle1/pose2d'
+    expect "pose2d 주기 약 62 Hz"    "average rate: 62"     bash -c 'timeout 8 ros2 topic hz /turtle1/pose2d 2>&1 | head -1'
+    pkill -f 'usv_basics/turtle_pose_relay' 2>/dev/null
+    pkill -f turtlesim_node 2>/dev/null
+  else
+    skip "중계 노드 실행" "DISPLAY 가 없다 (GUI 없는 환경)"
+  fi
 else
   ng "GitHub 에서 clone" "$(head -1 /tmp/v_clone.log)"
   skip "빌드·실행·QoS" "clone 실패로 이후 단계 건너뜀"

@@ -2,7 +2,7 @@
 type: week
 week: 3
 title: 3주차 — Gazebo VRX 구축과 좌표계
-date: 2026-09-03
+date: 2026-09-15
 tags: [week, gazebo, vrx, coordinate-frames]
 status: done
 summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼터니언, TF2
@@ -387,12 +387,12 @@ J(ψ) =  [ sin ψ    cos ψ   0 ]
 
 ### 실제 WAM-V 의 TF 트리 (실측)
 
-`ash
+```bash
 ros2 run tf2_tools view_frames
 `
 
 - 5초간 듣고 현재 폴더에 `frames_<날짜>.pdf` 를 만든다. 그 PDF 를 열면 트리 전체가 보인다
-- 기준 환경 결과: **프레임 36개**
+- 기준 환경 결과: **프레임 36개** (노트북 재측정 2026-09-15: 35개 — 발행 시점에 따라 1개 차이가 날 수 있음)
 
 | 층 | 프레임 예 | 뜻 |
 |---|---|---|
@@ -406,7 +406,8 @@ ros2 run tf2_tools view_frames
 | rate | 성질 |
 |---|---|
 | 10000.0 | **정적 TF**. 한 번 발행하고 안 바뀐다 (센서 장착 위치) |
-| 19.678 | **동적 TF**. 매 순간 바뀐다 (추진기 회전 등) |
+| 19.678 (노트북 19.447) | **동적 TF**. 매 순간 바뀐다 (추진기 회전 등). RTF 에 따라 조금씩 다름 |
+| 250.214 | 센서 프레임(`.../imu_wamv_sensor`, `.../navsat` 등). 노트북 실측값 |
 
 > [!note] 왜 `optical` 프레임이 따로 있는가
 > 로봇공학은 x 를 앞으로 보지만, 영상처리는 z 를 앞(광축)으로 본다.
@@ -569,7 +570,7 @@ Summary: 5 packages finished [39.7s]
 | 항목 | 기준 환경 실측 |
 |---|---|
 | 패키지 수 | **5개** (`vrx_gazebo` · `vrx_ros` · `wamv_description` · `wamv_gazebo` · `vrx_gz`) |
-| 빌드 시간 | **39.7초** |
+| 빌드 시간 | **39.7초** (데스크톱) · **1분 54초** (Core Ultra 7 258V 노트북) |
 | 만들어진 플러그인 | `install/lib/` 아래 **`.so` 21개** |
 | 워크스페이스 용량 | **904 MB** |
 
@@ -669,6 +670,55 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 ```
 
 - 시드니 레가타 해역에 WAM-V가 떠 있으면 성공
+
+### RTF 가 1 % 미만이면 — 카메라 렌더링 병목
+
+- 창은 떴는데 오른쪽 아래 실시간 계수가 **`0.2 %` ~ `1 %`** 이면 배가 사실상 멈춘 상태임
+- 이 상태에서는 §2-5·§2-6 에서 추력을 줘도 **움직임이 보이지 않음**
+- 새 터미널에서 수치로 확인
+
+```bash
+gz topic -e -t /stats -n 1 | grep real_time_factor
+```
+
+- 비정상 출력 (Intel Arc 140V 노트북 실측)
+
+```
+real_time_factor: 0.0026878428978619109
+```
+
+- 원인: **센서 카메라 렌더링**. WSL 의 D3D12 그래픽 경로에서 `ogre2` 엔진의 카메라 3대가 극단적으로 느려짐
+- 조치: 센서 렌더 엔진만 `ogre` 로 바꿔 실행. **월드·모델 파일은 고치지 않음**
+
+```bash
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "extra_gz_args:=--render-engine-server ogre"
+```
+
+> [!warning] 위 명령은 **한 줄**이다. 따옴표까지 그대로 복사한다
+
+- 정상 출력
+
+```
+real_time_factor: 0.98737029965454381
+```
+
+| 조건 (Intel Arc 140V · Core Ultra 7 258V, 2026-09-15 실측) | RTF |
+|---|---|
+| 월드만 (배 없음) | 99 % |
+| 배 + GPS · IMU · LiDAR (카메라 제외) | 99 % |
+| 배 + 카메라 1대 | 0.85 % |
+| **기본 명령** (카메라 3대) | **0.26 %** |
+| 기본 + `--render-engine-server ogre` | **98 %** (GUI 포함 90 %) |
+
+- 판단 기준
+  - RTF 가 **10 % 이상**이면 기본 명령 그대로 사용
+  - RTF 가 **1 % 미만**이면 이후 모든 주차에서 위 옵션을 붙여 실행
+- 카메라 토픽은 옵션을 붙여도 그대로 발행됨 (`front_left_camera_sensor/image_raw` 수신 확인)
+
+> [!note] 원인을 이렇게 좁혔다
+> - GUI 없이(`headless:=True`) 실행해도 0.26 % → GUI 문제가 아님
+> - 소프트웨어 렌더링(`LIBGL_ALWAYS_SOFTWARE=1`)이 오히려 3배 빠름(0.85 %) → GPU 경유 렌더링 병목
+> - 센서를 하나씩 켜 보니 **카메라를 켜는 순간** 떨어짐 → 표의 결과
 
 ### 확인할 것 3가지
 
@@ -948,7 +998,7 @@ ros2 run usv_basics wamv_teleop_key
 |---|---|
 | 배가 앞으로 나아간다 | 계류장이 멀어진다 |
 | 선수 방향이 돌아간다 | 배가 카메라에 대해 비스듬해진다 |
-| 왼쪽 아래 실시간 계수 | `35~50 %` — 실제 시간보다 느리게 도는 것이 정상 |
+| 오른쪽 아래 실시간 계수 | `35~50 %` (데스크톱 기본) · `90 %` (노트북 + `ogre` 옵션). **1 % 미만이면 §2-3 조치** |
 
 > [!note] 실시간 계수(RTF)가 100 % 가 아니어도 정상이다
 > 파랑·부력 계산이 무겁다. 6주차 Simulink 연동에서 이 값을 **직접 재서** 페이싱을 맞춘다.
@@ -1224,6 +1274,7 @@ rviz2
 | 빌드는 됐는데 실행 시 플러그인 오류 | **브랜치 미지정** | `cd ~/vrx_ws/src/vrx && git checkout humble` 후 재빌드 |
 | Gazebo 창이 안 뜨고 멈춤 | WSLg 미작동 | `wsl --update` → `xeyes` 확인 |
 | Gazebo가 매우 느림 (RTF < 0.2) | GPU 미사용 / RAM 부족 | 다른 프로그램 종료, 워크스테이션 사용 |
+| **RTF 가 1 % 미만** (창·배는 정상으로 보임) | WSL D3D12 경로의 카메라 센서 렌더링 병목 (Intel 그래픽에서 재현) | `"extra_gz_args:=--render-engine-server ogre"` 를 붙여 실행 (§2-3) |
 | `ros2 topic list` 에 wamv 토픽이 없음 | 환경 미적용 | `source ~/vrx_ws/install/setup.bash` |
 | `ros2 topic pub` 했는데 배가 안 움직임 | 토픽명 불일치 | `ros2 topic list \| grep thrusters` 로 정확한 이름 확인 |
 | `view_frames` 가 빈 PDF 생성 | TF 발행 노드 미실행 | VRX 실행 확인, 몇 초 더 대기 |

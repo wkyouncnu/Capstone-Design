@@ -188,7 +188,6 @@ F_R = X/2 - N / (2 x 1.027)
 | 센서 | x [m] | y [m] | z [m] | 비고 |
 |---|---|---|---|---|
 | 3D LiDAR | +0.700 | 0.000 | **1.800** | 가장 높다. 시야 확보 |
-| Livox Mid-360 | +0.700 | 0.000 | 0.710 | 근거리 보조 |
 | 전방 좌현 카메라 | +0.750 | +0.100 | 1.500 | |
 | 전방 우현 카메라 | +0.750 | −0.100 | 1.500 | 좌우 0.2 m 간격 = 스테레오 기선 |
 | 중앙 우현 카메라 | +0.500 | −0.450 | 1.500 | **yaw −90°** (우현을 본다) |
@@ -199,6 +198,11 @@ F_R = X/2 - N / (2 x 1.027)
 
 - 위 값은 **VRX 실행 중 TF 에서 측정**한 것이다 (2026-09-06). 추정치가 아니다
 - 측정 방법은 §2-3 에 있다
+
+> [!note] Livox Mid-360 은 기본 VRX 에 없다
+> - 이전 판에 있던 Livox 행은 연구실이 센서를 추가한 개조 모델의 값이었음
+> - VRX `humble` 소스 전체에서 `livox` 검색 결과 **0건** (2026-09-15)
+> - 기본 설치에서는 `/livox/lidar` 토픽이 나오지 않는 것이 정상
 
 
 ### 그림 읽는 법
@@ -359,8 +363,10 @@ wc -l topics_all.txt
 - 정상 출력 예
 
 ```
-38 topics_all.txt
+36 topics_all.txt
 ```
+
+- 기준 노트북 실측 36개 (`/wamv` 26개 + 기본·과제 토픽 10개, 2026-09-15). 1~2개 차이는 정상
 
 ### wamv 토픽만 추리기
 
@@ -434,11 +440,18 @@ done | tee topics_type.txt
 ### 준비 — 시뮬레이터를 띄운 상태에서 시작한다
 
 ```bash
-ros2 launch vrx_gz competition.launch.py world:=sydney_regatta ground_truth_enabled:=True
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 ```
 
 - 새 터미널을 하나 더 열고, 그 터미널에서 아래 명령들을 실행한다
 - 시뮬레이터 터미널은 그대로 둔다. 닫으면 토픽이 전부 사라진다
+- 3주차 §2-3 에서 RTF 가 1 % 미만이었다면 `"extra_gz_args:=--render-engine-server ogre"` 를 붙인다
+
+> [!warning] `ground_truth_enabled:=True` 를 런치 인자로 주면 **조용히 무시된다**
+> - `competition.launch.py` 의 인자는 `world` · `sim_mode` · `bridge_competition_topics` · `config_file` · `robot` · `headless` · `urdf` · `paused` · `competition_mode` · `extra_gz_args` 뿐임
+> - 없는 인자를 줘도 오류가 나지 않음 → `ground_truth_odometry` 토픽도 생기지 않음
+> - 참값 위치 토픽이 필요하면 **6주차 §urdf 수정 절차**를 따른다
+> - 인자 목록 확인: `ros2 launch vrx_gz competition.launch.py --show-args`
 
 ---
 
@@ -448,7 +461,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta ground_truth_enab
 ros2 topic list | wc -l
 ```
 
-- 기준 환경 결과: **44개**
+- 기준 환경 결과: **36개** (기본 런치, 2026-09-15)
 - 10개 미만이면 시뮬레이터가 아직 로딩 중이거나 `ROS_DOMAIN_ID` 가 다른 것이다
 
 ---
@@ -559,13 +572,24 @@ fields:
 > `data` 필드는 30,000개 점의 바이트 배열이라 터미널이 멈춘다.
 > **머리말(header·height·width·fields)까지만** 보고, 점 자체는 RViz2 로 본다.
 
-Livox Mid-360 도 같은 방식으로 확인한다.
+- 발행자 QoS 도 확인한다
 
 ```bash
-ros2 topic echo --once /livox/lidar | head -12
+ros2 topic info /wamv/sensors/lidars/lidar_wamv_sensor/points --verbose | grep -E "Publisher count|Reliability"
 ```
 
-- `height: 22`, `width: 900` → 한 스캔 **19,800점**, `frame_id: livox_frame`
+- 정상 출력 (2026-09-15 실측)
+
+```
+Publisher count: 1
+  Reliability: RELIABLE
+```
+
+> [!note] VRX 의 센서 토픽은 LiDAR·카메라까지 **전부 RELIABLE** 이다
+> - `ros_gz_bridge` 가 기본 QoS(RELIABLE)로 발행하기 때문
+> - `/wamv`·`/vrx` 토픽 전체를 조사한 결과 발행자가 있는 25개 모두 RELIABLE (2026-09-15)
+> - "고빈도 센서는 BEST_EFFORT" 는 일반적인 실선 드라이버 관행이며, **이 시뮬레이터에는 해당하지 않음**
+> - 따라서 **내 노드에서 직접 `ros2 topic info --verbose` 로 확인한 값**을 믿는다
 
 ---
 
@@ -640,15 +664,17 @@ ros2 topic echo --once /vrx/debug/wind/direction
 ros2 topic hz /wamv/sensors/imu/imu/data
 ```
 
-- 기준 환경 결과
+- 기준 환경 결과 — **RTF 에 따라 두 벌** 실었다
 
-| 토픽 | 실측 rate | 설계값 | 비고 |
-|---|---|---|---|
-| IMU | **36.2 Hz** | 100 Hz | |
-| GPS | **7.3 Hz** | 20 Hz | |
-| camera_info | **11.1 Hz** | 30 Hz | |
-| 3D LiDAR | **0.70 Hz** | 10 Hz | 점이 많아 특히 느리다 |
-| 바람 | **7.6 Hz** | 20 Hz | |
+| 토픽 | 데스크톱 (RTF 0.37) | 노트북 (RTF 0.84, `ogre` 옵션) | 설계값 | 비고 |
+|---|---|---|---|---|
+| IMU | **36.2 Hz** | **93.2 Hz** | 100 Hz | |
+| GPS | **7.3 Hz** | **19.3 Hz** | 20 Hz | |
+| camera_info | **11.1 Hz** | **29.0 Hz** | 30 Hz | |
+| 3D LiDAR | **0.70 Hz** | **2.5 Hz** | 10 Hz | 점이 많아 `ros2 topic hz` 자체가 따라가지 못함 |
+| 바람 | **7.6 Hz** | **9.7 Hz** | 20 Hz | |
+
+- 두 열의 비율이 대체로 RTF 비율(0.84 ÷ 0.37 ≈ 2.3)과 같음 → 센서가 아니라 시뮬레이터 속도가 결정함
 
 > [!warning] 설계값보다 느리게 나오는 것이 정상이다
 > `ros2 topic hz` 는 **벽시계 기준**으로 센다. 시뮬레이터가 실시간의 37 %(RTF ≈ 0.37) 속도로
@@ -673,7 +699,7 @@ RViz2 가 뜨면 아래 순서로 설정한다.
 
 1. 왼쪽 **Displays** 패널 → **Global Options** → **Fixed Frame** 을 `wamv/wamv/base_link` 로
 2. 왼쪽 아래 **Add** → **By topic** → LiDAR 토픽의 **PointCloud2** 선택
-3. 추가된 항목의 **Reliability Policy** 를 **Best Effort** 로 (기본 Reliable 이면 아무것도 안 보인다)
+3. 추가된 항목의 **Reliability Policy** 는 기본값 **Reliable** 그대로 둔다 (발행자가 RELIABLE — §2-3-4)
 4. **Add** → **TF**, **Add** → **By topic** → 카메라의 **Image**
 
 ![RViz2 — LiDAR 포인트클라우드와 전방 카메라](../assets/w04-rviz-lidar.png)
@@ -695,7 +721,7 @@ RViz2 가 뜨면 아래 순서로 설정한다.
 
 | 증상 | 원인 | 조치 |
 |---|---|---|
-| PointCloud2 를 추가했는데 아무것도 없음 | QoS 불일치 — LiDAR 는 **Best Effort** 로 발행 | Display 의 Reliability Policy 를 Best Effort 로 |
+| PointCloud2 를 추가했는데 아무것도 없음 | Topic 미선택 또는 Fixed Frame 오류 | Topic 칸에 LiDAR `points` 토픽 지정. QoS 는 Reliable·Best Effort 둘 다 수신됨 (발행자가 RELIABLE) |
 | `Global Status: Error` · `Fixed Frame [map] does not exist` | 기본 Fixed Frame 이 `map` 인데 그런 프레임이 없음 | `wamv/wamv/base_link` 로 변경 |
 | 점이 한 번 뜨고 멈춤 | 시뮬레이터 일시정지 | Gazebo 창 왼쪽 아래 재생 버튼 |
 | 이미지 창이 회색 | 토픽 이름 오타 | `ros2 topic list \| grep image_raw` 로 확인 |
@@ -748,6 +774,7 @@ nano ~/capstone_ws/wamv/my_wamv.urdf.xacro
 ```
 
 - `nano` 안에서 `Ctrl+W` → `lidar_wamv` 입력 → `Enter` 로 해당 줄 찾기
+  - 같은 이름이 **두 곳**에 있음. `vrx_sensors_enabled` 블록 안의 줄(`y="-0.3"` 이 **없는** 줄, 약 175행)을 고친다
 - 아래처럼 **`z` 값을 명시**해 수정
 
 ```xml
@@ -755,10 +782,20 @@ nano ~/capstone_ws/wamv/my_wamv.urdf.xacro
 <xacro:lidar name="lidar_wamv" type="16_beam"/>
 
 <!-- 수정 후 -->
-<xacro:lidar name="lidar_wamv" type="16_beam" z="0.9"/>
+<xacro:lidar name="lidar_wamv" type="16_beam" z="1.4"/>
 ```
 
 - 저장 `Ctrl+O` → `Enter` → 종료 `Ctrl+X`
+
+> [!caution] `z` 를 **1.35 m 이하**로 주면 Gazebo 서버가 죽는다
+> - LiDAR 는 갑판(z = 1.2965 m)에 세운 **기둥 위**에 달림
+> - 기둥 길이 = `z − 1.2965 − 0.05` (`wamv_3d_lidar.xacro` 63행)
+> - `z="0.9"` 이면 기둥 길이 **−0.45 m** → 물리엔진이 음수 길이 원기둥을 거부
+> - 증상: 창은 뜨지만 **토픽이 영영 안 나옴**. 터미널에 아래 줄이 찍힘 (실측)
+>
+> ```
+> gz sim server: ./dart/dynamics/CylinderShape.cpp:47: dart::dynamics::CylinderShape::CylinderShape(double, double): Assertion `0.0 < _height' failed.
+> ```
 
 ### 4단계 — 반영해서 실행
 
@@ -783,7 +820,19 @@ ros2 launch vrx_gz competition.launch.py \
 > 참고로 4추진기 X배치로 바꾸려면 복사한 xacro 의 `thruster_config` 기본값을 `X` 로 바꾸면 되지만,
 > 배분식이 복잡해지므로 본 과목에서는 하지 않는다.
 
-### 4단계 — 결과 비교
+- 반영됐는지 TF 로 확인
+
+```bash
+ros2 run tf2_ros tf2_echo wamv/wamv/base_link wamv/wamv/lidar_wamv_link
+```
+
+- 정상 출력 — 원본은 `1.800`, 수정 후는 아래 (2026-09-15 실측)
+
+```
+- Translation: [0.700, 0.000, 1.400]
+```
+
+### 5단계 — 결과 비교
 
 - RViz2 에서 LiDAR 점군을 띄우고, 변경 전후를 비교
 
@@ -852,10 +901,19 @@ sudo usermod -aG docker $USER
 ### 3단계 — Docker 데몬 시작
 
 - WSL2 는 systemd 가 기본 비활성이므로 수동 시작이 필요할 수 있음
+  - systemd 가 켜진 WSL(`ps -p 1 -o comm=` 결과가 `systemd`)에서는 설치 직후 자동 시작됨
 
 ```bash
 sudo service docker start
 sudo service docker status
+```
+
+- 정상 출력 (2026-09-15 실측, Docker 29.8.0)
+
+```
+● docker.service - Docker Application Container Engine
+     Loaded: loaded (/lib/systemd/system/docker.service; enabled; vendor preset: enabled)
+     Active: active (running)
 ```
 
 ### 4단계 — 지도 타일 서버 실행
@@ -865,16 +923,82 @@ mkdir -p ~/mapproxy
 docker run -p 8080:8080 -d -t -v ~/mapproxy:/mapproxy danielsnider/mapproxy
 ```
 
+- 처음에는 이미지를 내려받느라 1~2분 걸림. 마지막 줄에 컨테이너 ID(긴 16진수)가 나오면 성공
 - 확인
 
 ```bash
 docker ps
 ```
 
-### 5단계 — Mapviz 실행과 설정
+- 정상 출력
+
+```
+CONTAINER ID   IMAGE                   COMMAND                  CREATED         STATUS         PORTS
+27bf9a38b396   danielsnider/mapproxy   "/bin/sh -c /start.sh"   9 seconds ago   Up 8 seconds   0.0.0.0:8080->8080/tcp
+```
+
+- 타일이 실제로 나오는지 명령으로 확인
 
 ```bash
-ros2 launch mapviz mapviz.launch.py
+curl -s -o /tmp/tile.png -w "%{http_code}\n" "http://localhost:8080/wmts/gm_layer/gm_grid/17/120000/77000.png"
+```
+
+- 정상 출력: `200`
+
+### 5단계 — 원점을 시드니로 둔 런치 파일 만들기
+
+> [!warning] 기본 `mapviz.launch.py` 의 지도 원점은 **미국 텍사스(SwRI)** 이다
+> 그대로 실행하면 아래처럼 텍사스의 위성사진이 뜨고, 시드니에 있는 배의 항적은 **화면 밖**에 그려진다.
+> 오류 메시지도 나오지 않는다.
+
+![기본 런치 — 원점이 텍사스라 항적이 보이지 않는다](../assets/w04-mapviz-wrong-origin.png)
+
+- 원점만 `sydney_regatta` 기준점(3주차 §1-5 의 `lla0`)으로 바꾼 런치 파일을 만든다
+
+```bash
+mkdir -p ~/capstone_ws/mapviz
+cat > ~/capstone_ws/mapviz/mapviz_sydney.launch.py <<'EOF'
+import launch
+import launch_ros.actions
+
+
+def generate_launch_description():
+    return launch.LaunchDescription([
+        launch_ros.actions.Node(
+            package="mapviz", executable="mapviz", name="mapviz",
+            on_exit=launch.actions.Shutdown(),
+        ),
+        launch_ros.actions.Node(
+            package="swri_transform_util", executable="initialize_origin.py",
+            name="initialize_origin",
+            parameters=[
+                {"local_xy_frame": "map"},
+                {"local_xy_origin": "sydney_regatta"},
+                {"local_xy_origins": """[
+                    {"name": "sydney_regatta",
+                        "latitude": -33.72276870341191,
+                        "longitude": 150.67399057896623,
+                        "altitude": 1.183941401541233,
+                        "heading": 0.0}
+                ]"""},
+            ],
+        ),
+        launch_ros.actions.Node(
+            package="tf2_ros", executable="static_transform_publisher",
+            name="swri_transform",
+            arguments=["--frame-id", "map", "--child-frame-id", "origin"],
+        ),
+    ])
+EOF
+```
+
+> [!warning] `cat > ... <<'EOF'` 부터 마지막 `EOF` 까지 **한 덩어리로** 복사한다
+> 중간에서 끊으면 파일이 반만 만들어진다.
+
+### 6단계 — Mapviz 실행과 설정
+
+```bash
+ros2 launch ~/capstone_ws/mapviz/mapviz_sydney.launch.py
 ```
 
 1. 좌하단 **add** 클릭
@@ -888,6 +1012,18 @@ http://localhost:8080/wmts/gm_layer/gm_grid/{level}/{x}/{y}.png
 4. **Max Zoom** 을 19로 (선택)
 5. 다시 **add** → **navsat** 선택 → Topic 을 GPS 토픽으로 지정
 6. 배를 움직이면 지도 위에 궤적이 그려짐
+
+![시드니 원점 — 레가타 해역 위에 배의 선회 항적(빨강)](../assets/w04-mapviz-sydney.png)
+
+- 2026-09-15 실측. 좌 150 N · 우 300 N 으로 선회시키며 45초간 기록한 화면
+
+| 확인 항목 | 화면에서 |
+|---|---|
+| 호수와 부두 | 시드니 레가타 센터. 3주차 Gazebo 화면의 부두와 같은 배치 |
+| 빨간 원 | GPS 항적. 좌선회 중이라 원을 그림 |
+| 왼쪽 두 Status | `tile_map` · `navsat` 모두 **OK** |
+
+- 시작 직후 터미널에 `No transform between wgs84 and map` 이 한 번 찍히는 것은 정상. 원점 노드가 뜨기 전의 메시지임
 
 > [!caution] 지도가 표시되지 않는 경우
 > - `docker ps` 로 mapproxy 컨테이너가 살아 있는지 먼저 확인
@@ -1226,7 +1362,7 @@ ros2 topic echo /wamv/sensors/gps/gps/fix
 
 | 항목 | 내용 |
 |---|---|
-| 바꾼 값 | LiDAR z: 1.8 → 0.9 (또는 팀이 정한 값) |
+| 바꾼 값 | LiDAR z: 1.8 → 1.4 (또는 팀이 정한 값. **1.35 초과**) |
 | 변경 전 점군 | 스크린샷 |
 | 변경 후 점군 | 스크린샷 |
 | 관찰 | 근거리 / 원거리 / 수면 반사 각각 어떻게 달라졌는가 |
@@ -1234,7 +1370,7 @@ ros2 topic echo /wamv/sensors/gps/gps/fix
 ### ③ 분석 (5~10줄)
 
 1. `ros2 topic hz` 로 잰 주기가 설정값과 다르다면 그 이유는 무엇이겠는가?
-2. QoS 가 `BEST_EFFORT` 인 토픽과 `RELIABLE` 인 토픽은 각각 무엇이고, 왜 그렇게 나뉘어 있겠는가?
+2. 조사한 토픽의 QoS 가 전부 `RELIABLE` 로 나왔다면, 실선의 LiDAR·카메라 드라이버가 흔히 `BEST_EFFORT` 를 쓰는 이유는 무엇이며 시뮬레이터와 실선을 오갈 때 구독자 QoS 를 어떻게 정해야 하는가?
 3. LiDAR 높이를 바꿨을 때의 트레이드오프를 정리하시오. 본 과목 Term Project에는 어느 쪽이 유리한가?
 
 ### 평가 기준
@@ -1257,6 +1393,9 @@ ros2 topic echo /wamv/sensors/gps/gps/fix
 | `urdf:=` 가 무시됨 | 절대경로가 아님 | `$HOME/...` 또는 전체 경로로 지정 |
 | 센서를 바꿨는데 그대로임 | `config_file:=` 로 넘김 | 모델 지정은 **`urdf:=`** 임 |
 | xacro 처리 오류 | XML 문법 오류 | 닫는 태그와 따옴표 확인 |
+| `urdf:=` 로 띄웠더니 창은 뜨는데 토픽이 안 나옴 | LiDAR `z` 가 1.35 m 이하 → 서버 충돌 (`Assertion '0.0 < _height' failed`) | `z` 를 1.4 이상으로 (§2-4 3단계) |
+| `ground_truth_enabled:=True` 를 줬는데 토픽이 없음 | 존재하지 않는 런치 인자라 무시됨 | 6주차 urdf 수정 절차 |
+| Mapviz 에 **엉뚱한 지역** 지도가 뜨고 항적이 없음 | 기본 런치의 원점이 미국 텍사스(SwRI) | `mapviz_sydney.launch.py` 로 실행 (§2-5 5단계) |
 | yaml 수정 후 반영 안 됨 | 들여쓰기 오류 | yaml 은 **공백 들여쓰기만** 허용. 탭 금지 |
 | `docker: permission denied` | 그룹 미적용 | `sudo usermod -aG docker $USER` 후 `wsl --shutdown` |
 | `docker: Cannot connect to the Docker daemon` | 데몬 미실행 | `sudo service docker start` |

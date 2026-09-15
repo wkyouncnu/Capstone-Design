@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="560" viewBox="0 0 980 560" font-family="Malgun Gothic, sans-serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/>
+    </marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+  <rect width="980" height="560" fill="#ffffff"/>
+
+  <!-- 제목 -->
+  <text x="490" y="36" text-anchor="middle" font-size="20" font-weight="bold" fill="#1e293b">turtlesim 과 Simulink 사이의 토픽 흐름</text>
+
+  <!-- WSL 영역 -->
+  <rect x="30" y="64" width="400" height="430" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="50" y="94" font-size="17" font-weight="bold" fill="#334155">WSL 우분투 · ROS 2 Humble</text>
+
+  <!-- Windows 영역 -->
+  <rect x="560" y="64" width="390" height="430" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="580" y="94" font-size="17" font-weight="bold" fill="#334155">Windows · MATLAB Simulink</text>
+
+  <!-- turtlesim_node -->
+  <rect x="110" y="130" width="240" height="60" rx="6" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+  <text x="230" y="167" text-anchor="middle" font-size="17" font-family="Consolas, monospace" fill="#1e293b">turtlesim_node</text>
+
+  <!-- relay -->
+  <rect x="100" y="330" width="260" height="64" rx="6" fill="#eff6ff" stroke="#1d4ed8" stroke-width="3"/>
+  <text x="230" y="358" text-anchor="middle" font-size="17" font-family="Consolas, monospace" fill="#1d4ed8">turtle_pose_relay</text>
+  <text x="230" y="382" text-anchor="middle" font-size="15" fill="#1d4ed8">중계 노드 (usv_basics)</text>
+
+  <!-- ① pose : turtlesim -> relay -->
+  <line x1="230" y1="190" x2="230" y2="326" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+  <text x="245" y="245" font-size="16" font-family="Consolas, monospace" fill="#1e293b">/turtle1/pose</text>
+  <text x="245" y="270" font-size="15" font-family="Consolas, monospace" fill="#dc2626">turtlesim/msg/Pose</text>
+  <text x="245" y="293" font-size="15" fill="#dc2626">MATLAB 에 없는 형식</text>
+
+  <!-- Simulink blocks -->
+  <rect x="640" y="130" width="230" height="46" rx="4" fill="#eef0fb" stroke="#6366f1" stroke-width="2"/>
+  <text x="755" y="159" text-anchor="middle" font-size="16" font-family="Consolas, monospace" fill="#1e293b">CmdPublisher</text>
+  <rect x="640" y="212" width="230" height="46" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="755" y="241" text-anchor="middle" font-size="16" font-family="Consolas, monospace" fill="#1e293b">Control</text>
+  <rect x="640" y="294" width="230" height="46" rx="4" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="755" y="323" text-anchor="middle" font-size="16" font-family="Consolas, monospace" fill="#1e293b">Guidance</text>
+  <rect x="640" y="376" width="230" height="46" rx="4" fill="#eef0fb" stroke="#6366f1" stroke-width="2"/>
+  <text x="755" y="405" text-anchor="middle" font-size="16" font-family="Consolas, monospace" fill="#1e293b">PoseSubscriber</text>
+
+  <line x1="755" y1="376" x2="755" y2="344" stroke="#334155" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="768" y="366" font-size="15" fill="#64748b">x, y, θ</text>
+  <line x1="755" y1="294" x2="755" y2="262" stroke="#334155" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="768" y="284" font-size="15" fill="#64748b">ψ_ref, 거리, 모드</text>
+  <line x1="755" y1="212" x2="755" y2="180" stroke="#334155" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="768" y="202" font-size="15" fill="#64748b">v, ω</text>
+
+  <!-- ② pose2d : relay -> PoseSubscriber -->
+  <path d="M360,380 L500,380 L500,399 L636,399" fill="none" stroke="#1d4ed8" stroke-width="3" marker-end="url(#ahb)"/>
+  <text x="378" y="440" font-size="16" font-family="Consolas, monospace" fill="#1d4ed8">/turtle1/pose2d</text>
+  <text x="378" y="464" font-size="15" font-family="Consolas, monospace" fill="#1d4ed8">geometry_msgs/msg/Pose2D</text>
+
+  <!-- ③ cmd_vel : CmdPublisher -> turtlesim -->
+  <path d="M640,153 L500,153 L500,160 L354,160" fill="none" stroke="#334155" stroke-width="3" marker-end="url(#ah)"/>
+  <text x="372" y="118" font-size="16" font-family="Consolas, monospace" fill="#1e293b">/turtle1/cmd_vel</text>
+  <text x="372" y="140" font-size="15" font-family="Consolas, monospace" fill="#334155">geometry_msgs/msg/Twist</text>
+
+  <!-- 막힌 길 -->
+  <path d="M350,176 L470,290" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="452" y="318" font-size="22" font-weight="bold" fill="#dc2626">✕</text>
+  <text x="478" y="318" font-size="15" fill="#dc2626">직접 구독 불가</text>
+
+  <!-- 하단 설명 -->
+  <text x="490" y="528" text-anchor="middle" font-size="16" fill="#334155">중계 노드는 값을 바꾸지 않음 — 같은 x, y, θ 를 MATLAB 에 내장된 형식으로 옮겨 담을 뿐임</text>
+</svg>

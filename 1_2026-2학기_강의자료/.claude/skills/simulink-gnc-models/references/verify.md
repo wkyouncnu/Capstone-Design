@@ -102,3 +102,16 @@ pkill -f "vrx_gz|vrx_ros|ros_gz_bridge|gz sim|ruby|parameter_bridge"
 # 스크립트/원격 셸 안에서는 자기 명령줄이 패턴에 걸려 셸이 먼저 죽는다
 pkill -f "[v]rx_gz|[v]rx_ros|[r]os_gz_bridge|[g]z sim|[r]uby|[p]arameter_bridge"
 ```
+
+---
+
+## 12. WSL ROS 2 노드 + MATLAB — 2026-09-15 turtlesim 연동에서 밟은 것
+
+| 증상 | 원인 | 조치 |
+|---|---|---|
+| MATLAB 에서 `ros2 topic list` 는 보이는데 `receive` 가 시간 초과 | `wsl -- bash script` 안에서 `nohup ... &` 로 띄운 노드가 **wsl.exe 가 끝난 뒤 멈춤**. 목록(발견 정보)만 남는다 | 노드는 **백그라운드 태스크로 붙잡은 wsl 세션** 안에서 띄우고 `wait` 로 유지한다 |
+| 위와 같은데 `ros2 node list` 에 노드가 없고 발행자 이름이 `_NODE_NAME_UNKNOWN_` | 같은 원인 | 노드를 다시 띄운다. 먼저 WSL 안에서 `ros2 topic hz` 로 살아 있는지 본다 |
+| `turtlesim/Pose은(는) 인식할 수 없는 메시지 유형` | MATLAB 에 turtlesim 메시지가 내장돼 있지 않다 (`ros2 msg list` 358종 중 없음) | 중계 노드로 `geometry_msgs/Pose2D` 로 옮겨 발행 |
+| 첫 샘플 좌표가 (0,0) | Subscribe 는 첫 메시지 전 0 버스를 낸다. turtlesim 에서 (0,0) 은 실제 벽 모서리라 **값으로 거를 수 없다** | `IsNew` 를 래치해 `valid` 신호를 만든다 |
+| MCP 공유 세션이 응답하지 않음 | 클라이언트가 **요청 도중 시간 초과로 끊기면** MATLAB 쪽 평가가 매듭지어지지 않는다 | 긴 작업(모델 생성 + tidy)은 MCP 로 보내지 않고 `matlab -batch` 로 돌린다. MCP 는 짧은 확인에만 |
+| 결과 스크립트의 `fprintf` 가 MCP 출력에 없음 | `W02_setup` 의 `clc` 가 그 앞의 출력을 지운다 | 결과 출력은 setup **뒤에** 두거나 파일로 쓴다 |

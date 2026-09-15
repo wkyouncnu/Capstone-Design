@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="540" viewBox="0 0 980 540" font-family="Malgun Gothic, sans-serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <marker id="ahb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/>
+    </marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
+    </marker>
+    <marker id="aht" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/>
+    </marker>
+  </defs>
+  <rect width="980" height="540" fill="#ffffff"/>
+
+  <!-- ===== 왼쪽 : 기하 ===== -->
+  <text x="230" y="36" text-anchor="middle" font-size="19" font-weight="bold" fill="#1e293b">(a) 제어기가 계산하는 세 가지 값</text>
+
+  <!-- 축 -->
+  <line x1="50" y1="470" x2="420" y2="470" stroke="#cbd5e1" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="425" y="476" font-size="16" fill="#64748b">x</text>
+  <line x1="50" y1="470" x2="50" y2="70" stroke="#cbd5e1" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="40" y="64" font-size="16" fill="#64748b">y</text>
+
+  <!-- 거북이 (선체) at (110,380), heading theta = 10 deg (up-right slight) -->
+  <g transform="translate(110,380) rotate(-10)">
+    <polygon points="-40,-17 -40,17 14,17 42,0 14,-17" fill="#dcfce7" stroke="#16a34a" stroke-width="3"/>
+  </g>
+  <circle cx="110" cy="380" r="4" fill="#1e293b"/>
+  <text x="62" y="428" font-size="16" fill="#1e293b">현재 (x, y) — 뾰족한 쪽이 선수</text>
+
+  <!-- heading 선 -->
+  <line x1="151" y1="373" x2="300" y2="346" stroke="#16a34a" stroke-width="2.5" marker-end="url(#ah)"/>
+  <text x="305" y="352" font-size="16" fill="#16a34a">선수 θ</text>
+
+  <!-- 목표점 -->
+  <circle cx="330" cy="140" r="7" fill="none" stroke="#dc2626" stroke-width="3"/>
+  <line x1="330" y1="140" x2="330" y2="80" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#ahr)"/>
+  <text x="345" y="92" font-size="16" fill="#dc2626">θ_goal</text>
+  <text x="345" y="150" font-size="16" fill="#dc2626">목표 (x_g, y_g)</text>
+
+  <!-- 거리 선 -->
+  <line x1="110" y1="380" x2="324" y2="147" stroke="#1d4ed8" stroke-width="2.5" marker-end="url(#ahb)"/>
+  <text x="236" y="292" font-size="17" fill="#1d4ed8">거리 d</text>
+  <text x="236" y="314" font-size="15" fill="#1d4ed8">방향 ψ_ref = atan2(y_g−y, x_g−x)</text>
+
+  <!-- 각도 호 : heading -> bearing, 오차 e -->
+  <path d="M205,362 A 96 96 0 0 0 176,305" fill="none" stroke="#0d9488" stroke-width="2.5" marker-end="url(#aht)"/>
+  <text x="212" y="336" font-size="18" font-weight="bold" fill="#0d9488">e</text>
+
+  <!-- 식 박스 -->
+  <rect x="60" y="486" width="370" height="44" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="245" y="506" text-anchor="middle" font-size="15" fill="#1e293b">e = ssa(ψ_ref − θ),   ω = sat(K_ψ · e)</text>
+  <text x="245" y="524" text-anchor="middle" font-size="15" fill="#1e293b">v = min(K_v · d, v_max) · max(cos e, 0)</text>
+
+  <!-- ===== 오른쪽 : 모드 ===== -->
+  <line x1="480" y1="60" x2="480" y2="520" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="730" y="36" text-anchor="middle" font-size="19" font-weight="bold" fill="#1e293b">(b) 한 번에 하나씩 — 모드 3개</text>
+
+  <!-- mode 1 -->
+  <rect x="560" y="70" width="340" height="96" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2.5"/>
+  <text x="580" y="100" font-size="18" font-weight="bold" fill="#1d4ed8">모드 1 · GO — 목표점으로</text>
+  <text x="580" y="126" font-size="15" fill="#334155">ψ_ref = 목표점 방향</text>
+  <text x="580" y="150" font-size="15" fill="#334155">v = 거리에 비례해 감속,  ω = 방향 맞춤</text>
+
+  <line x1="730" y1="166" x2="730" y2="224" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+  <text x="745" y="202" font-size="16" fill="#1e293b">d &lt; tol_d  (0.05)</text>
+
+  <!-- mode 2 -->
+  <rect x="560" y="228" width="340" height="96" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2.5"/>
+  <text x="580" y="258" font-size="18" font-weight="bold" fill="#0d9488">모드 2 · ALIGN — 제자리 회전</text>
+  <text x="580" y="284" font-size="15" fill="#334155">ψ_ref = θ_goal</text>
+  <text x="580" y="308" font-size="15" fill="#334155">v = 0,  ω = 선수각 맞춤</text>
+
+  <line x1="730" y1="324" x2="730" y2="382" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+  <text x="745" y="360" font-size="16" fill="#1e293b">|θ_goal − θ| &lt; tol_th  (1°)</text>
+
+  <!-- mode 3 -->
+  <rect x="560" y="386" width="340" height="70" rx="10" fill="#f1f5f9" stroke="#64748b" stroke-width="2.5"/>
+  <text x="580" y="416" font-size="18" font-weight="bold" fill="#475569">모드 3 · DONE — 정지</text>
+  <text x="580" y="442" font-size="15" fill="#334155">v = 0,  ω = 0</text>
+
+  <!-- 되돌아가기 -->
+  <path d="M900,421 L940,421 L940,118 L904,118" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ahr)"/>
+  <text x="700" y="492" text-anchor="middle" font-size="15" fill="#dc2626">목표점을 바꿔 d &gt; 3·tol_d 가 되면 모드 1 로 되돌아감 (빨간 점선)</text>
+  <text x="700" y="518" text-anchor="middle" font-size="15" fill="#64748b">모드는 Unit Delay 로 한 스텝 늦춰 되먹임 — 대수 루프 방지</text>
+</svg>

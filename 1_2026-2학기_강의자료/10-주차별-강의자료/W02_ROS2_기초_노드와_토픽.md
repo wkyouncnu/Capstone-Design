@@ -2,10 +2,10 @@
 type: week
 week: 2
 title: 2주차 — ROS 2 기초, 노드와 토픽
-date: 2026-09-03
-tags: [week, ros2, vscode, qos]
+date: 2026-09-15
+tags: [week, ros2, qos, simulink]
 status: done
-summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불일치 재현, 표본화
+summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불일치 재현, 중계 노드와 Simulink 목표 자세 제어
 ---
 
 # 2주차 · ROS 2 기초 — 노드와 토픽
@@ -29,7 +29,7 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 > | Simulink | [Simulink Onramp](https://matlabacademy.mathworks.com/kr/details/simulink-onramp/simulink) · 담당 교수 Simulink 강의 [1부](https://youtu.be/a-afHg_fSaU) · [2부](https://youtu.be/070Yn0Hw5a0) |
 
 - **과목**: 캡스톤디자인 (2026-2) · 충남대학교 자율운항시스템공학과
-- **이번 주차 학습 내용**: ① ROS 2 설치 ② **VS Code 로 WSL 안의 코드 편집** ③ 두 프로그램이 서로 데이터를 주고받게 만들기 ④ **화면 도구(rqt · RViz2)로 눈으로 확인**
+- **이번 주차 학습 내용**: ① ROS 2 설치 ② **VS Code 로 WSL 안의 코드 편집** ③ 두 프로그램이 서로 데이터를 주고받게 만들기 ④ **화면 도구(rqt · RViz2)로 눈으로 확인** ⑤ **중계 노드로 Simulink 와 연결해 turtlesim 을 목표 자세로 보내기**
 
 > [!important] 시작 전 확인
 > - 1주차 WSL 설치가 끝나 있어야 함
@@ -51,6 +51,8 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 9. **내 손으로 노드를 작성**해서 데이터를 주고받기
 10. **QoS 불일치**를 재현하고 원인을 진단
 11. **표본화 주기**가 왜 중요한지 설명
+12. MATLAB 에 없는 메시지를 **중계 노드**로 표준 형식에 옮겨 발행
+13. Simulink 모델로 turtlesim 을 **목표 위치·선수각**까지 보내고 오프라인과 수치로 대조
 
 ---
 
@@ -63,6 +65,7 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 | 편집기 | **VS Code** (Windows 에 설치). 이번 주차 2-2절에서 함께 설치한다 |
 | 터미널 | VS Code 통합 터미널을 기본으로 쓴다. `terminator`(1주차 2-6절)도 그대로 사용 가능 |
 | 인터넷 | 패키지 내려받기. 학교 와이파이면 시간이 더 걸린다 |
+| MATLAB (§2-11 만) | **R2024b** + Simulink + ROS Toolbox. 없으면 §2-11 은 6주차 뒤로 미룬다 |
 
 > [!note] 이번 주차부터 편집기가 바뀐다
 > 1주차에서는 `nano` 로 파일을 만들었다. 이번 주차부터는 **VS Code** 를 쓴다.
@@ -2515,7 +2518,7 @@ ros2 run usv_basics qos_test_sub
 **2. 진단**
 
 ```bash
-ros2 topic info /qos_topic --verbose
+	ros2 topic info /qos_topic --verbose
 ```
 
 - 출력에서 `Endpoint type: PUBLISHER` 와 `SUBSCRIPTION` 각각의 `Reliability` 를 비교한다
@@ -2555,6 +2558,733 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 
 ---
 
+## 2-10. 중계 노드 — MATLAB 이 모르는 메시지를 표준 형식으로 옮긴다
+
+> [!important] 이 절에서 만드는 것
+> - `/turtle1/pose` 를 받아 **MATLAB 에 내장된 메시지 형식**으로 다시 발행하는 노드 하나
+> - 6주차부터 Simulink 가 ROS 2 와 통신한다. 그때 **"토픽은 보이는데 형식이 없다"** 는 문제를 반드시 만난다
+> - 해결 방법은 한 가지다 — **중계 노드**. 이번 주차에 만든 노드 작성법 그대로 쓴다
+
+### 용어 정리
+
+| 용어 | 뜻 | 비유 |
+|---|---|---|
+| **메시지 형식** (message type) | 토픽에 실리는 데이터의 구조. `turtlesim/msg/Pose` 처럼 `패키지/msg/이름` | 서류 양식 |
+| **내장 형식** | MATLAB ROS Toolbox 가 처음부터 알고 있는 형식. `ros2 msg list` 로 확인 | 이미 인쇄해 둔 양식 |
+| **중계 노드** (relay) | 한 토픽을 받아 **다른 형식**으로 옮겨 담아 다시 내보내는 노드 | 서류를 다른 양식에 옮겨 적는 직원 |
+
+### 문제 상황 — 토픽은 보이는데 받을 수 없다
+
+- turtlesim 을 띄운 상태의 토픽 목록 (기준 환경 실측)
+
+```bash
+ros2 topic list -t
+```
+
+- 정상 출력
+
+```
+/parameter_events [rcl_interfaces/msg/ParameterEvent]
+/rosout [rcl_interfaces/msg/Log]
+/turtle1/cmd_vel [geometry_msgs/msg/Twist]
+/turtle1/color_sensor [turtlesim/msg/Color]
+/turtle1/pose [turtlesim/msg/Pose]
+```
+
+- MATLAB 명령 창에서 `/turtle1/pose` 를 구독하면 아래 오류가 난다 (MATLAB R2024b 실측)
+
+```matlab
+node = ros2node("/probe", 8);
+sub  = ros2subscriber(node, "/turtle1/pose", "turtlesim/Pose");
+```
+
+```
+turtlesim/Pose은(는) 인식할 수 없는 메시지 유형입니다. 사용 가능한 유형을 보려면 ros2 msg list을(를) 사용하십시오.
+```
+
+| 메시지 형식 | MATLAB R2024b 내장 여부 (`ros2 msg list` 358종 중) |
+|---|---|
+| `turtlesim/msg/Pose` | **없음** |
+| `geometry_msgs/msg/Pose2D` | 있음 |
+| `geometry_msgs/msg/Twist` | 있음 — `/turtle1/cmd_vel` 이 이 형식이라 **보내기는 바로 된다** |
+
+> [!note] 없는 형식을 MATLAB 에 추가하는 방법도 있다
+> `ros2genmsg` 로 사용자 메시지를 빌드하면 된다. 다만 Python·CMake·C++ 컴파일러가 Windows 에 따로 필요해 설치가 무겁다.
+> 본 과목은 **중계 노드**를 쓴다 — 우분투 안에서 파이썬 파일 하나로 끝난다.
+
+### 해법 — 중계 노드가 가운데에 선다
+
+![turtlesim 과 Simulink 사이의 토픽 흐름](../assets/w02-relay-flow.svg)
+
+| 그림의 위치 | 무엇인가 |
+|---|---|
+| 왼쪽 위 `turtlesim_node` → 아래 화살표 | turtlesim 이 자기 형식(`turtlesim/msg/Pose`)으로 자세를 낸다 |
+| 빨간 점선 **✕ 직접 구독 불가** | MATLAB 은 이 형식을 모른다 |
+| 파란 상자 `turtle_pose_relay` | 이 절에서 만드는 노드. **같은 값을 표준 형식에 옮겨 담는다** |
+| 파란 화살표 `/turtle1/pose2d` | MATLAB 이 아는 `geometry_msgs/msg/Pose2D` |
+| 오른쪽 네 상자 | §2-11 의 Simulink 모델. 받고 → 판단하고 → 제어하고 → 보낸다 |
+| 위쪽 `/turtle1/cmd_vel` | 원래 표준 형식(`Twist`)이라 중계가 필요 없다 |
+
+### 두 형식을 나란히 본다
+
+```bash
+ros2 interface show turtlesim/msg/Pose
+```
+
+- 정상 출력
+
+```
+float32 x
+float32 y
+float32 theta
+
+float32 linear_velocity
+float32 angular_velocity
+```
+
+```bash
+ros2 interface show geometry_msgs/msg/Pose2D
+```
+
+- 정상 출력 (앞쪽 `#` 주석 줄 생략)
+
+```
+float64 x
+float64 y
+float64 theta
+```
+
+| `turtlesim/msg/Pose` | → | 옮겨 담는 곳 |
+|---|---|---|
+| `x` · `y` · `theta` | → | `/turtle1/pose2d` (`Pose2D`) 의 `x` · `y` · `theta` |
+| `linear_velocity` | → | `/turtle1/vel` (`Twist`) 의 `linear.x` |
+| `angular_velocity` | → | `/turtle1/vel` (`Twist`) 의 `angular.z` |
+
+- `float32` → `float64` 는 파이썬이 알아서 넓혀 준다. 변환 코드가 필요 없다
+
+> [!note] `Pose2D` 주석에 "Deprecated as of Foxy" 가 보인다
+> 3차원 `Pose` 를 권장한다는 안내일 뿐, Humble 에서 정상 동작한다. MATLAB 에도 내장돼 있다.
+> 평면에서 움직이는 거북이에는 `x, y, theta` 세 값이 그대로 대응하는 `Pose2D` 가 가장 읽기 쉽다.
+
+### 1단계 — 파일을 만든다
+
+- 위치: `~/capstone_ws/src/usv_basics/usv_basics/turtle_pose_relay.py`
+- §2-8 과 같은 방법으로 VS Code 탐색기에서 새 파일을 만든다
+
+![탐색기에서 turtle_pose_relay.py 위치](../assets/w02-relay-code-tree.png)
+
+| 화면에서 확인할 것 | 무엇 |
+|---|---|
+| 탐색기 `src / usv_basics` → `usv_basics` 아래 `turtle_pose_relay.py` | **안쪽** 모듈 폴더에 있어야 한다 (§2-8 경고와 같다) |
+| 탭 제목 `turtle_pose_relay.py` · 위쪽 경로 `src > usv_basics > usv_basics` | 올바른 위치 |
+| 왼쪽 아래 `WSL: Ubuntu-22.04` · `✕ 0 ⚠ 0` | 우분투 안의 파일이고 오류가 없다 |
+
+- 아래 내용을 붙여넣고 저장한다 (`Ctrl + S`)
+
+```python
+"""
+turtle_pose_relay — turtlesim 자세를 MATLAB 이 아는 메시지로 옮겨 다시 발행한다.
+
+왜 필요한가
+  - /turtle1/pose 의 형식은 turtlesim/msg/Pose (turtlesim 전용 메시지)
+  - MATLAB ROS Toolbox 에는 이 형식이 내장돼 있지 않다
+    -> Simulink Subscribe 블록에서 고를 수 없다
+  - 표준 메시지(geometry_msgs)로 옮겨 담아 다시 발행하면 바로 받을 수 있다
+
+토픽 대응
+  입력  /turtle1/pose    turtlesim/msg/Pose
+  출력  /turtle1/pose2d  geometry_msgs/msg/Pose2D   x, y, theta
+  출력  /turtle1/vel     geometry_msgs/msg/Twist    linear.x, angular.z
+
+실행
+  ros2 run usv_basics turtle_pose_relay
+  ros2 run usv_basics turtle_pose_relay --ros-args -p turtle:=turtle2
+"""
+
+from geometry_msgs.msg import Pose2D, Twist
+import rclpy
+from rclpy.node import Node
+from turtlesim.msg import Pose
+
+
+class TurtlePoseRelay(Node):
+
+    def __init__(self):
+        super().__init__('turtle_pose_relay')
+        turtle = self.declare_parameter('turtle', 'turtle1').value
+
+        self.pub_pose = self.create_publisher(Pose2D, f'/{turtle}/pose2d', 10)
+        self.pub_vel = self.create_publisher(Twist, f'/{turtle}/vel', 10)
+        self.sub = self.create_subscription(
+            Pose, f'/{turtle}/pose', self.on_pose, 10)
+
+        self.count = 0
+        self.get_logger().info(
+            f'/{turtle}/pose -> /{turtle}/pose2d (Pose2D), /{turtle}/vel (Twist)')
+
+    def on_pose(self, msg):
+        p = Pose2D()                        # 위치와 선수각
+        p.x = msg.x
+        p.y = msg.y
+        p.theta = msg.theta
+        self.pub_pose.publish(p)
+
+        v = Twist()                         # 속도
+        v.linear.x = msg.linear_velocity
+        v.angular.z = msg.angular_velocity
+        self.pub_vel.publish(v)
+
+        self.count += 1
+        if self.count == 1:                 # 첫 메시지만 알린다 — 연결 확인용
+            self.get_logger().info(
+                f'first relay: x={p.x:.3f} y={p.y:.3f} theta={p.theta:.3f}')
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = TurtlePoseRelay()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+> [!tip] 이미 `usv_basics` 저장소를 받아 둔 경우
+> 저장소에 이 파일이 들어 있다. 아래 한 줄로 최신 상태를 받고 **3단계(빌드)** 로 건너뛴다.
+>
+> ```bash
+> cd ~/capstone_ws/src/usv_basics && git pull
+> ```
+>
+> - 출력에 `turtle_pose_relay.py` 가 들어 있으면 받아진 것이다
+
+### 코드 읽기 ① — 발행자 둘, 구독자 하나
+
+![turtle_pose_relay.py 20~41행 — import 와 __init__](../assets/w02-relay-code-init.png)
+
+| 줄 | 코드 | 뜻 |
+|---|---|---|
+| 20 | `from geometry_msgs.msg import Pose2D, Twist` | **내보낼** 두 형식. MATLAB 이 아는 형식이다 |
+| 23 | `from turtlesim.msg import Pose` | **받을** 형식. MATLAB 이 모르는 형식이다 |
+| 29 | `super().__init__('turtle_pose_relay')` | 노드 이름. `ros2 node list` 에 이 이름이 뜬다 |
+| 30 | `self.declare_parameter('turtle', 'turtle1')` | **파라미터**(§1-2). 기본값 `turtle1`, 실행할 때 바꿀 수 있다 |
+| 32 | `create_publisher(Pose2D, f'/{turtle}/pose2d', 10)` | 발행자 ① — 위치와 선수각 |
+| 33 | `create_publisher(Twist, f'/{turtle}/vel', 10)` | 발행자 ② — 속도 |
+| 34~35 | `create_subscription(Pose, f'/{turtle}/pose', self.on_pose, 10)` | 구독자 — 메시지가 오면 `on_pose` 를 부른다 |
+
+- §2-8 의 `simple_talker`(발행자 1개)와 `simple_listener`(구독자 1개)를 **한 노드에 합친 모양**이다
+- 차이는 **타이머가 없다**는 것 하나 — 발행은 시계가 아니라 **메시지 도착**이 일으킨다
+
+### 코드 읽기 ② — 받자마자 옮겨 담아 보낸다
+
+![turtle_pose_relay.py 41~63행 — 콜백과 main](../assets/w02-relay-code-callback.png)
+
+| 줄 | 코드 | 뜻 |
+|---|---|---|
+| 41 | `def on_pose(self, msg)` | turtlesim 이 자세를 낼 때마다(약 62.5 Hz) 불린다 |
+| 42 | `p = Pose2D()` | 빈 `Pose2D` 양식을 만든다 |
+| 43~45 | `p.x = msg.x` … | **값을 그대로 옮겨 적는다.** 계산이 없다 |
+| 46 | `self.pub_pose.publish(p)` | `/turtle1/pose2d` 로 내보낸다 |
+| 48~51 | `v = Twist()` … `publish(v)` | 속도도 같은 방식으로 `/turtle1/vel` 에 |
+| 53~56 | `if self.count == 1:` | **첫 메시지 한 번만** 로그를 찍는다. 매번 찍으면 초당 62줄이 쏟아진다 |
+| 59~69 | `def main()` | §2-8 의 `main()` 과 같은 뼈대 |
+
+> [!important] 중계 노드는 값을 바꾸지 않는다
+> 들어온 `x, y, theta` 와 나간 `x, y, theta` 는 같은 숫자다. **형식(양식)만 바뀐다.**
+> 그래서 중계 노드에서 계산 실수를 할 여지가 없다. 제어 계산은 전부 Simulink 쪽에서 한다.
+
+### 2단계 — 실행파일 등록
+
+- `setup.py` 의 `console_scripts` 에 한 줄 추가 (32행)
+
+```python
+'turtle_pose_relay = usv_basics.turtle_pose_relay:main',
+```
+
+![setup.py — turtle_pose_relay 등록](../assets/w02-relay-setup.png)
+
+| 화면에서 확인할 것 | 무엇 |
+|---|---|
+| 27~31행 | §2-8 · 3주차에 등록한 기존 실행파일 5개 |
+| **32행** `'turtle_pose_relay = usv_basics.turtle_pose_relay:main',` | 이번에 추가한 줄. **끝의 쉼표** 확인 |
+
+- `package.xml` 의 `<depend>` 에 두 줄 추가 — 이 노드가 쓰는 메시지 패키지
+
+```xml
+  <depend>geometry_msgs</depend>
+  <depend>turtlesim</depend>
+```
+
+### 3단계 — 빌드
+
+```bash
+cd ~/capstone_ws
+colcon build --symlink-install --packages-select usv_basics
+source install/setup.bash
+```
+
+- 정상 출력 (기준 환경 실측)
+
+```
+Starting >>> usv_basics
+Finished <<< usv_basics [0.74s]
+
+Summary: 1 package finished [1.06s]
+```
+
+```bash
+ros2 pkg executables usv_basics
+```
+
+- 정상 출력 — `turtle_pose_relay` 가 목록에 있어야 한다
+
+```
+usv_basics qos_test_pub
+usv_basics qos_test_sub
+usv_basics simple_listener
+usv_basics simple_talker
+usv_basics turtle_pose_relay
+usv_basics wamv_teleop_key
+```
+
+### 4단계 — 실행 (터미널 두 개)
+
+- **왼쪽 터미널**
+
+```bash
+ros2 run turtlesim turtlesim_node
+```
+
+- 정상 출력
+
+```
+[INFO] [1789440411.425973831] [turtlesim]: Starting turtlesim with node name /turtlesim
+[INFO] [1789440411.430387320] [turtlesim]: Spawning turtle [turtle1] at x=[5.544445], y=[5.544445], theta=[0.000000]
+```
+
+- **오른쪽 터미널**
+
+```bash
+ros2 run usv_basics turtle_pose_relay
+```
+
+- 정상 출력 — 두 줄이 나오고 조용해지면 정상이다
+
+```
+[INFO] [1789440416.820377552] [turtle_pose_relay]: /turtle1/pose -> /turtle1/pose2d (Pose2D), /turtle1/vel (Twist)
+[INFO] [1789440416.829528022] [turtle_pose_relay]: first relay: x=5.544 y=5.544 theta=0.000
+```
+
+| 줄 | 뜻 |
+|---|---|
+| 첫 줄 | 노드가 떴고 발행자·구독자를 만들었다 |
+| 둘째 줄 `first relay` | **turtlesim 의 자세가 실제로 들어와 옮겨졌다.** 좌표가 turtlesim 시작 위치와 같다 |
+| 둘째 줄이 안 나옴 | turtlesim 이 안 떠 있다. 왼쪽 터미널 확인 |
+
+### 5단계 — 확인 (세 번째 터미널)
+
+```bash
+ros2 topic list -t
+```
+
+- 정상 출력 — 아래 두 줄이 **새로 생겼다**
+
+```
+/turtle1/pose2d [geometry_msgs/msg/Pose2D]
+/turtle1/vel [geometry_msgs/msg/Twist]
+```
+
+```bash
+ros2 topic echo --once /turtle1/pose2d
+```
+
+- 정상 출력
+
+```
+x: 5.544444561004639
+y: 5.544444561004639
+theta: 0.0
+---
+```
+
+```bash
+ros2 topic hz /turtle1/pose2d
+```
+
+- 정상 출력 (기준 환경 실측)
+
+```
+average rate: 62.504
+	min: 0.015s max: 0.017s std dev: 0.00057s window: 64
+```
+
+| 확인 항목 | 기대값 | 실측 |
+|---|---|---|
+| 새 토픽 형식 | `geometry_msgs/msg/Pose2D` | 같음 |
+| 값 | turtlesim 시작 자세 `(5.544, 5.544, 0)` | `x: 5.5444…`, `theta: 0.0` |
+| 주기 | turtlesim 원본과 같음 (약 62.5 Hz) | `average rate: 62.504` |
+
+> [!note] `x: 5.544444561004639` 처럼 자릿수가 긴 이유
+> 원본 `float32` 의 `5.544445` 를 `float64` 에 옮기면 float32 가 표현하던 **이진 근삿값이 그대로 드러난다.** 오차가 생긴 것이 아니다.
+
+---
+
+## 2-11. Simulink 로 turtlesim 을 목표 자세까지 보낸다
+
+> [!important] 이 절의 성격 — 미리 보기 실습
+> - Simulink 기초는 **6주차**에 배운다. 이번 주차에는 모델을 **만들지 않고 실행해서 구조를 읽는다**
+> - 목표: §2-10 의 중계 노드가 **실제 제어 루프의 한 부분**으로 쓰이는 것을 눈으로 확인
+> - MATLAB 이 아직 설치되지 않았다면 이 절은 6주차 이후 다시 와도 된다
+
+### 준비물
+
+| 항목 | 내용 |
+|---|---|
+| MATLAB | **R2024b** + Simulink + **ROS Toolbox** (학교 라이선스) |
+| 모델 폴더 | 강의자료 `10-주차별-강의자료/W02_simulink/` — 이 폴더를 통째로 복사해 쓴다 |
+| 우분투 쪽 | turtlesim + 중계 노드가 **떠 있어야** 한다 (§2-10 4단계) |
+| Domain ID | 우분투의 `echo $ROS_DOMAIN_ID` 값 — `W02_setup.m` 에 같은 값을 넣는다 |
+
+### 폴더에 들어 있는 것
+
+| 파일 | 하는 일 | 고칠 일 |
+|---|---|---|
+| `W02_setup.m` | 목표 자세·게인·Domain ID 설정. **모델보다 먼저** 실행 | **이 파일만 고친다** |
+| `build_w02_models.m` | 모델 3개를 코드로 생성. 모델이 망가지면 다시 실행 | 없음 |
+| `W02_1_pose_sub.slx` | 1단계 — `/turtle1/pose2d` 를 받아 숫자로 보여 준다 | 없음 |
+| `W02_2_goto_offline.slx` | 2단계 — **turtlesim 없이** 같은 운동식으로 미리 돌려 본다 | 없음 |
+| `W02_3_goto_turtlesim.slx` | 3단계 — 실제 turtlesim 을 목표 자세로 보낸다 | 없음 |
+| `W02_plot.m` · `W02_animate.m` · `W02_hull.m` | 결과 그림 · 실시간 그림 · 선체 모양 | 없음 |
+| `ros2/turtle_pose_relay.py` | §2-10 의 중계 노드와 같은 파일 (저장소 없이 쓸 때) | 없음 |
+
+### 제어 원리 — 한 번에 하나씩 맞춘다
+
+![목표 자세 제어의 기하와 모드](../assets/w02-goto-modes.svg)
+
+| 그림의 위치 | 무엇인가 |
+|---|---|
+| (a) 초록 선체 · 초록 화살표 | 현재 위치와 선수 방향 $\theta$. **뾰족한 쪽이 선수** |
+| (a) 파란 화살표 | 목표점까지의 거리 $d$ 와 방향 $\psi_{\text{ref}}$ |
+| (a) 청록 호 $e$ | 선수가 목표 방향에서 벗어난 각도 — 이것을 0 으로 만든다 |
+| (b) 모드 1 → 2 → 3 | 먼저 **위치**, 다음에 **선수각**, 끝나면 정지 |
+| (b) 빨간 점선 | 목표를 바꾸면 처음(모드 1)부터 다시 |
+
+- 목표 방향과 선수각 오차
+
+$$
+\psi_{\text{ref}} = \operatorname{atan2}(y_g - y,\ x_g - x), \qquad e = \operatorname{ssa}(\psi_{\text{ref}} - \theta)
+$$
+
+- 제어 법칙 — 선수각은 P 제어, 속도는 거리에 비례
+
+$$
+\omega = \operatorname{sat}_{\omega_{\max}}\!\left(K_\psi\, e\right), \qquad
+v = \min\!\left(K_v\, d,\ v_{\max}\right)\cdot \max(\cos e,\ 0)
+$$
+
+| 기호 | 뜻 | 값 (`W02_setup.m`) |
+|---|---|---|
+| $(x_g, y_g, \theta_g)$ | 목표 자세 | `(9.0, 2.0, 90°)` |
+| $d$ | 목표점까지 거리 | 계산값 |
+| $\operatorname{ssa}$ | 가장 짧은 쪽 각도 차이. $-\pi \sim \pi$ 로 접는다 | — |
+| $K_\psi$ | 선수각 게인 | `Kpsi = 4.0` |
+| $K_v$ | 속도 게인 | `Kv = 1.0` |
+| $v_{\max}$, $\omega_{\max}$ | 속도 · 회전 한계 | `2.0`, `2.0 rad/s` |
+| `tol_d`, `tol_th` | 도착 판정 | `0.05`, `1°` |
+
+- $\max(\cos e, 0)$ 의 역할 — 목표를 **등지고 있으면 전진하지 않고** 먼저 돈다
+- turtlesim 은 `cmd_vel` 의 속도를 **그대로** 따르는 운동학 모델이다. 그래서 추력 모델이나 D 항 없이 P 제어로 충분하다
+
+### 1단계 — MATLAB 준비
+
+1. MATLAB 을 연다
+2. 위쪽 **현재 폴더** 주소줄에서 `W02_simulink` 폴더로 이동한다
+3. `W02_setup.m` 을 열어 **Domain ID 를 우분투와 같게** 고친다 (22행)
+
+```matlab
+ros_domain_id = '8';        % 우분투의 echo $ROS_DOMAIN_ID 값
+```
+
+4. 명령 창에서 실행
+
+```matlab
+W02_setup
+```
+
+- 정상 출력
+
+```
+W02_setup 완료 — 목표 (9.00, 2.00, 90.0 deg), ROS_DOMAIN_ID=8
+```
+
+5. 우분투의 토픽이 MATLAB 에서 보이는지 확인
+
+```matlab
+ros2("topic","list")
+```
+
+- 정상 출력 — `/turtle1/pose2d` 가 있어야 한다 (중계 노드가 떠 있을 때)
+
+```
+/parameter_events
+/rosout
+/turtle1/cmd_vel
+/turtle1/color_sensor
+/turtle1/pose
+/turtle1/pose2d
+/turtle1/rotate_absolute/_action/feedback
+/turtle1/rotate_absolute/_action/status
+/turtle1/vel
+```
+
+> [!warning] 목록은 보이는데 다음 단계에서 값이 0 으로만 나오는 경우
+> 우분투 쪽 노드가 **멈춘 채 목록에만 남아 있는** 상태다. 목록은 발견 정보라 한동안 지워지지 않는다.
+> 우분투 터미널에서 `ros2 topic hz /turtle1/pose2d` 로 실제 주기가 나오는지 먼저 본다.
+> 안 나오면 두 노드를 `Ctrl + C` 로 끄고 다시 띄운다.
+
+### 2단계 — 모델 생성
+
+```matlab
+build_w02_models
+```
+
+- 정상 출력 (마지막 부분)
+
+```
+  W02_1_pose_sub 생성
+  W02_2_goto_offline 생성
+  W02_3_goto_turtlesim 생성
+
+완료. 생성된 모델:
+  W02_1_pose_sub.slx
+  W02_2_goto_offline.slx
+  W02_3_goto_turtlesim.slx
+```
+
+- `Automated layout might not improve upon original layout` 경고가 몇 줄 섞여 나온다. **무시해도 된다**
+
+> [!tip] 모델을 만지다 망가뜨렸을 때
+> `W02_setup` → `build_w02_models` 두 줄이면 처음 상태로 돌아온다. 마음껏 고쳐 볼 것.
+
+### 3단계 — 자세만 받아 본다 (`W02_1_pose_sub`)
+
+```matlab
+open_system('W02_1_pose_sub')
+```
+
+![1단계 모델 — 구독만](W02_simulink/img/W02_1_pose_sub.png)
+
+| 블록 | 하는 일 |
+|---|---|
+| `PoseSub` (ROS 2 Subscribe) | 토픽 `/turtle1/pose2d`, 형식 `geometry_msgs/Pose2D` 를 받는다 |
+| `Sel` (Bus Selector) | 메시지에서 `x` · `y` · `theta` 세 칸을 꺼낸다 |
+| `IsNew` | 이번 스텝에 새 메시지가 왔으면 1 |
+| `Display_x/y/theta` · `Display_theta_deg` | 숫자 표시. 마지막은 도 단위 |
+| `VelSub` → `SelVel` → `Display_v/w` | `/turtle1/vel` 의 속도 |
+
+1. Simulink 창 위쪽 **실행**(초록 삼각형)을 누른다 — 정지 시간이 `inf` 라 계속 돈다
+2. 우분투의 네 번째 터미널에서 거북이를 움직여 본다
+
+```bash
+ros2 run turtlesim turtle_teleop_key
+```
+
+3. 방향키를 누를 때마다 `Display_x` · `Display_theta_deg` 의 숫자가 바뀌면 성공
+4. Simulink 의 **정지**(빨간 네모)를 누른다
+
+### 4단계 — 오프라인으로 먼저 돌린다 (`W02_2_goto_offline`)
+
+> [!important] 실물 전에 오프라인 — 이 과목 내내 지키는 순서
+> 오프라인 모델은 turtlesim 과 **같은 운동식**(`turtle.cpp`)으로 만들었다.
+> 여기서 목표에 도착하지 못하면 실물에서도 못 한다. 반대로 여기서 맞춘 게인은 실물에 그대로 통한다.
+
+```matlab
+open_system('W02_2_goto_offline')
+```
+
+![2단계 모델 — 오프라인 거북이](W02_simulink/img/W02_2_goto_offline.png)
+
+| 색 | 서브시스템 | 입력 → 출력 | 속을 보려면 |
+|---|---|---|---|
+| 파랑 | `Guidance` (유도) | `x, y, th, valid` → `psi_ref, dist, mode` | 더블클릭 |
+| 주황 | `Control` (제어) | `psi_ref, dist, mode, th` → `v, w` | 더블클릭 |
+| 초록 | `TurtlePlant` (운동모델) | `v, w` → `x, y, th` | 더블클릭 |
+| 회색 | `Animate` · `Logging` | 선 없음. 태그 `[x]` `[y]` … 로 받는다 | 더블클릭 |
+| 흰 오각형 | `[x]` `[y]` `[th]` `[valid]` | 되먹임 태그. 오른쪽에서 보낸 값을 왼쪽에서 받는다 | — |
+
+- 신호는 **왼쪽 → 오른쪽** 한 방향으로만 흐른다. 되돌아오는 선은 태그로 대신했다
+- `Guidance` 를 더블클릭한 화면
+
+![Guidance 서브시스템 내부](W02_simulink/img/W02_2_goto_offline__Guidance.png)
+
+| 블록 | 뜻 |
+|---|---|
+| 가운데 `GuidanceLaw` (MATLAB Function) | 위 수식과 모드 전환. 더블클릭하면 코드가 보인다 |
+| 왼쪽 흰 상자 5개 | 목표 `x_goal` `y_goal` `theta_goal`, 판정 `tol_d` `tol_th` — `W02_setup.m` 의 변수 |
+| 왼쪽 아래 보라 `1/z` (Unit Delay) | 한 스텝 전 모드. 자기 출력을 바로 입력으로 쓰면 **대수 루프** 오류가 난다 |
+| 오른쪽 오각형 `psi_ref` `dist` `e_th` `mode` | 로깅용 태그 |
+
+- 실행 — 명령 창에서
+
+```matlab
+W02_setup
+out = sim('W02_2_goto_offline');
+S = W02_plot(out, '오프라인')
+```
+
+- 실행 중 뜨는 실시간 그림 (끝난 순간)
+
+![오프라인 실시간 항적](W02_simulink/img/W02_animate.png)
+
+| 그림에서 | 뜻 |
+|---|---|
+| 초록 선체의 **뾰족한 쪽** | 현재 선수 방향 |
+| 빨간 점선 선체 | 목표 자세. 초록 선체가 **그 안에 들어가 같은 방향**을 보면 성공 |
+| 제목 줄 | 시각 · 위치 · 선수각 · 목표까지 거리 |
+
+- 정상 출력
+
+```
+[오프라인] 위치오차 0.0481 | 선수각오차 0.903 deg | 위치도착 5.20 s | 완료 6.95 s
+```
+
+![오프라인 결과](W02_simulink/img/W02_2_offline_result.png)
+
+| 그림 | 읽는 법 |
+|---|---|
+| 왼쪽 회색 선체 | 출발 자세 `(5.54, 5.54)`, 선수 오른쪽(0°) |
+| 왼쪽 주황 윤곽 선체 + 시각 | 이동 0.8 마다 한 척. **간격이 점점 좁아진다** = 목표에 가까울수록 감속 |
+| 왼쪽 초록 선체 + 좌표 | 마지막 자세. 빨간 점선(목표)과 겹친다 |
+| 오른쪽 위 거리 | 약 5 초에 0 근처 |
+| 오른쪽 가운데 $\theta$ | 먼저 −50° 로 돌아 목표를 향하고(모드 1), 도착 뒤 90° 로 돈다(모드 2) |
+| 오른쪽 아래 mode | 1 → 2 (5.20 s) → 3 (6.95 s) |
+
+### 5단계 — 실제 turtlesim 을 움직인다 (`W02_3_goto_turtlesim`)
+
+```matlab
+open_system('W02_3_goto_turtlesim')
+```
+
+![3단계 모델 — Simulink 창](../assets/w02-simulink-turtlesim-window.png)
+
+| 화면의 위치 | 무엇인가 |
+|---|---|
+| 위쪽 리본 **실행**(초록 삼각형) · **정지 시간** `T_end` | 누르면 20 초 동안 돈다 |
+| 파랑 `Guidance` · 주황 `Control` | **2단계와 똑같은 서브시스템**이다 |
+| 연보라 `CmdPublisher` | `v, w` 를 `Twist` 에 담아 `/turtle1/cmd_vel` 로 보낸다 — 2단계의 `TurtlePlant` 자리 |
+| 연보라 `PoseSubscriber` | `/turtle1/pose2d` 를 받아 `[x] [y] [th] [valid]` 태그로 내보낸다 |
+
+- `PoseSubscriber` 를 더블클릭한 화면
+
+![PoseSubscriber 서브시스템 내부](W02_simulink/img/W02_3_goto_turtlesim__PoseSubscriber.png)
+
+| 블록 | 뜻 |
+|---|---|
+| `PoseSub` | §2-10 중계 노드가 내보낸 `/turtle1/pose2d` 를 받는다 |
+| `Sel` | `x` · `y` · `theta` 를 꺼낸다 |
+| `RxLatch` | **첫 메시지가 오기 전에는 `valid = 0`** — 그동안 거북이를 움직이지 않는다 |
+
+> [!warning] 첫 메시지 전에는 좌표가 (0, 0) 으로 들어온다
+> Subscribe 블록은 메시지가 오기 전에 **모든 칸을 0 으로 채운 값**을 낸다.
+> turtlesim 에서 (0, 0) 은 실제로 갈 수 있는 **왼쪽 아래 모서리**라 값만 보고는 거를 수 없다.
+> 그래서 `IsNew` 가 한 번이라도 1 이 됐는지를 기억해(`RxLatch`) 판단한다.
+
+- `CmdPublisher` 를 더블클릭한 화면
+
+![CmdPublisher 서브시스템 내부](W02_simulink/img/W02_3_goto_turtlesim__CmdPublisher.png)
+
+| 블록 | 뜻 |
+|---|---|
+| `BlankCmd` (Blank Message) | 빈 `geometry_msgs/Twist` 양식 |
+| `AsgCmd` (Bus Assignment) | `linear.x ← v`, `angular.z ← w` 두 칸만 채운다 |
+| `PubCmd` (Publish) | `/turtle1/cmd_vel` 로 보낸다 |
+
+1. 우분투에서 turtlesim 과 중계 노드가 떠 있는지 다시 확인한다
+
+```bash
+ros2 topic hz /turtle1/pose2d
+```
+
+2. 거북이를 시작 위치로 되돌린다 (이전 실습으로 옮겨졌다면)
+
+```bash
+ros2 service call /turtle1/teleport_absolute turtlesim/srv/TeleportAbsolute "{x: 5.544445, y: 5.544445, theta: 0.0}"
+```
+
+3. MATLAB 명령 창에서 실행
+
+```matlab
+W02_setup
+out = sim('W02_3_goto_turtlesim');
+S = W02_plot(out, 'turtlesim')
+```
+
+- 실행하는 20 초 동안 **turtlesim 창의 거북이가 오른쪽 아래로 가서 위를 보고 멈춘다**
+- 정상 출력 (기준 환경 실측)
+
+```
+[turtlesim] 위치오차 0.0478 | 선수각오차 0.973 deg | 위치도착 4.70 s | 완료 6.20 s
+```
+
+![turtlesim 결과](W02_simulink/img/W02_3_turtlesim_result.png)
+
+![turtlesim 창 — 목표 자세에 도착](../assets/w02-turtlesim-goto.png)
+
+| 화면에서 확인할 것 | 무엇 |
+|---|---|
+| 흰 선이 가운데에서 오른쪽 아래로 | 거북이가 지나간 길. 결과 그림 왼쪽의 파란 항적과 같은 모양 |
+| 거북이 머리가 **화면 위쪽** | 목표 선수각 90° |
+| 거북이 위치 `(9, 2)` 부근 | 목표점 |
+
+### 오프라인과 실물 대조
+
+| 항목 | 오프라인 (`W02_2`) | turtlesim (`W02_3`) | 차이 |
+|---|---|---|---|
+| 최종 위치 오차 | 0.048 | 0.048 | 0.000 |
+| 최종 선수각 오차 | 0.90° | 0.97° | +0.07° |
+| 위치 도착 (모드 1 → 2) | 5.20 s | 4.70 s | −0.50 s |
+| 완료 (모드 3) | 6.95 s | 6.20 s | −0.75 s |
+
+- 측정 조건 — 목표 `(9.0, 2.0, 90°)`, 출발 `(5.544, 5.544, 0°)`, 제어 주기 0.05 s, 20 초 실행의 **마지막 샘플**
+- **위치 오차 · 선수각 오차는 두 곳이 같다** — 둘 다 판정 기준(`tol_d = 0.05`, `tol_th = 1°`) 안에서 멈췄다
+- **시각은 실행할 때마다 흔들린다.** 같은 모델을 한 번 더 돌린 기록
+
+| turtlesim 실행 | 위치 오차 | 선수각 오차 | 위치 도착 | 완료 |
+|---|---|---|---|---|
+| 1회차 | 0.047 | 0.88° | 5.30 s | 7.05 s |
+| 2회차 (위 표) | 0.048 | 0.97° | 4.70 s | 6.20 s |
+
+> [!note] 실물 대조는 초 단위 시각보다 최종 오차를 먼저 본다
+> turtlesim 은 **벽시계**로 움직이고, Simulink 의 기록 시각은 **시뮬레이션 시계**다. 서로 다른 두 시계다.
+> 페이싱(`PacingRate = 1`)으로 맞추지만 회차 간 차이가 실측으로 위치 도착 0.60 s, 완료 0.85 s 났다.
+> 시뮬레이터와 Simulink 의 시계를 맞추는 페이싱은 6주차 VRX 연동에서 자세히 다룬다.
+
+### 해 볼 것 — 목표를 바꾼다
+
+1. `W02_setup.m` 의 목표를 고친다
+
+```matlab
+x_goal     = 2.0;
+y_goal     = 9.0;
+theta_goal = deg2rad(180);   % 화면 왼쪽
+```
+
+2. `W02_setup` → 오프라인으로 먼저 확인 → turtlesim 에서 실행
+3. 오프라인과 turtlesim 의 도착 시각이 비슷한지 표로 비교한다
+
+> [!caution] 목표를 벽(0 또는 11.09) 가까이 두지 않는다
+> turtlesim 은 벽에 닿으면 멈추고 경고를 낸다. 목표는 `1 ~ 10` 사이에 둔다.
+
+---
+
 # 마무리
 
 ## 이번 주차 요약
@@ -2571,6 +3301,8 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 | 8 | 워크스페이스와 패키지 생성 | `colcon build` → `1 package finished` |
 | 9 | 내 노드 작성 및 통신 | `received: USV alive: 0` |
 | 10 | QoS 불일치 재현 · 진단 · 해결 | 수신 0건 → 35건 |
+| 11 | **중계 노드** `turtle_pose_relay` | `/turtle1/pose2d [geometry_msgs/msg/Pose2D]` · 62.5 Hz |
+| 12 | **Simulink 로 turtlesim 목표 자세 제어** | 오프라인 위치오차 0.048 · turtlesim 0.048 |
 
 ---
 
@@ -2591,6 +3323,8 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 - [ ] `ROS_DOMAIN_ID` 를 왜 팀별로 나누는지 안다
 - [ ] QoS 불일치가 **프로그램을 죽이지 않고** 실패한다는 것을 안다
 - [ ] 에일리어싱이 무엇인지 그림으로 설명할 수 있다
+- [ ] MATLAB 이 `/turtle1/pose` 를 **왜 못 받는지**, 중계 노드가 **무엇을 바꾸고 무엇을 안 바꾸는지** 설명할 수 있다
+- [ ] 목표 자세 제어의 모드 1 · 2 · 3 이 각각 무엇을 맞추는지 설명할 수 있다
 
 ### 환경 구축
 
@@ -2621,6 +3355,9 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 - [ ] 직접 만든 `simple_talker` ↔ `simple_listener` 통신 성공
 - [ ] **QoS 불일치를 재현하고 진단한 뒤 해결했다** (수신 0건 → 정상 수신)
 - [ ] `~/.bashrc` 에 `ROS_DOMAIN_ID` 를 팀 번호로 설정했다
+- [ ] `ros2 run usv_basics turtle_pose_relay` 실행 후 `ros2 topic hz /turtle1/pose2d` 가 약 62 Hz 를 출력했다
+- [ ] (MATLAB 이 있으면) `W02_2_goto_offline` 결과 위치오차가 `tol_d = 0.05` 보다 작았다
+- [ ] (MATLAB 이 있으면) `W02_3_goto_turtlesim` 으로 turtlesim 거북이가 `(9, 2)` 에서 위를 보고 멈췄다
 
 ### 다음 주 준비
 
@@ -2709,6 +3446,18 @@ w_z(t) = 0.5 * sin(2*pi*0.5*t)    저주파  0.5 Hz  (실제 선회 운동)
 | 옆자리 학생의 토픽이 보임 | Domain ID 가 같음 | 팀 번호로 변경 후 `source ~/.bashrc` |
 | **토픽은 보이는데 데이터를 못 받음** | **QoS 불일치** | `ros2 topic info <토픽> --verbose` 로 `Reliability` 비교 |
 | `incompatible QoS ... Last incompatible policy: RELIABILITY` | 위와 같음 | §2-9 참조 |
+
+### 중계 노드 · Simulink
+
+| 화면에 나오는 것 | 원인 | 해결 |
+|---|---|---|
+| `turtlesim/Pose은(는) 인식할 수 없는 메시지 유형입니다` | MATLAB 에 turtlesim 메시지가 없음 | 중계 노드를 켜고 `/turtle1/pose2d` 를 구독 (§2-10) |
+| `ModuleNotFoundError: No module named 'turtlesim'` | 우분투에 turtlesim 이 없음 | `sudo apt install -y ros-humble-turtlesim` |
+| 중계 노드가 첫 줄만 찍고 `first relay` 가 안 나옴 | turtlesim 이 안 떠 있음 | `ros2 run turtlesim turtlesim_node` |
+| MATLAB 에서 토픽은 보이는데 Simulink 값이 계속 0 | 우분투 노드가 멈춘 채 **목록에만 남음** · Domain ID 불일치 | 우분투에서 `ros2 topic hz /turtle1/pose2d` 확인 → 노드 재실행 · `W02_setup.m` 의 `ros_domain_id` 확인 |
+| 거북이가 안 움직이고 결과가 `위치오차 9.2195` | 위와 같음 — 한 번도 자세를 못 받아 `valid = 0` 으로 정지 | 위와 같음. 9.2195 는 (0,0) 에서 (9,2) 까지 거리 |
+| `먼저 W02_setup 을 실행하십시오.` | 설정 변수가 없음 | `W02_setup` 실행 후 다시 |
+| 모델을 고치다 망가뜨림 | — | `W02_setup` → `build_w02_models` |
 
 - Domain ID 차이는 이렇게 눈으로 확인할 수 있다 (실측)
 
@@ -2807,9 +3556,11 @@ which code
 ### 이번 주차 실습 코드
 
 - **`usv_basics` 패키지** — <https://github.com/wkyouncnu/usv_basics>
-  - 이번 주차에 만드는 노드 4개가 그대로 들어 있다
+  - 이번 주차에 만드는 노드 4개와 중계 노드 `turtle_pose_relay` 가 그대로 들어 있다
   - 받는 법은 §2-7 "저장소에서 받기"
   - 라이선스 Apache-2.0. 자유롭게 고쳐 써도 된다
+- **Simulink 모델** — 강의자료 `10-주차별-강의자료/W02_simulink/` (§2-11)
+  - MATLAB ROS 2 사용자 메시지 — https://www.mathworks.com/help/ros/ref/ros2genmsg.html
 
 ### 공식 문서 (북마크 권장)
 
