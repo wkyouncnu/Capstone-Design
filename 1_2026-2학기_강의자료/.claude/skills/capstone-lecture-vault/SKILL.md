@@ -119,3 +119,30 @@ bash .claude/skills/capstone-lecture-vault/scripts/vault_check.sh
 > wsl -d Ubuntu-22.04 bash -lc 'pkill -f "[v]rx_gz|[v]rx_ros|[r]os_gz_bridge|[g]z sim|[r]uby|[p]arameter_bridge"'
 > ```
 > 대괄호를 씌우지 않으면 **자기 명령줄이 패턴에 걸려** 셸이 먼저 죽는다.
+
+---
+
+## 5. 작업이 끝나면 GitHub 로 올린다
+
+자료를 고쳤으면 **커밋하고 푸시하는 것까지가 한 작업**이다. 커밋만 해 두면 다른
+PC 와 어긋나고, Dropbox 동기화와 git 이 서로 다른 상태를 들고 있게 된다.
+
+```bash
+bash _tools/git_autopush.sh "직접 쓴 커밋 메시지"    # 커밋 + 푸시
+bash _tools/hook_stop.sh                             # PDF 동기화까지 함께
+```
+
+- 세션이 끝날 때 **Stop 훅**이 `hook_stop.sh` 를 부른다 — MD→PDF 동기화 후 커밋·푸시
+- 훅이 돌았는지 확인 : `git rev-list --count origin/main..HEAD` 가 **0**
+
+> [!caution] 볼트 밖 폴더에서 세션을 열면 훅이 걸리지 않는다
+> Claude Code 는 **연 폴더의** `.claude/settings.json` 만 읽고 상위 폴더로 거슬러
+> 올라가지 않는다. 볼트와 저장소 루트에 훅이 있어도, 다른 폴더에서 열면 아무것도
+> 걸리지 않고 커밋이 조용히 쌓인다 (2026-09-17 에 두 커밋이 밀려 있었다).
+>
+> - 되도록 **볼트 폴더에서 연다**
+> - 다른 폴더를 써야 하면 그 폴더에도 `.claude/settings.json` 을 두고 훅을 건다
+> - 어느 쪽이든 **끝내기 전에 미푸시 커밋 수를 직접 확인한다**
+
+올리면 안 되는 것은 `.gitignore` 가 막는다 — 학생 제출물, 저작권이 남에게 있는
+자료, 빌드 산출물(`slprj`, `.slxc`). 스테이징한 목록에 그런 것이 보이면 **멈춘다.**
