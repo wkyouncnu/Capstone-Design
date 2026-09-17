@@ -1,0 +1,134 @@
+% assets/w03-body-vs-ned-velocity.svg — u, v (몸체) 와 V_N, V_E (지구)
+%
+%   bash _tools/tikz2svg.sh assets/src/w03-body-vs-ned-velocity.tex \
+%        assets/w03-body-vs-ned-velocity.svg
+%
+% 요점: 같은 속도 하나를 두 좌표계로 읽은 것이다. 배를 돌리면 u, v 는 그대로인데
+%       V_N, V_E 가 바뀐다. 네 번째 칸이 결정적이다 — 선수 방향과 가는 방향이 다르다.
+%
+% 그리기 규칙
+%   NED 축은 **회색 얇은 선**. 그 위에 얹는 V_N, V_E 가 주인공이라 축이 눈에
+%   띄면 안 된다. 몸체축 x_b, y_b 는 점선. u, v 는 실선 화살표.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+% ---------------------------------------------------------------------------
+% \panel{x}{y}{psi}{u}{v}{제목}{설명}
+%   psi  선수각 [deg], 북쪽 기준 시계방향
+%   u    서지 속도 [m/s]  (선수 방향)
+%   v    스웨이 속도 [m/s] (우현 방향)
+% ---------------------------------------------------------------------------
+\newcommand{\panel}[7]{%
+\begin{scope}[shift={(#1,#2)}]
+  \pgfmathsetmacro{\psiD}{#3}
+  \pgfmathsetmacro{\uu}{#4}
+  \pgfmathsetmacro{\vv}{#5}
+  \pgfmathsetmacro{\SC}{17}                        % 1 m/s = 17 mm
+  \pgfmathsetmacro{\rot}{90-\psiD}                 % 화면 각도 = 90 - psi
+  %  반올림해 둔다. cos(90) 이 6e-17 로 나오면 \ifdim 이 읽지 못한다
+  \pgfmathsetmacro{\VN}{round((\uu*cos(\psiD) - \vv*sin(\psiD))*1000)/1000}
+  \pgfmathsetmacro{\VE}{round((\uu*sin(\psiD) + \vv*cos(\psiD))*1000)/1000}
+  \pgfmathsetmacro{\xE}{\VE*\SC}
+  \pgfmathsetmacro{\yN}{\VN*\SC}
+
+  % ---- NED 축 — 얇은 회색. 주인공이 아니다 ----
+  \draw[soft, line width=0.35pt, -{Stealth[length=3pt,width=2pt]}] (-4,0) -- (30,0);
+  \draw[soft, line width=0.35pt, -{Stealth[length=3pt,width=2pt]}] (0,-5) -- (0,30);
+  \node[font=\scriptsize, soft, anchor=north] at (30,-0.8) {$E$ (동)};
+  \node[font=\scriptsize, soft, anchor=east]  at (-0.8,30) {$N$ (북)};
+
+  % ---- V_N, V_E — 축 위에 얹는다 ----
+  \draw[soft, line width=0.35pt, densely dashed] (\xE,\yN) -- (\xE,0);
+  \draw[soft, line width=0.35pt, densely dashed] (\xE,\yN) -- (0,\yN);
+  \ifdim \VE pt > 0.01pt
+    \draw[nav, line width=1.1pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (\xE,0);
+    \node[font=\scriptsize, nav, anchor=north] at (\xE*0.55,-1.0) {$V_E$};
+  \fi
+  \ifdim \VN pt > 0.01pt
+    \draw[nav, line width=1.1pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,\yN);
+    \node[font=\scriptsize, nav, anchor=east] at (-1.0,\yN*0.55) {$V_N$};
+  \fi
+
+  % ---- 합 속도 — 굵게 **먼저** 긋는다 ----
+  %  psi = 0 이나 90 이고 v = 0 이면 u 와 V 가 정확히 포개진다. 그것이 요점이므로
+  %  숨기지 않는다. 대신 V 를 굵게 깔고 u 를 그 위에 얹어 둘 다 보이게 한다.
+  \draw[accent, line width=2.2pt, -{Stealth[length=5.5pt,width=4.5pt]}] (0,0) -- (\xE,\yN);
+
+  % ---- 선체와 몸체축 ----
+  \begin{scope}[rotate=\rot]
+    \draw[soft, line width=0.35pt, densely dotted, -{Stealth[length=3pt,width=2pt]}]
+         (0,0) -- (19,0);
+    \node[font=\scriptsize, soft, anchor=west] at (19.4,0) {$x_b$};
+    \draw[soft, line width=0.35pt, densely dotted, -{Stealth[length=3pt,width=2pt]}]
+         (0,0) -- (0,-10);
+    \node[font=\scriptsize, soft, anchor=north] at (0,-10.4) {$y_b$};
+    % 선체 — 선수가 +x
+    \draw[ink, line width=0.55pt, fill=white]
+         (-3.0,-2.0) -- (-3.0,2.0) -- (1.2,2.0) -- (3.8,0) -- (1.2,-2.0) -- cycle;
+    % u — 선수 방향
+    \draw[ctrl, line width=1.1pt, -{Stealth[length=4.5pt,width=3.5pt]}]
+         (0,0) -- (\uu*\SC,0);
+    \node[font=\scriptsize, ctrl, anchor=south] at (\uu*\SC*0.62,0.9) {$u$};
+    % v — 우현 방향. 0 이면 그리지 않는다
+    \ifdim \vv pt > 0.01pt
+      \draw[plant, line width=1.1pt, -{Stealth[length=4.5pt,width=3.5pt]}]
+           (\uu*\SC,0) -- (\uu*\SC,-\vv*\SC);
+      \node[font=\scriptsize, plant, anchor=west] at (\uu*\SC+1.0,-\vv*\SC*0.55) {$v$};
+    \fi
+  \end{scope}
+
+  % ---- 선수각 ----
+  \ifdim \psiD pt > 0.01pt
+    \draw[errc, line width=0.4pt, -{Stealth[length=3pt,width=2pt]}]
+         (0,11) arc (90:\rot:11mm);
+    \pgfmathsetmacro{\amid}{(90+\rot)/2}
+    \node[font=\scriptsize, errc] at (\amid:14mm) {$\psi$};
+  \fi
+
+  % ---- 제목과 숫자 ----
+  \node[font=\small\bfseries, anchor=west] at (-8,42) {#6};
+  \node[note, anchor=west, text width=52mm] at (-8,37) {#7};
+  \node[font=\scriptsize, ctrl, anchor=west] at (-8,-15)
+       {$u=\pgfmathprintnumber[fixed,precision=2]{\uu}$\;\,
+        \textcolor{plant}{$v=\pgfmathprintnumber[fixed,precision=2]{\vv}$}};
+  \node[font=\scriptsize, nav, anchor=west] at (-8,-20)
+       {$V_N=\pgfmathprintnumber[fixed,precision=2]{\VN}$\;\,
+        $V_E=\pgfmathprintnumber[fixed,precision=2]{\VE}$};
+\end{scope}}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\panel{0}{0}{0}{1.0}{0}{(1) $\psi = 0^{\circ}$ — 북쪽으로}
+  {선수가 북쪽. $u$ 가 그대로 $V_N$ 이라 두 화살표가 포개진다}
+
+\panel{72}{0}{90}{1.0}{0}{(2) $\psi = 90^{\circ}$ — 동쪽으로}
+  {배를 돌렸을 뿐인데 $V_N$ 이 0 이 되었다. $u$ 는 그대로 1.00}
+
+\panel{144}{0}{45}{1.0}{0}{(3) $\psi = 45^{\circ}$ — 북동으로}
+  {$u$ 하나가 두 성분으로 나뉜다}
+
+\panel{216}{0}{0}{1.0}{0.5}{(4) $\psi = 0^{\circ}$ 인데 옆으로 밀림}
+  {선수는 북쪽인데 \textbf{북동}으로 간다}
+
+% =========================== 변환식 =========================================
+\node[font=\small, anchor=west] at (0,-30)
+     {$\begin{aligned}
+        V_N &= u\cos\psi - v\sin\psi\\
+        V_E &= u\sin\psi + v\cos\psi
+       \end{aligned}$};
+
+\node[note, anchor=west, text width=76mm] at (64,-28)
+     {$u$, $v$ 는 \textbf{배에 붙어 있는} 축에서 잰 속도다. 배를 돌려도 값이 그대로다.
+      $V_N$, $V_E$ 는 \textbf{땅에 붙어 있는} 축에서 잰 \textbf{같은} 속도다.
+      배를 돌리면 값이 바뀐다. (1)(2)(3) 은 $u$ 가 모두 1.00 인데 $V_N$, $V_E$ 만 바뀐다};
+
+\node[wnote, anchor=west, text width=78mm] at (152,-28)
+     {(4) 가 핵심이다. 선수각 $\psi$ 는 배가 \textbf{어디를 보는가}이고,
+      $\operatorname{atan2}(V_E, V_N)$ 은 배가 \textbf{어디로 가는가}이다.
+      옆으로 밀리면 둘이 달라진다. 그 차이가 크랩각
+      $\beta = \operatorname{atan2}(v, u)$ 다 (7주차)};
+
+\end{tikzpicture}
+\end{document}
