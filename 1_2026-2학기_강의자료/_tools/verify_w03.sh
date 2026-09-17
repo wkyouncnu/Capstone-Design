@@ -78,8 +78,9 @@ echo
 # ---------- §2-3 ~ §2-6 VRX 실행 ----------
 echo "[§2-3~2-6] VRX 실행과 조종"
 if [ -n "${DISPLAY:-}" ] && [ -d "$HOME/vrx_ws/install" ]; then
-  pkill -9 -f '[c]ompetition.launch' 2>/dev/null; pkill -9 -f '[g]z-sim' 2>/dev/null; pkill -9 -f '[p]arameter_bridge' 2>/dev/null; rm -f /dev/shm/fastrtps_* /dev/shm/sem.fastrtps_* 2>/dev/null; sleep 3
+  pkill -9 -f '[c]ompetition.launch' 2>/dev/null; pkill -9 -f '[g]z sim' 2>/dev/null; pkill -9 -f '[v]rx_ros' 2>/dev/null; pkill -9 -f '[p]arameter_bridge' 2>/dev/null; rm -f /dev/shm/fastrtps_* /dev/shm/sem.fastrtps_* 2>/dev/null; sleep 3
   setsid nohup ros2 launch vrx_gz competition.launch.py world:=sydney_regatta \
+      "extra_gz_args:=--render-engine-server ogre" \
       > /tmp/v3_vrx.log 2>&1 < /dev/null & disown
   echo "  VRX 기동 대기 90초..."
   sleep 90
@@ -90,6 +91,14 @@ if [ -n "${DISPLAY:-}" ] && [ -d "$HOME/vrx_ws/install" ]; then
   expect "Gazebo 창"      "Gazebo"      bash -c 'xdotool search --name Gazebo getwindowname %@ 2>/dev/null | head -2'
   expect "카메라 고정"    "true" bash -c "gz service -s /gui/follow --reqtype gz.msgs.StringMsg --reptype gz.msgs.Boolean --timeout 4000 --req 'data: \"wamv\"'"
 
+  #  RTF — 0.1 미만이면 배가 사실상 멈춘 상태라 이후 실습이 성립하지 않는다 (W03 §2-3)
+  RTF=$(gz topic -e -t /stats -n 1 2>/dev/null | grep -m1 real_time_factor | awk '{print $2}')
+  if [ -n "$RTF" ] && awk -v r="$RTF" 'BEGIN{exit !(r>0.1)}'; then
+    ok "RTF $RTF (0.1 초과)"
+  else
+    ng "RTF" "실측 ${RTF:-측정실패} — W03 §2-3 의 렌더 엔진 조치를 확인한다"
+  fi
+
   #  teleop 이 실제로 추력을 내보내는지 — 토픽을 받아 본다
   if [ -f "$WS/install/setup.bash" ]; then
     timeout 12 ros2 topic pub /wamv/thrusters/left/thrust std_msgs/msg/Float64 "{data: 200.0}" -r 10 \
@@ -98,7 +107,7 @@ if [ -n "${DISPLAY:-}" ] && [ -d "$HOME/vrx_ws/install" ]; then
     expect "추력 명령 수신" "200" bash -c 'timeout 12 ros2 topic echo --once /wamv/thrusters/left/thrust'
     sleep 8
   fi
-  pkill -9 -f '[c]ompetition.launch' 2>/dev/null; pkill -9 -f '[g]z-sim' 2>/dev/null; pkill -9 -f '[p]arameter_bridge' 2>/dev/null
+  pkill -9 -f '[c]ompetition.launch' 2>/dev/null; pkill -9 -f '[g]z sim' 2>/dev/null; pkill -9 -f '[v]rx_ros' 2>/dev/null; pkill -9 -f '[p]arameter_bridge' 2>/dev/null
   sleep 3
 else
   skip "VRX 실행 전체" "DISPLAY 가 없거나 vrx_ws 미빌드"

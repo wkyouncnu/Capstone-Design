@@ -27,6 +27,7 @@ function build_w07_models()
 %   실행 전에 반드시 >> W07_setup 을 먼저 실행할 것.
 
     here = fileparts(mfilename('fullpath'));
+    addpath(fullfile(here, '..', '..', '_tools'));
     cd(here);
 
     if evalin('base', '~exist(''wp_north'',''var'')')
@@ -36,12 +37,33 @@ function build_w07_models()
     build_offline();
     build_vrx();
 
-
-    % 배치와 색을 정리한다. 선은 직선 또는 직각으로만 다시 그린다.
-    slxList = dir('*.slx');
-    for k = 1:numel(slxList)
-        [~, mName] = fileparts(slxList(k).name);
-        try, tidy_layout(mName); tidy_layout(mName); catch, end
+    % 최상위 배치 — autorouting 에 맡기지 않고 규칙대로 직접 놓는다.
+    % 겹침·블록관통 0, 꺾임 1회가 합격선이다 (references/line-routing.md)
+    chain = {'Guidance','InnerLoop','Thrusters','MotionModel'};
+    %  Wrap — 사슬을 몇 칸에서 접을지. 도면이 정사각형에 가까울수록 같은 픽셀 안에
+    %  크게 보인다. 값은 주차마다 재서 골랐다 (겹침 0 이 되는 것 중 가장 작은 쪽)
+    lay_chain('W07_0_offline', chain, 'Boxes', {'Animate','Logging'}, 'Wrap', 2);
+    lay_chain('W07_1_vrx', {'Guidance','InnerLoop','Thrusters','CmdPublisher','PoseSubscriber'}, ...
+              'Boxes', {'Animate','Logging'}, 'Wrap', 3);
+    % 역할별 배경색 — 색표는 _tools/gnc_colour.m 하나뿐이다
+    role = {'Guidance','guidance'; 'InnerLoop','control'; 'Thrusters','thruster'; ...
+            'MotionModel','plant'; 'CmdPublisher','ros'; 'PoseSubscriber','ros'; ...
+            'Animate','measurement'; 'Logging','measurement'};
+    for mm = {'W07_0_offline','W07_1_vrx'}
+        m = mm{1}; load_system(m);
+        for k = 1:size(role,1)
+            if ~isempty(find_system(m,'SearchDepth',1,'Name',role{k,1}))
+                set_param([m '/' role{k,1}], 'BackgroundColor', gnc_colour(role{k,2}));
+            end
+        end
+        for bt = {'Goto','From'}
+            b = find_system(m,'SearchDepth',1,'BlockType',bt{1});
+            for i = 1:numel(b)
+                set_param(b{i}, 'BackgroundColor', gnc_colour('measurement'));
+            end
+        end
+        mss_style(m); save_system(m); check_lines(m, false); export_diagram(m);
+        close_system(m, 0);
     end
     fprintf('\n완료. 생성된 모델:\n');
     d = dir('W07_*.slx');
@@ -81,10 +103,23 @@ end
 % 1단 · GUIDANCE
 % =====================================================================
 function addGuidance(m, x, y)
+% 1단 · GUIDANCE — 서브시스템 하나. 웨이포인트와 설정은 **상자 안에** 둔다.
+%
+%   포트   pn, pe  ->  psi_ref, y_e, gate
+%
+%   웨이포인트 배열·Delta·R·mode 는 신호가 아니라 **설정**이다. 최상위에 늘어놓으면
+%   상수 다섯 개와 선 다섯 개가 신호 사슬 앞을 가린다. 상자 안에 넣으면 최상위는
+%   "위치를 받아 목표 선수각을 낸다" 는 사실만 보여 준다.
+%
+%   웨이포인트 인덱스 되먹임(IdxDly)도 안에 있다. 유도부 **내부의 기억**이지
+%   모델의 되먹임이 아니기 때문이다.
+    ss = add_subsys(m, 'Guidance', [x y x+190 y+150], {'pn','pe'}, ...
+                    {'psi_ref','y_e','gate'}, gnc_colour('guidance'));
+
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [m '/Guidance'], 'Position', [x y x+190 y+200]);
-    setFcn(m, 'Guidance', [ ...
-'function [psi_ref, y_e, wp_idx, gate] = Guidance(pn, pe, wp_n, wp_e, Delta, R, mode, idx_prev)' newline ...
+              [ss '/GuidanceLaw'], 'Position', [320 60 500 500]);
+    setFcn(ss, 'GuidanceLaw', [ ...
+'function [psi_ref, y_e, wp_idx, gate] = GuidanceLaw(pn, pe, wp_n, wp_e, Delta, R, mode, idx_prev)' newline ...
 '%#codegen'                                                                     newline ...
 '% Waypoint guidance. Two laws in one block. Both return a HEADING command,'    newline ...
 '% following the MSS demo demoOtterUSVHeadingControl_P_D_Waypoint.slx.'         newline ...
@@ -126,11 +161,46 @@ function addGuidance(m, x, y)
 '    gate = 1;'                                                                 newline ...
 'end']);
 
-    add_block('simulink/Discrete/Unit Delay', [m '/IdxDelay'], ...
-              'Position', [x+55 y+250 x+130 y+285], ...
+    % 설정값 — 신호가 아니다. row_feed 가 각자 포트 높이로 옮겨 붙인다
+    cfg = {'wp_n','wp_north'; 'wp_e','wp_east'; 'Delta','Delta'; ...
+           'R','R_LOS'; 'mode','guidance_mode'};
+    for k = 1:size(cfg,1)
+        add_block('simulink/Sources/Constant', [ss '/' cfg{k,1}], ...
+                  'Position', [130 100+(k-1)*60 205 100+(k-1)*60+30], 'Value', cfg{k,2});
+    end
+    set_param([ss '/pn'], 'Position', [160 100 190 114]);
+    set_param([ss '/pe'], 'Position', [160 160 190 174]);
+    row_feed(ss, 'GuidanceLaw', {'pn','pe','wp_n','wp_e','Delta','R','mode',''});
+
+    % --- 8번 입력: 한 스텝 전의 웨이포인트 인덱스 ------------------------
+    q = port_xy(ss, 'GuidanceLaw', 'Inport', 8);
+    add_block('simulink/Discrete/Unit Delay', [ss '/IdxDly'], ...
+              'Position', [230 q(2)-20 300 q(2)+20], ...
               'InitialCondition','1', 'SampleTime','Ts_ctrl');
-    add_line(m, 'Guidance/3', 'IdxDelay/1', 'autorouting','on');
-    add_line(m, 'IdxDelay/1', 'Guidance/8', 'autorouting','on');
+    add_block('simulink/Signal Routing/From', [ss '/Fr_wp_idx'], ...
+              'Position', [130 q(2)-11 200 q(2)+11], 'GotoTag','wp_idx');
+    add_line(ss, 'Fr_wp_idx/1', 'IdxDly/1');      % 직선
+    add_line(ss, 'IdxDly/1', 'GuidanceLaw/8');    % 직선
+
+    % --- 출력: 본선 세 개는 포트로 -------------------------------------
+    outs = {'psi_ref',1; 'y_e',2; 'gate',4};
+    for k = 1:3
+        q = port_xy(ss, 'GuidanceLaw', 'Outport', outs{k,2});
+        set_param([ss '/' outs{k,1}], 'Position', [700 q(2)-7 730 q(2)+7]);
+        add_line(ss, sprintf('GuidanceLaw/%d', outs{k,2}), [outs{k,1} '/1']);
+    end
+
+    % 인덱스는 밖으로 나가지 않는다. 태그로 걸어 위의 IdxDly 가 받는다
+    drop_tag(ss, 'GuidanceLaw', 3, 'wp_idx', 120);
+
+    add_block('built-in/Note', [ss '/note'], 'Position', [130 640], 'Text', sprintf([ ...
+        '유도 — 위치를 받아 목표 선수각을 낸다.\n' ...
+        '  mode = 1  atan2 : 다음 웨이포인트를 곧장 겨눈다\n' ...
+        '  mode = 2  LOS   : 두 웨이포인트를 잇는 직선을 따라간다\n' ...
+        '\n' ...
+        'wp_idx 는 밖으로 나가지 않는다. 지금 몇 번째 구간을 달리는지를\n' ...
+        '유도부가 스스로 기억하는 값이라, 한 스텝 지연을 거쳐 자기에게 되돌아온다.\n' ...
+        '이 지연이 없으면 대수 루프가 되어 모델이 컴파일되지 않는다.']));
 end
 
 % =====================================================================
@@ -140,11 +210,15 @@ function addInnerLoop(m, x, y)
     ss = [m '/InnerLoop'];
     add_block('built-in/Subsystem', ss, 'Position', [x y x+190 y+170]);
 
-    in = {'psi_ref','gate','u_ref','psi','r','u'};
+    in = {'psi_ref','gate','psi','r','u'};
     for k = 1:numel(in)
         add_block('simulink/Sources/In1', [ss '/' in{k}], ...
                   'Position', [40 60+(k-1)*80 75 60+(k-1)*80+30], 'Port', num2str(k));
     end
+
+    % 목표 속도는 신호가 아니라 설정이다. 상자 안에 둔다
+    add_block('simulink/Sources/Constant', [ss '/u_ref'], ...
+              'Position', [40 380 130 410], 'Value','u_ref');
 
     % ---------- 헤딩 제어 : tau_N = Kp*ssa(psi_ref - psi) - Kd*r ----------
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
@@ -331,12 +405,21 @@ function addMotionModel(m, x, y)
     ss = [m '/MotionModel'];
     add_block('built-in/Subsystem', ss, 'Position', [x y x+210 y+200]);
 
+    % EOM 의 2~6번 입력 순서. 앞의 둘만 신호이고 나머지 셋은 설정이다
     in = {'FL','FR','V_c','beta_c','p'};
-    for k = 1:numel(in)
+    for k = 1:2
         add_block('simulink/Sources/In1', [ss '/' in{k}], ...
                   'Position', [40 60+(k-1)*70 75 60+(k-1)*70+30], 'Port', num2str(k));
     end
 
+    % 조류와 선체 계수는 신호가 아니라 설정이다. 상자 안에 둔다.
+    % 최상위에 두면 상수 세 개와 선 세 개가 운동모델 앞을 가린다.
+    cfg = {'V_c','current_speed'; 'beta_c','beta_c'; ...
+           'p','[m_usv; Izz; Xu; Xuu; Yv; Yvv; Nr; Nrr; half_beam]'};
+    for k = 1:3
+        add_block('simulink/Sources/Constant', [ss '/' cfg{k,1}], ...
+                  'Position', [40 220+(k-1)*70 130 220+(k-1)*70+30], 'Value', cfg{k,2});
+    end
     % ---- 운동방정식 (미분) ----
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
               [ss '/EOM'], 'Position', [200 60 380 260]);
@@ -400,19 +483,34 @@ function addMotionModel(m, x, y)
 'c    = psi + beta;           % course angle'               newline ...
 'chi  = atan2(sin(c), cos(c));']);
 
+    % --- 배치 : 한 줄에 EOM -> 1/s -> States. 포트 높이를 읽어서 맞춘다 ----
+    ROW = 340;
+    set_param([ss '/EOM'],    'Position', [280 100 460 580]);
+    set_param([ss '/Integ'],  'Position', [560 ROW-15 590 ROW+15]);
+    set_param([ss '/States'], 'Position', [680 100 840 580]);
+
+    % 2~6번 입력(추력 둘 + 설정 셋)을 각자 포트 높이로 옮겨 직선으로 잇는다
+    row_feed(ss, 'EOM', [{''}, in]);
+
+    add_line(ss, 'EOM/1',   'Integ/1');
+    add_line(ss, 'Integ/1', 'States/1');
+
+    % 상태 되먹임 — 적분기 출력이 자기 미분식으로 돌아간다.
+    % 화면을 가로지르는 대신 태그로 건너뛴다. 되먹임은 늘 이렇게 처리한다
+    drop_tag(ss, 'Integ', 1, 'x_state', 280);
+    b = port_xy(ss, 'EOM', 'Inport', 1);
+    add_block('simulink/Signal Routing/From', [ss '/Fr_x_state'], ...
+              'Position', [180 b(2)-11 250 b(2)+11], 'GotoTag','x_state');
+    add_line(ss, 'Fr_x_state/1', 'EOM/1');
+
+    % 출력 포트를 States 의 포트 높이에 맞춘다 -> 여덟 선이 전부 직선
     out = {'pn','pe','psi','u','r','beta','chi','U'};
     for k = 1:numel(out)
+        q = port_xy(ss, 'States', 'Outport', k);
         add_block('simulink/Sinks/Out1', [ss '/' out{k}], ...
-                  'Position', [800 60+(k-1)*45 840 60+(k-1)*45+30], 'Port', num2str(k));
-        add_line(ss, sprintf('States/%d',k), [out{k} '/1'], 'autorouting','on');
+                  'Position', [940 q(2)-7 970 q(2)+7], 'Port', num2str(k));
+        add_line(ss, sprintf('States/%d',k), [out{k} '/1']);
     end
-
-    for k = 1:5
-        add_line(ss, [in{k} '/1'], sprintf('EOM/%d', k+1), 'autorouting','on');
-    end
-    add_line(ss,'EOM/1','Integ/1','autorouting','on');
-    add_line(ss,'Integ/1','States/1','autorouting','on');
-    add_line(ss,'Integ/1','EOM/1','autorouting','on');
 end
 
 % =====================================================================
@@ -422,60 +520,24 @@ end
 %   실제 그리기는 W07_animate.m 이 한다.
 % =====================================================================
 function addAnimate(m, x, y)
-    add_block('simulink/Sources/Digital Clock', [m '/Clk'], ...
-              'Position', [x y+120 x+50 y+150], 'SampleTime','Ts_ctrl');
-    C(m,'Anim','animate', x, y+180);
-
-    F(m,'pn','v',  x, y);
-    F(m,'pe','v',  x, y+40);
-    F(m,'psi','v', x, y+80);
-
-    add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [m '/Animate'], 'Position', [x+150 y x+300 y+190]);
-    setFcn(m, 'Animate', [ ...
-'function ok = Animate(pn, pe, psi, t, en)'                            newline ...
-'%#codegen'                                                            newline ...
-'% Live plot of the boat and the waypoints while the model runs.'      newline ...
-'% MATLAB Function blocks cannot plot, so the drawing function is'     newline ...
-'% declared extrinsic: Simulink calls plain MATLAB instead of'         newline ...
-'% generating code for it.'                                            newline ...
-'coder.extrinsic(''W07_animate'');'                                    newline ...
-'ok = 1;'                                                              newline ...
-'if en > 0.5'                                                          newline ...
-'    W07_animate(pn, pe, psi, t);'                                     newline ...
-'end']);
-
-    add_block('simulink/Sinks/Terminator', [m '/AnimEnd'], ...
-              'Position', [x+350 y+80 x+375 y+105]);
-
-    add_line(m, ['Fr_pn_v/1'],  'Animate/1','autorouting','on');
-    add_line(m, ['Fr_pe_v/1'],  'Animate/2','autorouting','on');
-    add_line(m, ['Fr_psi_v/1'], 'Animate/3','autorouting','on');
-    add_line(m, 'Clk/1',  'Animate/4','autorouting','on');
-    add_line(m, 'Anim/1', 'Animate/5','autorouting','on');
-    add_line(m, 'Animate/1','AnimEnd/1','autorouting','on');
+% 실시간 그림 — 포트 없는 서브시스템 하나로 묶는다.
+% 공용 도구 _tools/add_animate_box.m 이 안을 채운다.
+    add_animate_box(m, {'pn','pe','psi'}, 'W07_animate', '', [x y], 'Ts_ctrl');
 end
 
 % =====================================================================
 % 설정 상수 + 유도/내부루프 입력 배선 (두 모델 공통)
 % =====================================================================
 function wireFront(m)
-% 1단 입력: 설정 상수 + 위치 되먹임
+% 유도·내부루프의 되먹임 입력 배선 (두 모델 공통)
+%
+%   설정값(웨이포인트·Delta·R·mode·u_ref)은 각 서브시스템 **안에** 있다.
+%   최상위에 남는 것은 **되먹임 다섯 개**뿐이다 — 그것이 이 모델이 하는 일이다.
     F(m,'pn','a', 40,  65);
     F(m,'pe','a', 40, 110);
-    C(m,'WPN','wp_north',      40, 155);
-    C(m,'WPE','wp_east',       40, 200);
-    C(m,'Dlt','Delta',         40, 245);
-    C(m,'Rsw','R_LOS',         40, 290);
-    C(m,'Mode','guidance_mode',40, 335);
 
     add_line(m,'Fr_pn_a/1','Guidance/1','autorouting','on');
     add_line(m,'Fr_pe_a/1','Guidance/2','autorouting','on');
-    add_line(m,'WPN/1', 'Guidance/3','autorouting','on');
-    add_line(m,'WPE/1', 'Guidance/4','autorouting','on');
-    add_line(m,'Dlt/1', 'Guidance/5','autorouting','on');
-    add_line(m,'Rsw/1', 'Guidance/6','autorouting','on');
-    add_line(m,'Mode/1','Guidance/7','autorouting','on');
 
     % 유도 출력에 로깅용 Goto 를 붙인다 (본선은 그대로 InnerLoop 로 간다)
     G(m,'psi_ref', 560,  70);
@@ -483,20 +545,18 @@ function wireFront(m)
     G(m,'gate',    560, 150);
     add_line(m,'Guidance/1','Go_psi_ref/1','autorouting','on');
     add_line(m,'Guidance/2','Go_y_e/1','autorouting','on');
-    add_line(m,'Guidance/4','Go_gate/1','autorouting','on');
+    add_line(m,'Guidance/3','Go_gate/1','autorouting','on');
 
-    % 2단 입력: 속도 지령 + 자세·속도 되먹임
-    C(m,'URef','u_ref',   560, 300);
+    % 2단 입력: 자세·속도 되먹임
     F(m,'psi','b', 560, 360);
     F(m,'r',  'b', 560, 400);
     F(m,'u',  'b', 560, 440);
 
     add_line(m,'Guidance/1','InnerLoop/1','autorouting','on');
-    add_line(m,'Guidance/4','InnerLoop/2','autorouting','on');
-    add_line(m,'URef/1',    'InnerLoop/3','autorouting','on');
-    add_line(m,'Fr_psi_b/1','InnerLoop/4','autorouting','on');
-    add_line(m,'Fr_r_b/1',  'InnerLoop/5','autorouting','on');
-    add_line(m,'Fr_u_b/1',  'InnerLoop/6','autorouting','on');
+    add_line(m,'Guidance/3','InnerLoop/2','autorouting','on');
+    add_line(m,'Fr_psi_b/1','InnerLoop/3','autorouting','on');
+    add_line(m,'Fr_r_b/1',  'InnerLoop/4','autorouting','on');
+    add_line(m,'Fr_u_b/1',  'InnerLoop/5','autorouting','on');
 end
 
 function F(m, tag, sfx, x, y)
@@ -506,7 +566,7 @@ end
 
 function G(m, tag, x, y)
     add_block('simulink/Signal Routing/Goto', [m '/Go_' tag], ...
-              'Position', [x y x+80 y+25], 'GotoTag', tag);
+              'Position', [x y x+80 y+25], 'GotoTag', tag, 'TagVisibility','global');
 end
 
 function wireThrusterGotos(m, x, y)
@@ -544,17 +604,11 @@ function build_offline()
     wireThrusterGotos(m, 1230, 290);
 
     % --- 4단 · 운동모델 (운동방정식 + 연속 적분 + 상태 산출) --------------
-    C(m,'Vc','current_speed', 1230, 470);
-    C(m,'BetaC','beta_c',     1230, 520);
-    C(m,'Par','[m_usv; Izz; Xu; Xuu; Yv; Yvv; Nr; Nrr; half_beam]', 1230, 570);
 
     addMotionModel(m, 1450, 280);
 
     add_line(m,'Thrusters/1','MotionModel/1','autorouting','on');
     add_line(m,'Thrusters/2','MotionModel/2','autorouting','on');
-    add_line(m,'Vc/1',       'MotionModel/3','autorouting','on');
-    add_line(m,'BetaC/1',    'MotionModel/4','autorouting','on');
-    add_line(m,'Par/1',      'MotionModel/5','autorouting','on');
 
     add_line(m,'InnerLoop/1','Thrusters/1','autorouting','on');
     add_line(m,'InnerLoop/2','Thrusters/2','autorouting','on');
@@ -591,38 +645,16 @@ function build_vrx()
     addThrusters(m, 1000, 290);
     wireThrusterGotos(m, 1230, 620);
 
-    % --- 4단 · 운동모델 = Gazebo ---------------------------------------
-    addThrusterPublisher(m, 'left',  'L', 1300, 200);
-    addThrusterPublisher(m, 'right', 'R', 1300, 380);
+    % --- 4단 · 추력 발행 (운동모델 = Gazebo) -----------------------------
+    add_cmd_publisher(m, [1300 260], ...
+        {'/wamv/thrusters/left/thrust','/wamv/thrusters/right/thrust'}, 'Ts_ctrl');
     add_line(m,'InnerLoop/1','Thrusters/1','autorouting','on');
     add_line(m,'InnerLoop/2','Thrusters/2','autorouting','on');
-    add_line(m,'Thrusters/1','AsgL/2','autorouting','on');
-    add_line(m,'Thrusters/2','AsgR/2','autorouting','on');
-
-    add_block('ros2lib/Subscribe', [m '/OdomSub'], 'Position',[1300 700 1430 760]);
-    set_param([m '/OdomSub'], 'topicSource','Specify your own', ...
-        'topic','/wamv/sensors/position/ground_truth_odometry', ...
-        'messageType','nav_msgs/Odometry', 'sampleTime','Ts_ctrl');
-
-    add_block('simulink/Signal Routing/Bus Selector', [m '/Sel'], ...
-              'Position',[1490 680 1540 810]);
-    set_param([m '/Sel'], 'OutputSignals', ...
-        ['pose.pose.position.x,pose.pose.position.y,' ...
-         'pose.pose.orientation.x,pose.pose.orientation.y,' ...
-         'pose.pose.orientation.z,pose.pose.orientation.w,' ...
-         'twist.twist.linear.x,twist.twist.linear.y,twist.twist.angular.z']);
-
-    add_block('simulink/Sinks/Display', [m '/IsNew'], 'Position',[1490 620 1570 650]);
-    add_line(m,'OdomSub/1','IsNew/1','autorouting','on');
-    add_line(m,'OdomSub/2','Sel/1','autorouting','on');
+    add_line(m,'Thrusters/1','CmdPublisher/1','autorouting','on');
+    add_line(m,'Thrusters/2','CmdPublisher/2','autorouting','on');
 
     % --- 5단 · 항법 (ENU -> NED 변환) -----------------------------------
-    C(m,'OrgN','origin_north', 1490, 870);
-    C(m,'OrgE','origin_east',  1490, 920);
-
-    add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [m '/Nav'], 'Position',[1660 670 1830 890]);
-    setFcn(m, 'Nav', [ ...
+    navCode = [ ...
 'function [pn, pe, psi, u, r, beta, chi, U] = Nav(ex, ey, qx, qy, qz, qw, bx, by, wz, orgN, orgE)' newline ...
 '%#codegen'                                                                 newline ...
 '% Gazebo/ROS uses ENU with a body frame of x-forward, y-LEFT, z-UP.'       newline ...
@@ -651,17 +683,21 @@ function build_vrx()
 'U    = sqrt(u*u + v*v);'                                                   newline ...
 'beta = atan2(v, u);          % crab angle'                                 newline ...
 'c    = psi + beta;'                                                        newline ...
-'chi  = atan2(sin(c), cos(c));']);
+'chi  = atan2(sin(c), cos(c));'];
 
-    for k = 1:9
-        add_line(m, sprintf('Sel/%d',k), sprintf('Nav/%d',k), 'autorouting','on');
+    add_pose_subscriber(m, [1660 620], ...
+        '/wamv/sensors/position/ground_truth_odometry', 'Ts_ctrl', navCode, ...
+        {'pn','pe','psi','u','r','beta','chi','U'});
+
+    % 항법 출력을 전부 Goto 태그로 내보낸다
+    tags = {'pn','pe','psi','u','r','beta','chi','U'};
+    for k = 1:numel(tags)
+        G(m, tags{k}, 1980, 620+(k-1)*45);
+        add_line(m, sprintf('PoseSubscriber/%d',k), ['Go_' tags{k} '/1'], 'autorouting','on');
     end
-    add_line(m,'OrgN/1','Nav/10','autorouting','on');
-    add_line(m,'OrgE/1','Nav/11','autorouting','on');
 
-    wireNavGotos(m, 1890, 670);
-    addAnimate(m, 2080, 700);
-    addLogging(m, 2080, 60);
+    addAnimate(m, 2080, 1100);
+    addLogging(m, 2400, 60);
 
     note(m,'n1', ['W07 실습 B  —  VRX 연동 (Gazebo 필요)' newline ...
         'Guidance -> Inner Loop -> Thrusters -> Gazebo -> Navigation' newline ...
@@ -697,18 +733,9 @@ end
 % 로깅 — W07_plot.m 이 읽는다
 % ---------------------------------------------------------------------
 function addLogging(m, x, y)
-% 모든 로깅은 From 태그로 받는다. 긴 선이 생기지 않는다.
-%   신호 이름  =  Goto 태그 이름 (n 만 nprop 태그를 쓴다)
+% 로깅 — 포트 없는 서브시스템 하나로 묶는다. W07_plot.m 이 이 변수들을 읽는다.
+%   신호 이름 = Goto 태그 이름 (n 만 nprop 태그를 쓴다)
     sig = {'pn','pe','psi','psi_ref','y_e','beta','chi','u','r','U','gate','FL','FR','n'};
     tag = {'pn','pe','psi','psi_ref','y_e','beta','chi','u','r','U','gate','FL','FR','nprop'};
-    for k = 1:numel(sig)
-        yy = y + (k-1)*55;
-        F(m, tag{k}, 'log', x, yy+3);
-        b = [m '/log_' sig{k}];
-        add_block('simulink/Sinks/To Workspace', b, ...
-                  'Position', [x+130 yy x+230 yy+30]);
-        set_param(b, 'VariableName', ['log_' sig{k}], ...
-                     'SaveFormat','Timeseries', 'SampleTime','Ts_ctrl');
-        add_line(m, ['Fr_' tag{k} '_log/1'], ['log_' sig{k} '/1'], 'autorouting','on');
-    end
+    add_logging_box(m, sig, tag, [x y], 'Ts_ctrl');
 end

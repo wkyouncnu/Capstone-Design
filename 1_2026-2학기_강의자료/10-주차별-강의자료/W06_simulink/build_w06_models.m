@@ -15,6 +15,7 @@ function build_w06_models()
 %       (강의자료 6주차 B절 참조)
 
     here = fileparts(mfilename('fullpath'));
+    addpath(fullfile(here, '..', '..', '_tools'));
     cd(here);
     load_system('ros2lib');
 
@@ -26,10 +27,12 @@ function build_w06_models()
 
 
     % 배치와 색을 정리한다. 선은 직선 또는 직각으로만 다시 그린다.
-    slxList = dir('*.slx');
+    % dir 의 문자 클래스는 Windows 에서 먹지 않는다. 목록을 받아 이름으로 거른다
+    slxList = dir('W06_*.slx');
+    slxList = slxList(~cellfun(@isempty, regexp({slxList.name}, '^W06_[1-5]_', 'once')));
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);
-        try, tidy_layout(mName); tidy_layout(mName); catch, end
+        try, tidy_model(mName); export_model_pngs(mName); catch e, warning(e.message); end
     end
     fprintf('\n완료. 생성된 모델:\n');
     d = dir('W06_*.slx');

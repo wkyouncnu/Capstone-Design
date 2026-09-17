@@ -11,14 +11,17 @@
 |---|---|
 | WSL 배포판 | **`Ubuntu-22.04`** — 기본 배포판이 아니다 |
 | 워크스페이스 | `/home/wkyoun/vrx_ws`, **merged install** (`install/share/vrx_gz/...`) |
-| 버전 | VRX 2.4.1 (로컬 체크아웃 브랜치 `main`, 커밋 `dc30ed8d`) |
-| 스택 | ROS 2 Humble + Gazebo Garden |
+| 버전 | VRX `humble` 브랜치 `2.4.0-2-gdc30ed8d` (2026-09-15 재설치 실측) |
+| 스택 | ROS 2 Humble + Gazebo Garden 7.9.0 |
+| **도메인** | `~/.bashrc` 의 `ROS_DOMAIN_ID=8`. **Simulink 프로필과 같아야 한다** (§1.1) |
+| 스폰 위치 | ENU `(-532, 162)` — `launch.py` 의 `Model('wamv','wam-v',[-532,162,0,0,0,1])` |
 
 ```bash
 wsl -d Ubuntu-22.04 bash -lc 'source /opt/ros/humble/setup.bash && source ~/vrx_ws/install/setup.bash && ros2 topic list'
 ```
 
 배포판 이름을 빼면 기본 배포판이 잡히고 토픽이 하나도 안 보인다. 매번 `-d Ubuntu-22.04`.
+스크립트에서 `bash -lc` 대신 파일로 넘길 때는 `.bashrc` 가 안 읽히므로 **도메인을 직접 export** 한다.
 
 ### 기동
 
@@ -26,7 +29,37 @@ wsl -d Ubuntu-22.04 bash -lc 'source /opt/ros/humble/setup.bash && source ~/vrx_
 wsl -d Ubuntu-22.04 bash -lc 'source ~/vrx_ws/install/setup.bash && ros2 launch vrx_gz competition.launch.py world:=2023_practice/practice_2023_wayfinding0_task'
 ```
 
-`ground_truth_enabled:=True` 가 켜져 있어야 `/wamv/sensors/position/ground_truth_odometry` 가 나온다.
+### ground truth 는 **런치 인자가 아니다**
+
+> [!caution] `ground_truth_enabled:=True` 를 런치에 주면 조용히 무시된다
+> `competition.launch.py` 의 인자는 `world` · `sim_mode` · `bridge_competition_topics` ·
+> `config_file` · `robot` · `headless` · `urdf` · `paused` · `competition_mode` · `extra_gz_args` 뿐이다.
+
+```bash
+cp ~/vrx_ws/src/vrx/vrx_urdf/wamv_gazebo/urdf/wamv_gazebo.urdf.xacro ~/capstone_ws/wamv/w7_wamv.urdf.xacro
+sed -i 's#ground_truth_enabled" default="false"#ground_truth_enabled" default="true"#' ~/capstone_ws/wamv/w7_wamv.urdf.xacro
+```
+
+그 뒤 `urdf:=$HOME/capstone_ws/wamv/w7_wamv.urdf.xacro` 로 넘긴다.
+정상이면 `/wamv/sensors/position/ground_truth_odometry` 가 `map → wamv/base_link`, 약 9~10 Hz, RELIABLE 로 나온다.
+
+### 카메라 렌더링이 느린 그래픽에서는 엔진을 바꾼다
+
+WSL 의 D3D12 경로(Intel 그래픽 실측)에서는 카메라 3대가 RTF 를 **0.26 %** 로 떨어뜨린다.
+
+```bash
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "extra_gz_args:=--render-engine-server ogre"
+```
+
+| 구성 | RTF |
+|---|---|
+| 월드만 | 0.99 |
+| 배(카메라 제외) | 0.99 |
+| 카메라 3대, `ogre2` 기본 | **0.0026** |
+| 카메라 3대, `ogre` | **0.98** |
+
+- 판정: `gz topic -e -t /stats -n 1 | grep real_time_factor`
+- RTF 는 같은 월드에서도 **0.46 ~ 0.98 로 흔들린다.** 비교 실험은 연속으로 돌린다
 
 ---
 
@@ -87,11 +120,15 @@ t = double(m.header.stamp.sec) + double(m.header.stamp.nanosec)*1e-9;
 
 | 증상 | 원인 | 조치 |
 |---|---|---|
+| **Simulink 만 아무것도 못 받는다** (MATLAB `ros2("topic","list")` 는 보임) | Simulink 블록은 **ROS 네트워크 프로필의 Domain ID**, `ros2*` 함수는 환경변수를 쓴다 | `getpref('ROS_Toolbox','ROS_NetworkAddress_Profiles')` 의 `DomainID` 로 `setenv('ROS_DOMAIN_ID',...)`. `W0X_vrx_run` 이 자동으로 함 |
+| 주행이 경로에서 수십 m 벗어난 채 시작 | `origin_north`/`origin_east` 가 스폰 좌표와 다름 (2.4.0-2 는 `162`, 예전 값은 `200`) | ground truth 첫 샘플을 읽어 맞춘다 |
+| 두 번째 실험부터 결과가 엉뚱함 | 앞 실험이 끝난 **자리에서 시작** | 실험마다 VRX 재기동 |
 | 첫 점이 수백 m 튄다 (약 568 m) | **Subscribe 는 첫 메시지 전에 0 으로 채운 버스**를 낸다. 원점을 빼면 스폰 좌표만큼 튄다 | `Nav` 첫머리에 `if ex==0 && ey==0` 가드 |
 | 초기 선수각이 90° | 위와 같은 첫 샘플 | `t >= 0.5 s` 샘플에서 읽는다 |
 | 대조 그래프가 수백 m 로 폭주 | 종료 시각이 달라 `interp1` 이 외삽 | **겹치는 시간 구간만** 비교 (`t <= t2(end)`) |
 | 선수각 그래프가 위아래로 튄다 | 쿼터니언에서 뽑은 $\psi$ 는 항상 $[-\pi,\pi]$ | `unwrap` 으로 풀어서 저장 |
 | 대지속도가 절반으로 보인다 | `PacingRate` 가 실측 RTF 와 다름 | 스크립트가 RTF 를 재서 넣는다 |
+| 페이싱을 높였더니 더 느려짐 | 모델과 시뮬레이터가 같은 CPU 를 쓴다. 0.97 을 요구해도 실효 **0.787** (실측) | 잰 값을 그대로 쓴다. 올리지 않는다 |
 | 부호가 반대 | ENU ↔ NED. 특히 `thrusters/*/pos` 는 **ENU 관절각** | 변환 지점에 `assert` 를 박는다 |
 
 > [!caution] 부호는 주석으로 막지 말고 `assert` 로 막는다

@@ -14,7 +14,7 @@ function build_w07_models()
     slxList = dir('*.slx');
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);
-        try, tidy_layout(mName); tidy_layout(mName); catch, end
+        try, tidy_model(mName); export_model_pngs(mName); catch e, warning(e.message); end
     end
     fprintf('\n완료.\n');
 end

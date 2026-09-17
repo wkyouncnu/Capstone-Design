@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" width="900" height="430" font-family="Malgun Gothic, sans-serif">
+  <rect width="900" height="430" fill="#ffffff"/>
+
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <text x="30" y="34" font-size="19" font-weight="bold" fill="#1e293b">개루프 — 재보지 않고 내보낸다</text>
+
+  <rect x="30"  y="62" width="130" height="54" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.6"/>
+  <text x="95"  y="86"  font-size="15" fill="#334155" text-anchor="middle">목표</text>
+  <text x="95"  y="106" font-size="15" fill="#334155" text-anchor="middle">"1.5 m/s 로 가라"</text>
+
+  <rect x="240" y="62" width="150" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8"/>
+  <text x="315" y="85"  font-size="15" fill="#92400e" text-anchor="middle">제어기</text>
+  <text x="315" y="105" font-size="15" fill="#92400e" text-anchor="middle">"추력 400 N"</text>
+
+  <rect x="470" y="62" width="150" height="54" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.8"/>
+  <text x="545" y="94"  font-size="15" fill="#115e59" text-anchor="middle">배 (플랜트)</text>
+
+  <rect x="700" y="62" width="150" height="54" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.6"/>
+  <text x="775" y="86"  font-size="15" fill="#334155" text-anchor="middle">실제 속도</text>
+  <text x="775" y="106" font-size="15" fill="#dc2626" text-anchor="middle">1.1 m/s ?</text>
+
+  <line x1="160" y1="89" x2="234" y2="89" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+  <line x1="390" y1="89" x2="464" y2="89" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+  <line x1="620" y1="89" x2="694" y2="89" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <text x="30" y="150" font-size="15" fill="#64748b">조류·바람·짐의 무게가 달라지면 그만큼 어긋난 채로 끝난다. 얼마나 어긋났는지 알 방법도 없다.</text>
+
+  <line x1="30" y1="172" x2="870" y2="172" stroke="#cbd5e1" stroke-width="1.4"/>
+
+  <text x="30" y="212" font-size="19" font-weight="bold" fill="#1e293b">피드백(폐루프) — 재보고, 틀린 만큼 고친다</text>
+
+  <rect x="30"  y="248" width="120" height="54" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.6"/>
+  <text x="90"  y="272" font-size="15" fill="#334155" text-anchor="middle">목표</text>
+  <text x="90"  y="292" font-size="15" fill="#334155" text-anchor="middle">1.5 m/s</text>
+
+  <circle cx="205" cy="275" r="20" fill="#fef2f2" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="196" y="270" font-size="15" fill="#dc2626" text-anchor="middle">+</text>
+  <text x="196" y="292" font-size="17" fill="#dc2626" text-anchor="middle">−</text>
+
+  <rect x="285" y="248" width="145" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8"/>
+  <text x="357" y="272" font-size="15" fill="#92400e" text-anchor="middle">제어기</text>
+  <text x="357" y="292" font-size="15" fill="#92400e" text-anchor="middle">PID</text>
+
+  <rect x="505" y="248" width="145" height="54" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.8"/>
+  <text x="577" y="280" font-size="15" fill="#115e59" text-anchor="middle">배 (플랜트)</text>
+
+  <rect x="725" y="248" width="145" height="54" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.6"/>
+  <text x="797" y="280" font-size="15" fill="#334155" text-anchor="middle">실제 속도</text>
+
+  <rect x="430" y="358" width="200" height="46" rx="6" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.8"/>
+  <text x="530" y="387" font-size="15" fill="#1e40af" text-anchor="middle">센서 (odometry)</text>
+
+  <line x1="150" y1="275" x2="179" y2="275" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+  <line x1="225" y1="275" x2="279" y2="275" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+  <line x1="430" y1="275" x2="499" y2="275" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+  <line x1="650" y1="275" x2="719" y2="275" stroke="#475569" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <polyline points="797,302 797,381 636,381" fill="none" stroke="#1d4ed8" stroke-width="1.8" marker-end="url(#ar)"/>
+  <polyline points="430,381 205,381 205,301" fill="none" stroke="#1d4ed8" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <text x="252" y="264" font-size="15" fill="#dc2626" text-anchor="middle">오차 e</text>
+  <text x="465" y="264" font-size="15" fill="#92400e" text-anchor="middle">u</text>
+  <text x="685" y="264" font-size="15" fill="#115e59" text-anchor="middle">y</text>
+  <text x="212" y="345" font-size="15" fill="#1d4ed8">측정값을 되돌려 목표에서 뺀다 — 이것이 "되먹임"</text>
+</svg>

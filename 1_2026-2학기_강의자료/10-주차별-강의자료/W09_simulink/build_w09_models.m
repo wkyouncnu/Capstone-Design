@@ -21,6 +21,7 @@ function build_w09_models()
 %   실행 전에 반드시 >> W09_setup 을 먼저 실행할 것.
 
     here = fileparts(mfilename('fullpath'));
+    addpath(fullfile(here, '..', '..', '_tools'));
     cd(here);
 
     if evalin('base', '~exist(''loiter_wp'',''var'')')
@@ -29,13 +30,34 @@ function build_w09_models()
 
     build_offline();
     build_vrx();
+    % 최상위 배치 — autorouting 에 맡기지 않고 규칙대로 직접 놓는다.
+    % 겹침 0 · 블록관통 0 · 꺾임3회+ 0 이 합격선 (references/line-routing.md)
+    lay_chain('W09_0_offline', {'Guidance','Mission','InnerLoop','Thrusters','MotionModel'}, ...
+              'Boxes', {'Animate','Logging'}, 'Wrap', 3);
+    lay_chain('W09_1_vrx', {'Guidance','Mission','InnerLoop','Thrusters', ...
+                            'CmdPublisher','PoseSubscriber'}, ...
+              'Boxes', {'Animate','Logging'}, 'Wrap', 2);
 
-
-    % 배치와 색을 정리한다. 선은 직선 또는 직각으로만 다시 그린다.
-    slxList = dir('*.slx');
-    for k = 1:numel(slxList)
-        [~, mName] = fileparts(slxList(k).name);
-        try, tidy_layout(mName); tidy_layout(mName); catch, end
+    % 역할별 배경색 — 색표는 _tools/gnc_colour.m 하나뿐이다
+    role = {'Guidance','guidance'; 'Mission','mission'; 'InnerLoop','control'; ...
+            'Thrusters','thruster'; 'MotionModel','plant'; ...
+            'CmdPublisher','ros'; 'PoseSubscriber','ros'; ...
+            'Animate','measurement'; 'Logging','measurement'};
+    for mm = {'W09_0_offline','W09_1_vrx'}
+        m = mm{1}; load_system(m);
+        for k = 1:size(role,1)
+            if ~isempty(find_system(m,'SearchDepth',1,'Name',role{k,1}))
+                set_param([m '/' role{k,1}], 'BackgroundColor', gnc_colour(role{k,2}));
+            end
+        end
+        for bt = {'Goto','From'}
+            b = find_system(m,'SearchDepth',1,'BlockType',bt{1});
+            for i = 1:numel(b)
+                set_param(b{i}, 'BackgroundColor', gnc_colour('measurement'));
+            end
+        end
+        mss_style(m); save_system(m); check_lines(m, false); export_diagram(m);
+        close_system(m, 0);
     end
     fprintf('\n완료. 생성된 모델:\n');
     d = dir('W09_*.slx');
@@ -69,7 +91,7 @@ end
 
 function G(m, tag, x, y)
     add_block('simulink/Signal Routing/Goto', [m '/Go_' tag], ...
-              'Position', [x y x+80 y+25], 'GotoTag', tag);
+              'Position', [x y x+80 y+25], 'GotoTag', tag, 'TagVisibility','global');
 end
 
 function note(m, tag, txt, x, y)
@@ -80,11 +102,27 @@ end
 % 1단 · 유도 — 웨이포인트 관리 + LOS + 로이터 벡터필드
 % =====================================================================
 function addGuidance(m, x, y)
+% 1단 · GUIDANCE — 웨이포인트 유도와 로이터 유도를 한 상자에.
+%
+%   포트   pn, pe, beta, mode  ->  psi_los, psi_lo, at_loiter, at_end, turns
+%
+%   두 유도법칙이 **동시에** 돈다. 어느 쪽을 쓸지는 미션 상자가 고른다.
+%   그래서 유도는 둘 다 계산해 내놓기만 하고, 판단은 하지 않는다.
+%
+%   안에 들어가는 것
+%     WpManager  웨이포인트 관리 + LOS (7주차)
+%     LoiterVF   원 궤도 벡터필드   (8주차)
+%     TurnCount  몇 바퀴 돌았는지
+%     설정 상수와 한 스텝 지연들
+    ss = add_subsys(m, 'Guidance', [x y x+190 y+200], ...
+                    {'pn','pe','beta','mode'}, ...
+                    {'psi_los','psi_lo','at_loiter','at_end','turns'}, ...
+                    gnc_colour('guidance'));
 
     % ---- 웨이포인트 관리 + LOS (7주차 유도를 확장한 것) ----
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [m '/WpManager'], 'Position', [x y x+200 y+240]);
-    setFcn(m, 'WpManager', [ ...
+              [ss '/WpManager'], 'Position', [520 50 760 550]);
+    setFcn(ss, 'WpManager', [ ...
 'function [psi_los, y_e, idx, at_loiter, at_end] = WpManager( ...'          newline ...
 '         pn, pe, wp_n, wp_e, Delta, R, loiter_wp, mode, idx_prev)'         newline ...
 '%#codegen'                                                                 newline ...
@@ -125,16 +163,21 @@ function addGuidance(m, x, y)
 '    idx = k;'                                                              newline ...
 'end']);
 
-    add_block('simulink/Discrete/Unit Delay', [m '/IdxDly'], ...
-              'Position', [x+60 y+290 x+135 y+325], ...
+    % 웨이포인트 인덱스는 유도부 안의 기억이다. 태그로 자기에게 되돌린다
+    drop_tag(ss, 'WpManager', 3, 'wp_idx', 150);
+    q = port_xy(ss, 'WpManager', 'Inport', 9);
+    add_block('simulink/Discrete/Unit Delay', [ss '/IdxDly'], ...
+              'Position', [x+60 q(2)-20 x+135 q(2)+20], ...
               'InitialCondition','1', 'SampleTime','Ts_ctrl');
-    add_line(m,'WpManager/3','IdxDly/1','autorouting','on');
-    add_line(m,'IdxDly/1','WpManager/9','autorouting','on');
+    add_block('simulink/Signal Routing/From', [ss '/Fr_wp_idx'], ...
+              'Position', [x-60 q(2)-11 x+10 q(2)+11], 'GotoTag','wp_idx');
+    add_line(ss, 'Fr_wp_idx/1', 'IdxDly/1');
+    add_line(ss, 'IdxDly/1', 'WpManager/9');
 
     % ---- 로이터 벡터필드 (8주차 그대로) ----
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [m '/LoiterVF'], 'Position', [x y+390 x+200 y+590]);
-    setFcn(m, 'LoiterVF', [ ...
+              [ss '/LoiterVF'], 'Position', [520 750 760 1250]);
+    setFcn(ss, 'LoiterVF', [ ...
 'function [psi_lo, r, theta] = LoiterVF(pn, pe, cn, ce, rd, vd, pc, beta, kcrab)' newline ...
 '%#codegen'                                                                newline ...
 '% Circular-orbit vector field guidance.'                                  newline ...
@@ -162,8 +205,8 @@ function addGuidance(m, x, y)
 
     % ---- 회전수 (모드가 로이터일 때만 센다) ----
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [m '/TurnCount'], 'Position', [x+300 y+640 x+500 y+850]);
-    setFcn(m, 'TurnCount', [ ...
+              [ss '/TurnCount'], 'Position', [520 1520 760 1880]);
+    setFcn(ss, 'TurnCount', [ ...
 'function [turns, th_out, acc_out, armed] = TurnCount( ...'                newline ...
 '         theta, r, rd, mode, th_prev, acc_prev, armed_prev)'              newline ...
 '%#codegen'                                                                newline ...
@@ -194,28 +237,105 @@ function addGuidance(m, x, y)
 'end'                                                                      newline ...
 'turns = abs(acc_out) / (2*pi);']);
 
-    dn = {'ThDly','AccDly','ArmDly'};
+    % TurnCount 의 기억 셋은 자기에게 돌아온다. 태그로 건넌다
+    dn  = {'ThDly','AccDly','ArmDly'};
+    tg  = {'th_prev','acc_prev','armed_prev'};
     for k = 1:3
-        add_block('simulink/Discrete/Unit Delay', [m '/' dn{k}], ...
-                  'Position', [x+340 y+900+(k-1)*50 x+415 y+935+(k-1)*50], ...
+        drop_tag(ss, 'TurnCount', k+1, tg{k}, 160 + 60*k);
+        q = port_xy(ss, 'TurnCount', 'Inport', k+4);
+        add_block('simulink/Discrete/Unit Delay', [ss '/' dn{k}], ...
+                  'Position', [x+300 q(2)-20 x+375 q(2)+20], ...
                   'InitialCondition','0', 'SampleTime','Ts_ctrl');
+        add_block('simulink/Signal Routing/From', [ss '/Fr_' tg{k}], ...
+                  'Position', [x+180 q(2)-11 x+250 q(2)+11], 'GotoTag', tg{k});
+        add_line(ss, ['Fr_' tg{k} '/1'], [dn{k} '/1']);
+        add_line(ss, [dn{k} '/1'], sprintf('TurnCount/%d', k+4));
     end
-    add_line(m,'TurnCount/2','ThDly/1','autorouting','on');
-    add_line(m,'TurnCount/3','AccDly/1','autorouting','on');
-    add_line(m,'TurnCount/4','ArmDly/1','autorouting','on');
-    add_line(m,'ThDly/1', 'TurnCount/5','autorouting','on');
-    add_line(m,'AccDly/1','TurnCount/6','autorouting','on');
-    add_line(m,'ArmDly/1','TurnCount/7','autorouting','on');
+
+
+    % 입력은 상자 안에서 **태그로 나눠 쓴다.** pn·pe·mode 를 두 함수가 함께 쓰는데,
+    % 포트에서 선을 두 갈래로 끌면 그 선이 설정 상수 열을 가로지른다.
+    ipt = {'pn','pe','beta','mode'};
+    for k = 1:numel(ipt)
+        add_block('simulink/Signal Routing/Goto', [ss '/Go_i_' ipt{k}], ...
+                  'Position', [160 196+(k-1)*60 240 218+(k-1)*60], ...
+                  'GotoTag', ['i_' ipt{k}], 'TagVisibility','local');
+        add_line(ss, [ipt{k} '/1'], ['Go_i_' ipt{k} '/1'], 'autorouting','on');
+    end
+
+    % --- 설정값 — 신호가 아니다. 상자 안에 둔다 --------------------------
+    cfg = {'WPN','wp_north'; 'WPE','wp_east'; 'Dlt','Delta'; 'Rsw','R_LOS'; ...
+           'LWP','loiter_wp'; 'LCN','loiter_cn'; 'LCE','loiter_ce'; ...
+           'LRD','loiter_radius'; 'LRD2','loiter_radius'; ...
+           'URf','u_ref'; 'Pc','p_c'; 'Kcr','crab_comp'};
+    for k = 1:size(cfg,1)
+        add_block('simulink/Sources/Constant', [ss '/' cfg{k,1}], ...
+                  'Position', [330 100+(k-1)*60 405 130+(k-1)*60], 'Value', cfg{k,2});
+    end
+    fr = {'pn_1','i_pn'; 'pe_1','i_pe'; 'mode_1','i_mode'; ...
+          'pn_2','i_pn'; 'pe_2','i_pe'; 'beta_1','i_beta'; 'mode_2','i_mode'};
+    for k = 1:size(fr,1)
+        add_block('simulink/Signal Routing/From', [ss '/Fr_' fr{k,1}], ...
+                  'Position', [330 900+(k-1)*60 400 922+(k-1)*60], 'GotoTag', fr{k,2});
+    end
+
+    % --- 배선 -----------------------------------------------------------
+    wp = {'Fr_pn_1','Fr_pe_1','WPN','WPE','Dlt','Rsw','LWP','Fr_mode_1'};
+    for k = 1:numel(wp)
+        add_line(ss, [wp{k} '/1'], sprintf('WpManager/%d',k), 'autorouting','on');
+    end
+    lv = {'Fr_pn_2','Fr_pe_2','LCN','LCE','LRD','URf','Pc','Fr_beta_1','Kcr'};
+    for k = 1:numel(lv)
+        add_line(ss, [lv{k} '/1'], sprintf('LoiterVF/%d',k), 'autorouting','on');
+    end
+    add_line(ss,'LoiterVF/3','TurnCount/1','autorouting','on');   % theta
+    add_line(ss,'LoiterVF/2','TurnCount/2','autorouting','on');   % r
+    add_line(ss,'LRD2/1',    'TurnCount/3','autorouting','on');
+    add_line(ss,'Fr_mode_2/1','TurnCount/4','autorouting','on');
+
+    % --- 출력 포트 : 순서를 미션 상자의 입력 순서와 **같게** 맞춘다 --------
+    ot = {'psi_los','WpManager',1; 'psi_lo','LoiterVF',1; ...
+          'at_loiter','WpManager',4; 'at_end','WpManager',5; 'turns','TurnCount',1};
+    for k = 1:size(ot,1)
+        add_line(ss, sprintf('%s/%d', ot{k,2}, ot{k,3}), [ot{k,1} '/1'], 'autorouting','on');
+    end
+
+    % --- 로깅용 태그 -----------------------------------------------------
+    lt = {'WpManager',2,'y_e'; 'WpManager',3,'idx'; ...
+          'LoiterVF',2,'r_lo'; 'TurnCount',1,'turns'};
+    for k = 1:size(lt,1)
+        add_block('simulink/Signal Routing/Goto', [ss '/Go_' lt{k,3}], ...
+                  'Position', [1000 200+(k-1)*60 1080 222+(k-1)*60], ...
+                  'GotoTag', lt{k,3}, 'TagVisibility','global');
+        add_line(ss, sprintf('%s/%d', lt{k,1}, lt{k,2}), ['Go_' lt{k,3} '/1'], ...
+                 'autorouting','on');
+    end
+
+    Simulink.BlockDiagram.arrangeSystem(ss);
 end
 
 % =====================================================================
 % 미션 상태기계 (Stateflow)
 % =====================================================================
 function addMissionFSM(m, x, y)
-    add_block('sflib/Chart', [m '/MissionFSM'], 'Position', [x y x+220 y+180]);
+% 2단 · MISSION — 지금 무엇을 할 차례인지 정하고, 그에 맞는 지령을 고른다.
+%
+%   포트   at_loiter, turns, at_end, psi_los, psi_lo  ->  psi_ref, gate
+%
+%   안에 들어가는 것
+%     MissionFSM  Stateflow 상태기계. WpFollow -> Loiter -> Finish
+%     ModeSwitch  상태에 맞는 선수각 지령을 고른다
+%     ModeDly     mode 를 한 스텝 늦춰 유도부로 되먹인다 (대수 루프 차단)
+%
+%   유도는 두 지령을 **둘 다** 계산해 내놓고, 고르는 일은 여기서만 한다.
+%   그래서 "판단"과 "유도"가 색으로도 갈린다 — 보라와 파랑.
+    ss = add_subsys(m, 'Mission', [x y x+190 y+170], ...
+                    {'psi_los','psi_lo','at_loiter','at_end','turns'}, ...
+                    {'psi_ref','gate'}, gnc_colour('mission'));
+    add_block('sflib/Chart', [ss '/MissionFSM'], 'Position', [x y x+220 y+180]);
 
     rt = sfroot;
-    ch = rt.find('-isa','Stateflow.Chart','Path',[m '/MissionFSM']);
+    ch = rt.find('-isa','Stateflow.Chart','Path',[ss '/MissionFSM']);
     ch.ActionLanguage = 'MATLAB';
     ch.ChartUpdate    = 'DISCRETE';
     ch.SampleTime     = 'Ts_ctrl';
@@ -270,15 +390,11 @@ function addMissionFSM(m, x, y)
     t3.Destination = s3;  t3.DestinationOClock = 9;
     t3.LabelString = '[at_end > 0.5]';
     t3.MidPoint = [355 125];
-end
 
-% =====================================================================
-% 모드 스위치 — 어떤 유도를 쓸지 고른다
-% =====================================================================
-function addModeSwitch(m, x, y)
+    % --- 모드 스위치 : 상태에 맞는 선수각 지령을 고른다 ------------------
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [m '/ModeSwitch'], 'Position', [x y x+180 y+150]);
-    setFcn(m, 'ModeSwitch', [ ...
+              [ss '/ModeSwitch'], 'Position', [x y x+180 y+150]);
+    setFcn(ss, 'ModeSwitch', [ ...
 'function [psi_ref, gate] = ModeSwitch(mode, psi_los, psi_lo)'          newline ...
 '%#codegen'                                                             newline ...
 '% Pick the heading command that belongs to the current mission state.' newline ...
@@ -295,6 +411,48 @@ function addModeSwitch(m, x, y)
 '    psi_ref = psi_los;'                                                newline ...
 '    gate    = 1;'                                                      newline ...
 'end']);
+
+    % --- 요구 회전수는 설정값이다. 상자 안에 둔다 -----------------------
+    add_block('simulink/Sources/Constant', [ss '/Req'], ...
+              'Position', [x-160 y+260 x-70 y+290], 'Value','loiter_turns');
+
+    % --- 배선 -----------------------------------------------------------
+    add_line(ss,'at_loiter/1','MissionFSM/1','autorouting','on');
+    add_line(ss,'turns/1',    'MissionFSM/2','autorouting','on');
+    add_line(ss,'Req/1',      'MissionFSM/3','autorouting','on');
+    add_line(ss,'at_end/1',   'MissionFSM/4','autorouting','on');
+
+    add_line(ss,'MissionFSM/1','ModeSwitch/1','autorouting','on');
+    add_line(ss,'psi_los/1',   'ModeSwitch/2','autorouting','on');
+    add_line(ss,'psi_lo/1',    'ModeSwitch/3','autorouting','on');
+
+    add_line(ss,'ModeSwitch/1','psi_ref/1','autorouting','on');
+    add_line(ss,'ModeSwitch/2','gate/1','autorouting','on');
+
+    % --- mode 되먹임 ----------------------------------------------------
+    %   FSM 이 낸 mode 가 유도부(WpManager·TurnCount)의 입력으로 돌아간다.
+    %   그대로 두면 대수 루프다. 한 스텝(0.05 s) 늦춰 끊는다.
+    add_block('simulink/Discrete/Unit Delay', [ss '/ModeDly'], ...
+              'Position', [x+380 y+300 x+455 y+340], ...
+              'InitialCondition','1', 'SampleTime','Ts_ctrl');
+    add_line(ss,'MissionFSM/1','ModeDly/1','autorouting','on');
+
+    % 태그로 내보낸다 — 최상위에서 From 하나가 받아 유도부로 넣는다
+    add_block('simulink/Signal Routing/Goto', [ss '/Go_mode'], ...
+              'Position', [x+520 y+310 x+600 y+332], ...
+              'GotoTag','mode', 'TagVisibility','global');
+    add_line(ss,'ModeDly/1','Go_mode/1','autorouting','on');
+
+    lt = {'ModeSwitch',1,'psi_ref'; 'ModeSwitch',2,'gate'};
+    for k = 1:2
+        add_block('simulink/Signal Routing/Goto', [ss '/Go_' lt{k,3}], ...
+                  'Position', [x+520 y+400+(k-1)*45 x+600 y+400+(k-1)*45+22], ...
+                  'GotoTag', lt{k,3}, 'TagVisibility','global');
+        add_line(ss, sprintf('%s/%d', lt{k,1}, lt{k,2}), ['Go_' lt{k,3} '/1'], ...
+                 'autorouting','on');
+    end
+
+    Simulink.BlockDiagram.arrangeSystem(ss);
 end
 
 % =====================================================================
@@ -451,11 +609,16 @@ function addMotionModel(m, x, y)
     ss = [m '/MotionModel'];
     add_block('built-in/Subsystem', ss, 'Position', [x y x+210 y+200]);
 
-    in = {'FL','FR','p'};
-    for k = 1:numel(in)
+    in = {'FL','FR','p'};   % 앞의 둘만 신호. p 는 설정이라 상자 안에 둔다
+    for k = 1:2
         add_block('simulink/Sources/In1', [ss '/' in{k}], ...
                   'Position', [40 60+(k-1)*70 75 60+(k-1)*70+30], 'Port', num2str(k));
     end
+
+    % 선체 계수는 신호가 아니라 설정이다. 상자 안에 둔다
+    add_block('simulink/Sources/Constant', [ss '/p'], ...
+              'Position', [40 220 130 250], ...
+              'Value', '[m_usv; Izz; Xu; Xuu; Yv; Yvv; Nr; Nrr; half_beam]');
 
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
               [ss '/EOM'], 'Position', [200 60 380 240]);
@@ -498,150 +661,77 @@ function addMotionModel(m, x, y)
 'c    = psi + beta;'                                        newline ...
 'chi  = atan2(sin(c), cos(c));']);
 
+    % --- 배치 : 한 줄에 EOM -> 1/s -> States. 포트 높이를 읽어서 맞춘다 ----
+    ROW = 340;
+    set_param([ss '/EOM'],    'Position', [280 140 460 540]);
+    set_param([ss '/Integ'],  'Position', [560 ROW-15 590 ROW+15]);
+    set_param([ss '/States'], 'Position', [680 100 840 580]);
+
+    % 2~4번 입력(추력 둘 + 계수)을 각자 포트 높이로 옮겨 직선으로 잇는다
+    row_feed(ss, 'EOM', [{''}, in]);
+
+    add_line(ss, 'EOM/1',   'Integ/1');
+    add_line(ss, 'Integ/1', 'States/1');
+
+    % 상태 되먹임 — 화면을 가로지르는 대신 태그로 건너뛴다
+    drop_tag(ss, 'Integ', 1, 'x_state', 280);
+    b = port_xy(ss, 'EOM', 'Inport', 1);
+    add_block('simulink/Signal Routing/From', [ss '/Fr_x_state'], ...
+              'Position', [180 b(2)-11 250 b(2)+11], 'GotoTag','x_state');
+    add_line(ss, 'Fr_x_state/1', 'EOM/1');
+
+    % 출력 포트를 States 의 포트 높이에 맞춘다 -> 여덟 선이 전부 직선
     out = {'pn','pe','psi','u','r','beta','chi','U'};
     for k = 1:numel(out)
+        q = port_xy(ss, 'States', 'Outport', k);
         add_block('simulink/Sinks/Out1', [ss '/' out{k}], ...
-                  'Position', [800 60+(k-1)*45 840 60+(k-1)*45+30], 'Port', num2str(k));
-        add_line(ss, sprintf('States/%d',k), [out{k} '/1'], 'autorouting','on');
+                  'Position', [940 q(2)-7 970 q(2)+7], 'Port', num2str(k));
+        add_line(ss, sprintf('States/%d',k), [out{k} '/1']);
     end
-    for k = 1:3
-        add_line(ss, [in{k} '/1'], sprintf('EOM/%d', k+1), 'autorouting','on');
-    end
-    add_line(ss,'EOM/1','Integ/1','autorouting','on');
-    add_line(ss,'Integ/1','States/1','autorouting','on');
-    add_line(ss,'Integ/1','EOM/1','autorouting','on');
 end
 
 % =====================================================================
 % 5단 · ANIMATE
 % =====================================================================
 function addAnimate(m, x, y)
-    F(m,'pn','v',   x, y);
-    F(m,'pe','v',   x, y+40);
-    F(m,'psi','v',  x, y+80);
-    F(m,'mode','v', x, y+120);
-    F(m,'turns','v',x, y+160);
-    add_block('simulink/Sources/Digital Clock', [m '/Clk'], ...
-              'Position', [x y+200 x+50 y+230], 'SampleTime','Ts_ctrl');
-    C(m,'Anim','animate', x, y+250);
-
-    add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [m '/Animate'], 'Position', [x+150 y x+300 y+260]);
-    setFcn(m, 'Animate', [ ...
-'function ok = Animate(pn, pe, psi, mode, turns, t, en)'               newline ...
-'%#codegen'                                                            newline ...
-'coder.extrinsic(''W09_animate'');'                                    newline ...
-'ok = 1;'                                                              newline ...
-'if en > 0.5'                                                          newline ...
-'    W09_animate(pn, pe, psi, mode, turns, t);'                        newline ...
-'end']);
-
-    add_block('simulink/Sinks/Terminator', [m '/AnimEnd'], ...
-              'Position', [x+350 y+115 x+375 y+140]);
-
-    add_line(m,'Fr_pn_v/1',   'Animate/1','autorouting','on');
-    add_line(m,'Fr_pe_v/1',   'Animate/2','autorouting','on');
-    add_line(m,'Fr_psi_v/1',  'Animate/3','autorouting','on');
-    add_line(m,'Fr_mode_v/1', 'Animate/4','autorouting','on');
-    add_line(m,'Fr_turns_v/1','Animate/5','autorouting','on');
-    add_line(m,'Clk/1', 'Animate/6','autorouting','on');
-    add_line(m,'Anim/1','Animate/7','autorouting','on');
-    add_line(m,'Animate/1','AnimEnd/1','autorouting','on');
+% 실시간 그림 — 포트 없는 서브시스템 하나로 묶는다.
+%
+%   태그 순서가 곧 W09_animate 의 인자 순서다 (뒤에 t, en 이 붙는다).
+%   turns 를 빠뜨리면 t 자리에 turns 가 들어가고 t 는 비어, 모델을 돌리는 순간
+%   "입력 인수가 부족합니다" 로 멈춘다 (2026-09-17 확인).
+    add_animate_box(m, {'pn','pe','psi','mode','turns'}, 'W09_animate', '', ...
+                    [x y], 'Ts_ctrl');
 end
 
 % =====================================================================
 % 앞단 배선 (두 모델 공통)
+%   설정값은 각 상자 안에 있다. 최상위에 남는 것은 되먹임뿐이다.
 % =====================================================================
 function wireFront(m)
-    F(m,'pn','a', 40,  65);
-    F(m,'pe','a', 40, 110);
-    C(m,'WPN','wp_north',   40, 155);
-    C(m,'WPE','wp_east',    40, 200);
-    C(m,'Dlt','Delta',      40, 245);
-    C(m,'Rsw','R_LOS',      40, 290);
-    C(m,'LWP','loiter_wp',  40, 335);
-    F(m,'mode','a', 40, 385);
+    F(m,'pn','a',   40,  65);
+    F(m,'pe','a',   40, 110);
+    F(m,'beta','a', 40, 155);
+    F(m,'mode','a', 40, 200);
 
-    add_line(m,'Fr_pn_a/1','WpManager/1','autorouting','on');
-    add_line(m,'Fr_pe_a/1','WpManager/2','autorouting','on');
-    add_line(m,'WPN/1','WpManager/3','autorouting','on');
-    add_line(m,'WPE/1','WpManager/4','autorouting','on');
-    add_line(m,'Dlt/1','WpManager/5','autorouting','on');
-    add_line(m,'Rsw/1','WpManager/6','autorouting','on');
-    add_line(m,'LWP/1','WpManager/7','autorouting','on');
-    add_line(m,'Fr_mode_a/1','WpManager/8','autorouting','on');
+    add_line(m,'Fr_pn_a/1',  'Guidance/1','autorouting','on');
+    add_line(m,'Fr_pe_a/1',  'Guidance/2','autorouting','on');
+    add_line(m,'Fr_beta_a/1','Guidance/3','autorouting','on');
+    add_line(m,'Fr_mode_a/1','Guidance/4','autorouting','on');
 
-    % 로이터 벡터필드 입력
-    F(m,'pn','b', 40, 460);
-    F(m,'pe','b', 40, 505);
-    C(m,'LCN','loiter_cn',     40, 550);
-    C(m,'LCE','loiter_ce',     40, 595);
-    C(m,'LRD','loiter_radius', 40, 640);
-    C(m,'URf','u_ref',         40, 685);
-    C(m,'Pc', 'p_c',           40, 730);
-    F(m,'beta','b', 40, 780);
-    C(m,'Kcr','crab_comp',     40, 825);
+    % 유도 -> 미션 : 다섯 줄이 그대로 넘어간다
+    % 유도 출력과 미션 입력의 **순서가 같다**. 다섯 선이 전부 직선이 된다
+    for k = 1:5
+        add_line(m, sprintf('Guidance/%d',k), sprintf('Mission/%d',k), 'autorouting','on');
+    end
 
-    add_line(m,'Fr_pn_b/1','LoiterVF/1','autorouting','on');
-    add_line(m,'Fr_pe_b/1','LoiterVF/2','autorouting','on');
-    add_line(m,'LCN/1','LoiterVF/3','autorouting','on');
-    add_line(m,'LCE/1','LoiterVF/4','autorouting','on');
-    add_line(m,'LRD/1','LoiterVF/5','autorouting','on');
-    add_line(m,'URf/1','LoiterVF/6','autorouting','on');
-    add_line(m,'Pc/1', 'LoiterVF/7','autorouting','on');
-    add_line(m,'Fr_beta_b/1','LoiterVF/8','autorouting','on');
-    add_line(m,'Kcr/1','LoiterVF/9','autorouting','on');
-
-    % 회전수
-    F(m,'mode','c', 40, 890);
-    add_line(m,'LoiterVF/3','TurnCount/1','autorouting','on');
-    add_line(m,'LoiterVF/2','TurnCount/2','autorouting','on');
-    add_line(m,'LRD/1','TurnCount/3','autorouting','on');
-    add_line(m,'Fr_mode_c/1','TurnCount/4','autorouting','on');
-
-    % 미션 FSM
-    C(m,'Req','loiter_turns', 640, 720);
-    add_line(m,'WpManager/4','MissionFSM/1','autorouting','on');   % at_loiter
-    add_line(m,'TurnCount/1','MissionFSM/2','autorouting','on');   % turns
-    add_line(m,'Req/1',      'MissionFSM/3','autorouting','on');
-    add_line(m,'WpManager/5','MissionFSM/4','autorouting','on');   % at_end
-
-    % 모드 스위치
-    add_line(m,'MissionFSM/1','ModeSwitch/1','autorouting','on');
-    add_line(m,'WpManager/1', 'ModeSwitch/2','autorouting','on');
-    add_line(m,'LoiterVF/1',  'ModeSwitch/3','autorouting','on');
-
-    % 태그
-    % mode 는 단위지연을 거쳐 되먹인다.
-    % FSM 출력이 WpManager·TurnCount 입력으로 돌아가므로 그대로 두면 대수 루프가 된다.
-    % 한 스텝(0.05 s) 늦게 보는 것뿐이라 동작에는 영향이 없다.
-    add_block('simulink/Discrete/Unit Delay', [m '/ModeDly'], ...
-              'Position', [1060 395 1135 430], ...
-              'InitialCondition','1', 'SampleTime','Ts_ctrl');
-    add_line(m,'MissionFSM/1','ModeDly/1','autorouting','on');
-    G(m,'mode',   1180, 400);
-    G(m,'turns',   640, 900);
-    G(m,'psi_ref',1500, 240);
-    G(m,'gate',   1500, 280);
-    G(m,'y_e',     300, 330);
-    G(m,'idx',     300, 370);
-    G(m,'r_lo',    300, 640);
-    add_line(m,'ModeDly/1','Go_mode/1','autorouting','on');
-    add_line(m,'TurnCount/1', 'Go_turns/1','autorouting','on');
-    add_line(m,'ModeSwitch/1','Go_psi_ref/1','autorouting','on');
-    add_line(m,'ModeSwitch/2','Go_gate/1','autorouting','on');
-    add_line(m,'WpManager/2', 'Go_y_e/1','autorouting','on');
-    add_line(m,'WpManager/3', 'Go_idx/1','autorouting','on');
-    add_line(m,'LoiterVF/2',  'Go_r_lo/1','autorouting','on');
-
-    % 내부루프 입력
+    % 내부루프 입력 : 미션 출력 둘 + 목표 속도 + 자세·속도 되먹임 셋
+    C(m,'URf2','u_ref', 1500, 560);
     F(m,'psi','d', 1500, 620);
     F(m,'r',  'd', 1500, 660);
     F(m,'u',  'd', 1500, 700);
-    C(m,'URf2','u_ref', 1500, 560);
-    add_line(m,'ModeSwitch/1','InnerLoop/1','autorouting','on');
-    add_line(m,'ModeSwitch/2','InnerLoop/2','autorouting','on');
-    add_line(m,'URf2/1',      'InnerLoop/3','autorouting','on');
+    add_line(m,'Mission/1','InnerLoop/1','autorouting','on');
+    add_line(m,'Mission/2','InnerLoop/2','autorouting','on');
+    add_line(m,'URf2/1',   'InnerLoop/3','autorouting','on');
     add_line(m,'Fr_psi_d/1','InnerLoop/4','autorouting','on');
     add_line(m,'Fr_r_d/1',  'InnerLoop/5','autorouting','on');
     add_line(m,'Fr_u_d/1',  'InnerLoop/6','autorouting','on');
@@ -651,17 +741,9 @@ end
 % 로깅
 % =====================================================================
 function addLogging(m, x, y)
+% 로깅 — 포트 없는 서브시스템 하나로 묶는다. W09_plot.m 이 이 변수들을 읽는다.
     sig = {'pn','pe','psi','psi_ref','y_e','idx','mode','turns','gate','u','beta','r_lo','FL','FR'};
-    for k = 1:numel(sig)
-        yy = y + (k-1)*55;
-        F(m, sig{k}, 'log', x, yy+3);
-        b = [m '/log_' sig{k}];
-        add_block('simulink/Sinks/To Workspace', b, ...
-                  'Position', [x+130 yy x+230 yy+30]);
-        set_param(b, 'VariableName', ['log_' sig{k}], ...
-                     'SaveFormat','Timeseries', 'SampleTime','Ts_ctrl');
-        add_line(m, ['Fr_' sig{k} '_log/1'], ['log_' sig{k} '/1'], 'autorouting','on');
-    end
+    add_logging_box(m, sig, sig, [x y], 'Ts_ctrl');
 end
 
 % =====================================================================
@@ -673,19 +755,16 @@ function build_offline()
                  'FixedStep','Ts_ctrl', 'StopTime','700', 'SimulationMode','normal');
 
     addGuidance(m, 300, 60);
-    addMissionFSM(m, 800, 620);
-    addModeSwitch(m, 1180, 200);
+    addMissionFSM(m, 800, 620);   % Mission 상자 — ModeSwitch·ModeDly 까지 안에 있다
     addInnerLoop(m, 1750, 560);
     wireFront(m);
     addThrusters(m, 2050, 570);
     addMotionModel(m, 2350, 560);
 
-    C(m,'Par','[m_usv; Izz; Xu; Xuu; Yv; Yvv; Nr; Nrr; half_beam]', 2050, 760);
     add_line(m,'InnerLoop/1','Thrusters/1','autorouting','on');
     add_line(m,'InnerLoop/2','Thrusters/2','autorouting','on');
     add_line(m,'Thrusters/1','MotionModel/1','autorouting','on');
     add_line(m,'Thrusters/2','MotionModel/2','autorouting','on');
-    add_line(m,'Par/1',      'MotionModel/3','autorouting','on');
 
     G(m,'FL', 2250, 800);  G(m,'FR', 2250, 840);  G(m,'nprop', 2250, 880);
     add_line(m,'Thrusters/1','Go_FL/1','autorouting','on');
@@ -720,47 +799,26 @@ function build_vrx()
                  'FixedStep','Ts_ctrl', 'StopTime','inf', 'SimulationMode','normal');
 
     addGuidance(m, 300, 60);
-    addMissionFSM(m, 800, 620);
-    addModeSwitch(m, 1180, 200);
+    addMissionFSM(m, 800, 620);   % Mission 상자 — ModeSwitch·ModeDly 까지 안에 있다
     addInnerLoop(m, 1750, 560);
     wireFront(m);
     addThrusters(m, 2050, 570);
 
-    addThrusterPublisher(m, 'left',  'L', 2350, 470);
-    addThrusterPublisher(m, 'right', 'R', 2350, 650);
-    add_line(m,'Thrusters/1','AsgL/2','autorouting','on');
-    add_line(m,'Thrusters/2','AsgR/2','autorouting','on');
+    % --- 4단 · 추력 발행 (운동모델 = Gazebo) -----------------------------
+    add_cmd_publisher(m, [2350 470], ...
+        {'/wamv/thrusters/left/thrust','/wamv/thrusters/right/thrust'}, 'Ts_ctrl');
     add_line(m,'InnerLoop/1','Thrusters/1','autorouting','on');
     add_line(m,'InnerLoop/2','Thrusters/2','autorouting','on');
+    add_line(m,'Thrusters/1','CmdPublisher/1','autorouting','on');
+    add_line(m,'Thrusters/2','CmdPublisher/2','autorouting','on');
 
     G(m,'FL', 2250, 860);  G(m,'FR', 2250, 900);  G(m,'nprop', 2250, 940);
     add_line(m,'Thrusters/1','Go_FL/1','autorouting','on');
     add_line(m,'Thrusters/2','Go_FR/1','autorouting','on');
     add_line(m,'Thrusters/3','Go_nprop/1','autorouting','on');
 
-    add_block('ros2lib/Subscribe', [m '/OdomSub'], 'Position',[2350 1000 2480 1060]);
-    set_param([m '/OdomSub'], 'topicSource','Specify your own', ...
-        'topic','/wamv/sensors/position/ground_truth_odometry', ...
-        'messageType','nav_msgs/Odometry', 'sampleTime','Ts_ctrl');
-
-    add_block('simulink/Signal Routing/Bus Selector', [m '/Sel'], ...
-              'Position',[2540 980 2590 1110]);
-    set_param([m '/Sel'], 'OutputSignals', ...
-        ['pose.pose.position.x,pose.pose.position.y,' ...
-         'pose.pose.orientation.x,pose.pose.orientation.y,' ...
-         'pose.pose.orientation.z,pose.pose.orientation.w,' ...
-         'twist.twist.linear.x,twist.twist.linear.y,twist.twist.angular.z']);
-
-    add_block('simulink/Sinks/Display', [m '/IsNew'], 'Position',[2540 920 2620 950]);
-    add_line(m,'OdomSub/1','IsNew/1','autorouting','on');
-    add_line(m,'OdomSub/2','Sel/1','autorouting','on');
-
-    C(m,'OrgN','origin_north', 2540, 1170);
-    C(m,'OrgE','origin_east',  2540, 1215);
-
-    add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [m '/Nav'], 'Position',[2710 970 2880 1190]);
-    setFcn(m, 'Nav', [ ...
+    % --- 5단 · 항법 (ENU -> NED 변환) -----------------------------------
+    navCode = [ ...
 'function [pn, pe, psi, u, r, beta, chi, U] = Nav(ex, ey, qx, qy, qz, qw, bx, by, wz, orgN, orgE)' newline ...
 '%#codegen'                                                                 newline ...
 '% Gazebo/ROS uses ENU with a body frame of x-forward, y-LEFT, z-UP.'       newline ...
@@ -780,27 +838,26 @@ function build_vrx()
 'U    = sqrt(u*u + v*v);'                                                   newline ...
 'beta = atan2(v, u);'                                                       newline ...
 'c    = psi + beta;'                                                        newline ...
-'chi  = atan2(sin(c), cos(c));']);
+'chi  = atan2(sin(c), cos(c));'];
 
-    for k = 1:9
-        add_line(m, sprintf('Sel/%d',k), sprintf('Nav/%d',k), 'autorouting','on');
-    end
-    add_line(m,'OrgN/1','Nav/10','autorouting','on');
-    add_line(m,'OrgE/1','Nav/11','autorouting','on');
+    add_pose_subscriber(m, [2710 970], ...
+        '/wamv/sensors/position/ground_truth_odometry', 'Ts_ctrl', navCode, ...
+        {'pn','pe','psi','u','r','beta','chi','U'});
 
     tags = {'pn','pe','psi','u','r','beta','chi','U'};
     for k = 1:numel(tags)
-        G(m, tags{k}, 2950, 970+(k-1)*40);
-        add_line(m, sprintf('Nav/%d',k), ['Go_' tags{k} '/1'], 'autorouting','on');
+        G(m, tags{k}, 2950, 970+(k-1)*45);
+        add_line(m, sprintf('PoseSubscriber/%d',k), ['Go_' tags{k} '/1'], 'autorouting','on');
     end
 
     addAnimate(m, 2950, 1340);
     addLogging(m, 3400, 60);
 
-    note(m,'n1', ['W09 실습 C  —  VRX 연동' newline ...
-        '유도·FSM·내부루프·추진기는 W09_0_offline 과 완전히 같다.' newline ...
+    note(m,'n1', ['W09 실습 C  —  VRX 연동 (Gazebo 필요)' newline ...
+        'Guidance -> Mission -> Inner Loop -> Thrusters -> Gazebo -> Navigation' newline ...
+        '유도부·미션·내부루프·게인은 W09_0_offline 과 완전히 같다.' newline ...
         '운동모델만 Gazebo 로 바뀐다.' newline ...
-        '실행 전: (1) W09_setup  (2) VRX 기동  (3) 페이싱을 RTF 에 맞출 것'], 300, -130);
+        '실행 전: (1) W09_setup  (2) VRX 기동  (3) 페이싱을 RTF 에 맞출 것'], 300, -120);
 
     save_system(m); close_system(m);
     fprintf('  W09_1_vrx      생성\n');

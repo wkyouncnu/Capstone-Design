@@ -72,6 +72,10 @@ expect "이름" "기대문자열" 명령...
 | 증상 | 원인 | 조치 |
 |---|---|---|
 | 스크립트가 첫 줄에서 조용히 끝남 | `set -u` + ROS `setup.bash` (미설정 변수 참조) | **`set +u`** 를 쓴다 |
+| `set: +: invalid option` · `$'\r': command not found` | Windows 쪽 편집기·파이썬으로 고쳐 **CRLF** 가 됨 | `python`의 `write_text` 는 Windows 에서 `\n` 을 `\r\n` 로 바꾼다. **`write_bytes` 로 쓰거나** 끝나고 `\r\n` → `\n` 변환 |
+| 돌던 실험 결과가 갑자기 망가짐 | **검증 스크립트가 VRX 를 `pkill` 함** | 실험과 검증을 **동시에 돌리지 않는다** |
+| 검사는 다 통과하는데 실습이 안 됨 | 성능 지표를 검사하지 않음 | **RTF 같은 임계값 검사**를 넣는다 (`gz topic -e -t /stats`) |
+| `ls` 로 없는 경로를 검사했는데 PASS | 오류 메시지에 기대 문자열이 들어 있었다 (`ls: cannot access '.../thrusters/'`) | 기대 문자열을 **파일명·값**처럼 구체적으로 잡는다 |
 | `pkill -f '[r]qt'` 가 **자기 셸**을 죽임 | 자기 명령줄에 `rqt` 문자열이 들어 있다 | 정리 명령을 **별도 호출**로 분리 |
 | 죽은 노드가 `ros2 node list` 에 계속 보임 | ROS 2 데몬 캐시 | `ros2 daemon stop` 후 재실행 |
 | `wsl.exe ... bash -lc '...$VAR...'` 에서 변수가 빈 값 | 바깥 셸이 먼저 확장 | **스크립트 파일로 만들어** 호출 |

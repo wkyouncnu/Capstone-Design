@@ -24,6 +24,21 @@ m   = 'W07_1_vrx';
 TOP = '/wamv/sensors/position/ground_truth_odometry';
 
 %% 1. 토픽 확인 -------------------------------------------------------
+% ---------------------------------------------------------------------
+%  ROS 2 도메인 맞추기 — Simulink 블록은 'ROS 네트워크 프로필'의 Domain ID 를
+%  쓰고, MATLAB 의 ros2* 함수는 환경변수 ROS_DOMAIN_ID(기본 0)를 쓴다.
+%  둘이 다르면 토픽이 보이지 않는다. 프로필 값으로 환경변수를 맞춘다.
+% ---------------------------------------------------------------------
+try
+    prof = getpref('ROS_Toolbox','ROS_NetworkAddress_Profiles');
+    if ~isempty(prof) && isfield(prof{1},'DomainID')
+        setenv('ROS_DOMAIN_ID', num2str(double(prof{1}.DomainID)));
+    end
+catch
+end
+if isempty(getenv('ROS_DOMAIN_ID')), setenv('ROS_DOMAIN_ID','0'); end
+fprintf('0) ROS_DOMAIN_ID = %s\n', getenv('ROS_DOMAIN_ID'));
+
 fprintf('1) VRX 토픽 확인\n');
 tl = ros2('topic','list');
 if ~any(strcmp(tl, TOP))
@@ -92,7 +107,7 @@ end
 
 % =====================================================================
 function RTF = measureRTF(topic, sec)
-n = ros2node(sprintf('/rtf_probe_%d', randi(9999)), 0);
+n = ros2node(sprintf('/rtf_probe_%d', randi(9999)));
 c = onCleanup(@() clear('n'));
 s = ros2subscriber(n, topic, 'nav_msgs/Odometry');
 m0 = receive(s, 15);  w = tic;

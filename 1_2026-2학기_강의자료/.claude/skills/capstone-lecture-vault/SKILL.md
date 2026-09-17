@@ -25,28 +25,33 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | "이 부분 설명 보강해줘" | 대상 독자를 먼저 정한다 — 기본은 **리눅스·ROS 무경험 4학년** | `references/lecture-md.md` |
 | "문체 고쳐줘 / AI 같아" | `scripts/vault_check.sh --style` 로 금지 표현부터 센다 | `references/lecture-md.md` §문체 |
 | "수식 넣어줘 / 보기 좋게" | LaTeX 으로 쓴다. MathType 이미지 불필요 | `references/pdf-and-math.md` |
-| "PDF 다시 뽑아줘" | `bash _tools/md2pdf.sh <파일>` — 쪽수까지 확인 | `references/pdf-and-math.md` |
+| "PDF 다시 뽑아줘" | `bash _tools/pdf_sync.sh` — 바뀐 MD 를 전부 다시 뽑는다 | `references/pdf-and-math.md` |
 | "그림 그려줘" | `assets/` 에 SVG. **한 번의 Bash 호출에 하나씩** | `references/figures-svg.md` |
 | "화면 캡처 넣어줘" · "따라 할 수 있게" | 도구를 **실제로 띄우고** 창을 찍는다. WSLg 창은 WSL 안에서 | `references/screenshots.md` |
 | "자료대로 되는지 확인해줘" · 자료를 고친 **직후** | `_tools/verify_wNN.sh` 를 돌린다. **FAIL 0 이 합격선** | `references/doc-verification.md` |
-| "모델 만들어줘 / 선 정리해줘" | `build_wXX_models.m` 작성 → `tidy_layout` 2회 | 스킬 `simulink-gnc-models` |
+| "모델 만들어줘 / 선 정리해줘" | `build_wXX_models.m` 작성 → `tidy_model` + `export_model_pngs` | 스킬 `simulink-gnc-models` |
 | "VRX 로 돌려서 확인해줘" | WSL 배포판 `Ubuntu-22.04` 확인부터 | `references/vrx-runbook.md` |
 | "오프라인이랑 대조해줘" | 겹치는 시간 구간만. 이격은 **위상 오차인 경우가 많다** | `references/vrx-runbook.md` |
 | "주차를 옮기자 / 순서 바꾸자" | 파급 범위를 먼저 나열한다 (문서 4곳 이상) | `references/vault-upkeep.md` |
+| **"전체 다 고쳐줘" · "다른 주차도" · 규칙·도구·형식이 바뀜** | **전수 조사 표부터 만든다.** 도구 → 전 주차 → 수치 → 그림 → MD → PDF | **`references/vault-wide-update.md`** |
 | "다 끝났나 확인해줘" | `bash .claude/skills/capstone-lecture-vault/scripts/vault_check.sh` | 아래 §4 |
 
 ---
 
-## 1. 어길 수 없는 것 여섯
+## 1. 어길 수 없는 것 일곱
 
 1. **수치는 실행 결과다.** 오차·시간·반경·RMS 를 추정으로 쓰지 않는다.
    반드시 **구간을 명시**한다 ("전 구간" 과 "초기 5초 제외" 는 다른 숫자다).
 2. **MD 를 고쳤으면 PDF 를 다시 뽑고, 자료대로 한 번 돌려 본다.**
+   세션 끝의 Stop 훅이 `_tools/pdf_sync.sh` 로 자동 처리하지만, **작업 중에도 직접 돌려 확인한다.**
+   훅은 마지막 안전망이지 면허가 아니다 — PDF 뷰어가 파일을 열고 있으면 훅도 실패한다.
    `_tools/verify_wNN.sh` → **FAIL 0**. 두 파일이 어긋나거나 명령이 안 되면 학생이 막힌다.
 3. **`10-주차별-강의자료/` 와 `80-과제/` 에 내부용 메모를 쓰지 않는다.** 그건 `00-운영/`.
 4. **HTML 슬라이드 덱을 만들지 않는다.** 요청받지 않는 한 `html-slide-deck` 스킬 금지.
 5. **개조식·정식 교재 어조.** 1·2인칭 금지, 시점 표현("오늘") 금지, 장식 기호 금지.
-6. **폴더명의 `[2026-2]` 대괄호** — PowerShell `-LiteralPath`, bash 는 `find -path "./[2025]*"` 대신
+6. **한 주차에서 고친 규칙은 전 주차에 적용한다.** 배치·문체·형식·도구가 바뀌면
+   그 주차만 고치고 끝내지 않는다. 전수 조사 표를 먼저 만든다 → `references/vault-wide-update.md`
+7. **폴더명의 `[2026-2]` 대괄호** — PowerShell `-LiteralPath`, bash 는 `find -path "./[2025]*"` 대신
    `*ROS2_VRX_Gazebo_Simulink*` 로 우회한다.
 
 ---
@@ -60,7 +65,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 2) 만들기      스크립트·모델·SVG
 3) 실행        MATLAB MCP / VRX — 수치를 뽑는다
 4) 문서        MD 에 그림 + 실측 수치 + 진도 체크 + 과제 배점
-5) 변환        md2pdf.sh → 쪽수 확인
+5) 변환        pdf_sync.sh (바뀐 MD 전부) → 쪽수 확인
 6) 색인        README 표 · 강의계획서 · 지식카드 갱신
 7) 점검        vault_check.sh → 0 건이 합격선
 ```
@@ -82,6 +87,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | `references/doc-verification.md` | **문서대로 되는지 기계로 확인할 때.** 검사식 작성법과 함정 |
 | `references/vrx-runbook.md` | VRX 를 띄우고 수치를 뽑을 때 |
 | `references/vault-upkeep.md` | 문서를 추가·이동·개편할 때, 지식카드를 만들 때 |
+| **`references/vault-wide-update.md`** | **한 주차에서 고친 것을 전 주차에 퍼뜨릴 때. 절 번호 밀기, 구조 변경 후 수치 대조** |
 
 모델 작업은 **다른 스킬**이다 — `.claude/skills/simulink-gnc-models/`
 (배치 정리 `layout.md`, 생성 관용구 `build-models.md`, MSS 규약 `gnc-conventions.md`,

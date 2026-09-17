@@ -2553,7 +2553,9 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 > 알고리즘도 배선도 바뀌지 않았다. QoS 정책 이름 하나만 바뀌었다.
 
 > [!warning] 3주차에서 다시 다룬다
-> Gazebo의 센서 토픽 상당수가 `BEST_EFFORT` 로 발행됨.
+> 실선의 LiDAR·카메라 드라이버는 `BEST_EFFORT` 로 발행하는 경우가 많다.
+> **다만 VRX 의 `ros_gz_bridge` 토픽은 전부 `RELIABLE` 이다** (2026-09-15 실측 25개 전수조사).
+> 그래서 외우지 말고 `ros2 topic info <토픽> --verbose` 로 **매번 확인**하는 습관을 들인다.
 > `ros2 topic echo` 로는 보이는데 내 노드만 못 받으면 **가장 먼저 QoS를 의심**할 것.
 
 ---

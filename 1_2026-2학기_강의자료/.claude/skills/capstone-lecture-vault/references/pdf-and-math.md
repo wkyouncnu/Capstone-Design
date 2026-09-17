@@ -3,6 +3,16 @@
 ## 1. PDF — 이 한 줄이 전부다
 
 ```bash
+bash _tools/pdf_sync.sh
+```
+
+- **MD 가 PDF 보다 새로운 문서만** 골라 다시 뽑는다. 대상 폴더는 `10-주차별-강의자료` · `80-과제` · `00-운영` · `30-환경`
+- 검사만 하려면 `bash _tools/pdf_sync.sh --check` (갱신 대상 수가 종료코드)
+- **세션이 끝날 때 Stop 훅(`_tools/hook_stop.sh`)이 이 스크립트를 자동으로 부른다.** 그 뒤 `git_autopush.sh` 가 돈다
+  - 훅 경로는 `.claude/settings.json` 에 박아 두지 않는다. `CLAUDE_PROJECT_DIR` 에서 위로 올라가며 `_tools/` 를 찾는다 (계정·PC 가 달라도 동작)
+- 파일을 지정해 뽑고 싶으면 아래를 쓴다
+
+```bash
 bash _tools/md2pdf.sh 10-주차별-강의자료/W0*.md
 ```
 
@@ -104,3 +114,36 @@ $$
 - 수식은 Obsidian 에서도 그대로 보인다. 별도 플러그인 불필요
 - 다만 **Obsidian 전용 문법(`![[파일]]`)은 쓰지 않는다** — VSCode·GitHub 에서 깨진다
 - 그림은 항상 표준 마크다운 `![설명](../assets/x.svg)`
+
+---
+
+## 쪽 번호 — `@page` 마진 박스
+
+모든 PDF 오른쪽 아래에 `현재쪽 / 전체쪽` 이 찍힌다. `_tools/pdf-template.html` 의
+`@page` 안에 있다.
+
+```css
+@page {
+  size: A4;
+  margin: 13mm 12mm 16mm 12mm;
+  @bottom-right {
+    content: counter(page) " / " counter(pages);
+    font-size: 8.6pt;
+    color: #94a3b8;
+  }
+}
+```
+
+- **Chrome 이 `@page` 마진 박스를 지원한다.** 2026-09-16 에 실측으로 확인했다
+  — 같은 3쪽 문서가 카운터 없이 10255 bytes, 카운터를 넣으면 15258 bytes
+- `position: fixed` 로 흉내 내지 않는다. 모든 쪽에 **같은 숫자**가 찍힌다
+- 아래 여백을 14mm 에서 **16mm** 로 늘렸다. 그러지 않으면 본문 마지막 줄과 겹친다
+
+> [!warning] 템플릿을 고치면 **전체 PDF 를 다시 뽑아야 한다**
+> `pdf_sync.sh` 는 MD 가 PDF 보다 새로울 때만 다시 뽑는다. 템플릿만 바뀐 경우는
+> 감지하지 못하므로 아래처럼 전부 강제로 돌린다.
+>
+> ```bash
+> bash _tools/md2pdf.sh 00-운영/*.md 30-환경/*.md 80-과제/*.md
+> bash _tools/md2pdf.sh 10-주차별-강의자료/W*.md
+> ```

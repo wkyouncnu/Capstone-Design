@@ -197,6 +197,29 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 
 ---
 
+## 6-0. 재현 검증 이력 (2026-09-15, 다른 노트북)
+
+다른 컴퓨터(Intel Arc 140V + Core Ultra 7 258V)에 **자료대로 처음부터 설치**하고 W03~W10 을 실행했다.
+발견한 결함은 전부 문서·스크립트에 반영했다.
+
+| 주차 | 결과 | 고친 것 |
+|---|---|---|
+| W03 | 통과 | 카메라 렌더링 병목(RTF 0.26 %) → `extra_gz_args:=--render-engine-server ogre` 절 신설 |
+| W04 | 통과 | Livox 행 삭제 · `ground_truth_enabled` 는 런치 인자가 아님 · LiDAR `z` 0.9 → 1.4 (서버 충돌) · QoS 전수 RELIABLE · Mapviz 원점 런치 파일 |
+| W05 | 통과 | Claude Code 설치 명령 · MCP 서버/애드온/`satk_initialize` 절차 · 정답지 경로 |
+| W06 | 통과 | 도메인 정렬 절 · 페이싱 = 실측 RTF · 스폰 좌표 표 |
+| W07~W10 | 통과 | `origin_north` 200 → **162** · `ros2node(...,0)` → 프로필 도메인 · 실험마다 VRX 재기동 |
+
+> [!important] 이 검증에서 배운 것 — **조용히 실패하는 것부터 검사한다**
+> 도메인 불일치 · 스폰 좌표 · 렌더 엔진 · 앞 실험 잔류 상태는 **오류 메시지가 없다.**
+> 그래서 `verify_wNN.sh` 에 RTF 검사와 QoS 검사를 넣었다.
+
+> [!warning] 검증 스크립트와 실험을 **동시에 돌리지 않는다**
+> `verify_w0N.sh` 는 시작·종료 때 VRX 를 `pkill` 한다.
+> 실험이 도는 중에 돌리면 그 실험이 조용히 망가진다 (실제로 W09 주행 하나를 잃었다).
+
+---
+
 ## 6. 주차별 현황 (2026-09-06 기준)
 
 | 주차 | 그림 | 정상출력 | 상태 |

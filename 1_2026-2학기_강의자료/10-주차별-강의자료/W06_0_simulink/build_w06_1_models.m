@@ -16,6 +16,7 @@ function build_w06_1_models()
 %   각 주제마다 `_done` (완성본) 과 `_todo` (학생이 채울 것) 두 개가 나온다.
 
     here = fileparts(mfilename('fullpath'));
+    addpath(fullfile(here, '..', '..', '_tools'));
     cd(here);
 
     build_SB7_done();   build_SB7_todo();
@@ -30,7 +31,7 @@ function build_w06_1_models()
         d = dir(sprintf('SB%d_*.slx', k));
         for j = 1:numel(d)
             [~, mName] = fileparts(d(j).name);
-            try, tidy_layout(mName); tidy_layout(mName); catch, end
+            try, tidy_model(mName); export_model_pngs(mName); catch e, warning(e.message); end
         end
     end
 

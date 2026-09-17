@@ -32,6 +32,7 @@ function build_w02_models()
 %   실행 전에 반드시 >> W02_setup 을 먼저 실행할 것.
 
     here = fileparts(mfilename('fullpath'));
+    addpath(fullfile(here, '..', '..', '_tools'));
     cd(here);
 
     if evalin('base', '~exist(''x_goal'',''var'')')
@@ -46,7 +47,7 @@ function build_w02_models()
     slxList = dir('W02_*.slx');
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);
-        try, tidy_layout(mName); tidy_layout(mName); catch e, warning(e.message); end
+        try, tidy_model(mName); export_model_pngs(mName); catch e, warning(e.message); end
     end
     fprintf('\n완료. 생성된 모델:\n');
     for k = 1:numel(slxList), fprintf('  %s\n', slxList(k).name); end

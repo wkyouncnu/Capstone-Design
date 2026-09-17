@@ -17,6 +17,7 @@ function build_w06_0_models()
 %   전제: MATLAB R2024b + Simulink  (ROS Toolbox 불필요, VRX 불필요)
 
     here = fileparts(mfilename('fullpath'));
+    addpath(fullfile(here, '..', '..', '_tools'));
     cd(here);
 
     build_SB1_done();  build_SB1_todo();
@@ -28,10 +29,12 @@ function build_w06_0_models()
 
 
     % 배치와 색을 정리한다. 선은 직선 또는 직각으로만 다시 그린다.
-    slxList = dir('*.slx');
+    % dir 의 문자 클래스는 Windows 에서 먹지 않는다. 목록을 받아 이름으로 거른다
+    slxList = dir('SB*.slx');
+    slxList = slxList(~cellfun(@isempty, regexp({slxList.name}, '^SB[1-6]_', 'once')));
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);
-        try, tidy_layout(mName); tidy_layout(mName); catch, end
+        try, tidy_model(mName); export_model_pngs(mName); catch e, warning(e.message); end
     end
     fprintf('\n완료. 생성된 모델:\n');
     d = dir('SB*.slx');
@@ -479,6 +482,10 @@ function build_SB5_done()
     wire(m,'PID/1','Sat/1');
     wire(m,'Sat/1','Plant/1');
     wire(m,'Plant/1','GotoY/1');
+
+    %  출력 y 를 Data Inspector 로 기록한다. 커밋된 모델은 이 표시를 달고 있었으나
+    %  빌더에는 없어, 다시 지을 때마다 조용히 빠지고 있었다 (2026-09-17 확인).
+    logPort(m, 'Plant', 'yout');
 
     add_block('simulink/Sinks/Scope', [m '/Scope'], 'Position',[700 210 750 260]);
     set_param([m '/Scope'],'NumInputPorts','2');

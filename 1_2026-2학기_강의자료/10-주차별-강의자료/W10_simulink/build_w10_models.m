@@ -10,6 +10,7 @@ function build_w10_models()
 %     DPRef -> DPCtrl -> Alloc -> Thrusters -> MotionModel(+Env) -> 로깅
 
     here = fileparts(mfilename('fullpath'));
+    addpath(fullfile(here, '..', '..', '_tools'));
     cd(here);
 
     if evalin('base', '~exist(''T_pinv'',''var'')')
@@ -18,12 +19,35 @@ function build_w10_models()
 
     build_offline();
     build_vrx();
+    % 최상위 배치 — autorouting 에 맡기지 않고 규칙대로 직접 놓는다.
+    % 겹침 0 · 블록관통 0 · 꺾임3회+ 0 이 합격선 (references/line-routing.md)
+    lay_chain('W10_0_offline', ...
+              {'DPRef','WaveFilter','DPCtrl','Alloc','Thrusters','Env','MotionModel'}, ...
+              'Boxes', {'Animate','Logging'}, 'Wrap', 2);
+    lay_chain('W10_1_vrx', ...
+              {'DPRef','WaveFilter','DPCtrl','Alloc','Thrusters','PoseSubscriber'}, ...
+              'Boxes', {'CmdPublisher','Animate','Logging'}, 'Wrap', 2);
 
-    % 배치와 색을 정리한다. 선은 직선 또는 직각으로만 다시 그린다.
-    slxList = dir('*.slx');
-    for k = 1:numel(slxList)
-        [~, mName] = fileparts(slxList(k).name);
-        try, tidy_layout(mName); tidy_layout(mName); catch, end
+    % 역할별 배경색 — 색표는 _tools/gnc_colour.m 하나뿐이다
+    role = {'DPRef','guidance'; 'WaveFilter','ros'; 'DPCtrl','control'; ...
+            'Alloc','allocation'; 'Thrusters','thruster'; 'Env','env'; ...
+            'MotionModel','plant'; 'CmdPublisher','ros'; 'PoseSubscriber','ros'; ...
+            'Animate','measurement'; 'Logging','measurement'};
+    for mm = {'W10_0_offline','W10_1_vrx'}
+        m = mm{1}; load_system(m);
+        for k = 1:size(role,1)
+            if ~isempty(find_system(m,'SearchDepth',1,'Name',role{k,1}))
+                set_param([m '/' role{k,1}], 'BackgroundColor', gnc_colour(role{k,2}));
+            end
+        end
+        for bt = {'Goto','From'}
+            b = find_system(m,'SearchDepth',1,'BlockType',bt{1});
+            for i = 1:numel(b)
+                set_param(b{i}, 'BackgroundColor', gnc_colour('measurement'));
+            end
+        end
+        mss_style(m); save_system(m); check_lines(m, false); export_diagram(m);
+        close_system(m, 0);
     end
 
     fprintf('\n완료. 생성된 모델:\n');
@@ -63,7 +87,7 @@ end
 
 function G(m, tag, x, y)
     add_block('simulink/Signal Routing/Goto', [m '/Go_' tag], ...
-              'Position', [x y x+80 y+25], 'GotoTag', tag);
+              'Position', [x y x+80 y+25], 'GotoTag', tag, 'TagVisibility','global');
 end
 
 function note(m, tag, txt, x, y)
@@ -72,16 +96,78 @@ end
 
 % =====================================================================
 % 1단 · DP 목표값
+function mk_inputs(ss, in, nSig, cfg, dly, clk)
+% 단계 입력 만들기 — 신호는 포트로, 설정은 상수로, 상태는 지연으로.
+%
+%   IN    함수 인자 순서 그대로의 이름 목록. **블록 이름도 이것을 쓴다**
+%         뒤의 배선 코드가 이름으로 잇기 때문에 바꾸지 않는다
+%   NSIG  바깥에서 들어오는 신호. 개수(앞에서부터) 또는 이름 목록 {'nu'}
+%   CFG   {이름, 값}            설정값 -> 상자 안의 Constant
+%   DLY   {이름, 출력포트, 초기값}  상태  -> 상자 안의 Unit Delay + 태그
+%   CLK   비우지 않으면 그 이름의 블록을 Digital Clock 으로 만든다
+%
+%   설정값을 최상위에 두면 상수 열이 신호 사슬 앞을 가리고, 상태 되먹임을
+%   최상위에 두면 화면을 가로지르는 선이 생긴다. 둘 다 상자 안의 일이다.
+if nargin < 6, clk = ''; end
+
+%  숫자면 '앞에서부터 그만큼', 이름 목록이면 그 이름들만 In1 으로 만든다.
+%  [2] 같은 1원소 배열은 isscalar 가 참이라 개수와 구별되지 않는다 — 이름을 쓴다.
+if iscell(nSig)
+    [~, idx] = ismember(nSig, in);
+else
+    idx = 1:nSig;
+end
+for p = 1:numel(idx)
+    k = idx(p);
+    add_block('simulink/Sources/In1', [ss '/' in{k}], ...
+              'Position',[40 60+(p-1)*70 75 90+(p-1)*70], 'Port', num2str(p));
+end
+if ~isempty(clk)
+    add_block('simulink/Sources/Digital Clock', [ss '/' clk], ...
+              'Position',[40 300 90 330], 'SampleTime','Ts_ctrl');
+end
+for k = 1:size(cfg,1)
+    add_block('simulink/Sources/Constant', [ss '/' cfg{k,1}], ...
+              'Position',[40 400+(k-1)*70 130 430+(k-1)*70], 'Value', cfg{k,2});
+end
+for k = 1:size(dly,1)
+    nm = dly{k,1};
+    %  블록 이름을 in{} 과 같게 둔다. 그래야 뒤의 배선이 그대로 통한다
+    add_block('simulink/Discrete/Unit Delay', [ss '/' nm], ...
+              'Position',[240 700+(k-1)*90 315 740+(k-1)*90], ...
+              'SampleTime','Ts_ctrl', 'InitialCondition', dly{k,3});
+    add_block('simulink/Signal Routing/From', [ss '/Fr_' nm], ...
+              'Position',[110 709+(k-1)*90 180 731+(k-1)*90], 'GotoTag', ['s_' nm]);
+    add_line(ss, ['Fr_' nm '/1'], [nm '/1'], 'autorouting','on');
+end
+end
+
+% ---------------------------------------------------------------------
+function mk_state_out(ss, fcn, dly)
+%MK_STATE_OUT  상태 출력을 태그로 걸어 지연 블록이 받게 한다.
+%   상자 밖으로 나가지 않는 값이므로 출력 포트를 만들지 않는다.
+for k = 1:size(dly,1)
+    nm = dly{k,1};
+    add_block('simulink/Signal Routing/Goto', [ss '/Go_' nm], ...
+              'Position',[560 709+(k-1)*90 640 731+(k-1)*90], ...
+              'GotoTag', ['s_' nm], 'TagVisibility','local');
+    add_line(ss, sprintf('%s/%d', fcn, dly{k,2}), ['Go_' nm '/1'], 'autorouting','on');
+end
+end
+
+% =====================================================================
+% 1단 · DP 목표값 (스케줄 + 레퍼런스 모델)
 % =====================================================================
 function addDPRef(m, x, y)
     ss = [m '/DPRef'];
     add_block('built-in/Subsystem', ss, 'Position', [x y x+160 y+120]);
 
-    in = {'t','mode','tbl','eta0','pre','rpar'};
-    for k = 1:numel(in)
-        add_block('simulink/Sources/In1', [ss '/' in{k}], ...
-                  'Position',[40 60+(k-1)*70 75 90+(k-1)*70], 'Port', num2str(k));
-    end
+    in  = {'t','mode','tbl','eta0','pre','rpar'};
+    cfg = {'mode','dp_mode'; 'tbl','dp_step'; ...
+           'eta0','[dp_N0; dp_E0; dp_PSI0]'; ...
+           'rpar','[dp_ref_on; dp_vmax; tau_ref; Ts_ctrl]'};
+    dly = {'pre',2,'[dp_N0; dp_E0; dp_PSI0]'};
+    mk_inputs(ss, in, 0, cfg, dly, 't');
 
     setFcn(ss, 'Sched', [ ...
 'function [eta_d, snew, eta_raw] = Sched(t, mode, tbl, eta0, pre, rpar)'  newline ...
@@ -135,14 +221,15 @@ function addDPRef(m, x, y)
     set_param([ss '/Sched'],'Position',[180 70 360 480]);
 
     out = {'eta_d','snew','eta_raw'};
-    for k = 1:numel(out)
+    for k = [1 3]
         add_block('simulink/Sinks/Out1', [ss '/' out{k}], ...
-                  'Position',[440 100+(k-1)*90 475 130+(k-1)*90], 'Port', num2str(k));
+                  'Position',[440 100+(k-1)*90 475 130+(k-1)*90], 'Port', num2str(1+(k>1)));
         add_line(ss, sprintf('Sched/%d',k), [out{k} '/1'], 'autorouting','on');
     end
     for k = 1:numel(in)
         add_line(ss, [in{k} '/1'], sprintf('Sched/%d',k), 'autorouting','on');
     end
+    mk_state_out(ss, 'Sched', dly);
     Simulink.BlockDiagram.arrangeSystem(ss);
 end
 
@@ -153,11 +240,10 @@ function addWaveFilter(m, x, y)
     ss = [m '/WaveFilter'];
     add_block('built-in/Subsystem', ss, 'Position', [x y x+170 y+140]);
 
-    in = {'eta','nu','pre','par'};
-    for k = 1:numel(in)
-        add_block('simulink/Sources/In1', [ss '/' in{k}], ...
-                  'Position',[40 60+(k-1)*70 75 90+(k-1)*70], 'Port', num2str(k));
-    end
+    in  = {'eta','nu','pre','par'};
+    cfg = {'par','[filt_on; w_filt; Ts_ctrl]'};
+    dly = {'pre',3,'[0;0;0;0;0;0]'};
+    mk_inputs(ss, in, 2, cfg, dly);
 
     setFcn(ss, 'Filt', [ ...
 'function [eta_f, nu_f, snew] = Filt(eta, nu, pre, par)'                 newline ...
@@ -191,14 +277,15 @@ function addWaveFilter(m, x, y)
     set_param([ss '/Filt'],'Position',[220 70 400 330]);
 
     out = {'eta_f','nu_f','snew'};
-    for k = 1:numel(out)
+    for k = 1:2
         add_block('simulink/Sinks/Out1', [ss '/' out{k}], ...
-                  'Position',[500 80+(k-1)*90 535 110+(k-1)*90], 'Port', num2str(k));
+                  'Position',[440 100+(k-1)*90 475 130+(k-1)*90], 'Port', num2str(k));
         add_line(ss, sprintf('Filt/%d',k), [out{k} '/1'], 'autorouting','on');
     end
     for k = 1:numel(in)
         add_line(ss, [in{k} '/1'], sprintf('Filt/%d',k), 'autorouting','on');
     end
+    mk_state_out(ss, 'Filt', dly);
     Simulink.BlockDiagram.arrangeSystem(ss);
 end
 
@@ -209,11 +296,10 @@ function addDPCtrl(m, x, y)
     ss = [m '/DPCtrl'];
     add_block('built-in/Subsystem', ss, 'Position', [x y x+190 y+220]);
 
-    in = {'eta_d','eta','nu','Ipre','par'};
-    for k = 1:numel(in)
-        add_block('simulink/Sources/In1', [ss '/' in{k}], ...
-                  'Position',[40 60+(k-1)*70 75 90+(k-1)*70], 'Port', num2str(k));
-    end
+    in  = {'eta_d','eta','nu','Ipre','par'};
+    cfg = {'par','[diag(Kp_dp); diag(Kd_dp); diag(Ki_dp); i_max; Ts_ctrl]'};
+    dly = {'Ipre',2,'[0;0;0]'};
+    mk_inputs(ss, in, 3, cfg, dly);
 
     setFcn(ss, 'PID3', [ ...
 'function [tau, Inew, eta_e] = PID3(eta_d, eta, nu, Ipre, par)'          newline ...
@@ -255,14 +341,15 @@ function addDPCtrl(m, x, y)
     set_param([ss '/PID3'],'Position',[220 70 420 400]);
 
     out = {'tau','Inew','eta_e'};
-    for k = 1:numel(out)
+    for k = [1 3]
         add_block('simulink/Sinks/Out1', [ss '/' out{k}], ...
-                  'Position',[520 80+(k-1)*90 555 110+(k-1)*90], 'Port', num2str(k));
+                  'Position',[440 100+(k-1)*90 475 130+(k-1)*90], 'Port', num2str(1+(k>1)));
         add_line(ss, sprintf('PID3/%d',k), [out{k} '/1'], 'autorouting','on');
     end
     for k = 1:numel(in)
         add_line(ss, [in{k} '/1'], sprintf('PID3/%d',k), 'autorouting','on');
     end
+    mk_state_out(ss, 'PID3', dly);
     Simulink.BlockDiagram.arrangeSystem(ss);
 end
 
@@ -273,11 +360,9 @@ function addAlloc(m, x, y)
     ss = [m '/Alloc'];
     add_block('built-in/Subsystem', ss, 'Position', [x y x+190 y+180]);
 
-    in = {'tau','Tp','lim'};
-    for k = 1:numel(in)
-        add_block('simulink/Sources/In1', [ss '/' in{k}], ...
-                  'Position',[40 60+(k-1)*80 75 90+(k-1)*80], 'Port', num2str(k));
-    end
+    in  = {'tau','Tp','lim'};
+    cfg = {'Tp','T_pinv'; 'lim','[F_max; del_max; alloc_mode]'};
+    mk_inputs(ss, in, 1, cfg, {});
 
     setFcn(ss, 'Allocate', [ ...
 'function [Tcmd, Dcmd, sat] = Allocate(tau, Tp, lim)'                     newline ...
@@ -358,11 +443,10 @@ function addThrusters(m, x, y)
     ss = [m '/Thrusters'];
     add_block('built-in/Subsystem', ss, 'Position', [x y x+190 y+180]);
 
-    in = {'Tcmd','Dcmd','Tpre','Dpre','par'};
-    for k = 1:numel(in)
-        add_block('simulink/Sources/In1', [ss '/' in{k}], ...
-                  'Position',[40 60+(k-1)*70 75 90+(k-1)*70], 'Port', num2str(k));
-    end
+    in  = {'Tcmd','Dcmd','Tpre','Dpre','par'};
+    cfg = {'par','[Ts_ctrl; tau_n; tau_del; del_rate]'};
+    dly = {'Tpre',1,'[0;0]'; 'Dpre',2,'[0;0]'};
+    mk_inputs(ss, in, 2, cfg, dly);
 
     setFcn(ss, 'Act', [ ...
 'function [Tact, Dact, f] = Act(Tcmd, Dcmd, Tpre, Dpre, par)'            newline ...
@@ -397,12 +481,13 @@ function addThrusters(m, x, y)
     out = {'Tact','Dact','f'};
     for k = 1:numel(out)
         add_block('simulink/Sinks/Out1', [ss '/' out{k}], ...
-                  'Position',[520 80+(k-1)*90 555 110+(k-1)*90], 'Port', num2str(k));
+                  'Position',[440 100+(k-1)*90 475 130+(k-1)*90], 'Port', num2str(k));
         add_line(ss, sprintf('Act/%d',k), [out{k} '/1'], 'autorouting','on');
     end
     for k = 1:numel(in)
         add_line(ss, [in{k} '/1'], sprintf('Act/%d',k), 'autorouting','on');
     end
+    mk_state_out(ss, 'Act', dly);
     Simulink.BlockDiagram.arrangeSystem(ss);
 end
 
@@ -413,11 +498,20 @@ function addEnv(m, x, y)
     ss = [m '/Env'];
     add_block('built-in/Subsystem', ss, 'Position', [x y x+190 y+180]);
 
-    in = {'t','nu','psi','wpar','wvpar'};
-    for k = 1:numel(in)
-        add_block('simulink/Sources/In1', [ss '/' in{k}], ...
-                  'Position',[40 60+(k-1)*70 75 90+(k-1)*70], 'Port', num2str(k));
-    end
+    in  = {'t','nu','psi','wpar','wvpar'};
+    cfg = {'wpar','[wind_on; wind_speed; wind_dir; rho_air; A_Fw; A_Lw; L_oa; c_x; c_y; c_n]'; ...
+           'wvpar','[wave_on; k_wave; wave_dir; lw_arm; wave_par(:,1); wave_par(:,2); wave_par(:,3)]'};
+    mk_inputs(ss, in, {'nu'}, cfg, {}, 't');   % nu 만 신호. t 는 시계, psi 는 아래에서 만든다
+
+    %  psi 는 eta 에서 뽑는다. 최상위에 Selector 를 두면 태그 열을 관통한다
+    add_block('simulink/Sources/In1', [ss '/eta_in'], ...
+              'Position',[40 200 75 230], 'Port','2');
+    add_block('simulink/Signal Routing/Selector', [ss '/psi'], ...
+              'Position',[150 195 200 235]);
+    set_param([ss '/psi'],'NumberOfDimensions','1', ...
+              'IndexOptions','Index vector (dialog)','Indices','3', ...
+              'InputPortWidth','3');
+    add_line(ss, 'eta_in/1', 'psi/1', 'autorouting','on');
 
     setFcn(ss, 'Dist', [ ...
 'function [tau_env, tau_w, tau_v] = Dist(t, nu, psi, wpar, wvpar)'       newline ...
@@ -494,11 +588,9 @@ function addMotionModel(m, x, y)
     ss = [m '/MotionModel'];
     add_block('built-in/Subsystem', ss, 'Position', [x y x+200 y+180]);
 
-    in = {'f','tau_env','Te','par'};
-    for k = 1:numel(in)
-        add_block('simulink/Sources/In1', [ss '/' in{k}], ...
-                  'Position',[40 60+(k-1)*80 75 90+(k-1)*80], 'Port', num2str(k));
-    end
+    in  = {'f','tau_env','Te','par'};
+    cfg = {'Te','T_e'; 'par','plant_par'};
+    mk_inputs(ss, in, 2, cfg, {});
 
     setFcn(ss, 'EOM', [ ...
 'function [xdot, tau_thr] = EOM(s, f, tau_env, Te, p)'                   newline ...
@@ -558,7 +650,12 @@ function addMotionModel(m, x, y)
     end
     add_line(ss,'EOM/1','Integ/1','autorouting','on');
     add_line(ss,'Integ/1','States/1','autorouting','on');
-    add_line(ss,'Integ/1','EOM/1','autorouting','on');
+    % 상태 되먹임 — 화면을 가로지르는 대신 태그로 건너뛴다
+    drop_tag(ss, 'Integ', 1, 'x_state', 280);
+    b = port_xy(ss, 'EOM', 'Inport', 1);
+    add_block('simulink/Signal Routing/From', [ss '/Fr_x_state'], ...
+              'Position', [60 b(2)-11 130 b(2)+11], 'GotoTag','x_state');
+    add_line(ss, 'Fr_x_state/1', 'EOM/1');
     Simulink.BlockDiagram.arrangeSystem(ss);
 end
 
@@ -566,130 +663,60 @@ end
 % 실시간 그림
 % =====================================================================
 function addAnimate(m, x, y)
-    add_block('simulink/Sources/Digital Clock', [m '/Clk2'], ...
-              'Position', [x y+160 x+50 y+190], 'SampleTime','Ts_ctrl');
-    C(m,'Anim','animate', x, y+220);
-
-    F(m,'eta','v',   x, y);
-    F(m,'eta_d','v', x, y+40);
-    F(m,'Dact','v',  x, y+80);
-    F(m,'Tact','v',  x, y+120);
-
-    setFcn(m, 'Animate', [ ...
-'function ok = Animate(eta, eta_d, Dact, Tact, t, en)'                 newline ...
-'%#codegen'                                                            newline ...
-'coder.extrinsic(''W10_animate'');'                                    newline ...
-'ok = 1;'                                                              newline ...
-'if en > 0.5'                                                          newline ...
-'    W10_animate(eta, eta_d, Dact, Tact, t);'                          newline ...
-'end']);
-    set_param([m '/Animate'],'Position',[x+150 y x+300 y+230]);
-
-    add_block('simulink/Sinks/Terminator', [m '/AnimEnd'], ...
-              'Position', [x+350 y+100 x+375 y+125]);
-
-    add_line(m,'Fr_eta_v/1',  'Animate/1','autorouting','on');
-    add_line(m,'Fr_eta_d_v/1','Animate/2','autorouting','on');
-    add_line(m,'Fr_Dact_v/1', 'Animate/3','autorouting','on');
-    add_line(m,'Fr_Tact_v/1', 'Animate/4','autorouting','on');
-    add_line(m,'Clk2/1','Animate/5','autorouting','on');
-    add_line(m,'Anim/1','Animate/6','autorouting','on');
-    add_line(m,'Animate/1','AnimEnd/1','autorouting','on');
+% 실시간 그림 — 포트 없는 서브시스템 하나로 묶는다.
+    add_animate_box(m, {'eta','eta_d','Dact','Tact'}, 'W10_animate', '', [x y], 'Ts_ctrl');
 end
 
 % =====================================================================
 % 로깅
 % =====================================================================
 function addLogging(m, x, y)
+% 로깅 — 포트 없는 서브시스템 하나로 묶는다. W10_plot.m 이 이 변수들을 읽는다.
     sig = {'eta','eta_d','eta_raw','eta_f','nu','eta_e','tau_cmd','tau_thr','tau_env', ...
            'Tact','Dact','sat','U','beta'};
-    for k = 1:numel(sig)
-        yy = y + (k-1)*55;
-        F(m, sig{k}, 'log', x, yy+3);
-        b = [m '/log_' sig{k}];
-        add_block('simulink/Sinks/To Workspace', b, 'Position', [x+130 yy x+230 yy+30]);
-        set_param(b, 'VariableName', ['log_' sig{k}], ...
-                     'SaveFormat','Timeseries', 'SampleTime','Ts_ctrl');
-        add_line(m, ['Fr_' sig{k} '_log/1'], ['log_' sig{k} '/1'], 'autorouting','on');
-    end
+    add_logging_box(m, sig, sig, [x y], 'Ts_ctrl');
 end
 
 % =====================================================================
 % 앞단 배선 — 두 모델이 공유한다
+%   설정값과 상태 지연은 각 상자 안에 있다. 최상위에 남는 것은 신호뿐이다.
 % =====================================================================
 function wireFront(m)
-    % --- 목표값 ---
-    add_block('simulink/Sources/Digital Clock', [m '/Clk'], ...
-              'Position',[40 40 90 70], 'SampleTime','Ts_ctrl');
-    C(m,'DpMode','dp_mode', 40, 110);
-    C(m,'DpTbl', 'dp_step', 40, 170);
-    C(m,'Eta0',  '[dp_N0; dp_E0; dp_PSI0]', 40, 230);
-
-    C(m,'RefPar','[dp_ref_on; dp_vmax; tau_ref; Ts_ctrl]', 40, 290);
-    add_block('simulink/Discrete/Unit Delay', [m '/Rdly'], ...
-              'Position',[260 300 305 340], 'SampleTime','Ts_ctrl', ...
-              'InitialCondition','[dp_N0; dp_E0; dp_PSI0]');
-
+    % --- 1단 · 목표값 : 입력이 없다. 시계와 표가 상자 안에 있다 ----------
     addDPRef(m, 400, 60);
-    add_line(m,'Clk/1',   'DPRef/1','autorouting','on');
-    add_line(m,'DpMode/1','DPRef/2','autorouting','on');
-    add_line(m,'DpTbl/1', 'DPRef/3','autorouting','on');
-    add_line(m,'Eta0/1',  'DPRef/4','autorouting','on');
-    add_line(m,'Rdly/1',  'DPRef/5','autorouting','on');
-    add_line(m,'RefPar/1','DPRef/6','autorouting','on');
-    add_line(m,'DPRef/2','Rdly/1','autorouting','on');
     G(m,'eta_d',   620, 100);
     G(m,'eta_raw', 620, 160);
     add_line(m,'DPRef/1','Go_eta_d/1','autorouting','on');
-    add_line(m,'DPRef/3','Go_eta_raw/1','autorouting','on');
+    add_line(m,'DPRef/2','Go_eta_raw/1','autorouting','on');
 
-    % --- 파랑 필터 ---
+    % --- 1.5단 · 파랑 필터 ---------------------------------------------
     addWaveFilter(m, 300, 400);
     F(m,'eta','f', 200, 420);
     F(m,'nu','f',  200, 470);
-    add_block('simulink/Discrete/Unit Delay', [m '/Fdly'], ...
-              'Position',[300 640 345 680], 'SampleTime','Ts_ctrl', ...
-              'InitialCondition','[0;0;0;0;0;0]');
-    C(m,'FiltPar','[filt_on; w_filt; Ts_ctrl]', 180, 540);
     add_line(m,'Fr_eta_f/1','WaveFilter/1','autorouting','on');
     add_line(m,'Fr_nu_f/1', 'WaveFilter/2','autorouting','on');
-    add_line(m,'Fdly/1',    'WaveFilter/3','autorouting','on');
-    add_line(m,'FiltPar/1', 'WaveFilter/4','autorouting','on');
-    add_line(m,'WaveFilter/3','Fdly/1','autorouting','on');
     G(m,'eta_f', 520, 420);
     G(m,'nu_f',  520, 470);
     add_line(m,'WaveFilter/1','Go_eta_f/1','autorouting','on');
     add_line(m,'WaveFilter/2','Go_nu_f/1','autorouting','on');
 
-    % --- 제어기 ---
+    % --- 2단 · 제어기 ---------------------------------------------------
     addDPCtrl(m, 620, 60);
     F(m,'eta_d','c', 540, 80);
     F(m,'eta_f','c', 540, 140);
     F(m,'nu_f','c',  540, 200);
-    add_block('simulink/Discrete/Unit Delay', [m '/Idly'], ...
-              'Position',[620 400 665 440], 'SampleTime','Ts_ctrl', ...
-              'InitialCondition','[0;0;0]');
-    C(m,'DpPar','[diag(Kp_dp); diag(Kd_dp); diag(Ki_dp); i_max; Ts_ctrl]', 540, 300);
-
     add_line(m,'Fr_eta_d_c/1','DPCtrl/1','autorouting','on');
     add_line(m,'Fr_eta_f_c/1','DPCtrl/2','autorouting','on');
     add_line(m,'Fr_nu_f_c/1', 'DPCtrl/3','autorouting','on');
-    add_line(m,'Idly/1',      'DPCtrl/4','autorouting','on');
-    add_line(m,'DpPar/1',     'DPCtrl/5','autorouting','on');
-    add_line(m,'DPCtrl/2','Idly/1','autorouting','on');
     G(m,'tau_cmd', 860, 100);
     G(m,'eta_e',   860, 160);
     add_line(m,'DPCtrl/1','Go_tau_cmd/1','autorouting','on');
-    add_line(m,'DPCtrl/3','Go_eta_e/1','autorouting','on');
+    add_line(m,'DPCtrl/2','Go_eta_e/1','autorouting','on');
 
-    % --- 배분 ---
+    % --- 3단 · 추력배분 -------------------------------------------------
     addAlloc(m, 1020, 60);
     F(m,'tau_cmd','a', 940, 80);
-    C(m,'Tpinv','T_pinv', 940, 150);
-    C(m,'AlLim','[F_max; del_max; alloc_mode]', 940, 210);
     add_line(m,'Fr_tau_cmd_a/1','Alloc/1','autorouting','on');
-    add_line(m,'Tpinv/1','Alloc/2','autorouting','on');
-    add_line(m,'AlLim/1','Alloc/3','autorouting','on');
     G(m,'Tcmd', 1260, 100);
     G(m,'Dcmd', 1260, 160);
     G(m,'sat',  1260, 220);
@@ -697,25 +724,12 @@ function wireFront(m)
     add_line(m,'Alloc/2','Go_Dcmd/1','autorouting','on');
     add_line(m,'Alloc/3','Go_sat/1','autorouting','on');
 
-    % --- 추진기 ---
+    % --- 4단 · 추진기 ---------------------------------------------------
     addThrusters(m, 1420, 60);
     F(m,'Tcmd','t', 1340, 80);
     F(m,'Dcmd','t', 1340, 140);
-    add_block('simulink/Discrete/Unit Delay', [m '/Tdly'], ...
-              'Position',[1420 420 1465 460], 'SampleTime','Ts_ctrl', ...
-              'InitialCondition','[0;0]');
-    add_block('simulink/Discrete/Unit Delay', [m '/Ddly'], ...
-              'Position',[1420 490 1465 530], 'SampleTime','Ts_ctrl', ...
-              'InitialCondition','[0;0]');
-    C(m,'ActPar','[Ts_ctrl; tau_n; tau_del; del_rate]', 1340, 260);
-
     add_line(m,'Fr_Tcmd_t/1','Thrusters/1','autorouting','on');
     add_line(m,'Fr_Dcmd_t/1','Thrusters/2','autorouting','on');
-    add_line(m,'Tdly/1','Thrusters/3','autorouting','on');
-    add_line(m,'Ddly/1','Thrusters/4','autorouting','on');
-    add_line(m,'ActPar/1','Thrusters/5','autorouting','on');
-    add_line(m,'Thrusters/1','Tdly/1','autorouting','on');
-    add_line(m,'Thrusters/2','Ddly/1','autorouting','on');
     G(m,'Tact', 1680, 100);
     G(m,'Dact', 1680, 160);
     G(m,'fthr', 1680, 220);
@@ -723,9 +737,6 @@ function wireFront(m)
     add_line(m,'Thrusters/2','Go_Dact/1','autorouting','on');
     add_line(m,'Thrusters/3','Go_fthr/1','autorouting','on');
 end
-
-% =====================================================================
-% 오프라인 모델
 % =====================================================================
 function build_offline()
     m = 'W10_0_offline'; fresh(m);
@@ -733,32 +744,21 @@ function build_offline()
 
     wireFront(m);
 
-    % --- 외란 ---
+    % --- 외란 : 바람·파랑. 설정값은 상자 안에 있다 -----------------------
     addEnv(m, 1820, 460);
-    add_block('simulink/Sources/Digital Clock', [m '/Clk3'], ...
-              'Position',[1740 480 1790 510], 'SampleTime','Ts_ctrl');
     F(m,'nu','e',  1740, 540);
-    F(m,'psi','e', 1740, 600);
-    C(m,'WPar', '[wind_on; wind_speed; wind_dir; rho_air; A_Fw; A_Lw; L_oa; c_x; c_y; c_n]', 1700, 660);
-    C(m,'WvPar','[wave_on; k_wave; wave_dir; lw_arm; wave_par(:,1); wave_par(:,2); wave_par(:,3)]', 1700, 720);
-    add_line(m,'Clk3/1','Env/1','autorouting','on');
-    add_line(m,'Fr_nu_e/1','Env/2','autorouting','on');
-    add_line(m,'Fr_psi_e/1','Env/3','autorouting','on');
-    add_line(m,'WPar/1','Env/4','autorouting','on');
-    add_line(m,'WvPar/1','Env/5','autorouting','on');
+    F(m,'eta','e', 1740, 600);
+    add_line(m,'Fr_nu_e/1', 'Env/1','autorouting','on');
+    add_line(m,'Fr_eta_e/1','Env/2','autorouting','on');
     G(m,'tau_env', 2080, 500);
     add_line(m,'Env/1','Go_tau_env/1','autorouting','on');
 
-    % --- 운동모델 ---
+    % --- 운동모델 -------------------------------------------------------
     addMotionModel(m, 2200, 60);
     F(m,'fthr','p',   2110, 80);
     F(m,'tau_env','p',2110, 140);
-    C(m,'TeC','T_e', 2110, 200);
-    C(m,'PlPar','plant_par', 2110, 260);
     add_line(m,'Fr_fthr_p/1','MotionModel/1','autorouting','on');
     add_line(m,'Fr_tau_env_p/1','MotionModel/2','autorouting','on');
-    add_line(m,'TeC/1','MotionModel/3','autorouting','on');
-    add_line(m,'PlPar/1','MotionModel/4','autorouting','on');
 
     tags = {'eta','nu','U','beta','tau_thr'};
     for k = 1:numel(tags)
@@ -766,22 +766,12 @@ function build_offline()
         add_line(m, sprintf('MotionModel/%d',k), ['Go_' tags{k} '/1'], 'autorouting','on');
     end
 
-    % psi 만 따로 뽑아 외란 계산에 쓴다
-    F(m,'eta','s', 2470, 400);
-    add_block('simulink/Signal Routing/Selector', [m '/PsiSel'], ...
-              'Position',[2570 395 2620 435]);
-    set_param([m '/PsiSel'],'NumberOfDimensions','1', ...
-              'IndexOptions','Index vector (dialog)','Indices','3', ...
-              'InputPortWidth','3');
-    G(m,'psi', 2680, 400);
-    add_line(m,'Fr_eta_s/1','PsiSel/1','autorouting','on');
-    add_line(m,'PsiSel/1','Go_psi/1','autorouting','on');
 
     addAnimate(m, 2200, 560);
     addLogging(m, 2800, 60);
 
     note(m,'n1', ['W10 실습 A  —  오프라인 DP (Gazebo 불필요)' newline ...
-        'DPRef -> DPCtrl -> Alloc -> Thrusters -> MotionModel(+Env)' newline ...
+        'DPRef -> WaveFilter -> DPCtrl -> Alloc -> Thrusters -> MotionModel(+Env)' newline ...
         '후방 2기가 ±45° 로 돌아가므로 3자유도가 모두 제어된다.' newline ...
         '바람·파랑 외란은 이 모델에서만 넣을 수 있다.' newline ...
         '실행 전 >> W10_setup'], 40, -140);
@@ -789,8 +779,6 @@ function build_offline()
     save_system(m); close_system(m);
     fprintf('  W10_0_offline  생성\n');
 end
-
-% =====================================================================
 % VRX 모델
 % =====================================================================
 function build_vrx()
@@ -799,32 +787,11 @@ function build_vrx()
     setSolver(m, 'T_end');
 
     wireFront(m);
+    % --- 추력·각도 발행 : 네 토픽을 한 상자에 -----------------------------
+    addCmdPub(m, [1820 60]);
 
-    % --- 추력·각도 발행 ---
-    addPub(m, 'left',  'L', 1, 1820, 60);
-    addPub(m, 'right', 'R', 2, 1820, 320);
-
-    % --- 구독 + 항법 ---
-    add_block('ros2lib/Subscribe', [m '/OdomSub'], 'Position',[1820 700 1950 760]);
-    set_param([m '/OdomSub'], 'topicSource','Specify your own', ...
-        'topic','/wamv/sensors/position/ground_truth_odometry', ...
-        'messageType','nav_msgs/Odometry', 'sampleTime','Ts_ctrl');
-
-    add_block('simulink/Signal Routing/Bus Selector', [m '/Sel'], ...
-              'Position',[2010 680 2060 810]);
-    set_param([m '/Sel'], 'OutputSignals', ...
-        ['pose.pose.position.x,pose.pose.position.y,' ...
-         'pose.pose.orientation.x,pose.pose.orientation.y,' ...
-         'pose.pose.orientation.z,pose.pose.orientation.w,' ...
-         'twist.twist.linear.x,twist.twist.linear.y,twist.twist.angular.z']);
-    add_block('simulink/Sinks/Display', [m '/IsNew'], 'Position',[2010 620 2090 650]);
-    add_line(m,'OdomSub/1','IsNew/1','autorouting','on');
-    add_line(m,'OdomSub/2','Sel/1','autorouting','on');
-
-    C(m,'OrgN','origin_north', 2010, 870);
-    C(m,'OrgE','origin_east',  2010, 930);
-
-    setFcn(m, 'Nav', [ ...
+    % --- 구독 + 항법 : 한 상자에 -----------------------------------------
+    navCode = [ ...
 'function [eta, nu, U, beta] = Nav(ex, ey, qx, qy, qz, qw, bx, by, wz, orgN, orgE)' newline ...
 '%#codegen'                                                                 newline ...
 '% Gazebo/ROS uses ENU with a body frame of x-forward, y-LEFT, z-UP.'       newline ...
@@ -844,27 +811,24 @@ function build_vrx()
 'eta  = [pn; pe; psi];'                                                     newline ...
 'nu   = [u; v; r];'                                                         newline ...
 'U    = sqrt(u*u + v*v);'                                                   newline ...
-'beta = atan2(v, u);']);
-    set_param([m '/Nav'],'Position',[2180 670 2350 890]);
+'beta = atan2(v, u);'];
 
-    for k = 1:9
-        add_line(m, sprintf('Sel/%d',k), sprintf('Nav/%d',k), 'autorouting','on');
-    end
-    add_line(m,'OrgN/1','Nav/10','autorouting','on');
-    add_line(m,'OrgE/1','Nav/11','autorouting','on');
+    add_pose_subscriber(m, [2180 670], ...
+        '/wamv/sensors/position/ground_truth_odometry', 'Ts_ctrl', navCode, ...
+        {'eta','nu','U','beta'});
 
     tags = {'eta','nu','U','beta'};
     for k = 1:numel(tags)
         G(m, tags{k}, 2420, 680+(k-1)*45);
-        add_line(m, sprintf('Nav/%d',k), ['Go_' tags{k} '/1'], 'autorouting','on');
+        add_line(m, sprintf('PoseSubscriber/%d',k), ['Go_' tags{k} '/1'], 'autorouting','on');
     end
 
     % VRX 에는 외란 모델을 넣지 않는다 — 바람은 world 가 만든다
     C(m,'ZeroEnv','[0;0;0]', 2420, 900);
     G(m,'tau_env', 2560, 900);
     add_line(m,'ZeroEnv/1','Go_tau_env/1','autorouting','on');
-    C(m,'ZeroThr','[0;0;0]', 2420, 960);
-    G(m,'tau_thr', 2560, 960);
+    C(m,'ZeroThr','[0;0;0]', 2420, 1060);
+    G(m,'tau_thr', 2560, 1060);
     add_line(m,'ZeroThr/1','Go_tau_thr/1','autorouting','on');
 
     addAnimate(m, 2200, 1000);
@@ -881,46 +845,57 @@ function build_vrx()
     fprintf('  W10_1_vrx      생성\n');
 end
 
-function addPub(m, side, tag, idx, x, y)
-% 추력 1개 + 방위각 1개를 발행한다
-    for j = 1:2
-        if j == 1, what = 'thrust'; nm = ['T' tag]; src = 'Tact';
-        else,      what = 'pos';    nm = ['D' tag]; src = 'Dact'; end
-        yy = y + (j-1)*150;
+function addCmdPub(m, pos)
+% 추력·방위각 발행을 한 상자에. 입출력 포트가 없다 — 안에서 태그로 받는다.
+%
+%   좌·우 추진기마다 추력 하나와 방위각 하나, 모두 네 토픽을 발행한다.
+%   토픽 하나에 블록 네 개(Selector·Blank·Assign·Publish)가 필요하므로
+%   최상위에 펼치면 열여섯 블록이다. 그 열여섯이 알려 주는 것은
+%   "추력과 각도를 Gazebo 로 보낸다" 한 문장뿐이다.
+    s = add_subsys(m, 'CmdPublisher', [pos(1) pos(2) pos(1)+160 pos(2)+90], ...
+                   {}, {}, gnc_colour('ros'));
 
-        F(m, src, [nm '_s'], x-260, yy+20);
-        add_block('simulink/Signal Routing/Selector', [m '/Sel' nm], ...
-                  'Position',[x-150 yy+15 x-100 yy+55]);
-        set_param([m '/Sel' nm],'NumberOfDimensions','1', ...
-                  'IndexOptions','Index vector (dialog)','Indices', num2str(idx), ...
-                  'InputPortWidth','2');
+    side = {'left','right'};
+    tag  = {'L','R'};
+    for i = 1:2
+        for j = 1:2
+            if j == 1, what = 'thrust'; src = 'Tact'; else, what = 'pos'; src = 'Dact'; end
+            nm = [upper(what(1)) tag{i}];
+            y  = 100 + ((i-1)*2 + (j-1))*200;
 
-        add_block('ros2lib/Blank Message', [m '/Blank' nm], ...
-                  'Position',[x yy x+100 yy+40]);
-        set_param([m '/Blank' nm], 'entityType','std_msgs/Float64', ...
-                  'messageType','std_msgs/Float64', 'SampleTime','Ts_ctrl');
-        add_block('simulink/Signal Routing/Bus Assignment', [m '/Asg' nm], ...
-                  'Position',[x+160 yy x+220 yy+115]);
-        set_param([m '/Asg' nm], 'AssignedSignals','data');
-        add_block('ros2lib/Publish', [m '/Pub' nm], ...
-                  'Position',[x+290 yy+35 x+390 yy+75]);
-        set_param([m '/Pub' nm], 'topicSource','Specify your own', ...
-                  'topic', ['/wamv/thrusters/' side '/' what], ...
-                  'messageType','std_msgs/Float64');
+            add_block('simulink/Signal Routing/From', [s '/Fr_' nm], ...
+                      'Position',[60 y-11 130 y+11], 'GotoTag', src);
+            add_block('simulink/Signal Routing/Selector', [s '/Sel' nm], ...
+                      'Position',[200 y-20 250 y+20]);
+            set_param([s '/Sel' nm],'NumberOfDimensions','1', ...
+                      'IndexOptions','Index vector (dialog)','Indices', num2str(i), ...
+                      'InputPortWidth','2');
+            add_block('ros2lib/Blank Message', [s '/Blank' nm], ...
+                      'Position',[340 y-60 440 y-20]);
+            set_param([s '/Blank' nm], 'entityType','std_msgs/Float64', ...
+                      'messageType','std_msgs/Float64', 'SampleTime','Ts_ctrl');
+            add_block('simulink/Signal Routing/Bus Assignment', [s '/Asg' nm], ...
+                      'Position',[520 y-60 600 y+20]);
+            set_param([s '/Asg' nm], 'AssignedSignals','data');
+            add_block('ros2lib/Publish', [s '/Pub' nm], ...
+                      'Position',[700 y-40 820 y]);
+            set_param([s '/Pub' nm], 'topicSource','Specify your own', ...
+                      'topic', ['/wamv/thrusters/' side{i} '/' what], ...
+                      'messageType','std_msgs/Float64');
 
-        add_line(m, ['Fr_' src '_' nm '_s/1'], ['Sel' nm '/1'], 'autorouting','on');
-        add_line(m, ['Blank' nm '/1'], ['Asg' nm '/1'], 'autorouting','on');
-        if j == 1
-            add_line(m, ['Sel' nm '/1'], ['Asg' nm '/2'], 'autorouting','on');
-        else
-            % VRX 의 pos 는 Gazebo 의 ENU 선체계(x 전방, y 좌현) 기준 관절각이다.
-            % 이 모델의 delta 는 NED 선체계(y 우현) 기준이므로 부호가 반대다.
-            % 이 Gain 을 빼면 횡방향·요 되먹임의 부호가 뒤집혀 DP 가 발산한다.
-            add_block('simulink/Math Operations/Gain', [m '/Neg' nm], ...
-                      'Gain','-1', 'Position',[x-60 yy+15 x-20 yy+45]);
-            add_line(m, ['Sel' nm '/1'], ['Neg' nm '/1'], 'autorouting','on');
-            add_line(m, ['Neg' nm '/1'], ['Asg' nm '/2'], 'autorouting','on');
+            add_line(s, ['Fr_' nm '/1'],   ['Sel' nm '/1'],  'autorouting','on');
+            add_line(s, ['Blank' nm '/1'], ['Asg' nm '/1'],  'autorouting','on');
+            add_line(s, ['Sel' nm '/1'],   ['Asg' nm '/2'],  'autorouting','on');
+            add_line(s, ['Asg' nm '/1'],   ['Pub' nm '/1'],  'autorouting','on');
         end
-        add_line(m, ['Asg' nm '/1'],   ['Pub' nm '/1'], 'autorouting','on');
     end
+
+    add_block('built-in/Note', [s '/note'], 'Position', [60 900], 'Text', sprintf([ ...
+        '발행 — 이 상자는 입출력 포트가 없다. Tact·Dact 를 태그로 받는다.\n' ...
+        '  /wamv/thrusters/left/thrust    좌현 추력  [N]\n' ...
+        '  /wamv/thrusters/left/pos       좌현 방위각 [rad]\n' ...
+        '  /wamv/thrusters/right/thrust   우현 추력\n' ...
+        '  /wamv/thrusters/right/pos      우현 방위각\n' ...
+        '\n' ...
+        'Selector 가 2원소 벡터에서 자기 쪽 하나를 골라낸다.']));
 end

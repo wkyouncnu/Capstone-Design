@@ -1239,6 +1239,18 @@ Topic information: Topic: /wamv/sensors/imu/imu/data | Type: sensor_msgs/msg/Imu
                    Topic: /wamv/sensors/gps/gps/fix | Type: sensor_msgs/msg/NavSatFix | Count: 594
 ```
 
+- 다른 노트북 재측정 (2026-09-15, RTF 0.99, 20초 기록)
+
+```
+Bag size:          817.5 KiB
+Duration:          20.190490976s
+Messages:          2074
+Topic information: Topic: /wamv/sensors/gps/gps/fix | Type: sensor_msgs/msg/NavSatFix | Count: 345
+                   Topic: /wamv/sensors/imu/imu/data | Type: sensor_msgs/msg/Imu | Count: 1729
+```
+
+- IMU : GPS 비율은 두 환경 모두 **약 5 : 1**. 절대 개수는 RTF 에 따라 달라진다
+
 | 읽는 법 | 뜻 |
 |---|---|
 | `Storage id: sqlite3` | ROS 1 의 `.bag` 과 달리 **SQLite 데이터베이스**다 |

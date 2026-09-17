@@ -53,7 +53,7 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | 4 | [[W04_VRX_심화_모델구조와_토픽조사]] | 5장 | WAM-V URDF·Xacro · 센서 배치 · 토픽 전수조사 · Mapviz · **과제 월드와 채점** · **ros2 bag** |
 | 5 | [[W05_VSCode와_Claude_에이전트_첫_제어노드]] | 3장 · PDF 21쪽 | VS Code 설치 · Claude Code 연동 · 첫 제어 노드 · **MATLAB MCP** 연동 |
 | 6 전 | [[W06_0_Simulink_기초]] | 12장 · PDF 42쪽 | **Simulink 속성 입문 (3시간 x 2회)** · 1일차 블록·솔버·MATLAB Function·Subsystem·버스·PID·로깅 · 2일차 Mux·Unit Delay·Integrator·Switch·Enabled·Mask · **모델 24개 배포** |
-| 6 | [[W06_Simulink_ROS2_연동과_첫_제어기]] | 7장 · PDF 21쪽 | Simulink↔ROS 2 연동 · 직진·선회·헤딩·속도 제어 · **오프라인 WAM-V** · **모델 5개 배포** |
+| 6 | [[W06_Simulink_ROS2_연동과_첫_제어기]] | 10장 · PDF 41쪽 | **PID 입문 — 직접 조립·pseudo-derivative·안티와인드업** · Simulink↔ROS 2 연동 · 직진·선회·헤딩·속도 제어 · **오프라인 WAM-V** · **모델 8개 배포** |
 | 7 | [[W07_웨이포인트_유도_atan2와_LOS]] | 3장 · PDF 24쪽 | 웨이포인트 유도 atan2 vs LOS · 조류 실험 · **오프라인+VRX 모델 2개** |
 | 8 | [[W08_한점을_중심으로_도는_로이터링]] | PDF 20쪽 | 벡터필드 로이터링 · 방향·속도·반경 변경 · **오프라인+VRX 모델 2개** |
 | 9 | [[W09_Stateflow_미션_웨이포인트와_로이터링]] | PDF 18쪽 | **Stateflow 미션 FSM** · WP → 로이터 → WP · **오프라인+VRX 모델 2개** |

@@ -4,7 +4,19 @@
 <meta charset="utf-8">
 <title>강의자료</title>
 <style>
-  @page { size: A4; margin: 13mm 12mm 14mm 12mm; }
+  /* 쪽 번호는 @page 의 마진 박스로 넣는다. Chrome 이 지원하는 것을 확인했다
+     (2026-09-16: 카운터 없는 PDF 10255 bytes vs 있는 PDF 15258 bytes).
+     position:fixed 로 흉내 내면 모든 쪽에 같은 숫자가 찍힌다 — 쓰지 않는다. */
+  @page {
+    size: A4;
+    margin: 13mm 12mm 16mm 12mm;
+    @bottom-right {
+      content: counter(page) " / " counter(pages);
+      font-family: "Malgun Gothic", "맑은 고딕", sans-serif;
+      font-size: 8.6pt;
+      color: #94a3b8;
+    }
+  }
 
   html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body {
