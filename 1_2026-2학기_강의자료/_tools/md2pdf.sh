@@ -42,6 +42,12 @@ n_js=$(grep -n '<!--MARKEDJS-->'   "$TPL" | head -1 | cut -d: -f1)
 
 ok=0; fail=0
 
+#  임시 HTML 은 어떤 경로로 끝나도 지운다. Ctrl+C 나 백그라운드 종료로 중단되면
+#  루프 끝의 rm 까지 가지 못하고 .md2pdf_*.html 이 MD 폴더에 남는다.
+#  2026-09-18 에 그 파일 두 개가 자동 커밋에 쓸려 들어갔다.
+tmp=""
+trap 'if [ -n "$tmp" ]; then rm -f "$tmp"; fi' EXIT INT TERM
+
 for md in "$@"; do
   [ -f "$md" ] || { echo "  [건너뜀] $md — 파일 없음"; fail=$((fail+1)); continue; }
 
