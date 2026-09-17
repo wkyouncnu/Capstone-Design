@@ -1,0 +1,161 @@
+% assets/w03-latlon-ned.svg — 위도·경도가 무엇이고, 그 자리에 NED 가 어떻게 서는가
+%
+%   bash _tools/tikz2svg.sh assets/src/w03-latlon-ned.tex assets/w03-latlon-ned.svg
+%
+% 요점
+%   위도 phi 는 적도에서 북쪽으로 잰 각, 경도 lambda 는 본초자오선에서 동쪽으로 잰 각.
+%   그 점에 지구를 **접하는 평면**을 세우면 N-E-D 가 된다. D 는 지구 중심을 향한다.
+%
+% 투영
+%   정사영. 카메라가 경도 0 위, 적도에서 T 만큼 올라간 자리에 있다.
+%     screen_x = R cos(phi) sin(lambda)
+%     screen_y = R ( cos(T) sin(phi) - sin(T) cos(phi) cos(lambda) )
+%   3차원 단위벡터 (vx,vy,vz) 는
+%     screen_x = vy,   screen_y = -sin(T) vx + cos(T) vz
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\pgfmathsetmacro{\R}{28}        % 지구 반지름 [mm]
+\pgfmathsetmacro{\T}{22}        % 카메라 올라간 각 [deg]
+\pgfmathsetmacro{\pP}{34}       % 점 P 의 위도 [deg]
+\pgfmathsetmacro{\lP}{48}       % 점 P 의 경도 [deg]
+
+% 화면 좌표 — #1 = 위도, #2 = 경도
+\newcommand{\SX}[2]{\R*cos(#1)*sin(#2)}
+\newcommand{\SY}[2]{\R*(cos(\T)*sin(#1) - sin(\T)*cos(#1)*cos(#2))}
+
+% =========================== 지구 ==========================================
+\begin{scope}[shift={(0,0)}]
+
+  \fill[white] (0,0) circle (\R);
+  \draw[soft, line width=0.45pt] (0,0) circle (\R);
+
+  % ---- 적도 : 앞(실선) · 뒤(점선) ----
+  \draw[soft, line width=0.35pt, densely dotted, samples=80, domain=90:270, variable=\t]
+       plot ({\SX{0}{\t}}, {\SY{0}{\t}});
+  \draw[errc, line width=0.7pt, samples=80, domain=-90:90, variable=\t]
+       plot ({\SX{0}{\t}}, {\SY{0}{\t}});
+  \node[font=\scriptsize, errc, anchor=north] at ({\SX{0}{-62}}, {\SY{0}{-62}-1.5}) {적도};
+
+  % ---- 본초자오선 (경도 0) ----
+  \draw[guid, line width=0.7pt, samples=60, domain=-90:90, variable=\t]
+       plot ({\SX{\t}{0}}, {\SY{\t}{0}});
+  \node[font=\scriptsize, guid, anchor=east] at ({\SX{-62}{0}-1}, {\SY{-62}{0}}) {본초자오선};
+
+  % ---- P 의 자오선과 위도선 ----
+  \draw[soft, line width=0.45pt, samples=60, domain=-90:90, variable=\t]
+       plot ({\SX{\t}{\lP}}, {\SY{\t}{\lP}});
+  \draw[soft, line width=0.35pt, densely dashed, samples=70, domain=-90:90, variable=\t]
+       plot ({\SX{\pP}{\t}}, {\SY{\pP}{\t}});
+
+  % ---- 극축 ----
+  \draw[soft, line width=0.35pt, densely dashed]
+       ({\SX{-90}{0}}, {\SY{-90}{0}}) -- ({\SX{90}{0}}, {\SY{90}{0}});
+  \node[font=\scriptsize, soft, anchor=south] at ({\SX{90}{0}}, {\SY{90}{0}+1}) {북극};
+
+  % ---- 경도 각 : 적도를 따라 0 에서 lP 까지 ----
+  \draw[accent, line width=0.9pt, samples=40, domain=0:\lP, variable=\t]
+       plot ({0.52*\SX{0}{\t}}, {0.52*\SY{0}{\t}});
+  \node[font=\small, accent] at ({0.66*\SX{0}{26}}, {0.66*\SY{0}{26}-1}) {$\lambda$};
+
+  % ---- 위도 각 : P 의 자오선을 따라 적도에서 P 까지 ----
+  \draw[ctrl, line width=0.9pt, samples=40, domain=0:\pP, variable=\t]
+       plot ({0.52*\SX{\t}{\lP}}, {0.52*\SY{\t}{\lP}});
+  \node[font=\small, ctrl] at ({0.70*\SX{18}{\lP}+1.5}, {0.70*\SY{18}{\lP}}) {$\varphi$};
+
+  % ---- 중심에서 P 로, 그리고 적도 발까지 ----
+  \draw[soft, line width=0.35pt, densely dashed]
+       (0,0) -- ({\SX{\pP}{\lP}}, {\SY{\pP}{\lP}});
+  \draw[soft, line width=0.35pt, densely dashed]
+       (0,0) -- ({\SX{0}{\lP}}, {\SY{0}{\lP}});
+  \fill[ink] (0,0) circle (0.7);
+
+  % ---- 점 P ----
+  \fill[ink] ({\SX{\pP}{\lP}}, {\SY{\pP}{\lP}}) circle (1.1);
+  \node[font=\small, ink, anchor=south west]
+       at ({\SX{\pP}{\lP}+1.2}, {\SY{\pP}{\lP}+0.8}) {$P$};
+
+  \node[font=\small\bfseries, anchor=west] at (-\R,\R+12) {위도 $\varphi$ 와 경도 $\lambda$};
+  \node[note, anchor=west, text width=62mm] at (-\R,\R+6)
+       {\textcolor{ctrl}{\textbf{위도}} 는 적도에서 북쪽으로 잰 각,
+        \textcolor{accent}{\textbf{경도}} 는 본초자오선에서 동쪽으로 잰 각};
+\end{scope}
+
+% =========================== 접평면과 NED ==================================
+\begin{scope}[shift={(96,0)}]
+
+  \pgfmathsetmacro{\Rr}{22}
+  % P 의 3차원 단위벡터
+  \pgfmathsetmacro{\px}{cos(\pP)*cos(\lP)}
+  \pgfmathsetmacro{\py}{cos(\pP)*sin(\lP)}
+  \pgfmathsetmacro{\pz}{sin(\pP)}
+  % 북 : d(위치)/d(위도)
+  \pgfmathsetmacro{\nx}{-sin(\pP)*cos(\lP)}
+  \pgfmathsetmacro{\ny}{-sin(\pP)*sin(\lP)}
+  \pgfmathsetmacro{\nz}{cos(\pP)}
+  % 동 : d(위치)/d(경도)
+  \pgfmathsetmacro{\ex}{-sin(\lP)}
+  \pgfmathsetmacro{\ey}{cos(\lP)}
+  \pgfmathsetmacro{\ez}{0}
+  % 화면 투영
+  \pgfmathsetmacro{\NX}{\ny}                       \pgfmathsetmacro{\NY}{-sin(\T)*\nx + cos(\T)*\nz}
+  \pgfmathsetmacro{\EX}{\ey}                       \pgfmathsetmacro{\EY}{-sin(\T)*\ex + cos(\T)*\ez}
+  \pgfmathsetmacro{\DX}{-\py}                      \pgfmathsetmacro{\DY}{-(-sin(\T)*\px + cos(\T)*\pz)}
+
+  % 접평면 — 북·동 두 방향으로 펼친 사각형
+  \pgfmathsetmacro{\HW}{20}
+  \fill[guid!8]
+       ({ \HW*\NX + \HW*\EX}, { \HW*\NY + \HW*\EY}) --
+       ({ \HW*\NX - \HW*\EX}, { \HW*\NY - \HW*\EY}) --
+       ({-\HW*\NX - \HW*\EX}, {-\HW*\NY - \HW*\EY}) --
+       ({-\HW*\NX + \HW*\EX}, {-\HW*\NY + \HW*\EY}) -- cycle;
+  \draw[soft, line width=0.4pt]
+       ({ \HW*\NX + \HW*\EX}, { \HW*\NY + \HW*\EY}) --
+       ({ \HW*\NX - \HW*\EX}, { \HW*\NY - \HW*\EY}) --
+       ({-\HW*\NX - \HW*\EX}, {-\HW*\NY - \HW*\EY}) --
+       ({-\HW*\NX + \HW*\EX}, {-\HW*\NY + \HW*\EY}) -- cycle;
+  \node[note, anchor=west] at ({-\HW*\NX + \HW*\EX + 1}, {-\HW*\NY + \HW*\EY - 3})
+       {$P$ 에서 지구에 접하는 평면};
+
+  % NED 축
+  \draw[errc, line width=1.0pt, -{Stealth[length=4.5pt,width=3.5pt]}]
+       (0,0) -- ({\Rr*\NX}, {\Rr*\NY});
+  \node[font=\small, errc] at ({(\Rr+5)*\NX}, {(\Rr+5)*\NY}) {$N$};
+  \draw[errc, line width=1.0pt, -{Stealth[length=4.5pt,width=3.5pt]}]
+       (0,0) -- ({\Rr*\EX}, {\Rr*\EY});
+  \node[font=\small, errc] at ({(\Rr+5)*\EX}, {(\Rr+5)*\EY}) {$E$};
+  \draw[errc, line width=1.0pt, -{Stealth[length=4.5pt,width=3.5pt]}]
+       (0,0) -- ({0.8*\Rr*\DX}, {0.8*\Rr*\DY});
+  \node[font=\small, errc] at ({(0.8*\Rr+5)*\DX}, {(0.8*\Rr+5)*\DY}) {$D$};
+
+  \fill[ink] (0,0) circle (1.1);
+  \node[font=\small, ink, anchor=south east] at (-1.2,1.0) {$P$};
+
+  \node[font=\small\bfseries, anchor=west] at (-32,\R+12) {그 자리에 세우는 NED};
+  \node[note, anchor=west, text width=62mm] at (-32,\R+6)
+       {$N$ 은 자오선을 따라 북쪽, $E$ 는 위도선을 따라 동쪽,
+        $D$ 는 \textbf{지구 중심}을 향한다};
+
+  \node[note, anchor=west, text width=64mm] at (-32,-\R-4)
+       {배가 수 km 안에서만 움직이면 이 평면을 평평하다고 보아도 된다.
+        그것이 flat-earth 근사이며, 위경도 차이에 곡률반경을 곱해 미터로 바꾼다};
+\end{scope}
+
+% =========================== 변환식 ========================================
+\node[font=\small, anchor=west] at (-28,-\R-22)
+     {$\begin{aligned}
+        \Delta N &= (\varphi - \varphi_0)\,R_M, \qquad
+        \Delta E  = (\lambda - \lambda_0)\,R_N\cos\varphi_0, \qquad
+        \Delta D  = -(h - h_0)
+       \end{aligned}$};
+
+\node[note, anchor=west, text width=150mm] at (-28,-\R-32)
+     {$R_M$ 자오선 곡률반경, $R_N$ 묘유선 곡률반경. 경도 쪽에 $\cos\varphi_0$ 가 붙는 이유는
+      위도가 높아질수록 경도 1도의 실제 거리가 짧아지기 때문이다 — 극에서는 0 이 된다};
+
+\end{tikzpicture}
+\end{document}

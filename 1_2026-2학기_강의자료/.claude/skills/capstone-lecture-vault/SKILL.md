@@ -53,6 +53,23 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
    그 주차만 고치고 끝내지 않는다. 전수 조사 표를 먼저 만든다 → `references/vault-wide-update.md`
 7. **폴더명의 `[2026-2]` 대괄호** — PowerShell `-LiteralPath`, bash 는 `find -path "./[2025]*"` 대신
    `*ROS2_VRX_Gazebo_Simulink*` 로 우회한다.
+8. **만든 모델은 반드시 자료에 나온다.** `WNN_simulink/` 에 모델을 만들어 놓고
+   주차 MD 가 한 번도 언급하지 않으면, 학생에게는 **없는 것과 같다.**
+   모델마다 (1) 도면 그림 (2) 무엇을 보는 모델인지 (3) 실행 순서
+   (4) **실측 결과와 그것을 어떻게 확인하는가** 를 적는다.
+   3주차가 모델 셋을 만들어 놓고 한 절도 쓰지 않은 채 있었다 (2026-09-17 발견).
+
+> [!tip] 점검하는 법
+> 모델 이름이 그 주차 MD 어딘가에 나오는지만 본다. 파일 이름(`SB7_...`)과 주차
+> 폴더(`W06_0_simulink`)가 다를 수 있으므로 **폴더로** 주차를 찾는다.
+> ```bash
+> for f in 10-주차별-강의자료/*_simulink/*.slx; do
+>   n=$(basename "$f" .slx)
+>   w=$(basename "$(dirname "$f")" | sed 's/_simulink$//')
+>   grep -qls "$n" 10-주차별-강의자료/${w}*.md >/dev/null 2>&1 \
+>     || echo "자료에 없음: $n"
+> done
+> ```
 
 ---
 

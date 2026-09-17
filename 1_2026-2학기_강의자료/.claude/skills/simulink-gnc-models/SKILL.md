@@ -100,6 +100,26 @@ Simulink 모델을 **손으로 그리지 않는다.** `build_wXX_models.m` 하�
    관용구·색 이름표·지뢰는 **`references/subsystems.md`**
 5. **제어기는 독립 모듈 하나** — 아래
 
+### 사람이 누르는 입력 — Dashboard 버튼
+
+키보드 노드(`wamv_teleop_key` 등)에 대응하는 Simulink 판을 만들 때 쓴다.
+
+```matlab
+add_block('simulink_hmi_blocks/Push Button', [ss '/btn_fwd'], 'Position',[x y x+90 y+70]);
+info = Simulink.HMI.ParamSourceInfo;
+info.BlockPath = [ss '/c_fwd'];      % 묶을 블록
+info.ParamName = 'Value';            % 묶을 파라미터
+set_param([ss '/btn_fwd'], 'Binding', info, ...
+          'ButtonText','▲ 전진', 'OnValue','1', 'OffValue','0', ...
+          'ButtonType','Momentary');
+```
+
+- 라이브러리 이름은 **`simulink_hmi_blocks`** 다. `simulink/Dashboard` 로는 찾지 못한다
+- 버튼은 **신호가 아니라 파라미터**를 누른다. `Constant` 의 `Value` 에 묶는다
+- `Binding` 은 반드시 `Simulink.HMI.ParamSourceInfo` **객체**여야 한다. 핸들을 주면 거부된다
+- `Momentary` 는 누르는 동안만 `OnValue`. 떼면 저절로 0 이 되므로 "정지" 버튼이 필요 없다
+- **모델을 돌린 상태에서** 눌러야 반응한다
+
 ### 제어기는 서브시스템 하나로 (예외 없음)
 
 제어기 하나 = **서브시스템 하나**다. 밖에서는 그 상자와 포트 이름만 보인다.

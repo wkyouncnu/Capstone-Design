@@ -1,0 +1,111 @@
+% assets/w03-euler.svg — 오일러각 셋. 무엇이 어느 축을 도는가
+%
+%   bash _tools/tikz2svg.sh assets/src/w03-euler.tex assets/w03-euler.svg
+%
+% 요점
+%   오일러각은 "축 하나를 골라 그 축으로 돌리기" 를 세 번 한 것이다.
+%   선박에서는 x_b(선수) 둘레가 롤, y_b(우현) 둘레가 피치, z_b(아래) 둘레가 요.
+%
+% 투영 — 앞왼쪽 위에서 내려다본 3/4 시점. 오른손 좌표계 (x 앞, y 우현, z 아래)
+%   x_b -> (-0.75,  0.38)      y_b -> ( 0.90,  0.30)      z_b -> ( 0.00, -0.95)
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\pgfmathsetmacro{\S}{1.7}                    % 1 단위 = 1.7 mm
+% 투영 — #1 = x(앞), #2 = y(우현), #3 = z(아래)
+\newcommand{\PX}[3]{\S*(-0.75*#1 + 0.90*#2 + 0.00*#3)}
+\newcommand{\PY}[3]{\S*( 0.38*#1 + 0.30*#2 - 0.95*#3)}
+
+% ---------------------------------------------------------------------------
+% \hull  선체 — 갑판 오각형. 선수가 +x
+% ---------------------------------------------------------------------------
+\newcommand{\hull}{%
+  \draw[ink, line width=0.5pt, fill=white, fill opacity=0.9]
+       ({\PX{9}{0}{0}},{\PY{9}{0}{0}}) --
+       ({\PX{4}{4}{0}},{\PY{4}{4}{0}}) --
+       ({\PX{-6}{4}{0}},{\PY{-6}{4}{0}}) --
+       ({\PX{-6}{-4}{0}},{\PY{-6}{-4}{0}}) --
+       ({\PX{4}{-4}{0}},{\PY{4}{-4}{0}}) -- cycle;}
+
+% ---------------------------------------------------------------------------
+% \axes  몸체 3축
+% ---------------------------------------------------------------------------
+\newcommand{\axes}[1]{%
+  \draw[#1, line width=0.45pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+       (0,0) -- ({\PX{14}{0}{0}},{\PY{14}{0}{0}});
+  \node[font=\scriptsize, #1] at ({\PX{17}{0}{0}},{\PY{17}{0}{0}}) {$x_b$};
+  \draw[#1, line width=0.45pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+       (0,0) -- ({\PX{0}{11}{0}},{\PY{0}{11}{0}});
+  \node[font=\scriptsize, #1] at ({\PX{0}{14}{0}},{\PY{0}{14}{0}}) {$y_b$};
+  \draw[#1, line width=0.45pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+       (0,0) -- ({\PX{0}{0}{10}},{\PY{0}{0}{10}});
+  \node[font=\scriptsize, #1] at ({\PX{0}{0}{13}},{\PY{0}{0}{13}}) {$z_b$};}
+
+% ---------------------------------------------------------------------------
+% \panel{x}{y}{제목}{각 기호}{설명}{강조축 0=x 1=y 2=z}
+% ---------------------------------------------------------------------------
+\newcommand{\panel}[6]{%
+\begin{scope}[shift={(#1,#2)}]
+  \hull
+  \axes{soft}
+  % 도는 축만 진하게 다시 긋는다
+  \ifnum#6=0
+    \draw[ctrl, line width=1.1pt, -{Stealth[length=4pt,width=3pt]}]
+         (0,0) -- ({\PX{14}{0}{0}},{\PY{14}{0}{0}});
+    \draw[ctrl, line width=0.8pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+         ({\PX{7}{5}{0}},{\PY{7}{5}{0}})
+         .. controls ({\PX{7}{5}{-4}},{\PY{7}{5}{-4}}) and ({\PX{7}{-2}{-6}},{\PY{7}{-2}{-6}})
+         .. ({\PX{7}{-5}{-2}},{\PY{7}{-5}{-2}});
+  \fi
+  \ifnum#6=1
+    \draw[ctrl, line width=1.1pt, -{Stealth[length=4pt,width=3pt]}]
+         (0,0) -- ({\PX{0}{11}{0}},{\PY{0}{11}{0}});
+    \draw[ctrl, line width=0.8pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+         ({\PX{7}{5}{0}},{\PY{7}{5}{0}})
+         .. controls ({\PX{9}{5}{-4}},{\PY{9}{5}{-4}}) and ({\PX{2}{5}{-7}},{\PY{2}{5}{-7}})
+         .. ({\PX{-4}{5}{-4}},{\PY{-4}{5}{-4}});
+  \fi
+  \ifnum#6=2
+    \draw[ctrl, line width=1.1pt, -{Stealth[length=4pt,width=3pt]}]
+         (0,0) -- ({\PX{0}{0}{10}},{\PY{0}{0}{10}});
+    \draw[ctrl, line width=0.8pt, -{Stealth[length=3.5pt,width=2.5pt]}]
+         ({\PX{10}{4}{0}},{\PY{10}{4}{0}})
+         .. controls ({\PX{6}{9}{0}},{\PY{6}{9}{0}}) and ({\PX{-2}{10}{0}},{\PY{-2}{10}{0}})
+         .. ({\PX{-7}{7}{0}},{\PY{-7}{7}{0}});
+  \fi
+  \node[font=\small\bfseries, anchor=west] at (-20,26) {#3};
+  \node[font=\small, ctrl, anchor=west] at (-20,20.5) {#4};
+  \node[note, anchor=west, text width=44mm] at (-20,-19) {#5};
+\end{scope}}
+
+\panel{0}{0}{롤 (Roll)}{$\phi$ — $x_b$ 둘레}
+  {좌우로 기울어짐. 파도를 옆에서 맞으면 커진다}{0}
+
+\panel{62}{0}{피치 (Pitch)}{$\theta$ — $y_b$ 둘레}
+  {앞뒤로 기울어짐. 뱃머리가 들렸다 잠겼다 한다}{1}
+
+\panel{124}{0}{요 (Yaw)}{$\psi$ — $z_b$ 둘레}
+  {뱃머리 방향이 돌아감. \textbf{선수각}이 이것이다}{2}
+
+% =========================== 정리 ==========================================
+\node[font=\small\bfseries, anchor=west] at (-20,-32) {세 번 돌린다 — 순서가 곧 정의다};
+
+\node[font=\small, anchor=west] at (-20,-42)
+     {$\mathbf{R}(\phi,\theta,\psi) \;=\; \mathbf{R}_z(\psi)\,\mathbf{R}_y(\theta)\,\mathbf{R}_x(\phi)$};
+
+\node[note, anchor=west, text width=74mm] at (56,-38)
+     {오른쪽부터 읽는다 — 롤, 피치, 요 순서로 돌린다. 순서를 바꾸면 \textbf{다른 자세}가
+      되므로, 오일러각은 "세 숫자" 가 아니라 "세 숫자와 순서" 다.
+      항공·선박은 $z$-$y$-$x$ (요-피치-롤) 를 쓴다};
+
+\node[wnote, anchor=west, text width=150mm] at (-20,-54)
+     {피치가 $\pm 90^{\circ}$ 에 닿으면 롤 축과 요 축이 겹쳐 자유도 하나를 잃는다
+      (\textbf{짐벌락}). 수상선은 피치가 몇 도를 넘지 않아 실무에서 만나지 않지만,
+      저장·전송에는 이 문제가 없는 쿼터니언을 쓴다};
+
+\end{tikzpicture}
+\end{document}

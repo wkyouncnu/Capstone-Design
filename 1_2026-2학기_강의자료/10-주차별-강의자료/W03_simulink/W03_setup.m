@@ -68,6 +68,14 @@ T_end = 30;        % [s]
 animate       = 1;
 animate_every = 0.5;
 
+%  4단계 버튼 조종 — 버튼 하나를 누를 때 나가는 추력 [N]
+%  추진기 한 대의 한계가 250 N 이므로 그보다 낮게 잡는다. 전진과 선회를 함께
+%  누르면 한쪽이 합쳐져 한계를 넘으므로, Mix 안에서 다시 한 번 자른다.
+teleop_thrust = 200;
+
+%  버튼으로 몰아 보려면 30 초는 짧다. 4단계를 돌릴 때만 길게 잡는다.
+T_end_teleop = 300;   % [s]
+
 fprintf(['W03_setup 완료 — 기준점 (%.6f, %.6f), 시나리오 %d ' ...
          '(좌 %+.0f N / 우 %+.0f N), ROS_DOMAIN_ID=%s\n'], ...
         lat0, lon0, scenario, thrust_left, thrust_right, ros_domain_id);

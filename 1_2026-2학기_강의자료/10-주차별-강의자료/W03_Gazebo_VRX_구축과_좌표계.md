@@ -327,6 +327,29 @@ $$
 
 ### 위경도를 미터로 — LLA → NED
 
+![위도·경도와 NED](../assets/w03-latlon-ned.svg)
+
+**위도 $\varphi$ 와 경도 $\lambda$ 가 무엇인가**
+
+- 지구를 구로 보고, 중심에서 그 점을 향해 그은 선이 만드는 **두 각**이다
+- **위도** — 적도면에서 북쪽으로 잰 각. 적도가 $0^{\circ}$, 북극이 $+90^{\circ}$, 남극이 $-90^{\circ}$
+- **경도** — 영국 그리니치를 지나는 **본초자오선**에서 동쪽으로 잰 각. $-180^{\circ} \sim +180^{\circ}$
+- 본 과목의 기준점은 남반구라 위도가 **음수**다 ($-33.72^{\circ}$)
+
+**그 자리에 NED 를 세운다**
+
+- 그 점에서 지구에 **접하는 평면**을 하나 놓는다
+- $N$ — 자오선을 따라 북쪽. $E$ — 위도선을 따라 동쪽. $D$ — **지구 중심** 방향
+- 배가 수 km 안에서만 움직이면 이 평면을 평평하다고 보아도 된다
+
+> [!important] 왜 경도에만 $\cos\varphi$ 가 붙는가
+> 자오선(남북 방향)은 어느 위도에서나 같은 큰 원이다. 그래서 위도 1도의 거리는
+> 어디서나 약 111 km 로 거의 같다.
+>
+> 위도선(동서 방향)은 극으로 갈수록 **작아지는 원**이다. 그 반지름이
+> $R\cos\varphi$ 이므로 경도 1도의 거리도 $\cos\varphi$ 배로 줄어든다.
+> 적도에서 111 km 인 것이 위도 $60^{\circ}$ 에서는 절반, 극에서는 0 이 된다.
+
 - GPS는 위도 · 경도 · 고도(LLA)를 줌
 - 제어기는 미터 단위 지역 좌표가 필요
 - **Flat-Earth 근사** (수 km 이내에서 유효)
@@ -363,31 +386,93 @@ lla0 = [-33.72276870341191, 150.67399057896623, 1.183941401541233]
 
 ### ① 오일러각 — 사람이 읽기 좋음
 
-- `(φ, θ, ψ)` = (roll, pitch, yaw)
-- 선박 · 항공은 **Z-Y-X 순서** (yaw → pitch → roll)
-- 장점: 직관적. "선수각 30도" 하면 바로 이해됨
-- 단점: **짐벌락**
+![오일러각 세 가지](../assets/w03-euler.svg)
+
+오일러각은 **축 하나를 골라 그 축으로 돌리기**를 세 번 한 것이다.
+
+| 각 | 기호 | 도는 축 | 배에서 보이는 모습 |
+|---|---|---|---|
+| 롤 Roll | $\phi$ | $x_b$ (선수) | 좌우로 기울어짐 |
+| 피치 Pitch | $\theta$ | $y_b$ (우현) | 뱃머리가 들렸다 잠겼다 |
+| 요 Yaw | $\psi$ | $z_b$ (아래) | 뱃머리 방향이 돌아감 — **선수각** |
+
+**순서가 곧 정의다.** 선박 · 항공은 $z$-$y$-$x$ 순서를 쓴다.
+
+$$
+\mathbf{R}(\phi,\theta,\psi) \;=\; \mathbf{R}_z(\psi)\,\mathbf{R}_y(\theta)\,\mathbf{R}_x(\phi)
+$$
+
+- 오른쪽부터 읽는다 — **롤 → 피치 → 요** 순서로 돌린다
+- 순서를 바꾸면 **다른 자세**가 된다. 오일러각은 "세 숫자"가 아니라 "세 숫자와 순서"다
+- 각 축의 회전행렬
+
+$$
+\mathbf{R}_x(\phi) =
+\begin{bmatrix} 1 & 0 & 0 \\ 0 & \cos\phi & -\sin\phi \\ 0 & \sin\phi & \cos\phi \end{bmatrix},
+\quad
+\mathbf{R}_y(\theta) =
+\begin{bmatrix} \cos\theta & 0 & \sin\theta \\ 0 & 1 & 0 \\ -\sin\theta & 0 & \cos\theta \end{bmatrix},
+\quad
+\mathbf{R}_z(\psi) =
+\begin{bmatrix} \cos\psi & -\sin\psi & 0 \\ \sin\psi & \cos\psi & 0 \\ 0 & 0 & 1 \end{bmatrix}
+$$
 
 ### 짐벌락이란
 
-- pitch가 ±90도가 되면 roll 축과 yaw 축이 겹침
-- 자유도 하나를 잃고, 변환식의 분모가 0이 되어 값이 튐
+- 피치가 $\pm 90^{\circ}$ 가 되면 롤 축과 요 축이 겹침
+- 자유도 하나를 잃고, 변환식이 불안정해짐
 
-```
-roll  = atan2( 2(wx + yz), 1 - 2(x^2 + y^2) )
-pitch = asin ( 2(wy - zx) )                      <- 이 값이 ±1에 가까워지면
-yaw   = atan2( 2(wz + xy), 1 - 2(y^2 + z^2) )    <- roll 과 yaw 가 불안정해짐
-```
-
-> [!note] 수상선은 pitch가 ±90도가 될 일이 없음
+> [!note] 수상선은 피치가 ±90도가 될 일이 없음
 > 그러면 배가 뒤집힌 것임. 그래서 실무상 오일러각으로 다뤄도 됨.
 > 다만 **저장과 전송은 쿼터니언**이 표준이고, ROS 메시지도 전부 쿼터니언임.
 
 ### ② 쿼터니언 — 컴퓨터가 좋아함
 
-- `q = (w, x, y, z)`, 크기가 1인 4개 숫자
-- 장점: 짐벌락 없음, 계산 효율적
-- 단점: 값만 봐서는 자세를 알 수 없음
+쿼터니언은 **"어느 축으로, 얼마나 돌렸는가"** 를 네 숫자로 적은 것이다.
+회전축 단위벡터를 $\mathbf{n} = (n_x, n_y, n_z)$, 회전각을 $\alpha$ 라 하면
+
+$$
+q \;=\; \Bigl(\underbrace{\cos\tfrac{\alpha}{2}}_{w},\;
+\underbrace{n_x \sin\tfrac{\alpha}{2}}_{x},\;
+\underbrace{n_y \sin\tfrac{\alpha}{2}}_{y},\;
+\underbrace{n_z \sin\tfrac{\alpha}{2}}_{z}\Bigr),
+\qquad w^2 + x^2 + y^2 + z^2 = 1
+$$
+
+- 각을 **반으로** 나누어 넣는 것이 특징이다. 회전을 두 번 겹쳐 적용하는 대수 구조에서 나온다
+- 크기가 항상 1 이다. 수치 오차로 1 에서 벗어나면 **정규화**한다
+- $q$ 와 $-q$ 는 **같은 자세**다. 부호가 뒤집혀 있어도 틀린 것이 아니다
+
+간단한 예 — 요만 $\psi$ 만큼 돌린 경우 (수상선이 거의 이 경우다)
+
+$$
+\mathbf{n} = (0,\,0,\,1) \quad\Longrightarrow\quad
+q = \bigl(\cos\tfrac{\psi}{2},\; 0,\; 0,\; \sin\tfrac{\psi}{2}\bigr)
+$$
+
+**쿼터니언 → 오일러각**
+
+$$
+\begin{aligned}
+\phi   &= \operatorname{atan2}\bigl(2(wx + yz),\; 1 - 2(x^2 + y^2)\bigr) \\
+\theta &= \arcsin\bigl(2(wy - zx)\bigr)
+          &&\leftarrow \text{이 값이 } \pm 1 \text{ 에 가까우면 짐벌락} \\
+\psi   &= \operatorname{atan2}\bigl(2(wz + xy),\; 1 - 2(y^2 + z^2)\bigr)
+\end{aligned}
+$$
+
+**오일러각 → 쿼터니언**
+
+$$
+\begin{aligned}
+w &= c_\phi c_\theta c_\psi + s_\phi s_\theta s_\psi, &\qquad
+x &= s_\phi c_\theta c_\psi - c_\phi s_\theta s_\psi \\
+y &= c_\phi s_\theta c_\psi + s_\phi c_\theta s_\psi, &\qquad
+z &= c_\phi c_\theta s_\psi - s_\phi s_\theta c_\psi
+\end{aligned}
+$$
+
+여기서 $c_\phi = \cos\tfrac{\phi}{2}$, $s_\phi = \sin\tfrac{\phi}{2}$ 이며 $\theta, \psi$ 도 같다.
 
 > [!caution] 순서 관례가 두 가지임
 > - ROS · Gazebo: `(x, y, z, w)` — **w가 마지막**
@@ -396,18 +481,41 @@ yaw   = atan2( 2(wz + xy), 1 - 2(y^2 + z^2) )    <- roll 과 yaw 가 불안정�
 > 이 불일치로 인한 버그가 매년 나옴.
 > 변환 코드를 짤 때 **반드시 주석으로 순서를 명시**할 것.
 
+> [!tip] 본 과목에서 실제로 쓰는 것은 요 하나뿐이다
+> 수평면 3자유도만 다루므로 $\phi \approx \theta \approx 0$ 이다. 그래서 위의 긴 식
+> 대신 **요만 뽑는 한 줄**을 쓴다. 3주차 Simulink 모델과 6주차 `Quat2Yaw` 가 이것이다.
+>
+> $$
+> \psi_{\text{ENU}} = \operatorname{atan2}\bigl(2(wz + xy),\; 1 - 2(y^2 + z^2)\bigr)
+> $$
+
 ### ③ 회전행렬 (DCM)
 
-- 3×3 행렬. 벡터를 한 좌표계에서 다른 좌표계로 옮김
-- 수평면 3자유도에서 Body → NED
+- $3\times3$ 행렬. 벡터를 한 좌표계에서 다른 좌표계로 옮김
+- 수평면 3자유도에서 Body $\to$ NED
 
-```
-        [ cos ψ   -sin ψ   0 ]
-J(ψ) =  [ sin ψ    cos ψ   0 ]
-        [   0        0     1 ]
+$$
+\mathbf{J}(\psi) =
+\begin{bmatrix}
+\cos\psi & -\sin\psi & 0 \\
+\sin\psi & \cos\psi & 0 \\
+0 & 0 & 1
+\end{bmatrix},
+\qquad
+\begin{bmatrix} \dot{x} \\ \dot{y} \\ \dot{\psi} \end{bmatrix}
+= \mathbf{J}(\psi)
+\begin{bmatrix} u \\ v \\ r \end{bmatrix}
+$$
 
-[ẋ, ẏ, ψ̇] = J(ψ) x [u, v, r]
-```
+- 첫 두 줄을 풀어 쓰면 1-5 에서 본 그 식이다
+
+$$
+\dot{x} = V_N = u\cos\psi - v\sin\psi, \qquad
+\dot{y} = V_E = u\sin\psi + v\cos\psi
+$$
+
+- $\mathbf{J}$ 는 **직교행렬**이라 역변환이 전치다 — $\mathbf{J}^{-1} = \mathbf{J}^{\mathsf T}$.
+  NED 속도에서 몸체 속도로 돌아올 때 역행렬을 계산할 필요가 없다
 
 ### 정리
 
@@ -1199,6 +1307,201 @@ rviz2
 
 ---
 
+# 3부 · Simulink — 좌표 변환을 눈으로 확인한다
+
+1부에서 쓴 변환식을 **블록으로 만들어 돌려 본다.** 모델 네 개가 한 단계씩 올라간다.
+
+```matlab
+>> W03_setup            % 기준점 · 시나리오 · 샘플링
+>> build_w03_models     % 모델 네 개를 다시 만든다 (깨졌을 때)
+```
+
+| 모델 | 무엇을 보는가 | VRX 필요 |
+|---|---|---|
+| `W03_1_frame_check` | 변환식이 맞는지 **숫자 하나로** 확인 | 필요 없음 |
+| `W03_2_vrx_nav` | 실제 센서를 받아 NED 로 바꾼다 | 필요 |
+| `W03_3_vrx_drive` | 추력을 주고 **부호**를 확인한다 | 필요 |
+| `W03_4_teleop` | **버튼으로 몰면서** 궤적과 상태를 함께 본다 | 필요 |
+
+---
+
+## 3-1. `W03_1_frame_check` — VRX 없이 변환식만 검산
+
+![1단계 모델](W03_simulink/img/W03_1_frame_check.png)
+
+- 상수 열 개(샘플 위경도·고도, 쿼터니언, 기준점)를 `FrameConv` 에 넣는다
+- 출력은 `N`, `E`, `D`, `yaw_enu`, `psi` 다섯 개
+- **ROS 도 Gazebo 도 필요 없다.** 식이 맞는지 보는 것이 전부다
+
+### 실행
+
+```matlab
+>> W03_setup
+>> sim('W03_1_frame_check')
+```
+
+### 실측 결과
+
+| 값 | 결과 | 어떻게 확인하는가 |
+|---|---|---|
+| `N` | **37.955** m | 위도가 $3.42\times10^{-4}$ 도 북쪽 → $\times R_M$ |
+| `E` | **−0.323** m | 경도가 거의 같으므로 0 에 가깝다 |
+| `D` | **−0.064** m | 고도가 기준보다 **높으므로 음수** |
+| `yaw_enu` | **1.0001** rad = 57.30° | 쿼터니언에서 뽑은 ENU 방위 |
+| `psi` | **0.5707** rad = 32.70° | $90^{\circ} - 57.30^{\circ} = 32.70^{\circ}$ |
+
+> [!important] 이 표의 마지막 두 줄이 이 모델의 전부다
+> $\psi_{\text{NED}} = 90^{\circ} - \psi_{\text{ENU}}$ 가 **숫자로** 맞는지 본다.
+> 57.30 + 32.70 = 90.00 이 되면 변환이 맞은 것이다.
+> 손으로 계산해 보고 화면의 `Display` 와 맞춰 볼 것.
+
+> [!caution] `D` 가 음수인 것이 정상이다
+> NED 의 `D` 는 **아래**가 양수다. 배가 기준 고도보다 위에 있으면 `D < 0` 이다.
+> 부호를 바꿔 쓰면 10주차 DP 에서 깊이 방향이 뒤집힌다.
+
+### 해 볼 것
+
+| 시도 | 관찰 |
+|---|---|
+| `W03_setup` 의 `lat_s` 를 기준점과 같게 | `N` 이 0 이 되는가 |
+| `lon_s` 를 $+10^{-4}$ 도 늘림 | `E` 가 몇 미터 늘어나는가. 위도 쪽과 비교 |
+| `qz_s`, `qw_s` 를 $(0, 1)$ 로 | `yaw_enu` = 0, `psi` = 90° 가 되는가 |
+
+---
+
+## 3-2. `W03_2_vrx_nav` — 실제 센서를 NED 로
+
+![2단계 모델](W03_simulink/img/W03_2_vrx_nav.png)
+
+- `SensorSubscriber` 가 GPS(`NavSatFix`)와 IMU(`Imu`)를 받는다
+- `Nav` 가 1부의 변환식을 그대로 적용해 `N`, `E`, `psi`, `r` 을 낸다
+- `Animate` 가 NED 평면에 항적을 실시간으로 그린다
+
+> [!important] `RxLatch` 가 있는 이유
+> `Subscribe` 블록은 첫 메시지가 오기 **전에도** 값을 낸다 — 전부 0 이다.
+> 그런데 위도 0, 경도 0 은 기니만의 실제 좌표라서, 값만 보고는 "아직 안 왔다"를
+> 구별할 수 없다. 그래서 `IsNew` 플래그를 걸어 두고 `valid` 로 내보낸다.
+
+### 실행 순서
+
+```bash
+# 터미널 1 — VRX
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
+```
+
+```matlab
+% MATLAB
+>> W03_setup
+>> open_system('W03_2_vrx_nav')      % Run 을 누른다
+```
+
+- `valid` 가 1 이 되어야 값이 의미가 있다. 0 이면 토픽이 오지 않는 것이다
+- 배가 가만히 있으면 `N`, `E` 가 거의 변하지 않는다. 2-5 절 명령으로 밀어 본다
+
+---
+
+## 3-3. `W03_3_vrx_drive` — 추력을 주고 부호를 확인한다
+
+![3단계 모델](W03_simulink/img/W03_3_vrx_drive.png)
+
+- `Thrusters` 가 `/wamv/thrusters/{left,right}/thrust` 로 발행한다
+- 추력은 `W03_setup` 의 `scenario` 로 고른다
+
+| `scenario` | 좌 | 우 | 기대 |
+|---|---|---|---|
+| 1 | +200 N | +200 N | 직진. `psi` 가 거의 안 변함 |
+| 2 | −200 N | +200 N | **좌선회.** `psi` 가 줄고 `r` 이 음수 |
+
+> [!important] 이 모델의 목적은 속도가 아니라 **부호**다
+> 좌선회에서 `psi_NED` 가 **줄어드는지** 본다. 늘어난다면 어딘가에서 부호가
+> 한 번 더 뒤집힌 것이다 — 3주차 과제가 바로 이것을 수치로 증명하게 한다.
+
+---
+
+## 3-4. `W03_4_teleop` — 버튼으로 몰면서 상태를 본다
+
+![4단계 모델](W03_simulink/img/W03_4_teleop.png)
+
+2-6 절의 `wamv_teleop_key` 와 **같은 일**을 하는 Simulink 판이다.
+다른 점은 누른 값이 Simulink 안에 있어, **명령과 응답을 한 화면에서 함께 본다**는 것이다.
+
+### 버튼 — 신호가 아니라 파라미터를 누른다
+
+`TeleopPad` 를 더블클릭하면 화살표 버튼 네 개가 나온다.
+
+| 버튼 | 좌 추력 | 우 추력 | 결과 |
+|---|---|---|---|
+| ▲ 전진 | $+F$ | $+F$ | 앞으로 |
+| ▼ 후진 | $-F$ | $-F$ | 뒤로 |
+| ◀ 좌선회 | $-F$ | $+F$ | 제자리 좌선회 |
+| ▶ 우선회 | $+F$ | $-F$ | 제자리 우선회 |
+
+$$
+F_L = F\,\bigl[(\text{전진}-\text{후진}) + (\text{우}-\text{좌})\bigr], \qquad
+F_R = F\,\bigl[(\text{전진}-\text{후진}) - (\text{우}-\text{좌})\bigr]
+$$
+
+- $F$ 는 `W03_setup` 의 `teleop_thrust` (기본 200 N)
+- 전진과 선회를 **함께** 누르면 한쪽이 합쳐져 한계를 넘으므로 `Mix` 안에서 다시 자른다
+
+> [!important] Dashboard 버튼은 **파라미터**에 묶인다
+> 일반 블록처럼 출력 포트가 있는 것이 아니다. 각 버튼이 옆에 있는 `Constant` 의
+> `Value` 에 묶여 있고, **누르는 동안만** 1 이 된다 (Momentary).
+> 그래서 **모델을 돌린 상태에서** 눌러야 반응한다.
+
+### 화면 — 왼쪽은 어디 있는가, 오른쪽은 어떻게 움직이는가
+
+`Animate` 가 창 하나를 띄운다.
+
+| 자리 | 그리는 것 |
+|---|---|
+| **왼쪽** | NED 평면의 항적. 가로축 East, 세로축 North (해도와 같은 방향) |
+| **오른쪽** | 위에서부터 $\psi$, $u$, $v$, $r$ 네 줄 |
+
+> [!important] 네 값이 움직이는 **순서**를 본다
+> 좌선회 버튼을 누르면
+> 1. 추력 차이가 요 모멘트를 만들어 **$r$ 이 먼저** 선다
+> 2. $r$ 이 쌓여 **$\psi$ 가 돈다** — $\dot{\psi} = r$
+> 3. $\psi$ 가 돌아야 **항적이 휜다**
+>
+> 버튼을 떼면 역순으로 잦아든다. 1-4 절의 "힘 → 속도 → 위치" 가 이 세 줄이다.
+
+> [!note] $v$ 는 선회 중에만 0 이 아니다
+> 직진 버튼만 누르면 $v \approx 0$ 이다. 선회하면 배가 옆으로 밀려 $v$ 가 생긴다.
+> 1-5 절에서 본 **크랩각**이 이때 나타난다.
+
+### 실행 순서
+
+```bash
+# 터미널 1 — VRX
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
+```
+
+```matlab
+% MATLAB
+>> W03_setup
+>> open_system('W03_4_teleop')
+```
+
+1. **Run** 을 누른다 (정지 시간은 `T_end_teleop`, 기본 300 초)
+2. `TeleopPad` 를 더블클릭해 버튼 창을 연다
+3. 버튼을 눌러 가며 왼쪽 항적과 오른쪽 네 줄을 함께 본다
+
+### 관찰 과제
+
+| 시도 | 기록할 것 |
+|---|---|
+| ▲ 만 3초 | $u$ 가 얼마까지 오르는가. $v$, $r$ 은 0 에 가까운가 |
+| ◀ 만 3초 | $r$ 이 먼저 서는가. $\psi$ 는 늘어나는가 **줄어드는가** |
+| ▲ 와 ◀ 를 함께 | 항적이 원호를 그리는가. $v$ 의 부호는 |
+| 버튼을 뗀 뒤 | $u$, $r$ 이 0 으로 돌아오는 데 몇 초 걸리는가 |
+
+> [!caution] 버튼을 떼면 추력이 0 이지만 배는 바로 서지 않는다
+> 물의 저항만으로 멈추므로 수 초가 걸린다. 이 **관성**이 6주차 이후 제어기가
+> 상대할 대상이다.
+
+---
+
 # 마무리
 
 ## 이번 주차 요약
@@ -1213,6 +1516,8 @@ rviz2
 | 6 | 명령어로 배 조종 | 직진 · 선회 성공 |
 | 7 | **키보드로 배 조종** | `wamv_teleop_key` 로 `w a s d` 동작 |
 | 8 | TF 트리 확인 | `frames_*.pdf` 생성 |
+| 9 | **Simulink 로 변환식 검산** | `W03_1_frame_check` 에서 57.30 + 32.70 = 90.00 |
+| 10 | **Simulink 버튼으로 배 조종** | `W03_4_teleop` 에서 항적과 $\psi, u, v, r$ 을 함께 봄 |
 
 ---
 
@@ -1249,6 +1554,11 @@ rviz2
 - [ ] `q` 로 종료하면 배가 **선다**는 것을 확인했다
 - [ ] `view_frames` 로 TF 트리 PDF 를 생성했다
 - [ ] RViz2 에서 TF 를 표시했다
+- [ ] `W03_setup` → `sim('W03_1_frame_check')` 로 **`yaw_enu` + `psi` = 90°** 를 확인했다
+- [ ] `W03_2_vrx_nav` 에서 `valid` 가 1 이 되는 것을 확인했다
+- [ ] `W03_3_vrx_drive` 의 `scenario` 를 1·2 로 바꿔 **`psi` 의 증감 방향**을 확인했다
+- [ ] `W03_4_teleop` 을 돌리고 버튼으로 배를 몰았다
+- [ ] 좌선회 버튼에서 **`r` 이 먼저 서고 그 다음 `psi` 가 도는** 순서를 보았다
 
 ### 관찰 기록
 
@@ -1363,6 +1673,20 @@ rviz2
 - **`usv_basics` 패키지** — <https://github.com/wkyouncnu/usv_basics>
   - `wamv_teleop_key` — 이번 주차 §2-6 의 키보드 조종 노드
   - 갱신은 `cd ~/capstone_ws/src/usv_basics && git pull` 후 재빌드
+
+- **`W03_simulink/`** — 3부에서 쓰는 Simulink 모델과 스크립트
+
+| 파일 | 하는 일 |
+|---|---|
+| `W03_setup.m` | 기준점 · 시나리오 · 샘플링 · `teleop_thrust` |
+| `build_w03_models.m` | 모델 네 개를 다시 만든다 |
+| `W03_1_frame_check.slx` | 변환식 검산 (VRX 불필요) |
+| `W03_2_vrx_nav.slx` | 센서 → NED |
+| `W03_3_vrx_drive.slx` | 추력을 주고 부호 확인 |
+| `W03_4_teleop.slx` | **버튼 조종** + 실시간 항적·상태 |
+| `W03_animate.m` | 2·3단계의 항적 그림 |
+| `W03_teleop_plot.m` | 4단계의 항적 + $\psi, u, v, r$ 그림 |
+| `W03_vrx_run.m` | VRX 기동 · 정리 명령 모음 |
 
 ### 공식 문서
 
