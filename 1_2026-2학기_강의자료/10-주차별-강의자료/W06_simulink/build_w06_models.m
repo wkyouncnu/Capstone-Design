@@ -32,7 +32,17 @@ function build_w06_models()
     slxList = slxList(~cellfun(@isempty, regexp({slxList.name}, '^W06_[1-5]_', 'once')));
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);
-        try, tidy_model(mName); export_model_pngs(mName); catch e, warning(e.message); end
+        try
+
+            tidy_model(mName);
+
+            paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
+
+            check_colour(mName);
+
+            export_model_pngs(mName);
+
+        catch e, warning(e.message); end
     end
     fprintf('\n완료. 생성된 모델:\n');
     d = dir('W06_*.slx');

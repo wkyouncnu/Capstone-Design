@@ -6,7 +6,7 @@
 bash _tools/pdf_sync.sh
 ```
 
-- **MD 가 PDF 보다 새로운 문서만** 골라 다시 뽑는다. 대상 폴더는 `10-주차별-강의자료` · `80-과제` · `00-운영` · `30-환경`
+- **PDF 가 원본보다 오래된 문서만** 골라 다시 뽑는다. 대상 폴더는 `10-주차별-강의자료` · `80-과제` · `00-운영` · `30-환경`
 - 검사만 하려면 `bash _tools/pdf_sync.sh --check` (갱신 대상 수가 종료코드)
 - **세션이 끝날 때 Stop 훅(`_tools/hook_stop.sh`)이 이 스크립트를 자동으로 부른다.** 그 뒤 `git_autopush.sh` 가 돈다
   - 훅 경로는 `.claude/settings.json` 에 박아 두지 않는다. `CLAUDE_PROJECT_DIR` 에서 위로 올라가며 `_tools/` 를 찾는다 (계정·PC 가 달라도 동작)
@@ -19,10 +19,35 @@ bash _tools/md2pdf.sh 10-주차별-강의자료/W0*.md
 - 인터넷 불필요. `_tools/marked.min.js` + `_tools/mathjax-tex-svg.js` 로컬 사본 사용
 - 서식 기준은 `_tools/pdf-template.html` 의 `<style>` **하나**
 - 성공 시 `[OK] 파일명 NNN KB`, 실패 시 원인까지 출력한다
-- 쪽수 확인이 필요하면 그 뒤에
+
+### 무엇이 바뀌면 다시 뽑는가 — 네 가지
+
+| 바뀐 것 | 잡히는가 | 보고되는 이유 |
+|---|---|---|
+| MD 본문 | O | `MD` |
+| MD 가 싣고 있는 그림 (PNG · SVG) | O | `그림 <파일명>` |
+| 조판 도구 — `pdf-template.html` · `md2pdf.sh` · `marked.min.js` · `mathjax-tex-svg.js` | O | `조판도구 <파일명>` |
+| 짝 PDF 가 아예 없음 (주차자료 · 과제) | O | `PDF 없음` |
+
+> [!warning] 그림과 템플릿을 보지 않으면 조용히 어긋난다
+> MD 의 시각만 비교하던 때에는 Simulink 도면을 다시 뽑거나 CSS 를 고쳐도
+> 검사가 "갱신할 것 없음" 이라 했다. PDF 는 옛 그림을 품은 채 남고, 학생이
+> 받는 것은 그 PDF 다. 2026-09-17 에 두 번 겪었다 — 그림 높이 제한을 넣었을
+> 때와 블록에 색을 칠했을 때. 그때는 전부 강제로 다시 뽑아야 했다.
+>
+> 이제 `why_stale()` 이 MD 에서 `![](경로)` 와 `<img src="경로">` 를 훑어
+> 그림의 시각까지 비교한다. **강제 재생성은 더 필요 없다.**
+
+> [!important] 그림을 바꿨으면 `pdf_sync` 를 한 번 더 돌린다
+> Simulink 모델을 고쳐 PNG 를 다시 뽑았으면, 그 그림을 싣는 주차 PDF 가
+> 자동으로 목록에 오른다. 어느 주차인지 외울 필요가 없다.
+> 목록에 뜨지 않는다면 **그 그림이 어느 강의자료에도 실려 있지 않다는 뜻이다** —
+> 자료의 구멍이지 스크립트의 문제가 아니다 (스킬 `capstone-lecture-vault` 규칙 8).
+
+- 쪽수 확인이 필요하면 아래를 쓴다
 
 ```bash
-python -c "import sys,re;d=open(sys.argv[1],'rb').read();print(len(re.findall(rb'/Type\s*/Page[^s]',d)))" 파일.pdf
+grep -ao "/Count [0-9]*" 파일.pdf | sort -t' ' -k2 -n | tail -1
 ```
 
 > [!warning] Chrome 은 Windows 실행 파일이라 POSIX 경로를 못 읽는다
@@ -147,7 +172,7 @@ img { max-width: 100%; max-height: 248mm; height: auto; ... }
 
 ---
 
-## 4. Obsidian 쪽 확인
+## 5. Obsidian 쪽 확인
 
 - 수식은 Obsidian 에서도 그대로 보인다. 별도 플러그인 불필요
 - 다만 **Obsidian 전용 문법(`![[파일]]`)은 쓰지 않는다** — VSCode·GitHub 에서 깨진다
@@ -177,11 +202,7 @@ img { max-width: 100%; max-height: 248mm; height: auto; ... }
 - `position: fixed` 로 흉내 내지 않는다. 모든 쪽에 **같은 숫자**가 찍힌다
 - 아래 여백을 14mm 에서 **16mm** 로 늘렸다. 그러지 않으면 본문 마지막 줄과 겹친다
 
-> [!warning] 템플릿을 고치면 **전체 PDF 를 다시 뽑아야 한다**
-> `pdf_sync.sh` 는 MD 가 PDF 보다 새로울 때만 다시 뽑는다. 템플릿만 바뀐 경우는
-> 감지하지 못하므로 아래처럼 전부 강제로 돌린다.
->
-> ```bash
-> bash _tools/md2pdf.sh 00-운영/*.md 30-환경/*.md 80-과제/*.md
-> bash _tools/md2pdf.sh 10-주차별-강의자료/W*.md
-> ```
+> [!important] 템플릿을 고치면 `pdf_sync` 만 돌리면 된다
+> `pdf_sync.sh` 가 `pdf-template.html` 의 시각도 본다. 템플릿이 PDF 보다 새로우면
+> 그 PDF 는 `조판도구 pdf-template.html` 이유로 목록에 오른다 — **강제 재생성은
+> 더 필요 없다.** §1 의 표를 볼 것.

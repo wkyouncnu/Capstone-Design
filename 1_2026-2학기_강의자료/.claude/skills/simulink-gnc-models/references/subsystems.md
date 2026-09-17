@@ -86,27 +86,30 @@ end
 
 ---
 
-## 4. 색은 이름으로 정해진다
+## 4. 색은 역할표가 정한다
 
-`tidy_layout.m` 의 `colorFor` 가 **블록 이름의 부분 문자열**로 색을 고른다.
-이름이 목록에 없으면 서브시스템은 **주황(제어)** 이 된다. 새 이름을 쓰면 목록에 넣는다.
+`_tools/gnc_roles.m` 에 모델 이름별 표가 있고, `paint_roles` 가 그것을 칠한다.
+**이름의 부분 문자열로 색을 고르던 `tidy_layout.m` 의 `colorFor` 는 더 쓰지 않는다.**
+`PoseNav` 의 `nav` 가 `plant` 로 걸려 초록이 되는 식의 사고가 있었다 — 이름을 바꾸면
+색이 바뀌는 규칙은 유지할 수 없다.
 
-| 서브시스템 이름 | 걸리는 키워드 | 색 |
-|---|---|---|
-| `Guidance` · 안쪽 `GuidanceLaw` | `guidance` | 파랑 |
-| `Control` · `HeadingSpeedCtrl` | (없음 → 기본) | 주황 |
-| `TurtlePlant` · 안쪽 `PlantEq` · `IntegDly` | `plant` · `integ` | 초록 |
-| `PoseSubscriber` · 안쪽 `PoseSub` · `RxLatch` | `posesub` · `rxlatch` | 연보라 |
-| `CmdPublisher` · 안쪽 `BlankCmd` · `AsgCmd` · `PubCmd` | `pub` · `blank` · `asg` | 연보라 |
-| `Animate` · 안쪽 `AnimateFcn` | `animate` | 회색 |
-| `Logging` · 안쪽 `log_*` | `logging` · `log_` | 회색 |
-| 안쪽 `ModeDly` | `modedly` | 보라 |
+```matlab
+% _tools/gnc_roles.m
+case 'W03_4_teleop'
+    role = [GNC; {'TeleopPad','guidance'; 'OdomNav','ros'}];
+```
 
-> [!warning] 키워드 순서가 우선순위다
-> `colorFor` 는 위에서부터 검사한다. `PoseNav` 처럼 `nav` 가 들어가면 **초록(운동모델)** 로 칠해진다.
-> ROS 블록에 `nav` · `plant` · `guidance` 를 넣지 않는다.
+- 표에 적는 것은 **최상위 블록뿐**이다. 안쪽 서브시스템은 부모 색을 물려받는다
+- `Scope` · `Display` · `ToWorkspace` · `Goto` · `From` · `Terminator` 는
+  적지 않아도 **언제나 회색**이다
+- 표에 없는 모델은 관례 이름(`Guidance` · `InnerLoop` · `Thrusters` ·
+  `MotionModel` · `CmdPublisher` · `PoseSubscriber` · `Animate` · `Logging`)이
+  그대로 맞는다. 그래서 7~9주차는 `case` 한 줄로 끝난다
+- 새 이름을 쓰면 `gnc_roles.m` 에 `case` 를 추가한다. **고칠 곳은 그 한 파일뿐이다**
 
-- 이름을 추가했으면 **세 사본을 모두** 고친다 — `_tools/tidy_layout.m`, 스킬 `scripts/tidy_layout.m`, 각 주차 폴더 사본
+> [!important] 빠뜨렸는지는 `check_colour` 가 말해 준다
+> 최상위에 있는데 표에 없는 서브시스템은 흰색으로 남고, 검사에 걸린다.
+> 일부러 그렇게 두었다 — 조용히 아무 색이나 주는 것보다 낫다.
 
 ---
 

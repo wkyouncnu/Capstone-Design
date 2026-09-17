@@ -18,16 +18,22 @@ Simulink 모델을 **손으로 그리지 않는다.** `build_wXX_models.m` 하�
 
 1. **생성** — `build_wXX_models.m` 작성 → MATLAB MCP 로 실행
 2. **정리** — 스크립트 끝에서 `tidy_model(모델)` 호출. 한 번이면 된다
-3. **그림** — 같은 자리에서 `export_model_pngs(모델)` 호출
-4. **검증** — 컴파일 · 미연결 포트 0 · 실제 시뮬레이션 실행
-5. **문서** — MD 에 그림과 **실측 수치**를 싣고 PDF 재생성
+3. **색** — 이어서 `paint_roles(모델)` · `check_colour(모델)`. 흰색 0 이 합격선
+4. **그림** — 같은 자리에서 `export_model_pngs(모델)` 호출
+5. **검증** — 컴파일 · 미연결 포트 0 · 실제 시뮬레이션 실행
+6. **문서** — MD 에 그림과 **실측 수치**를 싣고 PDF 재생성
 
 ```matlab
     slxList = dir('W06_*.slx');
     slxList = slxList(~cellfun(@isempty, regexp({slxList.name}, '^W06_[1-5]_', 'once')));
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);
-        try, tidy_model(mName); export_model_pngs(mName); catch e, warning(e.message); end
+        try
+            tidy_model(mName);
+            paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
+            check_colour(mName);       % 흰색으로 남은 블록 0 이 합격선
+            export_model_pngs(mName);
+        catch e, warning(e.message); end
     end
 ```
 
@@ -72,17 +78,52 @@ Simulink 모델을 **손으로 그리지 않는다.** `build_wXX_models.m` 하�
 
 ### 색 규칙 (바꾸지 말 것)
 
-| 색 | 역할 |
-|---|---|
-| 파랑 `[0.80 0.89 0.98]` | 유도 Guidance |
-| 보라 `[0.90 0.83 0.96]` | 미션 판단 (FSM, 모드 전환) |
-| 주황 `[1.00 0.88 0.72]` | 제어 Control |
-| 노랑 `[1.00 0.95 0.70]` | 추진기 |
-| 초록 `[0.81 0.93 0.81]` | 운동모델 Plant |
-| 분홍 `[0.98 0.85 0.85]` | 외란 (바람·파랑) |
-| 연보라 `[0.87 0.87 0.96]` | ROS 통신 · 신호처리 |
-| 회색 `[0.93 0.93 0.93]` | 로깅·표시 |
-| 흰색 | 설정값 Constant |
+| 색 | 역할 | `gnc_colour` 이름 |
+|---|---|---|
+| 파랑 `[0.80 0.89 0.98]` | 유도 Guidance | `guidance` |
+| 보라 `[0.90 0.83 0.96]` | 미션 판단 (FSM, 모드 전환) | `mission` |
+| 주황 `[1.00 0.88 0.72]` | 제어 Control | `control` |
+| 노랑 `[1.00 0.95 0.70]` | 추진기 · 추력 배분 | `thruster` · `allocation` |
+| 초록 `[0.81 0.93 0.81]` | 운동모델 Plant | `plant` |
+| 분홍 `[0.98 0.85 0.85]` | 외란 (바람 · 파랑 · 센서 잡음) | `env` |
+| 연보라 `[0.87 0.87 0.96]` | ROS 통신 · 신호처리 | `ros` |
+| 회색 `[0.93 0.93 0.93]` | 로깅 · 표시 | `measurement` |
+| 흰색 | 설정값 Constant | `command` |
+
+#### 칠하는 것은 두 줄이다
+
+```matlab
+paint_roles(m);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
+check_colour(m);       % 흰색으로 남은 것을 잡는다. 합격선은 0
+```
+
+- **역할표는 `_tools/gnc_roles.m` 한 파일에만 있다.** 모델 이름으로 찾는다.
+  새 모델을 만들면 거기에 `case` 한 줄을 추가한다
+- 빌더는 `tidy_model` 뒤에서 위 두 줄을 부르기만 한다.
+  `set_param(..., 'BackgroundColor', ...)` 를 빌더에 직접 쓰지 않는다
+
+#### 세 가지 규칙
+
+1. **색은 블록 종류가 아니라 단계를 따른다** — `W06_P1` 의 `SumE` 는 Sum 블록이지만
+   제어기의 일부여서 주황이다. 덧셈이라서 무슨 색인 것이 아니다
+2. **안쪽 서브시스템은 부모 색을 물려받는다** — 역할표에는 최상위만 적는다.
+   예외는 `'InnerLoop/Kp'` 처럼 경로로 적는다
+3. **Scope · Display · To Workspace · Goto · From · Terminator 는 언제나 회색** —
+   역할표에 적지 않는다. 계산하지 않고 내보내거나 이어 줄 뿐이어서 어느 모델
+   어느 층에서든 뜻이 같다
+
+#### SB 드릴은 예외다
+
+`SB*` 는 GNC 사슬이 아니라 Simulink 블록 자체를 가르친다. 단계 색을 억지로 입히면
+학생이 없는 뜻을 배운다. 뜻이 분명한 것만 칠하고 — 전달함수는 초록, 제어기는 주황,
+계산용 서브시스템은 연보라(신호처리) — 나머지는 흰색으로 둔다.
+
+> [!warning] 색이 빠지는 것은 조용한 사고다
+> 배선 검사는 통과하고, 모델도 돌아가고, 수치도 맞다. 도면만 흑백이 된다.
+> 2026-09-17 감사 — 강의 모델 **49개 전부가 걸렸고 흰색 블록이 1359개**였다.
+> 빌더 11개 중 4개(W07~W10)만 색칠 루프를 들고 있었고, W02·W03·W04·W06 에는
+> 아예 없었다. **같은 루프를 복사해 두면 복사하지 않은 곳이 반드시 생긴다.**
+> 그래서 `check_colour` 를 `check_lines` 와 같은 자리에 두었다 — 빌더는 둘 다 부른다.
 
 ---
 
@@ -175,6 +216,17 @@ check_lines(모델, true)      % 겹침 · 블록 관통 · 꺾임 3회+ · 매�
 - **넷 다 0 이 합격선.** 최상위와 모든 서브시스템에 대해
 - 하나라도 남으면 `references/line-routing.md` 를 읽고 **배치로** 푼다. 배선으로 풀지 않는다
 
+
+### 색 검사 — 배선 검사와 같은 자리에서
+
+```matlab
+check_colour(모델, true)     % 흰색으로 남은 블록을 나열한다
+```
+
+- **0 이 합격선.** 서브시스템 · Scope · Display · To Workspace · Goto · From ·
+  Terminator 는 흰색으로 두지 않는다
+- Constant · Step · Sine 같은 설정값 소스는 **흰색이 맞다** (`command`)
+- 걸리면 `_tools/gnc_roles.m` 에 그 모델의 `case` 를 고친다. 빌더를 고치지 않는다
 ### 도면만 보지 말고 컴파일까지 볼 것
 
 ```matlab

@@ -37,6 +37,8 @@ function build_w06_pid_models()
     names = {'W06_P1_pid_step','W06_P2_pid_byhand','W06_P3_boat_speed'};
     for k = 1:numel(names)
         check_lines(names{k}, true);
+        paint_roles(names{k});        % 역할표는 _tools/gnc_roles.m 하나뿐이다
+        check_colour(names{k});
         export_diagram(names{k});
     end
 end

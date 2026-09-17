@@ -31,7 +31,17 @@ function build_w06_1_models()
         d = dir(sprintf('SB%d_*.slx', k));
         for j = 1:numel(d)
             [~, mName] = fileparts(d(j).name);
-            try, tidy_model(mName); export_model_pngs(mName); catch e, warning(e.message); end
+            try
+
+                tidy_model(mName);
+
+                paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
+
+                check_colour(mName);
+
+                export_model_pngs(mName);
+
+            catch e, warning(e.message); end
         end
     end
 

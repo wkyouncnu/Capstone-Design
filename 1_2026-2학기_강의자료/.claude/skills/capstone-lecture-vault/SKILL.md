@@ -25,11 +25,12 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | "이 부분 설명 보강해줘" | 대상 독자를 먼저 정한다 — 기본은 **리눅스·ROS 무경험 4학년** | `references/lecture-md.md` |
 | "문체 고쳐줘 / AI 같아" | `scripts/vault_check.sh --style` 로 금지 표현부터 센다 | `references/lecture-md.md` §문체 |
 | "수식 넣어줘 / 보기 좋게" | LaTeX 으로 쓴다. MathType 이미지 불필요 | `references/pdf-and-math.md` |
-| "PDF 다시 뽑아줘" | `bash _tools/pdf_sync.sh` — 바뀐 MD 를 전부 다시 뽑는다 | `references/pdf-and-math.md` |
+| "PDF 다시 뽑아줘" | `bash _tools/pdf_sync.sh` — MD·그림·템플릿 중 하나라도 새로우면 다시 뽑는다 | `references/pdf-and-math.md` |
 | "그림 그려줘" | `assets/` 에 SVG. **한 번의 Bash 호출에 하나씩** | `references/figures-svg.md` |
 | "화면 캡처 넣어줘" · "따라 할 수 있게" | 도구를 **실제로 띄우고** 창을 찍는다. WSLg 창은 WSL 안에서 | `references/screenshots.md` |
 | "자료대로 되는지 확인해줘" · 자료를 고친 **직후** | `_tools/verify_wNN.sh` 를 돌린다. **FAIL 0 이 합격선** | `references/doc-verification.md` |
-| "모델 만들어줘 / 선 정리해줘" | `build_wXX_models.m` 작성 → `tidy_model` + `export_model_pngs` | 스킬 `simulink-gnc-models` |
+| "모델 만들어줘 / 선 정리해줘" | `build_wXX_models.m` 작성 → `tidy_model` + `paint_roles` + `export_model_pngs` | 스킬 `simulink-gnc-models` |
+| "색이 없는데" · 도면이 흑백 | `check_colour(모델)` → 0 이 합격선. 표는 `_tools/gnc_roles.m` | 스킬 `simulink-gnc-models` |
 | "VRX 로 돌려서 확인해줘" | WSL 배포판 `Ubuntu-22.04` 확인부터 | `references/vrx-runbook.md` |
 | "오프라인이랑 대조해줘" | 겹치는 시간 구간만. 이격은 **위상 오차인 경우가 많다** | `references/vrx-runbook.md` |
 | "주차를 옮기자 / 순서 바꾸자" | 파급 범위를 먼저 나열한다 (문서 4곳 이상) | `references/vault-upkeep.md` |
@@ -82,7 +83,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 2) 만들기      스크립트·모델·SVG
 3) 실행        MATLAB MCP / VRX — 수치를 뽑는다
 4) 문서        MD 에 그림 + 실측 수치 + 진도 체크 + 과제 배점
-5) 변환        pdf_sync.sh (바뀐 MD 전부) → 쪽수 확인
+5) 변환        pdf_sync.sh (MD·그림·템플릿 중 바뀐 것) → 쪽수 확인
 6) 색인        README 표 · 강의계획서 · 지식카드 갱신
 7) 점검        vault_check.sh → 0 건이 합격선
 ```

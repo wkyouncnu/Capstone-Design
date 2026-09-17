@@ -18,6 +18,15 @@ n  = sum(arrayfun(@(h) isempty(get_param(h,'Line')) || get_param(h,'Line') < 0, 
 tidy_all('<폴더>')     % 겹침 0 이 합격선
 ```
 
+## 2-2. 색
+
+```matlab
+check_colour('<모델>')      % 흰색으로 남은 블록 0 이 합격선
+```
+
+- 걸리면 `_tools/gnc_roles.m` 의 그 모델 `case` 를 고치고 `paint_roles` 를 다시 부른다
+- 색이 빠져도 모델은 돌아가고 수치도 맞다. 그래서 **검사하지 않으면 모른다**
+
 ## 3. 실제로 돌린다
 
 - 문서에 싣는 값은 전부 `sim()` 결과

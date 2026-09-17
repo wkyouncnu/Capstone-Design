@@ -38,23 +38,11 @@ function build_w08_models()
     lay_chain('W08_1_vrx', {'Guidance','InnerLoop','Thrusters','CmdPublisher','PoseSubscriber'}, ...
               'Boxes', {'Animate','Logging'}, 'Wrap', 3);
 
-    % 역할별 배경색 — 색표는 _tools/gnc_colour.m 하나뿐이다
-    role = {'Guidance','guidance'; 'InnerLoop','control'; 'Thrusters','thruster'; ...
-            'MotionModel','plant'; 'CmdPublisher','ros'; 'PoseSubscriber','ros'; ...
-            'Animate','measurement'; 'Logging','measurement'};
+    %  색 — 역할표는 _tools/gnc_roles.m 하나뿐이다. 빌더는 부르기만 한다
     for mm = {'W08_0_offline','W08_1_vrx'}
         m = mm{1}; load_system(m);
-        for k = 1:size(role,1)
-            if ~isempty(find_system(m,'SearchDepth',1,'Name',role{k,1}))
-                set_param([m '/' role{k,1}], 'BackgroundColor', gnc_colour(role{k,2}));
-            end
-        end
-        for bt = {'Goto','From'}
-            b = find_system(m,'SearchDepth',1,'BlockType',bt{1});
-            for i = 1:numel(b)
-                set_param(b{i}, 'BackgroundColor', gnc_colour('measurement'));
-            end
-        end
+        paint_roles(m);
+        check_colour(m);
         mss_style(m); save_system(m); check_lines(m, false); export_diagram(m);
         close_system(m, 0);
     end
