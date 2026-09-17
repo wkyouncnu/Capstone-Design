@@ -4,6 +4,23 @@
 %
 % 요점: 배는 "가장 가까운 점"이 아니라 그보다 Delta 앞의 조준점을 겨냥한다.
 % 화면 규약: N(북) 위, E(동) 오른쪽.
+%
+% 좌표는 손으로 찍지 않는다. pi_p = 50 deg, x_e = 45, y_e = 18, Delta = 30 (mm)
+% 에서 계산한 값이다. 그래서 수선의 발은 정말 경로 위에 있고, y_e 는 정말
+% 경로에 수직이며, 그려진 시선은 정말 psi_ref 방향을 가리킨다.
+%
+%     t = (sin 50,  cos 50) = ( 0.76604,  0.64279)    경로 방향
+%     n = (cos 50, -sin 50) = ( 0.64279, -0.76604)    경로의 오른쪽(우현)
+%     F  = wk + 45 t  = (48.47, 42.93)      수선의 발
+%     배 = F  + 18 n  = (60.04, 29.14)
+%     A  = F  + 30 t  = (71.45, 62.21)      조준점
+%     arctan(18/30) = 30.96 deg,  psi_ref = 50 - 30.96 = 19.04 deg
+%
+% 고친 것 (2026-09-17). 이전 그림은 셋이 틀렸다.
+%   1) y_e 가 경로에 수직이 아니었다 — 직각 표시도 없었다
+%   2) pi_p 를 북이 아니라 동에서 재고 있었다
+%   3) x_e(경로 방향 오차)가 아예 없었다 — 전환 판정이 쓰는 값이다
+% 수락반경은 이 그림에서 뺐다. 전환 판정은 w07-switching.svg 가 맡는다.
 
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
@@ -12,59 +29,73 @@
 \begin{tikzpicture}[x=1mm, y=1mm]
 
 % ---- 좌표축 ---------------------------------------------------------------
-\draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,16);
-\draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (16,0);
-\node[font=\small, anchor=east]  at (-1.2,15) {$N$};
-\node[font=\small, anchor=north] at (15,-1.2) {$E$};
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,60) -- (2,76);
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,60) -- (18,60);
+\node[font=\small, anchor=east]  at (1,75) {$N$};
+\node[font=\small, anchor=north] at (17,59) {$E$};
+
+% ---- 좌표 -----------------------------------------------------------------
+\coordinate (wk)  at (14,14);
+\coordinate (wk1) at (87.54,75.71);
+\coordinate (ft)  at (48.47,42.93);      % 수선의 발
+\coordinate (sh)  at (60.04,29.14);      % 배
+\coordinate (ap)  at (71.45,62.21);      % 조준점
 
 % ---- 계획 경로 -------------------------------------------------------------
-\coordinate (wk)  at (18,14);
-\coordinate (wk1) at (104,54);
 \draw[pathc, line width=0.8pt] (wk) -- (wk1);
 \fill[pathc] (wk)  circle (1.1);
 \fill[pathc] (wk1) circle (1.1);
-\node[note, pathc, below right=0.5mm and 0mm of wk]  {웨이포인트 $k$};
-\node[note, pathc, above left=0.5mm and 0mm of wk1] {$k+1$};
-\node[note, pathc] at (56,38) {계획 경로};
+\node[note, pathc, below right=0.3mm and 0mm of wk]  {웨이포인트 $k$};
+\node[note, pathc, above left=0.3mm and 0mm of wk1] {$k+1$};
+\node[note, pathc, rotate=40] at (78.4,70.6) {계획 경로};
 
-% 수락반경
-\draw[pathc, densely dotted] (wk1) circle (9mm);
-\node[note, pathc, right=9.5mm of wk1] {수락반경 $R$};
+% ---- 경로 방위각 pi_p — 북에서 잰다 ----------------------------------------
+\draw[axis, densely dashed] (wk) -- ++(0,26);
+\draw[axis] (wk) ++(0,20) arc (90:40:20);
+\node[note] at (21,36) {$\pi_p$};
+\node[note, anchor=west] at (2,46) {경로 방위각};
+\node[note, anchor=west] at (2,42.5) {(북에서 잰다)};
 
-% 경로 방위각
-\draw[axis, densely dashed] (wk) -- ++(30,0);
-\draw[axis] (wk) ++(16,0) arc (0:25:16mm);
-\node[note] at (40,18.5) {$\pi_p$};
-\node[note, right=1mm] at (44,17) {경로 방위각};
+% ---- 두 오차 ---------------------------------------------------------------
+% x_e : 경로를 따라 wk 에서 수선의 발까지
+\draw[errc, line width=0.9pt] (wk) -- (ft);
+\node[note, errc, rotate=40] at (34.4,24.6) {$x_e$};
 
-% ---- 배 -------------------------------------------------------------------
-\coordinate (sh) at (52,10);
-\fill[ink] (sh) circle (1.3);
-\node[note, below=1mm of sh] {배};
-
-% 발 (경로 위 가장 가까운 점)
-\coordinate (ft) at (60.6,33.8);
+% y_e : 수선의 발에서 배까지, 경로에 수직
+\draw[errc, line width=0.9pt] (ft) -- (sh);
+\node[note, errc] at (56.6,37.4) {$y_e$};
 \fill[errc] (ft) circle (1.0);
-\draw[errc, line width=0.6pt] (sh) -- (ft);
-\node[note, errc] at (52.5,23) {$y_e$};
+\node[note, errc, above left=0.2mm and 0.2mm of ft] {수선의 발};
 
-% 조준점 = 발에서 Delta 앞
-\coordinate (lp) at (81,43.5);
-\fill[accent] (lp) circle (1.2);
-\draw[accent, densely dashed, line width=0.6pt] (ft) -- (lp);
-\node[note, accent, above left=0mm and 1mm of lp] {조준점};
-\node[note, accent] at (71,35) {$\Delta$};
+% 직각 표시 — 수선의 발에서 t 방향과 n 방향으로 2.6mm 씩
+\draw[errc, line width=0.4pt]
+     ($(ft)+(1.99,1.67)$) -- ($(ft)+(1.99,1.67)+(1.67,-1.99)$)
+                          -- ($(ft)+(1.67,-1.99)$);
 
-% 유도 지령
-\draw[sig, accent] (sh) -- (lp);
-\node[note, accent] at (72,20) {$\psi_{\mathrm{ref}}$};
-\node[note, accent] at (78,16) {유도 지령};
+% ---- Delta 와 조준점 -------------------------------------------------------
+\draw[thr, line width=1.1pt] (ft) -- (ap);
+\fill[accent] (ap) circle (1.2);
+\node[note, accent, above left=0.4mm and 0.2mm of ap] {조준점};
+\node[note, thr] at (56.2,55.4) {$\Delta$};
 
-% ---- 식 -------------------------------------------------------------------
-\node[font=\small, anchor=west] at (2,-12)
-     {$\psi_{\mathrm{ref}} = \pi_p - \arctan\!\left(\dfrac{y_e}{\Delta}\right)$};
-\node[note, anchor=west, text width=76mm] at (46,-12)
-     {경로 위의 한 점을 겨냥한다. 그 점은 가장 가까운 지점보다 $\Delta$ 만큼 앞이다};
+% ---- 시선 (line of sight) --------------------------------------------------
+\draw[sig, accent, line width=0.7pt] (sh) -- (ap);
+\node[note, accent, rotate=71] at (61.8,52) {시선};
+
+% 보정각 arctan(y_e/Delta) — 조준점에서 경로와 시선 사이
+\draw[axis] (ap) ++(-8.43,-7.07) arc (220:251:11);
+\node[note, anchor=west] at (74,49) {$\arctan\!\left(\dfrac{y_e}{\Delta}\right)$};
+\node[note, anchor=west] at (74,41.5) {보정각};
+
+% ---- 배와 psi_ref ----------------------------------------------------------
+\draw[axis, densely dashed] (sh) -- ++(0,17);
+\draw[axis] (sh) ++(0,13) arc (90:70.96:13);
+\node[note, anchor=east] at (58.6,41.8) {$\psi_{\mathrm{ref}}$};
+
+\begin{scope}[shift={(60.04,29.14)}, rotate=-19.04]
+  \fill[ink] (-1.7,-2.4) -- (-1.7,1.4) -- (0,3.4) -- (1.7,1.4) -- (1.7,-2.4) -- cycle;
+\end{scope}
+\node[note, below=2.6mm of sh] {배};
 
 \end{tikzpicture}
 \end{document}

@@ -1,0 +1,68 @@
+% assets/w07-track-error.svg — 두 오차는 회전 한 번에서 함께 나온다
+%
+%   bash _tools/tikz2svg.sh assets/src/w07-track-error.tex assets/w07-track-error.svg
+%
+% 요점: 경로가 자기 좌표계를 만든다. t 는 경로를 따라, n 은 경로의 오른쪽.
+%       배의 위치를 그 둘로 나눈 것이 x_e 와 y_e 다. 식의 sin·cos 이 이 회전이다.
+%
+%   pi_p = 50 deg,  t = (0.76604, 0.64279),  n = (0.64279, -0.76604)
+%   p_k = (18,18),  x_e = 42,  y_e = 15
+%   F  = p_k + 42 t = (50.17, 45.00)
+%   배 = F   + 15 n = (59.81, 33.51)
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- 좌표축 ---------------------------------------------------------------
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,52) -- (2,66);
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,52) -- (16,52);
+\node[font=\small, anchor=east]  at (1,65) {$N$};
+\node[font=\small, anchor=north] at (15,51) {$E$};
+
+\coordinate (pk) at (18,18);
+\coordinate (ft) at (50.17,45.00);
+\coordinate (sh) at (59.81,33.51);
+
+% ---- 경로 -----------------------------------------------------------------
+\draw[pathc, line width=0.8pt] (pk) -- (79.3,69.4);
+\node[note, pathc, rotate=40] at (67,64) {계획 경로};
+
+% ---- 배까지의 위치 벡터 (회색) ---------------------------------------------
+\draw[sig, soft, line width=0.6pt] (pk) -- (sh);
+
+% ---- 두 성분 ---------------------------------------------------------------
+\draw[errc, line width=1.1pt] (pk) -- (ft);
+\node[note, errc, rotate=40] at (43,32.6) {$x_e$};
+\draw[errc, line width=1.1pt] (ft) -- (sh);
+\node[note, errc, anchor=west] at (56.4,41) {$y_e$};
+\fill[errc] (ft) circle (1.0);
+
+\draw[errc, line width=0.4pt]
+     ($(ft)+(1.99,1.67)$) -- ($(ft)+(1.99,1.67)+(1.67,-1.99)$)
+                          -- ($(ft)+(1.67,-1.99)$);
+
+% ---- 경로가 만드는 좌표계 — x_e 위에 겹쳐 그린다 ---------------------------
+\draw[pathc, line width=1.3pt, -{Stealth[length=5pt,width=4pt]}] (pk) -- ++(10.7,9.0);
+\node[note, pathc, anchor=south east] at (28.0,28.4) {$\hat{t}$};
+\draw[pathc, line width=1.3pt, -{Stealth[length=5pt,width=4pt]}] (pk) -- ++(9.0,-10.7);
+\node[note, pathc, anchor=west] at (28.4,7.6) {$\hat{n}$};
+\fill[pathc] (pk) circle (1.2);
+\node[note, pathc, anchor=east] at (16.6,18) {웨이포인트 $k$};
+
+% ---- 배 -------------------------------------------------------------------
+\begin{scope}[shift={(59.81,33.51)}, rotate=-30]
+  \fill[ink] (-1.7,-2.4) -- (-1.7,1.4) -- (0,3.4) -- (1.7,1.4) -- (1.7,-2.4) -- cycle;
+\end{scope}
+\node[note, right=1.6mm of sh] {배};
+
+% ---- 읽는 법 ---------------------------------------------------------------
+\node[note, anchor=west] at (40,20) {회색 화살표 = 배의 위치 $-$ 웨이포인트 $k$};
+\node[note, pathc, anchor=west] at (40,15.5) {$\hat{t}$ 는 경로 방향, $\hat{n}$ 은 경로의 오른쪽(우현)};
+\node[note, errc, anchor=west] at (40,11) {그 화살표를 $\hat{t}$ 성분과 $\hat{n}$ 성분으로 나눈 것이};
+\node[note, errc, anchor=west] at (40,7)  {$x_e$ 와 $y_e$ 다 — 식의 $\sin\cdot\cos$ 이 이 회전이다};
+
+\end{tikzpicture}
+\end{document}

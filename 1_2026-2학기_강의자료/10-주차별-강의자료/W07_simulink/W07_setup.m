@@ -32,6 +32,7 @@ wp_east  = [  20   20  100  100   20 ];
 guidance_mode = 2;      % 1 = atan2 유도,  2 = LOS 유도
 Delta         = 10;     % lookahead distance [m]  (LOS 만 사용)
 R_LOS         = 5;      % 웨이포인트 수락반경 [m]
+sw_mode       = 1;      % 전환 판정.  1 = 경로 방향 (d - x_e < R),  2 = 수락 원
 u_ref         = 1.5;    % 목표 속도 [m/s]
 
 %% ====================================================================
@@ -143,6 +144,12 @@ end
 fprintf('W07 설정 완료\n');
 fprintf('  웨이포인트 %d개, 유도 = %s\n', numel(wp_north), mode_name);
 fprintf('  Delta = %g m, R = %g m, u_ref = %g m/s\n', Delta, R_LOS, u_ref);
+if sw_mode == 1
+    sw_name = '경로 방향 (d - x_e < R)';
+else
+    sw_name = '수락 원';
+end
+fprintf('  전환 판정 = %s\n', sw_name);
 fprintf('  조류 = %g m/s @ %g deg  (오프라인 모델에서만 적용)\n', ...
         current_speed, current_direction);
 

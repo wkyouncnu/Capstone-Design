@@ -1,0 +1,87 @@
+% assets/w07-switching.svg — 웨이포인트 전환 판정 두 가지
+%
+%   bash _tools/tikz2svg.sh assets/src/w07-switching.tex assets/w07-switching.svg
+%
+% 요점: 배는 같은 자리에 있다. 판정만 다른데 한쪽은 넘어가고 한쪽은 넘어가지 않는다.
+%       경로에서 멀리 밀려나면 원 판정은 영원히 만족되지 않는다.
+%
+% 두 판정
+%   경로 방향 :  d - x_e < R              남은 "경로 방향" 거리
+%   수락 원   :  || p - p_(k+1) || < R    실제 직선거리
+% 항상  || p - p_(k+1) || = sqrt( (d - x_e)^2 + y_e^2 )  >=  d - x_e
+% 이므로 원 판정이 언제나 더 엄격하다.
+%
+% 그린 값: R = 12 mm,  d - x_e = 9 mm (< R),  y_e = 24 mm (= 2R)
+%          실제 거리 = sqrt(9^2 + 24^2) = 25.6 mm > 2R
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% =========================================================================
+% 왼쪽 — 경로 방향 판정
+% =========================================================================
+\begin{scope}[shift={(0,0)}]
+  \node[font=\small, anchor=west] at (0,60) {경로 방향 판정};
+  \node[note, anchor=west] at (0,55.5) {남은 경로 방향 거리가 $R$ 보다 작은가};
+
+  \draw[pathc, line width=0.8pt] (4,40) -- (62,40);
+  \fill[pathc] (10,40) circle (1.1);
+  \fill[pathc] (56,40) circle (1.1);
+  \node[note, pathc, below=0.8mm] at (10,40) {$k$};
+  \node[note, pathc, above=1.2mm] at (56,40) {$k+1$};
+
+  \fill[pathc, opacity=0.13] (44,14) rectangle (56,48);
+  \draw[pathc, densely dashed, line width=0.5pt] (44,14) -- (44,48);
+  \draw[pathc, densely dashed, line width=0.5pt] (56,14) -- (56,48);
+  \node[note, pathc, anchor=south] at (50,48.5) {$R$};
+
+  \coordinate (sh) at (47,16);
+  \draw[errc, line width=0.9pt] (47,40) -- (sh);
+  \fill[errc] (47,40) circle (0.9);
+  \node[note, errc, anchor=east] at (45.6,27) {$y_e = 2R$};
+  \draw[errc, line width=0.9pt] (47,40) -- (56,40);
+  \node[note, errc, anchor=west] at (48.4,36.4) {$d - x_e$};
+
+  \begin{scope}[shift={(47,16)}]
+    \fill[ink] (-1.7,-2.4) -- (-1.7,1.4) -- (0,3.4) -- (1.7,1.4) -- (1.7,-2.4) -- cycle;
+  \end{scope}
+
+  \node[note, anchor=west] at (2,8)   {$d - x_e < R$ \ 이므로};
+  \node[font=\small, pathc, anchor=west] at (2,3.5) {전환한다};
+\end{scope}
+
+% =========================================================================
+% 오른쪽 — 수락 원 판정
+% =========================================================================
+\begin{scope}[shift={(74,0)}]
+  \node[font=\small, anchor=west] at (0,60) {수락 원 판정};
+  \node[note, anchor=west] at (0,55.5) {실제 직선거리가 $R$ 보다 작은가};
+
+  \draw[pathc, line width=0.8pt] (4,40) -- (62,40);
+  \fill[pathc] (10,40) circle (1.1);
+  \fill[pathc] (56,40) circle (1.1);
+  \node[note, pathc, below=0.8mm] at (10,40) {$k$};
+  \node[note, pathc, above=1.2mm] at (56,40) {$k+1$};
+
+  \fill[thr, opacity=0.13] (56,40) circle (12);
+  \draw[thr, densely dashed, line width=0.5pt] (56,40) circle (12);
+  \draw[thr, line width=0.5pt] (56,40) -- ++(8.49,8.49);
+  \node[note, thr, anchor=south west] at (61,45) {$R$};
+
+  \coordinate (sh2) at (47,16);
+  \draw[warn, line width=0.9pt] (56,40) -- (sh2);
+  \node[note, warn, anchor=east] at (49,24) {실제 거리 $> 2R$};
+
+  \begin{scope}[shift={(47,16)}]
+    \fill[ink] (-1.7,-2.4) -- (-1.7,1.4) -- (0,3.4) -- (1.7,1.4) -- (1.7,-2.4) -- cycle;
+  \end{scope}
+
+  \node[note, anchor=west] at (2,8)  {원 밖이므로};
+  \node[font=\small, warn, anchor=west] at (2,3.5) {전환하지 않는다 — 계속 기다린다};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

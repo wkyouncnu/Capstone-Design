@@ -1,0 +1,70 @@
+% assets/w07-lookahead.svg — lookahead distance 가 하는 일
+%
+%   bash _tools/tikz2svg.sh assets/src/w07-lookahead.tex assets/w07-lookahead.svg
+%
+% 요점: 이탈량은 하나도 바뀌지 않았다. Delta 만 바뀌었는데 지령이 일곱 배 꺾인다.
+%
+% 축척 1 m = 3 mm.  y_e = 4 m = 12 mm,  Delta = 3 / 10 / 30 m = 9 / 30 / 90 mm
+%   arctan(4/3)  = 53.13 deg
+%   arctan(4/10) = 21.80 deg
+%   arctan(4/30) =  7.59 deg
+% 경로는 정동향(pi_p = 90 deg)으로 눕혔다. 배가 경로 아래 = 우현 = y_e > 0,
+% 그래서 지령은 좌현(위)으로 꺾인다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- 좌표축 ---------------------------------------------------------------
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,52) -- (2,64);
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,52) -- (14,52);
+\node[font=\small, anchor=east]  at (1,63) {$N$};
+\node[font=\small, anchor=north] at (13,51) {$E$};
+
+% ---- Delta 세 개를 길이 그대로 그린다 --------------------------------------
+\node[note, anchor=east] at (13,44) {$\Delta = 3$ m};
+\draw[thr, line width=1.6pt] (14,44) -- (23,44);
+\node[note, anchor=east] at (13,39) {$\Delta = 10$ m};
+\draw[thr, line width=1.6pt] (14,39) -- (44,39);
+\node[note, anchor=east] at (13,34) {$\Delta = 30$ m};
+\draw[thr, line width=1.6pt] (14,34) -- (104,34);
+
+% ---- 경로 -----------------------------------------------------------------
+\draw[pathc, line width=0.8pt] (6,24) -- (116,24);
+\node[note, pathc, anchor=west] at (106,20.5) {계획 경로};
+
+\coordinate (ft) at (14,24);
+\coordinate (sh) at (14,12);
+\fill[errc] (ft) circle (1.0);
+\draw[errc, line width=1.0pt] (ft) -- (sh);
+\node[note, errc, anchor=east] at (12.6,18) {$y_e = 4$ m};
+\draw[errc, line width=0.4pt] (14,26.6) -- (16.6,26.6) -- (16.6,24);
+
+% ---- 조준점 세 개와 지령 ---------------------------------------------------
+\fill[accent] (23,24)  circle (1.1);
+\fill[accent] (44,24)  circle (1.1);
+\fill[accent] (104,24) circle (1.1);
+
+\draw[sig, accent, line width=0.7pt] (sh) -- (23,24);
+\draw[sig, accent, line width=0.7pt] (sh) -- (44,24);
+\draw[sig, accent, line width=0.7pt] (sh) -- (104,24);
+
+\node[note, accent, anchor=south west] at (22.5,25) {$53.1^\circ$};
+\node[note, accent, anchor=south west] at (43.5,25) {$21.8^\circ$};
+\node[note, accent, anchor=south west] at (103,25) {$7.6^\circ$};
+
+% ---- 배 -------------------------------------------------------------------
+\begin{scope}[shift={(14,12)}, rotate=-53]
+  \fill[ink] (-1.7,-2.4) -- (-1.7,1.4) -- (0,3.4) -- (1.7,1.4) -- (1.7,-2.4) -- cycle;
+\end{scope}
+\node[note, below=2.6mm of sh] {배};
+
+% ---- 읽는 법 ---------------------------------------------------------------
+\node[note, anchor=west, text width=96mm] at (20,4)
+     {조준점이 셋 다 경로 위에 있고 이탈량 $y_e$ 도 셋 다 같다.
+      $\Delta$ 하나만 바뀌었는데 꺾으라는 각이 $7$ 배 차이가 난다};
+
+\end{tikzpicture}
+\end{document}

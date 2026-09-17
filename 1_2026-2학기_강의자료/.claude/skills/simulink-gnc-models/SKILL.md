@@ -241,6 +241,23 @@ set_param(모델, 'SimulationCommand', 'update')     % 차원·자료형이 풀�
 깨지면 **손대기 전 파일로 되돌린다.** 도면을 예쁘게 만들자고 모델을 망가뜨릴 수는
 없다.
 
+
+### 포트를 하나 더 달았다면 — `settle_links`
+
+```matlab
+settle_links(m)      % 배치는 그대로, 선만 지적 0 이 될 때까지 다시 긋는다
+```
+
+- `lay_chain` 으로 배치를 잡아 둔 모델에는 **`tidy_model` 을 쓰지 않는다.** `arrangeSystem`
+  이 배치부터 다시 잡아서 접어 둔 모양이 무너진다. `settle_links` 는 `lay_links` 만 반복한다
+- 신호 기록 표시는 안에서 `keep_signals` 로 챙겼다가 되돌린다
+
+> [!warning] 출력 포트를 늘리면 아래 포트가 전부 밀린다
+> 2026-09-17 에 W07 의 `Guidance` 에 `x_e` 출력을 더했더니 `gate` 가 한 칸 내려가고,
+> 그 선이 전에는 비어 있던 자리를 지나가며 From 두 개를 가로질렀다 — 블록관통 2건.
+> 배치를 다시 잡을 일이 아니라 **선 하나를 다른 통로로 보내면 되는 일**이다.
+> 빌더의 `mss_style` 뒤에 `settle_links(m)` 를 한 줄 넣으면 다시 만들 때마다 알아서 풀린다.
+
 ### 선을 그을 때는 `draw_line`
 
 ```matlab
