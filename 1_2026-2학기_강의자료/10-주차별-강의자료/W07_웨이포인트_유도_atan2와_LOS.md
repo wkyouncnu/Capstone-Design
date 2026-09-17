@@ -480,9 +480,9 @@ end
 
 **헤딩 제어 — P-D 요각속도 되먹임**
 
-```
-tau_N = Kp_psi · ssa(psi_ref − psi) − Kd_psi · r
-```
+$$
+\tau_N \;=\; K_{p,\psi}\,\operatorname{ssa}(\psi_{\text{ref}} - \psi) \;-\; K_{d,\psi}\,r
+$$
 
 > [!important] 오차를 미분하지 않는다
 > - 6주차 H절의 `HeadingCtrl` 과 **같은 식**이다. 여기서는 지령이 계속 바뀐다
@@ -494,8 +494,8 @@ tau_N = Kp_psi · ssa(psi_ref − psi) − Kd_psi · r
 
 | `d_mode` | D 항 | 특징 |
 |---|---|---|
-| **1** (기본) | `−Kd·r` | 요각속도 되먹임. 지령이 튀어도 D 항은 안 튐 |
-| 2 | `+Kd·de/dt` | 오차 미분. **웨이포인트 전환 때 추력이 크게 튐** |
+| **1** (기본) | $-K_d\,r$ | 요각속도 되먹임. 지령이 튀어도 D 항은 안 튐 |
+| 2 | $+K_d\,\dot{e}$ | 오차 미분. **웨이포인트 전환 때 추력이 크게 튐** |
 
 - 기준 환경 실측값 — 한 스텝당 추력 변화 최대값
 
@@ -510,9 +510,9 @@ tau_N = Kp_psi · ssa(psi_ref − psi) − Kd_psi · r
 
 **속도 제어 — surge velocity 되먹임 PI**
 
-```
-tau_X = PI( u_ref · gate − u )
-```
+$$
+\tau_X \;=\; \operatorname{PI}\bigl(u_{\text{ref}}\cdot \text{gate} \;-\; u\bigr)
+$$
 
 > [!warning] `U = √(u²+v²)` 가 아니라 **`u`** 를 되먹임한다
 > - `U` 는 대지속력이라 옆으로 밀리는 성분까지 포함한다
