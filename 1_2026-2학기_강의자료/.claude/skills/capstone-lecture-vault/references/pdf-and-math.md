@@ -98,10 +98,48 @@ $$
 - `$HOME`, `$(pwd)` 가 **수식으로 잡히지 않는다** (1·2단계에서 이미 빠졌으므로)
 - `y_e` 의 밑줄이 **강조로 해석되지 않는다** (marked 가 수식을 보지 못하므로)
 
+---
+
+## 4. 그림이 두 쪽에 걸치지 않게
+
+`break-inside: avoid` **하나로는 안 된다.** 그 규칙은 "한 쪽에 들어가는 요소"만
+다음 쪽으로 밀어 준다. 쪽보다 큰 그림에는 아무 효과가 없고, 브라우저는 자른다.
+
+- A4 297mm − 위 13 − 아래 16 = **본문 높이 268mm**, 본문 폭 186mm
+- 따라서 **세로/가로 비가 1.44 를 넘는 그림**은 폭에 맞추는 순간 쪽을 넘는다
+
+템플릿이 하는 일 두 가지.
+
+```css
+img { max-width: 100%; max-height: 248mm; height: auto; ... }
+.figblock { break-inside: avoid; page-break-inside: avoid; }
+```
+
+- `max-height` 로 **높이를 본문 안에 가둔다.** `max-width` 와 함께 주면 비율은 유지된다
+- marked 는 그림을 `<p>` 로 감싸므로, 렌더 뒤 JS 가 **그림만 든 문단**에 `.figblock` 을 붙인다
+
+> [!important] 측정으로 확인한다
+> 그림 하나만 든 MD 를 만들어 쪽 수를 세면 바로 보인다.
+> ```bash
+> grep -ao "/Count [0-9]*" 파일.pdf | head -1
+> ```
+> 2026-09-17 측정 — `W02_1_pose_sub.png` (1205×1999, 비 1.66) 하나만 담은 문서가
+> **제한 없이 3쪽, `max-height: 248mm` 에서 1쪽**이었다.
+>
+> PDF 를 그림으로 볼 수 없는 환경(`pdftoppm` 미설치)에서도 이 방법은 동작한다.
+
+- 그림을 새로 만들 때 **비 1.44 를 넘기지 않는 것이 가장 좋다.**
+  넘으면 제한에 걸려 폭이 줄어들고, 쪽 옆이 비어 보인다
+- 사슬이 긴 Simulink 도면은 `lay_chain` 의 `Wrap` 으로 접는다 →
+  스킬 `simulink-gnc-models` 의 `references/line-routing.md` §8.5
+
+---
+
 ### 템플릿 지뢰
 
 | 증상 | 원인 | 조치 |
 |---|---|---|
+| **그림이 두 쪽에 걸침** | 그림이 본문 높이(268mm)보다 큼 | `img` 의 `max-height` 를 확인. §4 |
 | `Can't load "/input/tex/extensions/boldsymbol.js"` | MathJax 축약 빌드는 확장을 원격에서 받는다 | **`tex-svg-full.js`** 를 쓴다 |
 | 파일이 갑자기 "binary" 로 잡힘 | Edit 도구가 NUL 문자를 삽입 | `tr -d '\000'` 로 제거 후 재확인 |
 | 수식 번호가 붙음 | `tags` 기본값 | 설정이 `tags:"none"` 이다. 바꾸지 말 것 |

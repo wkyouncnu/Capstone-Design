@@ -79,9 +79,23 @@
   th { background: #e2e8f0; font-weight: 700; color: #0f172a; }
   tr:nth-child(even) td { background: #f8fafc; }
 
-  /* ---------- 그림 ---------- */
-  img { max-width: 100%; display: block; margin: 9px auto;
+  /* ---------- 그림 ----------
+     그림이 두 쪽에 걸치지 않게 하는 데는 규칙 하나로 부족하다.
+
+     (1) break-inside: avoid 는 **한 쪽에 들어가는 그림**만 다음 쪽으로 밀어 준다.
+         쪽보다 큰 그림에는 아무 효과가 없다. 브라우저는 자를 수밖에 없다.
+     (2) 그래서 높이를 본문 안으로 **제한**한다.
+         A4 297mm - 위 13 - 아래 16 = 본문 268mm. 여백을 빼고 248mm 로 잡는다.
+         max-width 와 max-height 를 함께 주면 비율은 저절로 유지된다.
+     (3) marked 는 그림을 <p> 로 감싼다. 그 <p> 에도 avoid 를 걸어야 한다
+         (.figblock — 렌더 뒤 JS 가 붙인다).
+
+     2026-09-17 측정: 세로/가로 비가 1.44 를 넘는 그림 11개가 쪽을 넘고 있었다.
+     가장 심한 것은 SB10_logic_done (2.13). */
+  img { max-width: 100%; max-height: 248mm; height: auto; display: block;
+        margin: 9px auto;
         break-inside: avoid; page-break-inside: avoid; }
+  .figblock { break-inside: avoid; page-break-inside: avoid; margin: 9px 0; }
 
   /* ---------- 콜아웃 ---------- */
   blockquote {
@@ -209,6 +223,14 @@ window.MathJax = {
     t.className = 'callout-title';
     t.innerHTML = (ICON[type] || '') + ' ' + title;
     bq.insertBefore(t, bq.firstChild);
+  });
+
+  // 그림만 들어 있는 문단에 .figblock — 그림과 그 문단이 함께 다음 쪽으로 넘어간다.
+  // img 에만 avoid 를 걸면 <p> 가 쪼개지면서 그림이 쪽 경계에 걸리는 경우가 있다.
+  Array.prototype.forEach.call(document.querySelectorAll('#out p'), function (p) {
+    var imgs = p.querySelectorAll('img');
+    if (!imgs.length) return;
+    if (p.textContent.trim() === '') p.classList.add('figblock');
   });
 
   // 1부 / 2부 / 마무리 등 두 번째 이후 h1 은 새 페이지에서 시작
