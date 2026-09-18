@@ -140,14 +140,24 @@ thruster 배치 xacro     (추진기 배치)
 
 - 좌우 추력을 다르게 주어 회전 모멘트를 만듦
 
-```
-전진력   X = F_L + F_R
-요모멘트 N = (F_L - F_R) x 1.027        (NED 기준, 양수면 우선회)
+- 전진력은 두 추력의 **합**, 요 모멘트는 두 추력의 **차**에 반폭 $b$ 를 곱한 것이다
 
-역변환 (제어기가 쓰는 식)
-F_L = X/2 + N / (2 x 1.027)
-F_R = X/2 - N / (2 x 1.027)
-```
+$$
+X = F_L + F_R,
+\qquad
+N = b\,(F_L - F_R),
+\qquad
+b = 1.027\ \text{m}
+$$
+
+- NED 기준이라 $N > 0$ 이면 **우선회**(시계방향)다. 왼쪽을 더 세게 밀면 뱃머리가 오른쪽으로 돈다
+- 제어기는 거꾸로 쓴다 — 필요한 $X$ 와 $N$ 을 정하고 두 추력을 푼다
+
+$$
+F_L = \frac{X}{2} + \frac{N}{2b},
+\qquad
+F_R = \frac{X}{2} - \frac{N}{2b}
+$$
 
 | 주는 값 | 결과 |
 |---|---|
@@ -1046,8 +1056,6 @@ http://localhost:8080/wmts/gm_layer/gm_grid/{level}/{x}/{y}.png
 
 ---
 
-# 마무리
-
 ## 2-6. VRX 과제 월드 — 15주 뒤 무엇을 하게 되는가
 
 > [!important] VRX 에는 **채점까지 되는 과제 월드 12종**이 들어 있다
@@ -1302,6 +1310,116 @@ ros2 topic echo /wamv/sensors/gps/gps/fix
 
 ---
 
+## 2-8. Simulink 로 같은 것을 재 본다
+
+- 2-3-7 절의 발행 주기와 2주차 2-9 절의 QoS 불일치를 **Simulink 모델로 다시** 잰다
+- 6주차부터는 제어기가 Simulink 안에서 토픽을 받는다. 터미널에서 본 숫자와 **Simulink 가 받는 숫자가 같은지** 먼저 확인해 두는 절이다
+
+```matlab
+cd('<배포 폴더>/W04_simulink')
+W04_setup
+```
+
+- 정상 출력
+
+```
+W04_setup 완료 — Ts = 0.005 s (200 Hz), 측정 20초, ROS_DOMAIN_ID=8
+```
+
+| 읽는 법 | 뜻 |
+|---|---|
+| `Ts = 0.005 s (200 Hz)` | IMU 100 Hz 를 세려면 모델이 그보다 빨라야 한다 |
+| `측정 20초` | 짧으면 주기가 흔들린다. 벽시계로 20 초를 센다 (Simulation Pacing 켬) |
+| `ROS_DOMAIN_ID=8` | WSL 의 `~/.bashrc` 와 같아야 토픽이 보인다 |
+
+### 2-8-1. 센서 세 개의 수신 주기 — `W04_1_sensor_rates` (VRX 필요)
+
+![센서 수신 주기 모델](W04_simulink/img/W04_1_sensor_rates.png)
+
+| 서브시스템 | 하는 일 |
+|---|---|
+| `SensorSubscriber` | GPS · IMU · 바람 세 토픽을 동시에 구독한다 |
+| `RateMeter` | 받은 메시지 수를 흐른 시간으로 나눈다 — `ros2 topic hz` 가 하는 일과 같다 |
+| `Logging` | 세 주기를 기록한다 |
+
+- VRX 를 띄운 뒤
+
+```matlab
+S = W04_rates_run(20);
+```
+
+- 정상 출력 (2026-09-18, 이 과목 기준 PC, VRX 헤드리스 · `ogre`, RTF 0.99)
+
+```
+  토픽    설계값[Hz]   Simulink 실측[Hz]   비율
+  ----    ----------   -----------------   ----
+  GPS          20             15.25     0.76
+  IMU         100             74.90     0.75
+  wind         20              9.15     0.46
+```
+
+- 같은 시각 터미널에서 잰 값
+
+| 토픽 | Simulink | `ros2 topic hz` |
+|---|---|---|
+| IMU | 74.90 Hz | 76.05 Hz |
+| GPS | 15.25 Hz | 15.36 Hz |
+
+| 읽는 법 | 뜻 |
+|---|---|
+| Simulink ≈ `ros2 topic hz` | **Simulink 가 받는 것이 토픽에 실제로 오는 것과 같다.** 이 모델의 목적이 이것이다 |
+| RTF 0.99 인데 비율 0.75 | 2-3-7 절에서는 "RTF 가 주기를 정한다" 고 했다. 이 PC 에서는 RTF 가 거의 1 인데도 3/4 만 온다. **RTF 말고도 병목이 있다**는 뜻이다 — 원인은 이 측정만으로 가를 수 없다 |
+| 바람만 0.46 | 바람만 비율이 다르다. 세 비율이 같지 않으면 원인이 시뮬레이터 속도 하나가 아니다 |
+
+> [!important] 6주차에서 이 숫자가 왜 중요한가
+> 제어기는 **받은 만큼만** 안다. IMU 가 100 Hz 로 설계돼 있어도 75 Hz 로 오면 제어기는 75 Hz 로 판단한다.
+> 제어 주기를 정하기 전에 **실제로 받는 주기**를 재는 것이 순서다. 설계값을 믿지 않는다.
+
+### 2-8-2. QoS 불일치 — `W04_2_qos_test` (VRX 불필요)
+
+![QoS 시험 모델](W04_simulink/img/W04_2_qos_test.png)
+
+- 같은 토픽 `/qos_topic` 을 **두 번** 구독한다. 다른 것은 Reliability 하나뿐이다
+
+| 구독 블록 | Reliability |
+|---|---|
+| `SubReliable` | Reliable |
+| `SubBestEffort` | Best effort |
+
+- 발행자는 2주차 2-9 절의 `qos_test_pub` — **BEST_EFFORT** 로 0.5 초마다 한 번 보낸다
+
+```bash
+ros2 run usv_basics qos_test_pub
+```
+
+```matlab
+out = sim('W04_2_qos_test');     % 20 초, 벽시계
+```
+
+- 정상 결과 (2026-09-18 실행)
+
+| 구독 | 20 초 동안 받은 수 |
+|---|---|
+| Best effort | **40** (0.5 초마다 한 번 × 20 초 — 빠짐없이) |
+| Reliable | **0** |
+
+| 읽는 법 | 뜻 |
+|---|---|
+| Reliable 0 | 발행자(BEST_EFFORT)보다 **엄격한** 구독자는 한 건도 받지 못한다 |
+| 토픽은 보인다 | 이 동안에도 `ros2 topic list` 에 `/qos_topic` 이 그대로 있다 — **보이는데 안 온다** |
+| 오류 메시지가 없다 | Simulink 는 경고 없이 0 을 센다. 2주차와 같은 실패가 Simulink 에서도 조용히 일어난다 |
+
+> [!warning] 시뮬레이터에서는 안 걸리고, 실선에서 걸린다
+> VRX 는 LiDAR · 카메라까지 **전부 RELIABLE** 로 발행한다 (2-3 절, 2026-09-15 전수조사).
+> 그래서 VRX 에서는 Simulink 구독 블록을 기본값(Reliable)으로 둬도 잘 받는다.
+> 그런데 **실선**의 LiDAR · 카메라 드라이버는 BEST_EFFORT 로 발행하는 경우가 많다.
+> 시뮬레이터에서 잘 돌던 모델이 실선에서 **토픽 이름이 맞는데도 값이 영원히 0** 이 된다.
+> 구독 블록의 QoS 는 발행자에 맞추고, 바꾼 환경에서는 `ros2 topic info --verbose` 로 먼저 확인한다.
+
+---
+
+# 마무리
+
 ## 이번 주차 요약
 
 | 순서 | 한 일 | 확인 방법 |
@@ -1314,6 +1432,7 @@ ros2 topic echo /wamv/sensors/gps/gps/fix
 | 6 | Mapviz + mapproxy 설정 | 위성지도에 항적 표시 |
 | 7 | **과제 월드 실행** | `/vrx/task/info` 에 `state: running` |
 | 8 | **`ros2 bag` 기록·재생** | `ros2 bag info` 에 메시지 수 표시 |
+| 9 | **Simulink 로 재기** — 수신 주기 · QoS | IMU 74.90 Hz ≈ `ros2 topic hz` 76.05 Hz · Reliable 0 / Best effort 40 |
 
 ---
 
@@ -1341,6 +1460,8 @@ ros2 topic echo /wamv/sensors/gps/gps/fix
 - [ ] `config_file` 이 아니라 `urdf` 가 모델 지정 인자라는 것을 안다
 - [ ] RViz2 에서 변경 전후 점군을 비교했다
 - [ ] Mapviz + mapproxy 로 위성지도 위 항적을 확인했다
+- [ ] `W04_rates_run` 으로 잰 Simulink 수신 주기가 `ros2 topic hz` 와 같은지 비교했다
+- [ ] `W04_2_qos_test` 에서 Reliable 구독이 0 건인 것을 확인했다
 
 ### 과제 월드와 기록
 
