@@ -86,7 +86,7 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 | 언제 | 절 | 무엇을 얻는가 |
 |---|---|---|
 | **수업 전** — 설치 | 2-1 ROS 2 설치 · 2-2 VS Code | 수업 시간에 설치로 막히지 않는다 |
-| **수업 중** — 개념 | 1-1 ~ 1-2 · 1-4 ~ 1-6 | 노드 · 토픽 · 메시지 · Domain ID · QoS 가 무엇인가 |
+| **수업 중** — 개념 | 1-1 \~ 1-2 · 1-4 \~ 1-6 | 노드 · 토픽 · 메시지 · Domain ID · QoS 가 무엇인가 |
 | **수업 중** — 손으로 | 2-3 첫 통신 → 2-4 turtlesim → 2-7 패키지 → 2-8 첫 노드 → 2-9 QoS 실험 | 이 주차의 뼈대. 순서대로 한다 |
 | **수업 중** — Simulink | 2-10 중계 노드 → 2-11 목표 자세 제어 | 6주차 Simulink 연동의 예고편. 2-10 을 먼저 해야 2-11 이 돈다 |
 | **과제** | 1-7 표본화 | 과제 2(가상 IMU 표본화) 가 이 절에서 나온다 |
@@ -469,7 +469,7 @@ std_msgs/Header header
 ### 해결 — `ROS_DOMAIN_ID`
 
 - 같은 번호를 가진 노드끼리만 통신
-- 범위: `0` ~ `101`
+- 범위: `0` \~ `101`
 
 > [!important] 본 과목의 규칙
 > **팀 번호를 Domain ID로 사용.** 1팀 → 1, 2팀 → 2 ...
@@ -576,11 +576,11 @@ ros2 topic info /토픽이름 --verbose
 
 | 센서 | 주기 | VRX |
 |---|---|---|
-| IMU | 100~200 Hz | 100 Hz |
-| GNSS | 1~10 Hz | 10 Hz |
-| LiDAR | 10~20 Hz | 10 Hz |
-| 카메라 | 15~30 Hz | 20 Hz |
-| **제어기** | 10~100 Hz | 100 Hz |
+| IMU | 100\~200 Hz | 100 Hz |
+| GNSS | 1\~10 Hz | 10 Hz |
+| LiDAR | 10\~20 Hz | 10 Hz |
+| 카메라 | 15\~30 Hz | 20 Hz |
+| **제어기** | 10\~100 Hz | 100 Hz |
 
 ### 표본화 정리 (Nyquist)
 
@@ -630,7 +630,7 @@ ros2 topic info /토픽이름 --verbose
 
 ## 2-1. ROS 2 Humble 설치
 
-> [!note] 소요 시간 약 20~40분
+> [!note] 소요 시간 약 20\~40분
 > 다운로드가 큼. 중간에 노트북을 절전 모드로 두지 말 것.
 
 ### 1단계 — 언어 설정
@@ -743,14 +743,14 @@ humble
 > 동작에는 문제가 없지만 지저분하므로 VS Code 로 열어 지운다.
 >
 > ```bash
-> code ~/.bashrc
+> code \~/.bashrc
 > ```
 >
 > - 중복 확인 — 각각 **1** 이 나와야 한다
 >
 > ```bash
-> grep -c "opt/ros/humble/setup.bash" ~/.bashrc
-> grep -c "ROS_DOMAIN_ID" ~/.bashrc
+> grep -c "opt/ros/humble/setup.bash" \~/.bashrc
+> grep -c "ROS_DOMAIN_ID" \~/.bashrc
 > ```
 
 - 워크스페이스를 만든 뒤에는 **한 줄을 더** 넣는다 (§2-7 에서 다시 나온다)
@@ -863,7 +863,7 @@ cd ~/capstone_ws
 code .
 ```
 
-- 처음 실행하면 VS Code 서버가 WSL 안에 자동 설치된다 (1~2분)
+- 처음 실행하면 VS Code 서버가 WSL 안에 자동 설치된다 (1\~2분)
 
 - **방법 2 — VS Code 안에서**
 
@@ -1694,7 +1694,7 @@ python3 ~/ros2_examples/rclpy/topics/minimal_subscriber/examples_rclpy_minimal_s
 
 > [!note] 구독자의 첫 숫자가 0 이 아닌 이유
 > 발행자를 먼저 켰기 때문이다. 구독자는 **켜진 뒤부터** 받는다.
-> 위 실측에서는 3번부터 받았다. 놓친 0~2번은 되돌아오지 않는다.
+> 위 실측에서는 3번부터 받았다. 놓친 0\~2번은 되돌아오지 않는다.
 > 이것을 바꾸는 설정이 QoS 의 **Durability** 다 (§1-6).
 
 ### 발행자·구독자의 QoS 를 눈으로 확인한다
@@ -1970,8 +1970,8 @@ ros2 pkg executables usv_basics
 > 그렇게 되면 세 폴더를 지우고 **한 단계 위에서 다시** 빌드한다.
 >
 > ```bash
-> rm -rf ~/capstone_ws/src/build ~/capstone_ws/src/install ~/capstone_ws/src/log
-> cd ~/capstone_ws && colcon build --symlink-install
+> rm -rf \~/capstone_ws/src/build \~/capstone_ws/src/install \~/capstone_ws/src/log
+> cd \~/capstone_ws && colcon build --symlink-install
 > ```
 
 **3단계 — VS Code 로 연다**
@@ -2204,16 +2204,16 @@ if __name__ == '__main__':
 
 ![발행자(왼쪽)와 구독자(오른쪽) 코드 비교](../assets/w02-code-pub-sub.png)
 
-- **1~3행은 완전히 같다.** 두 노드 모두 `rclpy` · `Node` · `String` 을 쓴다
+- **1\~3행은 완전히 같다.** 두 노드 모두 `rclpy` · `Node` · `String` 을 쓴다
 
 | 줄 | 발행자 `simple_talker.py` | 구독자 `simple_listener.py` | 무엇이 다른가 |
 |---|---|---|---|
 | 6 | `class SimpleTalker(Node)` | `class SimpleListener(Node)` | 클래스 이름만 다르다. **둘 다 `Node` 를 상속**한다 |
 | 8 | `super().__init__('simple_talker')` | `super().__init__('simple_listener')` | **노드 이름.** `ros2 node list` 에 이 이름이 뜬다 |
-| 9~10 | `self.create_publisher(String, 'usv_chatter', 10)` | `self.create_subscription(String, 'usv_chatter', self.on_msg, 10)` | **핵심 차이.** 구독자는 인자가 하나 더 있다 |
+| 9\~10 | `self.create_publisher(String, 'usv_chatter', 10)` | `self.create_subscription(String, 'usv_chatter', self.on_msg, 10)` | **핵심 차이.** 구독자는 인자가 하나 더 있다 |
 | 11 | `self.create_timer(0.5, self.on_timer)` | (없음) | 발행자만 **스스로 주기적으로** 움직인다 |
 | 12 | `self.count = 0` | (없음) | 발행자만 셀 것이 있다 |
-| 14~19 | `def on_timer(self)` — 0.5초마다 호출 | `def on_msg(self, msg)` — **메시지가 올 때마다** 호출 | **누가 부르는가가 다르다** |
+| 14\~19 | `def on_timer(self)` — 0.5초마다 호출 | `def on_msg(self, msg)` — **메시지가 올 때마다** 호출 | **누가 부르는가가 다르다** |
 
 > [!important] 이 표의 마지막 줄이 이번 절의 핵심이다
 > - **발행자의 `on_timer`** 는 **시계**가 부른다. 아무도 안 들어도 계속 돈다
@@ -2278,8 +2278,8 @@ entry_points={
 | 3 | `<package format="3">` | ROS 2 의 패키지 명세 **3판**. ROS 1은 2판 |
 | 4 | `<name>usv_basics</name>` | **`ros2 run` 의 첫 인자.** 폴더 이름과 같아야 한다 |
 | 8 | `<license>Apache-2.0</license>` | 비우면 빌드 경고 |
-| 10~13 | `<test_depend>` | 자동 생성된 검사 도구. 지우지 않는다 |
-| 15~17 | `<build_type>ament_python</build_type>` | **파이썬 패키지**라는 선언. C++ 이면 `ament_cmake` |
+| 10\~13 | `<test_depend>` | 자동 생성된 검사 도구. 지우지 않는다 |
+| 15\~17 | `<build_type>ament_python</build_type>` | **파이썬 패키지**라는 선언. C++ 이면 `ament_cmake` |
 
 - `setup.py` 를 읽는 법 (위 화면 왼쪽)
 
@@ -2287,9 +2287,9 @@ entry_points={
 |---|---|---|
 | 3 | `package_name = 'usv_basics'` | 아래에서 계속 쓰이는 이름 |
 | 8 | `packages=find_packages(exclude=['test'])` | 어떤 폴더를 파이썬 모듈로 볼지 |
-| 10~12 | `data_files=[...]` | `resource/` 표식과 `package.xml` 을 설치 경로로 복사 |
+| 10\~12 | `data_files=[...]` | `resource/` 표식과 `package.xml` 을 설치 경로로 복사 |
 | 19 | `license='Apache-2.0'` | `package.xml` 과 **같게** 맞춘다 |
-| 25~31 | **`entry_points`** | **여기가 핵심.** 실행파일 목록 |
+| 25\~31 | **`entry_points`** | **여기가 핵심.** 실행파일 목록 |
 
 - `entry_points` 한 줄의 구조
 
@@ -2777,14 +2777,14 @@ if __name__ == '__main__':
 > 저장소에 이 파일이 들어 있다. 아래 한 줄로 최신 상태를 받고 **3단계(빌드)** 로 건너뛴다.
 >
 > ```bash
-> cd ~/capstone_ws/src/usv_basics && git pull
+> cd \~/capstone_ws/src/usv_basics && git pull
 > ```
 >
 > - 출력에 `turtle_pose_relay.py` 가 들어 있으면 받아진 것이다
 
 ### 코드 읽기 ① — 발행자 둘, 구독자 하나
 
-![turtle_pose_relay.py 20~41행 — import 와 __init__](../assets/w02-relay-code-init.png)
+![turtle_pose_relay.py 20\~41행 — import 와 __init__](../assets/w02-relay-code-init.png)
 
 | 줄 | 코드 | 뜻 |
 |---|---|---|
@@ -2794,24 +2794,24 @@ if __name__ == '__main__':
 | 30 | `self.declare_parameter('turtle', 'turtle1')` | **파라미터**(§1-2). 기본값 `turtle1`, 실행할 때 바꿀 수 있다 |
 | 32 | `create_publisher(Pose2D, f'/{turtle}/pose2d', 10)` | 발행자 ① — 위치와 선수각 |
 | 33 | `create_publisher(Twist, f'/{turtle}/vel', 10)` | 발행자 ② — 속도 |
-| 34~35 | `create_subscription(Pose, f'/{turtle}/pose', self.on_pose, 10)` | 구독자 — 메시지가 오면 `on_pose` 를 부른다 |
+| 34\~35 | `create_subscription(Pose, f'/{turtle}/pose', self.on_pose, 10)` | 구독자 — 메시지가 오면 `on_pose` 를 부른다 |
 
 - §2-8 의 `simple_talker`(발행자 1개)와 `simple_listener`(구독자 1개)를 **한 노드에 합친 모양**이다
 - 차이는 **타이머가 없다**는 것 하나 — 발행은 시계가 아니라 **메시지 도착**이 일으킨다
 
 ### 코드 읽기 ② — 받자마자 옮겨 담아 보낸다
 
-![turtle_pose_relay.py 41~63행 — 콜백과 main](../assets/w02-relay-code-callback.png)
+![turtle_pose_relay.py 41\~63행 — 콜백과 main](../assets/w02-relay-code-callback.png)
 
 | 줄 | 코드 | 뜻 |
 |---|---|---|
 | 41 | `def on_pose(self, msg)` | turtlesim 이 자세를 낼 때마다(약 62.5 Hz) 불린다 |
 | 42 | `p = Pose2D()` | 빈 `Pose2D` 양식을 만든다 |
-| 43~45 | `p.x = msg.x` … | **값을 그대로 옮겨 적는다.** 계산이 없다 |
+| 43\~45 | `p.x = msg.x` … | **값을 그대로 옮겨 적는다.** 계산이 없다 |
 | 46 | `self.pub_pose.publish(p)` | `/turtle1/pose2d` 로 내보낸다 |
-| 48~51 | `v = Twist()` … `publish(v)` | 속도도 같은 방식으로 `/turtle1/vel` 에 |
-| 53~56 | `if self.count == 1:` | **첫 메시지 한 번만** 로그를 찍는다. 매번 찍으면 초당 62줄이 쏟아진다 |
-| 59~69 | `def main()` | §2-8 의 `main()` 과 같은 뼈대 |
+| 48\~51 | `v = Twist()` … `publish(v)` | 속도도 같은 방식으로 `/turtle1/vel` 에 |
+| 53\~56 | `if self.count == 1:` | **첫 메시지 한 번만** 로그를 찍는다. 매번 찍으면 초당 62줄이 쏟아진다 |
+| 59\~69 | `def main()` | §2-8 의 `main()` 과 같은 뼈대 |
 
 > [!important] 중계 노드는 값을 바꾸지 않는다
 > 들어온 `x, y, theta` 와 나간 `x, y, theta` 는 같은 숫자다. **형식(양식)만 바뀐다.**
@@ -2829,7 +2829,7 @@ if __name__ == '__main__':
 
 | 화면에서 확인할 것 | 무엇 |
 |---|---|
-| 27~31행 | §2-8 · 3주차에 등록한 기존 실행파일 5개 |
+| 27\~31행 | §2-8 · 3주차에 등록한 기존 실행파일 5개 |
 | **32행** `'turtle_pose_relay = usv_basics.turtle_pose_relay:main',` | 이번에 추가한 줄. **끝의 쉼표** 확인 |
 
 - `package.xml` 의 `<depend>` 에 두 줄 추가 — 이 노드가 쓰는 메시지 패키지
@@ -3435,7 +3435,7 @@ w_z(t) = 0.5 * sin(2*pi*0.5*t)    저주파  0.5 Hz  (실제 선회 운동)
   - (b) 이동평균 후 10 Hz
 - 축 라벨 · 단위 · 범례 필수
 
-### ④ 분석 (5~10줄)
+### ④ 분석 (5\~10줄)
 
 1. 9 Hz 성분을 10 Hz로 표본화하면 **몇 Hz로 둔갑**하는가? 그래프에서 확인되는가?
 2. (a)와 (b) 중 어느 쪽이 나은가? **왜** 그런가?
@@ -3626,4 +3626,4 @@ which code
 - 준비물
   - 이번 주차에 작성한 ROS 2 환경
   - **저장공간 20 GB 이상** (VRX 빌드에 필요)
-  - 빌드에 30~60분 걸리므로 충전기 지참
+  - 빌드에 30\~60분 걸리므로 충전기 지참

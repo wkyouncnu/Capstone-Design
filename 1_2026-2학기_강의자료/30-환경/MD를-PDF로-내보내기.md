@@ -103,7 +103,7 @@ MD  ->  임시 HTML (원본과 같은 폴더에 생성 -> ../assets/ 그림 경�
 |---|---|
 | Page size | A4 |
 | Margin | Default 또는 Small |
-| Downscale percent | 90 ~ 100% |
+| Downscale percent | 90 \~ 100% |
 | Include file name as title | 끄기 (문서 첫 줄에 이미 제목 있음) |
 
 - 서식이 `md2pdf.sh` 결과와 다르므로 **배포본을 섞지 말 것**

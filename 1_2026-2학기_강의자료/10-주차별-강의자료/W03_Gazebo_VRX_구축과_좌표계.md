@@ -35,7 +35,7 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 > - 2주차 ROS 2 설치가 끝나 있어야 함
 > - `ros2 run demo_nodes_cpp talker` 가 되는지 먼저 확인할 것
 > - 저장공간 20 GB 이상: `df -h` 로 확인
-> - **빌드에 30~60분 걸림.** 충전기를 꽂고, 절전 모드로 두지 말 것
+> - **빌드에 30\~60분 걸림.** 충전기를 꽂고, 절전 모드로 두지 말 것
 
 ---
 
@@ -107,7 +107,7 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 | **RTF (Real Time Factor)** | 시뮬레이션 시간 ÷ 실제 시간 |
 
 - RTF = 1.0 → 실시간과 같은 속도
-- VRX + 무거운 센서 → 보통 **0.3 ~ 0.7**
+- VRX + 무거운 센서 → 보통 **0.3 \~ 0.7**
 - Gazebo 창 하단에 표시됨
 
 > [!warning] 알고리즘의 오류가 아니라 처리 속도 문제일 수 있다
@@ -698,15 +698,15 @@ gz sim -v 4 shapes.sdf
 ### 1단계 — 폴더 만들고 내려받기
 
 ```bash
-mkdir -p ~/vrx_ws/src
-cd ~/vrx_ws/src
+mkdir -p \~/vrx_ws/src
+cd \~/vrx_ws/src
 git clone https://github.com/osrf/vrx.git
 ```
 
 ### 2단계 — 브랜치 지정 (가장 중요)
 
 ```bash
-cd ~/vrx_ws/src/vrx
+cd \~/vrx_ws/src/vrx
 git checkout humble
 ```
 
@@ -752,7 +752,7 @@ git describe --tags
 ### 3단계 — 의존성 설치
 
 ```bash
-cd ~/vrx_ws
+cd \~/vrx_ws
 rosdep install --from-paths src --ignore-src -r -y
 ```
 
@@ -801,7 +801,7 @@ Summary: 5 packages finished [39.7s]
 - 플러그인이 실제로 만들어졌는지 확인한다
 
 ```bash
-ls ~/vrx_ws/install/lib/*.so | head -5
+ls \~/vrx_ws/install/lib/*.so | head -5
 ```
 
 ```
@@ -815,8 +815,8 @@ ls ~/vrx_ws/install/lib/*.so | head -5
 ### 5단계 — 환경 자동 적용
 
 ```bash
-echo "source ~/vrx_ws/install/setup.bash" >> ~/.bashrc
-source ~/.bashrc
+echo "source \~/vrx_ws/install/setup.bash" >> \~/.bashrc
+source \~/.bashrc
 ```
 
 > [!note] 2주차 `capstone_ws` 와 함께 쓰기
@@ -1081,7 +1081,7 @@ ros2 topic pub --rate 10 /wamv/thrusters/right/thrust std_msgs/msg/Float64 "{dat
 - 2주차에 받은 저장소에 노드가 추가되어 있다. **최신으로 갱신**한다
 
 ```bash
-cd ~/capstone_ws/src/usv_basics
+cd \~/capstone_ws/src/usv_basics
 git pull
 ```
 
@@ -1105,7 +1105,7 @@ Fast-forward
 ### 2단계 — 빌드
 
 ```bash
-cd ~/capstone_ws
+cd \~/capstone_ws
 colcon build --symlink-install
 source install/setup.bash
 ros2 pkg executables usv_basics
@@ -1291,7 +1291,7 @@ ros2 run usv_basics wamv_teleop_key --ros-args \
 - VRX 쪽 조이스틱 스크립트의 위치는 아래에서 확인할 수 있다
 
 ```bash
-ls ~/vrx_ws/src/vrx/vrx_gz/launch/
+ls \~/vrx_ws/src/vrx/vrx_gz/launch/
 ```
 
 ```
@@ -1307,7 +1307,7 @@ usv_joy_teleop.py      vrx_environment.launch.py
 - VRX 에는 **채점까지 되는 과제 월드**가 함께 들어 있다
 
 ```bash
-ls ~/vrx_ws/src/vrx/vrx_gz/worlds/ | head
+ls \~/vrx_ws/src/vrx/vrx_gz/worlds/ | head
 ```
 
 | 월드 | 본 과목에서 |

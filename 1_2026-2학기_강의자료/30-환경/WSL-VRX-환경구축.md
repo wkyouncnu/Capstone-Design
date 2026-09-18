@@ -34,7 +34,7 @@ summary: Ubuntu 22.04 · ROS 2 Humble · Gazebo Garden · VRX · MATLAB 연동�
 | 경로 | 소요 시간 | 대상 |
 |---|---|---|
 | **A. 배포 이미지 import** (§9) | 약 20분 | 대부분의 학생. **권장** |
-| **B. 처음부터 직접 설치** (§1~§7) | 약 2~3시간 | 전 과정을 이해하고 싶은 학생, 이미지가 안 맞는 경우 |
+| **B. 처음부터 직접 설치** (§1\~§7) | 약 2\~3시간 | 전 과정을 이해하고 싶은 학생, 이미지가 안 맞는 경우 |
 
 - 경로 A로 진행하더라도 §8(MATLAB 연동)과 §1.3(터미널 기본기)은 반드시 수행해야 한다.
 
@@ -93,7 +93,7 @@ wsl --set-version Ubuntu-22.04 2
 | `df` / `du` | 디스크 용량 / 폴더 크기 | `nano` | 간단한 텍스트 편집기 |
 
 **팁**
-- 대부분의 명령어와 경로는 **Tab 키 1~2회로 자동완성**된다. 적극 활용할 것.
+- 대부분의 명령어와 경로는 **Tab 키 1\~2회로 자동완성**된다. 적극 활용할 것.
 - 터미널 복사는 `Ctrl+Shift+C`, 붙여넣기는 `Ctrl+Shift+V`.
 - Windows 파일은 `/mnt/c/Users/...` 로 접근 가능하다. 단, **ROS 워크스페이스는 반드시 리눅스 파일시스템(`~/`)에 두어야** 빌드가 빠르다.
 
@@ -272,7 +272,7 @@ source /opt/ros/humble/setup.bash
 colcon build --merge-install
 ```
 
-> 빌드에 **30~60분** 걸린다. RAM이 부족하면 `colcon build --merge-install --parallel-workers 2` 로 병렬도를 낮춘다.
+> 빌드에 **30\~60분** 걸린다. RAM이 부족하면 `colcon build --merge-install --parallel-workers 2` 로 병렬도를 낮춘다.
 
 ### 5.3 환경 적용
 
@@ -295,7 +295,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 
 | 월드 | 용도 | 주차 |
 |---|---|---|
-| `sydney_regatta` | 기본 해역, 조종 연습 | 3~9주 |
+| `sydney_regatta` | 기본 해역, 조종 연습 | 3\~9주 |
 | `stationkeeping_task` | 위치유지 과제 | 13주 |
 | `wayfinding_task` | 자세 리스트 추종 | 9주 |
 | `perception_task` | 부표·토템 인식 | 12주 |
@@ -306,9 +306,9 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 
 | 월드 | 용도 | 주차 |
 |---|---|---|
-| `sydney_regatta_ca` | **적색 마커부표 36개 장애물 필드** | 10~11주 |
+| `sydney_regatta_ca` | **적색 마커부표 36개 장애물 필드** | 10\~11주 |
 | `sydney_regatta_ca_v2` | 색상 혼합 소규모 필드 | 10주 |
-| `scan_dock_deliver_full` | **도킹 스테이션 3개 베이** | 12~13주 |
+| `scan_dock_deliver_full` | **도킹 스테이션 3개 베이** | 12\~13주 |
 | `scan_dock_deliver_CA` | 부표 80개 + 도킹 플랫폼 (통합) | Term Project |
 
 > [!caution] 아래 파일은 `git clone` 으로 받아지지 않는다
@@ -375,7 +375,7 @@ sudo apt install -y \
   ros-humble-multires-image
 ```
 
-> ⚠️ **수정 사항**: 원본 자료의 `ros-$ROS_humble-mapviz` 는 존재하지 않는 변수명이다. 원 튜토리얼의 `$ROS_DISTRO`를 잘못 치환한 것으로, 이 오타가 원본 슬라이드 18~19의 설치 실패 원인이다. **위와 같이 `ros-humble-` 을 직접 쓸 것.**
+> ⚠️ **수정 사항**: 원본 자료의 `ros-$ROS_humble-mapviz` 는 존재하지 않는 변수명이다. 원 튜토리얼의 `$ROS_DISTRO`를 잘못 치환한 것으로, 이 오타가 원본 슬라이드 18\~19의 설치 실패 원인이다. **위와 같이 `ros-humble-` 을 직접 쓸 것.**
 
 ### 6.2 소스 빌드 (플러그인 커스터마이즈가 필요한 경우만)
 
@@ -532,7 +532,7 @@ networkingMode=mirrored
 
 **② Domain ID 통일**
 
-- 양쪽 모두 같은 값을 쓴다. 실습실에서 여러 학생이 동시에 작업하므로 **팀 번호를 Domain ID로 사용**한다 (0~101 범위).
+- 양쪽 모두 같은 값을 쓴다. 실습실에서 여러 학생이 동시에 작업하므로 **팀 번호를 Domain ID로 사용**한다 (0\~101 범위).
 
 - WSL 쪽 (`~/.bashrc`에 추가):
 ```bash
@@ -624,7 +624,7 @@ send(pub, m);
 
 ## 9. 배포 이미지로 설치하기 (권장 경로)
 
-- 조교가 배포하는 `vrx-ubuntu2204.tar` 를 사용하면 §3~§7을 건너뛸 수 있다.
+- 조교가 배포하는 `vrx-ubuntu2204.tar` 를 사용하면 §3\~§7을 건너뛸 수 있다.
 
 ### 9.1 import
 
@@ -669,7 +669,7 @@ wsl --shutdown
 wsl --export Ubuntu-22.04 D:\dist\vrx-ubuntu2204.tar
 ```
 
-> export 전에 `~/.bash_history` 정리, `apt clean`, 빌드 캐시(`build/`, `log/`) 삭제를 권장한다. 정리하면 8~10 GB 수준으로 줄어든다.
+> export 전에 `~/.bash_history` 정리, `apt clean`, 빌드 캐시(`build/`, `log/`) 삭제를 권장한다. 정리하면 8\~10 GB 수준으로 줄어든다.
 
 ---
 
@@ -679,7 +679,7 @@ wsl --export Ubuntu-22.04 D:\dist\vrx-ubuntu2204.tar
 |---|---|---|---|---|
 | 1 | §1.1 | `wsl --install –d Ubuntu-22.04` | `wsl --install -d Ubuntu-22.04` | 유니코드 엔대시 → ASCII 하이픈. 원본 그대로는 실행 실패 |
 | 2 | §5.1 | `git clone` 만 | **`git checkout humble` 추가** | 기본 브랜치는 Jazzy+Harmonic용. Garden 환경에서 빌드/실행 실패 |
-| 3 | §6.1 | `ros-$ROS_humble-mapviz` | `ros-humble-mapviz` | `$ROS_DISTRO` 오용. 원본 슬라이드 18~19 설치 실패의 원인 |
+| 3 | §6.1 | `ros-$ROS_humble-mapviz` | `ros-humble-mapviz` | `$ROS_DISTRO` 오용. 원본 슬라이드 18\~19 설치 실패의 원인 |
 | 4 | §7.1 | 저장소 `bionic`, `apt-key add` | `$(lsb_release -cs)`, keyring 파일 방식 | Ubuntu 22.04는 `jammy`. `apt-key`는 deprecated |
 | 5 | §1.4 | `Ctrl+Alt+E/O/W` | `Ctrl+Shift+E/O/W` | Ubuntu 22.04 terminator 기본 키맵 |
 | 6 | §2.1 | — | `.wslconfig` 리소스 제한 **추가** | 메모리 부족으로 인한 빌드·실행 실패 예방 |

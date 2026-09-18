@@ -238,6 +238,21 @@ check_refs() {
   return 0
 }
 
+check_tilde() {
+  head2 "14. 취소선이 되는 물결표"
+  # 본문의 "−90°~+90°" 같은 범위 표시 ~ 가 한 문단에 둘이면 marked · GitHub 가 그 사이를
+  # 취소선으로 그린다 (GFM ~text~). 2026-09-18 에 231곳이었다. 고치는 법:
+  #   perl _tools/escape_tilde.pl <파일...>      (코드 · 수식 안은 건드리지 않는다)
+  local n
+  n=$(perl _tools/escape_tilde.pl --check 10-주차별-강의자료/*.md 80-과제/*.md 00-운영/*.md \
+        30-환경/*.md 20-지식/*.md README.md 2>/dev/null | awk '/^합계/{print $2}')
+  n=${n:-0}
+  [ "$n" -gt 0 ] && perl _tools/escape_tilde.pl --check 10-주차별-강의자료/*.md 80-과제/*.md \
+        00-운영/*.md 30-환경/*.md 20-지식/*.md README.md 2>/dev/null | grep -v "^합계" | sed 's/^/    /'
+  note "이스케이프 안 된 범위 물결표" "$n"
+  FAIL=$((FAIL+n))
+}
+
 # ── 실행 ──────────────────────────────────────────────────────────────────
 echo "볼트: $ROOT"
 case "$MODE" in
@@ -246,7 +261,7 @@ case "$MODE" in
   --fig)   check_fig ;;
   --refs)  check_refs 1 ;;
   --struct) check_struct ;;
-  *)       check_pdf; check_links; check_style; check_svg; check_fig; check_struct; check_refs 0 ;;
+  *)       check_pdf; check_links; check_style; check_svg; check_fig; check_struct; check_tilde; check_refs 0 ;;
 esac
 
 echo

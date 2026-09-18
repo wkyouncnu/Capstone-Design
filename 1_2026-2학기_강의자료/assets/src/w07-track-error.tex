@@ -4,11 +4,18 @@
 %
 % 요점: 경로가 자기 좌표계를 만든다. t 는 경로를 따라, n 은 경로의 오른쪽.
 %       배의 위치를 그 둘로 나눈 것이 x_e 와 y_e 다. 식의 sin·cos 이 이 회전이다.
+%       그리고 경로 방위각 pi_p 는 두 웨이포인트의 좌표 차이 (dE, dN) 가 정한다.
 %
-%   pi_p = 50 deg,  t = (0.76604, 0.64279),  n = (0.64279, -0.76604)
-%   p_k = (18,18),  x_e = 42,  y_e = 15
-%   F  = p_k + 42 t = (50.17, 45.00)
-%   배 = F   + 15 n = (59.81, 33.51)
+% 좌표는 계산한 값이다 (N 위, E 오른쪽, 원점 = 축 교점 (4,4)).
+%   pi_p = 50 deg,  t = (sin50, cos50) = (0.76604, 0.64279),  n = (0.64279, -0.76604)
+%   p_k   = (18.00, 18.00)
+%   p_k+1 = p_k + 70 t = (71.62, 63.00)      -> E_k+1 - E_k = 53.62, N_k+1 - N_k = 45.00
+%   F     = p_k + 42 t = (50.17, 45.00)      수선의 발
+%   배    = F + 15 n   = (59.81, 33.51)
+%   atan2(53.62, 45.00) = 50.0 deg  (pi_p 확인)
+%
+% 고친 것 (2026-09-18) — 웨이포인트 k+1 이 없었고, pi_p 식의 E_k, N_k, E_k+1, N_k+1 이
+% 그림 어디에 있는지 보이지 않았다. 축을 크게 그리고 두 점을 축에 내려 표시했다.
 
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
@@ -16,53 +23,83 @@
 \begin{document}
 \begin{tikzpicture}[x=1mm, y=1mm]
 
-% ---- 좌표축 ---------------------------------------------------------------
-\draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,52) -- (2,66);
-\draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,52) -- (16,52);
-\node[font=\small, anchor=east]  at (1,65) {$N$};
-\node[font=\small, anchor=north] at (15,51) {$E$};
+\coordinate (o)   at (4,4);
+\coordinate (pk)  at (18,18);
+\coordinate (pk1) at (71.62,63.00);
+\coordinate (ft)  at (50.17,45.00);
+\coordinate (sh)  at (59.81,33.51);
 
-\coordinate (pk) at (18,18);
-\coordinate (ft) at (50.17,45.00);
-\coordinate (sh) at (59.81,33.51);
+% ---- N · E 축 --------------------------------------------------------------
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (o) -- (4,76);
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (o) -- (84,4);
+\node[font=\small, anchor=south] at (4,76.5) {$N$};
+\node[font=\small, anchor=west]  at (84.5,4) {$E$};
+
+% ---- 두 웨이포인트를 축에 내린다 -------------------------------------------
+\draw[pathc, densely dotted, line width=0.4pt] (pk)  -- (18,4);
+\draw[pathc, densely dotted, line width=0.4pt] (pk)  -- (4,18);
+\draw[pathc, densely dotted, line width=0.4pt] (pk1) -- (71.62,4);
+\draw[pathc, densely dotted, line width=0.4pt] (pk1) -- (4,63);
+\node[font=\scriptsize, pathc, anchor=north] at (18,3.2)    {$E_k$};
+\node[font=\scriptsize, pathc, anchor=north] at (71.62,3.2) {$E_{k+1}$};
+\node[font=\scriptsize, pathc, anchor=east]  at (3.2,18)    {$N_k$};
+\node[font=\scriptsize, pathc, anchor=east]  at (3.2,63)    {$N_{k+1}$};
+
+% 배의 좌표도 흐리게 — x_e, y_e 식의 (N - N_k), (E - E_k) 가 여기서 나온다
+\draw[soft, densely dotted, line width=0.3pt] (sh) -- (59.81,4);
+\draw[soft, densely dotted, line width=0.3pt] (sh) -- (4,33.51);
+\node[font=\scriptsize, soft, anchor=north] at (59.81,3.2) {$E$};
+\node[font=\scriptsize, soft, anchor=east]  at (3.2,33.51) {$N$};
+
+% ---- 경로 방위각을 정하는 삼각형 -------------------------------------------
+\draw[thr, line width=0.6pt] (pk) -- (71.62,18) -- (pk1);
+\draw[thr, line width=0.4pt] (69.02,18) -- (69.02,20.6) -- (71.62,20.6);
+\node[font=\scriptsize, thr, anchor=north] at (44.8,17.4) {$E_{k+1} - E_k$};
+\node[font=\scriptsize, thr, anchor=west]  at (72.4,40.5) {$N_{k+1} - N_k$};
 
 % ---- 경로 -----------------------------------------------------------------
-\draw[pathc, line width=0.8pt] (pk) -- (79.3,69.4);
-\node[note, pathc, rotate=40] at (67,64) {계획 경로};
+\draw[pathc, line width=0.8pt] (pk) -- (pk1);
+\fill[pathc] (pk)  circle (1.2);
+\fill[pathc] (pk1) circle (1.2);
+\node[note, pathc, anchor=north east] at (17.2,16.8) {웨이포인트 $k$};
+\node[note, pathc, anchor=south east] at (70.8,64.2) {웨이포인트 $k+1$};
+
+% pi_p — 북에서 잰다
+\draw[axis, densely dashed] (pk) -- ++(0,20);
+\draw[axis] (pk) ++(0,15) arc (90:40:15);
+\node[note] at (21.5,35.2) {$\pi_p$};
 
 % ---- 배까지의 위치 벡터 (회색) ---------------------------------------------
 \draw[sig, soft, line width=0.6pt] (pk) -- (sh);
 
 % ---- 두 성분 ---------------------------------------------------------------
 \draw[errc, line width=1.1pt] (pk) -- (ft);
-\node[note, errc, rotate=40] at (43,32.6) {$x_e$};
+\node[note, errc, rotate=40] at (40.5,40.3) {$x_e$};
 \draw[errc, line width=1.1pt] (ft) -- (sh);
-\node[note, errc, anchor=west] at (56.4,41) {$y_e$};
+\node[note, errc, anchor=west] at (56.2,41.2) {$y_e$};
 \fill[errc] (ft) circle (1.0);
-
 \draw[errc, line width=0.4pt]
      ($(ft)+(1.99,1.67)$) -- ($(ft)+(1.99,1.67)+(1.67,-1.99)$)
                           -- ($(ft)+(1.67,-1.99)$);
 
-% ---- 경로가 만드는 좌표계 — x_e 위에 겹쳐 그린다 ---------------------------
+% ---- 경로가 만드는 좌표계 --------------------------------------------------
 \draw[pathc, line width=1.3pt, -{Stealth[length=5pt,width=4pt]}] (pk) -- ++(10.7,9.0);
-\node[note, pathc, anchor=south east] at (28.0,28.4) {$\hat{t}$};
+\node[note, pathc, anchor=north west] at (29.2,26.6) {$\hat{t}$};
 \draw[pathc, line width=1.3pt, -{Stealth[length=5pt,width=4pt]}] (pk) -- ++(9.0,-10.7);
-\node[note, pathc, anchor=west] at (28.4,7.6) {$\hat{n}$};
-\fill[pathc] (pk) circle (1.2);
-\node[note, pathc, anchor=east] at (16.6,18) {웨이포인트 $k$};
+\node[note, pathc, anchor=west] at (27.4,8.2) {$\hat{n}$};
 
 % ---- 배 -------------------------------------------------------------------
 \begin{scope}[shift={(59.81,33.51)}, rotate=-30]
   \fill[ink] (-1.7,-2.4) -- (-1.7,1.4) -- (0,3.4) -- (1.7,1.4) -- (1.7,-2.4) -- cycle;
 \end{scope}
-\node[note, right=1.6mm of sh] {배};
+\node[note, anchor=west] at (61.8,31.5) {배 $(N,\ E)$};
 
 % ---- 읽는 법 ---------------------------------------------------------------
-\node[note, anchor=west] at (40,20) {회색 화살표 = 배의 위치 $-$ 웨이포인트 $k$};
-\node[note, pathc, anchor=west] at (40,15.5) {$\hat{t}$ 는 경로 방향, $\hat{n}$ 은 경로의 오른쪽(우현)};
-\node[note, errc, anchor=west] at (40,11) {그 화살표를 $\hat{t}$ 성분과 $\hat{n}$ 성분으로 나눈 것이};
-\node[note, errc, anchor=west] at (40,7)  {$x_e$ 와 $y_e$ 다 — 식의 $\sin\cdot\cos$ 이 이 회전이다};
+\node[note, anchor=west, text width=58mm] at (92,64) {주황 삼각형 — 두 웨이포인트의 좌표 차이가 경로 방위각을 정한다};
+\node[font=\scriptsize, anchor=west] at (92,56) {$\pi_p = \operatorname{atan2}(E_{k+1}-E_k,\ N_{k+1}-N_k)$};
+\node[note, anchor=west, text width=64mm] at (92,46) {회색 화살표 = 배의 위치 $-$ 웨이포인트 $k$, 즉 $(N-N_k,\ E-E_k)$};
+\node[note, pathc, anchor=west, text width=58mm] at (92,37) {$\hat{t}$ 는 경로 방향, $\hat{n}$ 은 경로의 오른쪽(우현)};
+\node[note, errc, anchor=west, text width=58mm] at (92,27) {회색 화살표를 $\hat{t}$ 성분과 $\hat{n}$ 성분으로 나눈 것이 $x_e$ 와 $y_e$ 다 — 식의 $\sin\cdot\cos$ 이 이 회전이다};
 
 \end{tikzpicture}
 \end{document}

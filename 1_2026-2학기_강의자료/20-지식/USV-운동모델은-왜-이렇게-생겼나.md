@@ -93,7 +93,7 @@ N = (FL − FR) × 1.027
 
 | 파일 | 내용 |
 |---|---|
-| `Handbook Of Marine Craft Hydrodynamics And Motion Control(2nd) @.pdf` | Fossen 교과서. 3~7장 |
+| `Handbook Of Marine Craft Hydrodynamics And Motion Control(2nd) @.pdf` | Fossen 교과서. 3\~7장 |
 | `Fossen 2024 Lecture on 2D and 3D path-following control.pdf` | LOS·ILOS 유도 |
 | `1. 동역학 모델.pdf` | 교수 강의자료. 운동방정식 유도 |
 | `2. USV 제어기 설계.pdf` | 선형화, 극배치, 추력배분, 접안 |
