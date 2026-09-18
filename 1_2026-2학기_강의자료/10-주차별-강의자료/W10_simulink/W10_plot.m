@@ -7,10 +7,12 @@ function S = W10_plot(out, ttl)
 %   반환값 S
 %     S.rms_pos    구간별 위치 오차 RMS [m]
 %     S.rms_psi    구간별 선수각 오차 RMS [deg]
-%     S.max_pos    최대 위치 오차 [m]
+%     S.max_pos    최대 위치 오차 [m] — 기준모델 출력 eta_d 기준 (따라가는 오차)
+%     S.max_raw    최대 위치 오차 [m] — 원래 계단 목표 eta_raw 기준
 %     S.mean_T     평균 추력 크기 [N]
 %     S.sat_pct    포화·불감대에 걸린 시간 비율 [%]
-%     S.settle     각 구간의 정착 시간 [s] (오차 0.5 m 이내 진입)
+%     S.settle     각 구간의 정착 시간 [s] — 계단 목표 eta_raw 까지 0.5 m 이내로 들어온 때
+%                  (eta_d 기준으로 재면 기준모델이 목표를 끌고 가므로 늘 0 s 가 된다)
 
 if nargin < 2, ttl = ''; end
 
@@ -23,6 +25,7 @@ t   = out.log_eta.Time;
 N   = numel(t);
 eta = pick(out.log_eta,     N);          % [N x 3]
 etd = pick(out.log_eta_d,   N);
+erw = pick(out.log_eta_raw, N);
 nu  = pick(out.log_nu,      N);
 ee  = eta - etd;
 ee(:,3) = atan2(sin(ee(:,3)), cos(ee(:,3)));   % 실제 오차 (필터 전)
@@ -33,6 +36,7 @@ Da  = pick(out.log_Dact,    N);
 sat = pick(out.log_sat,     N);
 
 epos = hypot(ee(:,1), ee(:,2));
+eraw = hypot(eta(:,1)-erw(:,1), eta(:,2)-erw(:,2));   % 계단 목표 기준
 epsi = rad2deg(ee(:,3));
 
 % 각 목표 구간의 마지막 20 초를 정상상태로 본다
@@ -47,10 +51,11 @@ for i = 1:numel(seg)
         S.rms_psi(i) = sqrt(mean(epsi(m1).^2));
     end
     m2 = t >= seg(i) & t <= t2;
-    k  = find(m2 & epos <= 0.5, 1);
+    k  = find(m2 & eraw <= 0.5, 1);
     if ~isempty(k), S.settle(i) = t(k) - seg(i); end
 end
 S.max_pos = max(epos);
+S.max_raw = max(eraw);
 S.mean_T  = mean(mean(abs(Ta)));
 S.sat_pct = 100*mean(sat > 0.5);
 % 추진기가 얼마나 바쁘게 움직이는가 — 파랑 필터의 효과를 보는 지표
@@ -109,7 +114,8 @@ for i = 1:numel(seg)
         seg(i), tbl(i,2), tbl(i,3), tbl(i,4), S.rms_pos(i), S.rms_psi(i), ...
         ternary(isnan(S.settle(i)), '  —  ', sprintf('%5.1f s', S.settle(i))));
 end
-fprintf('  최대 위치 오차          %6.3f m\n', S.max_pos);
+fprintf('  최대 위치 오차          %6.3f m   (기준모델 목표 eta_d 기준)\n', S.max_pos);
+fprintf('  최대 위치 오차          %6.3f m   (계단 목표 eta_raw 기준)\n', S.max_raw);
 fprintf('  평균 추력 크기          %6.1f N\n', S.mean_T);
 fprintf('  포화·불감대 시간 비율   %6.1f %%\n', S.sat_pct);
 fprintf('  추력 변화율 RMS         %6.1f N/s\n', S.dT_rms);

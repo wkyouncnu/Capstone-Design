@@ -656,12 +656,13 @@ ros2 topic echo /wamv/sensors/position/ground_truth_odometry --once
 | `child_frame_id` | `wamv/base_link` | 선체 |
 | 발행 주기 | **9.07 Hz** | 설계 10 Hz. RTF 만큼 느려진다 |
 | QoS | `RELIABLE`, 발행자 1 | |
-| 스폰 위치 | `x = -532.0`, `y = 162.0` | **ENU**. 즉 NED 로 (N, E) = (162, −532) |
+| 스폰 위치 | `x = -532.0`, `y = 162.0` (이 표를 잰 노트북) | **ENU**. 즉 NED 로 (N, E) = (162, −532). 다른 설치에서는 `y = 200.0` |
 
-> [!caution] 스폰 좌표는 VRX 판마다 다르다
-> `vrx_gz/launch/competition.launch.py` 의 `Model('wamv','wam-v',[-532, 162, 0, 0, 0, 1])` 이 기준이다.
-> 7\~10주차 스크립트의 `origin_north` · `origin_east` 가 이 값과 다르면
-> **주행이 그 차이만큼 경로에서 벗어난 채 시작**한다. 값이 의심되면 위 표처럼 직접 읽어서 맞춘다.
+> [!caution] 스폰 좌표는 설치마다 다르다
+> - 기준은 `vrx_gz/launch/competition.launch.py` 의 `Model('wamv','wam-v',[-532, y, 0, 0, 0, 1])`
+> - 같은 VRX 2.4.0-2 인데 `y` 가 **162** 인 설치와 **200** 인 설치가 있었다 (2026-09-18 확인)
+> - 자기 설치의 값 확인: `grep -n "Model('wamv'" ~/vrx_ws/src/vrx/vrx_gz/launch/competition.launch.py`
+> - 7\~10주차 `W0X_vrx_run` 은 ground truth 첫 샘플을 원점으로 쓰므로 손댈 필요가 없다. 모델을 **직접** 돌릴 때만 `origin_north` · `origin_east` 를 맞춘다
 
 ---
 

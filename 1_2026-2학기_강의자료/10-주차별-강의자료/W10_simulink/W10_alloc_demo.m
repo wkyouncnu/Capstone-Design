@@ -4,8 +4,9 @@ function W10_alloc_demo()
 %   >> W10_setup
 %   >> W10_alloc_demo
 %
-%   그림 세 장
+%   그림 세 장 (img/ 에 저장)
 %     (1) 도달가능 제어집합 (ACS) — 고정 추진기 vs 틸팅 추진기
+%         연한 초록 = N 을 따지지 않은 (X,Y) 투영, 진한 초록 = N = 0 을 지키는 단면
 %     (2) 요구 방위각 -> 실제 인가되는 각도·추력 (±45° 매핑)
 %     (3) 네 가지 기본 기동에서 두 추진기가 어떻게 배치되는가
 %
@@ -19,15 +20,13 @@ Fmax = evalin('base','F_max');
 dmax = evalin('base','del_max');
 
 %% ---------- (1) 도달가능 제어집합 --------------------------------
-NT = 21;
+NT = 25;                                   % 추력·각도 격자 (25^4 = 39만 점)
 Tr = linspace(-Fmax, Fmax, NT);
 Dr = linspace(-dmax, dmax, NT);
-
-X = []; Y = [];
-for a = Tr, for da = Dr, for b = Tr, for db = Dr
-    X(end+1) = a*cos(da) + b*cos(db); %#ok<AGROW>
-    Y(end+1) = a*sin(da) + b*sin(db); %#ok<AGROW>
-end, end, end, end
+[a, da, b, db] = ndgrid(Tr, Dr, Tr, Dr);
+F4 = [a(:).*cos(da(:)), a(:).*sin(da(:)), b(:).*cos(db(:)), b(:).*sin(db(:))]';
+tau = Te*F4;
+X = tau(1,:);  Y = tau(2,:);  Nm = tau(3,:);
 
 % 고정 추진기(7~9주차): delta = 0 만 가능
 Xf = []; Yf = [];
@@ -37,13 +36,23 @@ end, end
 
 figure('Name','도달가능 제어집합','Color','w','Position',[80 80 720 560]);
 k = convhull(X, Y);
-fill(X(k), Y(k), [0.80 0.93 0.80], 'EdgeColor',[0.2 0.6 0.2], 'LineWidth',1.6); hold on;
+fill(X(k), Y(k), [0.85 0.95 0.85], 'EdgeColor',[0.2 0.6 0.2], 'LineWidth',1.2); hold on;
+% N = 0 단면 — 요 모멘트를 내지 않으면서 낼 수 있는 (X,Y). 격자라 |N| < 20 N·m 로 근사
+z  = abs(Nm) < 20;
+k0 = convhull(X(z), Y(z));
+Xz = X(z); Yz = Y(z);
+fill(Xz(k0), Yz(k0), [0.45 0.75 0.45], 'EdgeColor',[0.1 0.45 0.1], 'LineWidth',1.6);
 plot([min(Xf) max(Xf)], [0 0], 'r-', 'LineWidth',3);
 plot(0,0,'k+','MarkerSize',12,'LineWidth',1.5);
 axis equal; grid on;
 xlabel('전후 추력 X [N]'); ylabel('횡 추력 Y [N]');
-legend({'틸팅 ±45° (10주차)','고정 추진기 (7~9주차)','원점'}, 'Location','best');
-title('도달가능 제어집합 — 틸팅이 열어 주는 것은 Y 축이다');
+legend({'틸팅 ±45°, N 무관 (투영)','틸팅 ±45°, N = 0','고정 추진기 (7~9주차)','원점'}, 'Location','best');
+% 순수 횡이동의 한계는 격자가 아니라 식으로 — 1-9절의 배분 비율 750:944 (T_e^+ 해)
+f1 = Tp*[0; 1; 0];  Ymax = Fmax/hypot(f1(1), f1(2));
+plot([0 0], [-Ymax Ymax], 'k:', 'LineWidth',1.2, 'DisplayName','순수 횡이동 (X = N = 0)');
+plot(0, [Ymax -Ymax], 'kd', 'MarkerFaceColor','y', 'MarkerSize',8, 'HandleVisibility','off');
+title(sprintf('도달가능 제어집합 — 순수 횡이동 한계 %.0f N (투영으로는 %.0f N)', Ymax, 2*Fmax*sin(dmax)));
+saveImg(gcf, 'W10_acs.png');
 
 %% ---------- (2) ±45° 매핑 ----------------------------------------
 dreq = linspace(-180, 180, 721);
@@ -75,6 +84,7 @@ xlim([-180 180]); set(gca,'XTick',-180:45:180);
 xlabel('요구 방위각 [deg]'); ylabel('실제 인가 추력 [N]');
 legend({'모드 1','모드 2'},'Location','best');
 title(sprintf('추력 포화 (요구 %.0f N, 한계 %.0f N)', Treq, Fmax));
+saveImg(gcf, 'W10_map45.png');
 
 %% ---------- (3) 네 가지 기본 기동 ---------------------------------
 cases = { '전진  \tau = [300, 0, 0]',   [300;   0;    0];
@@ -101,13 +111,21 @@ for i = 1:4
     plot(xt,-yt,'ro','MarkerFaceColor','r');
     plot(xt, yt,'bo','MarkerFaceColor','b');
     axis equal; grid on; xlim([-4 3]); ylim([-2.5 2.5]);
-    xlabel('x_b [m] (선수 +)'); ylabel('y_b [m] (우현 +)');
+    set(gca, 'YDir','reverse');   % 위에서 내려다본 모습: 선수가 오른쪽이면 우현은 아래
+    xlabel('x_b [m] (선수 +)'); ylabel('y_b [m] (우현 +, 아래로)');
     title(sprintf('%s\n좌 %+.0f N @ %+.0f°,  우 %+.0f N @ %+.0f°\n실현 \\tau = [%.0f %.0f %.0f]', ...
         cases{i,1}, T1, rad2deg(d1), T2, rad2deg(d2), tau_a(1), tau_a(2), tau_a(3)), ...
         'FontSize', 9);
 end
 
+saveImg(gcf, 'W10_maneuvers.png');
 fprintf('\n배분 검산 — 요구 tau 와 실현 tau 가 같아야 한다 (포화가 없다면)\n');
+end
+
+function saveImg(h, name)
+d = fullfile(fileparts(mfilename('fullpath')), 'img');
+exportgraphics(h, fullfile(d, name), 'Resolution', 110);
+fprintf('   그림 저장: img/%s\n', name);
 end
 
 % ---------------------------------------------------------------

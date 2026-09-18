@@ -43,7 +43,13 @@ end
 fprintf('   OK — 토픽 %d개\n', numel(tl));
 
 fprintf('2) RTF 측정 (20초)\n');
-RTF = measureRTF(TOP, 20);
+[RTF, N0, E0] = measureRTF(TOP, 20);
+% 스폰 위치를 직접 읽어 원점으로 쓴다. launch.py 의 스폰 좌표가 설치마다 다르다
+% (같은 2.4.0-2 인데 한 컴퓨터는 ENU y = 162, 다른 컴퓨터는 200 — 2026-09-18).
+% 고정값을 쓰면 그 차이만큼 경로가 통째로 밀려 안전 수역을 벗어난다.
+assignin('base', 'origin_north', N0);
+assignin('base', 'origin_east',  E0);
+fprintf('   스폰 위치 (N, E) = (%.1f, %.1f) m — 이 점을 원점으로 쓴다\n', N0, E0);
 fprintf('   RTF = %.3f\n', RTF);
 
 fprintf('3) %s 실행 (%d초)\n', m, T_end);
@@ -97,12 +103,13 @@ fprintf('  궤적 평균 이격 %6.2f m,  최대 %6.2f m\n', S.sep_mean, S.sep_m
 end
 
 % =====================================================================
-function RTF = measureRTF(topic, sec)
+function [RTF, N0, E0] = measureRTF(topic, sec)
 n = ros2node(sprintf('/rtf_probe_%d', randi(9999)));
 c = onCleanup(@() clear('n'));
 s = ros2subscriber(n, topic, 'nav_msgs/Odometry');
 m0 = receive(s, 15);  w = tic;
 t0 = double(m0.header.stamp.sec) + double(m0.header.stamp.nanosec)*1e-9;
+E0 = m0.pose.pose.position.x;   N0 = m0.pose.pose.position.y;   % ENU -> NED
 pause(sec);
 m1 = receive(s, 15);  dw = toc(w);
 t1 = double(m1.header.stamp.sec) + double(m1.header.stamp.nanosec)*1e-9;

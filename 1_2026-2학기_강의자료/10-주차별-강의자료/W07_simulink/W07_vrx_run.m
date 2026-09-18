@@ -2,9 +2,9 @@ function S = W07_vrx_run(T_end, do_compare)
 % W07_VRX_RUN  VRX(Gazebo) 와 연동해 W07_1_vrx 를 돌리고 결과를 그린다.
 %
 %   >> W07_setup
-%   >> W07_vrx_run              % 150초 주행 + 오프라인 대조
-%   >> W07_vrx_run(200)         % 200초
-%   >> W07_vrx_run(150, false)  % 대조 없이 VRX 만
+%   >> W07_vrx_run              % 230초 주행(임무 약 207 s 완주) + 오프라인 대조
+%   >> W07_vrx_run(150)         % 150초 — 완주 전에 끊긴다
+%   >> W07_vrx_run(230, false)  % 대조 없이 VRX 만
 %
 %   이 스크립트가 대신 해 주는 것
 %     1. VRX 토픽이 보이는지 확인          (안 보이면 여기서 멈춘다)
@@ -17,7 +17,7 @@ function S = W07_vrx_run(T_end, do_compare)
 %     ros2 launch vrx_gz competition.launch.py world:=sydney_regatta \
 %          urdf:=$HOME/capstone_ws/wamv/w7_wamv.urdf.xacro
 
-if nargin < 1 || isempty(T_end),     T_end = 150;   end
+if nargin < 1 || isempty(T_end),     T_end = 230;   end
 if nargin < 2 || isempty(do_compare), do_compare = true; end
 
 m   = 'W07_1_vrx';
@@ -51,7 +51,13 @@ fprintf('   OK — 토픽 %d개\n', numel(tl));
 
 %% 2. RTF 측정 --------------------------------------------------------
 fprintf('2) RTF 측정 (20초)\n');
-RTF = measureRTF(TOP, 20);
+[RTF, N0, E0] = measureRTF(TOP, 20);
+% 스폰 위치를 직접 읽어 원점으로 쓴다. launch.py 의 스폰 좌표가 설치마다 다르다
+% (같은 2.4.0-2 인데 한 컴퓨터는 ENU y = 162, 다른 컴퓨터는 200 — 2026-09-18).
+% 고정값을 쓰면 그 차이만큼 경로가 통째로 밀려 안전 수역을 벗어난다.
+assignin('base', 'origin_north', N0);
+assignin('base', 'origin_east',  E0);
+fprintf('   스폰 위치 (N, E) = (%.1f, %.1f) m — 이 점을 원점으로 쓴다\n', N0, E0);
 fprintf('   RTF = %.3f  ->  페이싱 비율을 이 값으로 둔다\n', RTF);
 
 %% 3. 실행 ------------------------------------------------------------
@@ -107,12 +113,13 @@ fprintf('  궤적 평균 이격 %6.2f m,  최대 %6.2f m\n', S.sep_mean, S.sep_m
 end
 
 % =====================================================================
-function RTF = measureRTF(topic, sec)
+function [RTF, N0, E0] = measureRTF(topic, sec)
 n = ros2node(sprintf('/rtf_probe_%d', randi(9999)));
 c = onCleanup(@() clear('n'));
 s = ros2subscriber(n, topic, 'nav_msgs/Odometry');
 m0 = receive(s, 15);  w = tic;
 t0 = double(m0.header.stamp.sec) + double(m0.header.stamp.nanosec)*1e-9;
+E0 = m0.pose.pose.position.x;   N0 = m0.pose.pose.position.y;   % ENU -> NED
 pause(sec);
 m1 = receive(s, 15);  dw = toc(w);
 t1 = double(m1.header.stamp.sec) + double(m1.header.stamp.nanosec)*1e-9;

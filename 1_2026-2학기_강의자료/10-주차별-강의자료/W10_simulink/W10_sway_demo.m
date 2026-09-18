@@ -60,21 +60,25 @@ pPL = ros2publisher(n, '/wamv/thrusters/left/pos',     'std_msgs/Float64');
 pPR = ros2publisher(n, '/wamv/thrusters/right/pos',    'std_msgs/Float64');
 mT  = ros2message('std_msgs/Float64');
 
-m0 = receive(sub, 20);
-[E0, N0, psi0] = unpackENU(m0);
-t0 = stampSec(m0);
-
-% --- 25초 개루프 -----------------------------------------------------
-fprintf('2) %g 초 개루프 발행 (되먹임 없음)\n', T_open);
+% --- 개루프 T_open 초 (시뮬레이션 시각) --------------------------------
+%  벽시계로 재면 RTF 가 낮은 컴퓨터일수록 시뮬레이션 시간이 덜 흐른다.
+%  odometry 의 시각 도장으로 재야 어느 컴퓨터에서나 같은 실험이 된다.
+fprintf('2) %g 초 개루프 발행 (시뮬레이션 시각, 되먹임 없음)\n', T_open);
 mT.data = posL; send(pPL, mT);
 mT.data = posR; send(pPR, mT);
 pause(1.0);                              % 방위각이 자리를 잡을 시간
+m0 = receive(sub, 20);                   % 추력을 켜는 순간을 출발점으로
+[E0, N0, psi0] = unpackENU(m0);
+t0 = stampSec(m0);
 w = tic;
-while toc(w) < T_open
+while true
     mT.data = FL; send(pTL, mT);
     mT.data = FR; send(pTR, mT);
     mT.data = posL; send(pPL, mT);
     mT.data = posR; send(pPR, mT);
+    mm = sub.LatestMessage;
+    if ~isempty(mm) && stampSec(mm) - t0 >= T_open, break; end
+    if toc(w) > 20*T_open, warning('시뮬레이션 시간이 흐르지 않는다 — VRX 가 멈췄는가'); break; end
     pause(0.1);
 end
 mT.data = 0; send(pTL, mT); send(pTR, mT); send(pPL, mT); send(pPR, mT);
@@ -91,9 +95,11 @@ stb = dE*sin(psi0) - dN*cos(psi0);       % 좌우 (+ 우현)
 fprintf('\n===== 개루프 횡이동 (%.1f s, 시뮬레이션 시각 기준) =====\n', t1 - t0);
 fprintf('  선체 기준 우현 이동      %+7.2f m\n', stb);
 fprintf('  선체 기준 전후 이동      %+7.2f m\n', fwd);
-fprintf('  선수각 변화              %+7.1f deg\n', rad2deg(wrapToPiLocal(psi1 - psi0)));
+% 선수각 변화는 NED (북에서 시계 +) 로 보고한다. ENU 요각과 부호가 반대
+dpsi = -rad2deg(wrapToPiLocal(psi1 - psi0));
+fprintf('  선수각 변화 (NED, 시계 +) %+7.1f deg\n', dpsi);
 
-S = struct('stb', stb, 'fwd', fwd, 'dpsi_deg', rad2deg(wrapToPiLocal(psi1-psi0)), ...
+S = struct('stb', stb, 'fwd', fwd, 'dpsi_deg', dpsi, ...
            'dt_sim', t1 - t0, 'f', f, 'FL', FL, 'FR', FR, ...
            'aL_deg', rad2deg(aL), 'aR_deg', rad2deg(aR));
 end

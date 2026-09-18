@@ -394,7 +394,7 @@ summary: 한 줄 설명. 마침표 없이
 > | 항목 | 규칙 |
 > |---|---|
 > | **도메인** | Simulink 블록은 **ROS 네트워크 프로필**의 Domain ID, MATLAB `ros2*` 함수는 **환경변수**를 본다. 스크립트 첫머리에서 프로필 값으로 `setenv` 할 것 |
-> | **스폰 원점** | `origin_north`·`origin_east` 는 `launch.py` 의 `Model('wamv', ...)` 와 같아야 한다 (현재 `-532, 162`). 다르면 그만큼 어긋난 채 출발 |
+> | **스폰 원점** | `origin_north`·`origin_east` 는 `launch.py` 의 `Model('wamv', ...)` 와 같아야 한다. **설치마다 다르다** (ENU y 162 / 200). `W07~W10_vrx_run` 이 ground truth 첫 샘플로 잰다. 다르면 그만큼 어긋난 채 출발 |
 > | **ground truth** | `ground_truth_enabled` 는 **xacro 인자**다. 런치 인자로 주면 무시된다 |
 > | **실험 간 초기화** | 주차마다 VRX 를 **다시 띄운다.** 앞 실험이 끝난 자리에서 시작하면 결과가 무의미하다 |
 >

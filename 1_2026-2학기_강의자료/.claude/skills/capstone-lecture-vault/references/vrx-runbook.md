@@ -14,7 +14,7 @@
 | 버전 | VRX `humble` 브랜치 `2.4.0-2-gdc30ed8d` (2026-09-15 재설치 실측) |
 | 스택 | ROS 2 Humble + Gazebo Garden 7.9.0 |
 | **도메인** | `~/.bashrc` 의 `ROS_DOMAIN_ID=8`. **Simulink 프로필과 같아야 한다** (§1.1) |
-| 스폰 위치 | ENU `(-532, 162)` — `launch.py` 의 `Model('wamv','wam-v',[-532,162,0,0,0,1])` |
+| 스폰 위치 | **설치마다 다르다.** 데스크톱 ENU `(-532, 200)`, 9-15 노트북 `(-532, 162)` — 둘 다 2.4.0-2. `vrx_run` 이 ground truth 첫 샘플로 잰다 (§4) |
 
 ```bash
 wsl -d Ubuntu-22.04 bash -lc 'source /opt/ros/humble/setup.bash && source ~/vrx_ws/install/setup.bash && ros2 topic list'
@@ -121,7 +121,7 @@ t = double(m.header.stamp.sec) + double(m.header.stamp.nanosec)*1e-9;
 | 증상 | 원인 | 조치 |
 |---|---|---|
 | **Simulink 만 아무것도 못 받는다** (MATLAB `ros2("topic","list")` 는 보임) | Simulink 블록은 **ROS 네트워크 프로필의 Domain ID**, `ros2*` 함수는 환경변수를 쓴다 | `getpref('ROS_Toolbox','ROS_NetworkAddress_Profiles')` 의 `DomainID` 로 `setenv('ROS_DOMAIN_ID',...)`. `W0X_vrx_run` 이 자동으로 함 |
-| 주행이 경로에서 수십 m 벗어난 채 시작 | `origin_north`/`origin_east` 가 스폰 좌표와 다름 (2.4.0-2 는 `162`, 예전 값은 `200`) | ground truth 첫 샘플을 읽어 맞춘다 |
+| 주행이 경로에서 수십 m 벗어난 채 시작, 대조 궤적이 **평행하게** 떨어짐 | `origin_north`/`origin_east` 가 스폰 좌표와 다름 (설치마다 `162` 또는 `200`, 38 m 차이) | `W07~W10_vrx_run` 이 RTF 를 잴 때 첫 샘플로 원점을 덮어쓴다 (2026-09-18). 고정값을 믿지 않는다 |
 | 두 번째 실험부터 결과가 엉뚱함 | 앞 실험이 끝난 **자리에서 시작** | 실험마다 VRX 재기동 |
 | 첫 점이 수백 m 튄다 (약 568 m) | **Subscribe 는 첫 메시지 전에 0 으로 채운 버스**를 낸다. 원점을 빼면 스폰 좌표만큼 튄다 | `Nav` 첫머리에 `if ex==0 && ey==0` 가드 |
 | 초기 선수각이 90° | 위와 같은 첫 샘플 | `t >= 0.5 s` 샘플에서 읽는다 |
@@ -147,10 +147,12 @@ t = double(m.header.stamp.sec) + double(m.header.stamp.nanosec)*1e-9;
 
 | 주차 | 평균 이격 | 읽는 법 |
 |---|---|---|
-| 7 | 1.11 m | |
-| 8 | 0.31 m | |
-| 9 | 5.07 m | **위상 오차** — 궤적은 겹친다 |
-| 10 | 0.25 m | 네 주차 중 최소 |
+| 7 | 0.28 m | 230 s, 완주 206.7 / 207.0 s |
+| 8 | 4.96 m | **위상 오차** — 궤적은 겹치고 VRX 가 한 바퀴에 4 s 빠름 |
+| 9 | 0.83 m | 전이 시각 1 s 안 |
+| 10 | 0.16 m | 네 주차 중 최소 |
+
+- 2026-09-18 데스크톱, 같은 날 연속 실행, 원점 실측. 이 전의 표(1.11 / 0.31 / 5.07 / 0.25)는 원점 고정값 시절이다
 
 > [!note] 이격은 오차가 아니라 지연인 경우가 많다
 > - 궤적을 겹쳐 그렸을 때 **선이 겹치면** 위상 오차다

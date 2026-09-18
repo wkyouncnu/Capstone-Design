@@ -44,9 +44,9 @@ R = [cos(psi) -sin(psi); sin(psi) cos(psi)];
 hb = (R*hull')';
 set(hHull,'XData', E + hb(:,2), 'YData', N + hb(:,1));
 
-% --- 추진기 화살표 ---
-aL = arrowPts([xt  yt], Dact(1), Tact(1), Fmax, scale, R, N, E);
-aR = arrowPts([xt -yt], Dact(2), Tact(2), Fmax, scale, R, N, E);
+% --- 추진기 화살표 — NED 선체계: 좌현 y = -yt, 우현 y = +yt ---
+aL = arrowPts([xt -yt], Dact(1), Tact(1), Fmax, scale, R, N, E);
+aR = arrowPts([xt  yt], Dact(2), Tact(2), Fmax, scale, R, N, E);
 set(hArrL,'XData',aL(:,1),'YData',aL(:,2));
 set(hArrR,'XData',aR(:,1),'YData',aR(:,2));
 
