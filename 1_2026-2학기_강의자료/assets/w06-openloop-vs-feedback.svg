@@ -15,7 +15,7 @@
 
   <rect x="240" y="62" width="150" height="54" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.8"/>
   <text x="315" y="85"  font-size="15" fill="#92400e" text-anchor="middle">제어기</text>
-  <text x="315" y="105" font-size="15" fill="#92400e" text-anchor="middle">"추력 400 N"</text>
+  <text x="315" y="105" font-size="15" fill="#92400e" text-anchor="middle">"추력 488 N"</text>
 
   <rect x="470" y="62" width="150" height="54" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.8"/>
   <text x="545" y="94"  font-size="15" fill="#115e59" text-anchor="middle">배 (플랜트)</text>

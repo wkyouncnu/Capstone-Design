@@ -44,6 +44,12 @@ function build_w02_models()
     build_turtlesim();
 
     % 배치와 색을 정리한다. 한 번으로는 수렴하지 않아 두 번 부른다.
+    % 이 도구들은 볼트의 _tools 에 있다. 모델 폴더만 복사해 가면 없으므로 그때는
+    % 정리 없이 모델만 남긴다 (모델 동작과는 무관). 볼트 안에서 돌리면 img/*.png 를 덮어쓴다.
+    if exist('tidy_model','file') ~= 2
+        fprintf('  _tools 가 없어 배선 정리·색·그림 저장을 건너뛴다 (모델 동작과는 무관)\n');
+        return
+    end
     slxList = dir('W02_*.slx');
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);

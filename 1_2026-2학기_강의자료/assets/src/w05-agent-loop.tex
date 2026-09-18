@@ -28,7 +28,7 @@
 
 % 되돌아가는 화살표
 \draw[fb] (e.north) -- ++(0,10mm) -| (r.north);
-\node[note] at (51,15) {결과를 보고 다시 읽는다 (반복)};
+\node[note, fill=white, inner sep=1pt, anchor=south] at (51,11.2) {결과를 보고 다시 읽는다 (반복)};
 
 % 에이전트 영역 묶기
 \begin{scope}[on background layer]
@@ -43,7 +43,7 @@
 
 \draw[sig, warn] (box.south) -- (v.north);
 
-\node[wnote, text width=96mm, align=center] at (51,-42)
+\node[wnote, text width=96mm, align=center, anchor=north] at (51,-45)
      {에이전트는 그럴듯하게 틀린 코드도 똑같이 자신 있게 내놓는다.\\
       이 과목에서 채점하는 것은 4번이 아니라 \textbf{5번}이다};
 

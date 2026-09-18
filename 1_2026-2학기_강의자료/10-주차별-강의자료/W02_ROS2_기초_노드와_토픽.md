@@ -2540,26 +2540,40 @@ ros2 topic info /qos_topic --verbose
 ```
 
 - 출력에서 `Endpoint type: PUBLISHER` 와 `SUBSCRIPTION` 각각의 `Reliability` 를 비교한다
-- 볼 줄만 추린 형태 (나머지 줄은 `...` 로 생략)
+- 정상 출력 (2026-09-18 실측, `GID` 는 실행마다 다름)
 
 ```
+Type: std_msgs/msg/String
+
 Publisher count: 1
 
 Node name: qos_test_pub
-...
+Node namespace: /
+Topic type: std_msgs/msg/String
 Endpoint type: PUBLISHER
-...
+GID: 01.0f.45.06.fd.20.ad.f2.00.00.00.00.00.00.11.03.00.00.00.00.00.00.00.00
+QoS profile:
   Reliability: BEST_EFFORT
-...
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  ...
+
 Subscription count: 1
 
 Node name: qos_test_sub
-...
+Node namespace: /
+Topic type: std_msgs/msg/String
 Endpoint type: SUBSCRIPTION
-...
+GID: 01.0f.45.06.fc.20.c1.02.00.00.00.00.00.00.11.04.00.00.00.00.00.00.00.00
+QoS profile:
   Reliability: RELIABLE
+  History (Depth): UNKNOWN
+  Durability: VOLATILE
+  ...
 ```
-- 실측에서는 발행자가 `BEST_EFFORT`, 구독자가 `RELIABLE` 로 서로 다르게 나온다
+
+- 발행자는 `BEST_EFFORT`, 구독자는 `RELIABLE` — 서로 다르다
+- `Publisher count: 1` 인지도 본다. 2 이상이면 발행자를 두 번 띄운 것이라 아래 줄 수가 두 배로 나온다
 
 **3. 수정**
 
@@ -2576,17 +2590,22 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 - 고친 뒤 구독자 출력 (기준 환경 실측)
 
 ```
-[INFO] [1788862838.706155006] [qos_test_sub]: received: best effort message
-[INFO] [1788862838.950216507] [qos_test_sub]: received: best effort message
-[INFO] [1788862839.197985143] [qos_test_sub]: received: best effort message
+[INFO] [1789718301.477341524] [qos_test_sub]: received: best effort message
+[INFO] [1789718301.980649150] [qos_test_sub]: received: best effort message
+[INFO] [1789718302.480484697] [qos_test_sub]: received: best effort message
 ```
+
+- 시각 도장의 간격이 약 0.5 s — 발행자의 타이머 `create_timer(0.5, ...)` 와 같다
 
 | 상태 | 8초 동안 구독자가 받은 줄 수 (실측) |
 |---|---|
 | 불일치 — 발행 `BEST_EFFORT` / 구독 `RELIABLE` | **0** |
-| 일치 — 발행 `BEST_EFFORT` / 구독 `BEST_EFFORT` | **35** |
+| 일치 — 발행 `BEST_EFFORT` / 구독 `BEST_EFFORT` | **16** |
 
-> [!important] 0 과 35 의 차이를 만든 것은 코드 한 단어다
+- 2026-09-18 재측정, 발행자 하나 (`Publisher count: 1`). 2 Hz × 8 s = 16 과 맞음
+  - 예전 판의 35 는 발행자가 둘 떠 있던 상태에서 잰 값이었다 (간격 0.25 s)
+
+> [!important] 0 과 16 의 차이를 만든 것은 코드 한 단어다
 > 알고리즘도 배선도 바뀌지 않았다. QoS 정책 이름 하나만 바뀌었다.
 
 > [!warning] 3주차에서 다시 다룬다
@@ -3365,7 +3384,7 @@ theta_goal = deg2rad(180);   % 화면 왼쪽
 | 7 | **rqt_graph · Topic Monitor · rqt_console · RViz2** | 창 4개가 뜬다 |
 | 8 | 워크스페이스와 패키지 생성 | `colcon build` → `1 package finished` |
 | 9 | 노드 직접 작성 및 통신 | `received: USV alive: 0` |
-| 10 | QoS 불일치 재현 · 진단 · 해결 | 수신 0건 → 35건 |
+| 10 | QoS 불일치 재현 · 진단 · 해결 | 수신 0건 → 16건 (8 s) |
 | 11 | **중계 노드** `turtle_pose_relay` | `/turtle1/pose2d [geometry_msgs/msg/Pose2D]` · 62.5 Hz |
 | 12 | **Simulink 로 turtlesim 목표 자세 제어** | 오프라인 위치오차 0.048 · turtlesim 0.048 |
 

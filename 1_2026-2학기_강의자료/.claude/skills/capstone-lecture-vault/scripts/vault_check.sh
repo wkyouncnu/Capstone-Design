@@ -249,7 +249,22 @@ check_tilde() {
   n=${n:-0}
   [ "$n" -gt 0 ] && perl _tools/escape_tilde.pl --check 10-주차별-강의자료/*.md 80-과제/*.md \
         00-운영/*.md 30-환경/*.md 20-지식/*.md README.md 2>/dev/null | grep -v "^합계" | sed 's/^/    /'
-  note "이스케이프 안 된 범위 물결표" "$n"
+  note "이스케이프 안 된 범위 물결표 · 코드 안 \\~ · 홀수 펜스" "$n"
+  FAIL=$((FAIL+n))
+}
+
+check_ctrl() {
+  head2 "15. 문서에 섞인 제어문자"
+  # 셸 치환(sed · perl)으로 LaTeX 를 고치면 \t \r \b \f 가 제어문자로 바뀐다.
+  # 2026-09-18 — $\times$ 가 $<TAB>imes$ 로, \rvert 의 \r 이 줄바꿈으로 깨졌다.
+  # TAB 은 캡처한 출력 코드블록 안에 원래 있을 수 있어 세지 않는다.
+  local n=0 f c
+  for f in 10-주차별-강의자료/*.md 80-과제/*.md 00-운영/*.md 20-지식/*.md 30-환경/*.md README.md; do
+    [ -f "$f" ] || continue
+    c=$(grep -cP '[\x00-\x08\x0b\x0c\x0e-\x1f]' "$f")
+    if [ "$c" -gt 0 ]; then echo "    $f  $c 줄"; n=$((n+c)); fi
+  done
+  note "제어문자가 든 줄" "$n"
   FAIL=$((FAIL+n))
 }
 
@@ -261,7 +276,7 @@ case "$MODE" in
   --fig)   check_fig ;;
   --refs)  check_refs 1 ;;
   --struct) check_struct ;;
-  *)       check_pdf; check_links; check_style; check_svg; check_fig; check_struct; check_tilde; check_refs 0 ;;
+  *)       check_pdf; check_links; check_style; check_svg; check_fig; check_struct; check_tilde; check_ctrl; check_refs 0 ;;
 esac
 
 echo

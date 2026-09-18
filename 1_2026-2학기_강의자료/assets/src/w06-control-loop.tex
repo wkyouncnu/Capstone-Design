@@ -2,7 +2,8 @@
 %
 %   bash _tools/tikz2svg.sh assets/src/w06-control-loop.tex assets/w06-control-loop.svg
 %
-% 요점: 두 루프가 같은 배를 공유한다. 속도는 PI, 헤딩은 PD.
+% 요점: 두 루프가 같은 배를 공유한다. 속도는 PI, 헤딩은 P + 요각속도 되먹임 (오차를 미분하지 않는다).
+% 고친 것 (2026-09-18) — 헤딩을 PD 로 적고 psi 만 되먹였는데 실제 법칙은 Kp*e - Kd*r 이다. r 되먹임을 그렸다.
 %       둘의 출력 X 와 N 이 차동 배분에서 좌·우 추력으로 나뉜다.
 
 \documentclass[border=6pt]{standalone}
@@ -24,8 +25,8 @@
 % ---- 헤딩 루프 (아래) ------------------------------------------------------
 \node[blk]                          (pref) at (0,-14) {목표 선수각};
 \node[sum,  right=8mm of pref]      (sp)              {};
-\node[cblk, right=8mm of sp]        (pd)              {PD};
-\node[note, below=0.8mm of pd]                        {헤딩 제어기};
+\node[cblk, right=8mm of sp]        (pd)              {P + 감쇠};
+\node[note, above=0.8mm of pd]                        {헤딩 제어기 \ $K_p e - K_d\, r$};
 
 \draw[sig] (pref) -- node[sname, above] {$\psi_{\mathrm{ref}}$} (sp);
 \draw[sig] (sp)   -- (pd);
@@ -57,9 +58,13 @@
 \draw[sig] (fb) |- (su.south);
 \draw[sig] (fb) |- (sp.south);
 
-\node[note, below=1.2mm of odom.south, text width=52mm, align=center]
-     {$u=$ \texttt{twist.linear.x} \quad $\psi=$ 쿼터니언에서 계산\\
-      10\,Hz · 참값이므로 추정 오차가 없다};
+% 요각속도 r — 헤딩 제어기로 바로 (오차를 미분하지 않는다)
+\draw[sig] ($(odom.north west)+(6,0)$) |- ($(pd.south)+(0,-9)$) -- (pd.south);
+\node[sname, anchor=west] at ($(pd.south)+(0.8,-6)$) {$r$};
+
+\node[note, below=1.2mm of odom.south, text width=78mm, align=left]
+     {$u$ = \texttt{twist.twist.linear.x},\ \ $r$ = $-$\texttt{twist.twist.angular.z},\ \ $\psi$ = 쿼터니언에서 계산\\
+      약 10\,Hz · 참값이므로 추정 오차가 없다};
 
 \end{tikzpicture}
 \end{document}
