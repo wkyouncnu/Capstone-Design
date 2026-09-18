@@ -195,13 +195,58 @@ check_fig() {
   return 0
 }
 
+check_struct() {
+  head2 "12. 주차 문서 구조"
+  # "# 마무리" 뒤에 실습 절(## 2-3. / ## D. …)이 오면 그 절이 마무리의 일부로 렌더된다.
+  # 2026-09-18 4주차에서 2-6 · 2-7 절이 그렇게 되어 있었다.
+  local bad=0 f
+  for f in 10-주차별-강의자료/W*.md; do
+    [ -f "$f" ] || continue
+    local hit
+    hit=$(awk '/^# 마무리$/{m=1; next} m && /^## ([0-9]+-[0-9]+\.|[A-Z]\. )/{print FNR": "$0}' "$f")
+    if [ -n "$hit" ]; then
+      printf '     %s\n' "$f"; printf '%s\n' "$hit" | sed 's/^/        /'
+      bad=$((bad + $(printf '%s\n' "$hit" | grep -c .)))
+    fi
+  done
+  note "마무리 뒤에 놓인 실습 절" "$bad"
+  FAIL=$((FAIL+bad))
+}
+
+check_refs() {
+  # 다른 주차를 가리키는 약속 — "8주차에서 다룬다" 같은 문장.
+  # 강의계획서가 바뀌면 조용히 틀린다. 2026-09-18 에 14곳이 틀린 주차를 가리키고 있었다.
+  # 뜻까지 기계로 맞출 수는 없으므로, 그 주차의 실제 제목을 옆에 붙여 사람이 본다.
+  local verbose=${1:-0}
+  head2 "13. 다른 주차를 가리키는 약속 (눈으로 확인 — 지적 수에 넣지 않는다)"
+  local plan=00-운영/강의계획서.md
+  [ -f "$plan" ] || { note "강의계획서 없음" "-"; return 0; }
+  local n=0 f line wk title
+  while IFS= read -r line; do
+    f=${line%%:*}; rest=${line#*:}; ln=${rest%%:*}; txt=${rest#*:}
+    wk=$(printf '%s' "$txt" | grep -oE '[0-9]{1,2}주차' | head -1 | tr -dc '0-9')
+    [ -z "$wk" ] && continue
+    title=$(grep -m1 -E "^#### ${wk}주차 · " "$plan" | sed -E "s/^#### ${wk}주차 · //")
+    n=$((n+1))
+    if [ "$verbose" -eq 1 ]; then
+      printf '     %-14s %5s  -> %2s주차 [%s]\n' "$(basename "$f" | cut -c1-12)" "$ln" "$wk" "${title:-계획서에 없음}"
+      printf '            %s\n' "$(printf '%s' "$txt" | sed 's/^ *//' | cut -c1-110)"
+    fi
+  done < <(grep -nHE '[0-9]{1,2}주차[^|]{0,40}(다룬다|유도한다|배운다|계산한다|이어진다|다룸|한다\.)' 10-주차별-강의자료/W*.md)
+  note "다른 주차를 가리키는 문장" "$n"
+  [ "$verbose" -eq 0 ] && echo "     (목록과 각 주차의 실제 제목은 --refs 로 본다)"
+  return 0
+}
+
 # ── 실행 ──────────────────────────────────────────────────────────────────
 echo "볼트: $ROOT"
 case "$MODE" in
   --style) check_style ;;
   --links) check_links ;;
   --fig)   check_fig ;;
-  *)       check_pdf; check_links; check_style; check_svg; check_fig ;;
+  --refs)  check_refs 1 ;;
+  --struct) check_struct ;;
+  *)       check_pdf; check_links; check_style; check_svg; check_fig; check_struct; check_refs 0 ;;
 esac
 
 echo

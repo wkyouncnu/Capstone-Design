@@ -258,6 +258,16 @@ settle_links(m)      % 배치는 그대로, 선만 지적 0 이 될 때까지 �
 > 배치를 다시 잡을 일이 아니라 **선 하나를 다른 통로로 보내면 되는 일**이다.
 > 빌더의 `mss_style` 뒤에 `settle_links(m)` 를 한 줄 넣으면 다시 만들 때마다 알아서 풀린다.
 
+
+### Stateflow 차트 그림 — `export_diagram` 이 아니라 `sfprint`
+
+```matlab
+sfprint('SB13_stateflow_done/Mission', 'png', fullfile(pwd,'img','SB13_chart.png'));
+```
+
+- `print('-s모델/차트')` (= `export_diagram`) 는 차트 **블록의 겉모양**만 찍는다 — 상태 셋이 빈 상자로 나온다
+- 상태 이름 · `en:` 동작 · 전이 조건까지 보이려면 `sfprint` 를 쓴다. 2026-09-18 SB13 에서 확인
+
 ### 선을 그을 때는 `draw_line`
 
 ```matlab

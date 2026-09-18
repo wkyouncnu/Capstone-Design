@@ -1498,7 +1498,7 @@ build_w07_models
 | `W07_simulink/W07_plot.m` | 그림 6장 + 성능 지표 |
 | `W07_simulink/W07_compare.m` | 4조건 비교 (과제 ①) |
 | `W07_simulink/W07_lookahead_demo.m` | **Δ 네 값의 경로 복귀 비교** (§1-7, 실습 D-1) |
-| `W07_simulink/W07_crab_demo.m` | **조류 속 뱃머리 · 진행 방향 · 크랩각**, $y_e = Delta	aneta$ 확인 (1-7절) |
+| `W07_simulink/W07_crab_demo.m` | **조류 속 뱃머리 · 진행 방향 · 크랩각** — 정상 이탈이 $\Delta\tan\beta$ 로 맞는지 확인 (1-7절) |
 | `W07_simulink/build_w07_models.m` | 모델 재생성 |
 | `W07_matlab/` | MSS 원본 함수들 (읽기용) |
 
