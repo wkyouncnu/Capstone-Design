@@ -63,9 +63,9 @@ function build_p1(ROW)
 
     straight(m, {'Ref','SumE'; 'SumE','PID'; 'PID','Plant'; 'Plant','Go_y'});
     feed_from(m, 'y', 'SumE', 2, 90);    % 되먹임은 원의 아래에서 올라온다
-    drop_tag(m, 'PID', 1, 'u', 90);      % 제어입력도 태그로 빼 둔다
+    drop_tag(m, 'PID', 1, 'tau', 90);      % 제어입력도 태그로 빼 둔다
 
-    addLogging(m, {'y','u'}, [x(4)+40 ROW+150]);
+    addLogging(m, {'y','tau'}, [x(4)+40 ROW+150]);
     paint(m, {'Ref','command'; 'SumE','control'; 'PID','control'; 'Plant','plant'});
 
     solver(m, 'ode4', '0.001', '10');
@@ -127,7 +127,7 @@ function build_p2(ROW)
     feed_from(m, 'ym_lib', 'SumE_lib', 2, 90);
     feed_from(m, 'noise',  'SumY_lib', 2, 90, '1');
     drop_tag(m, 'Plant_lib', 1, 'y_lib', -150);         % 로깅은 잡음 없는 참값으로
-    drop_tag(m, 'PID_lib',   1, 'u_lib', -150);
+    drop_tag(m, 'PID_lib',   1, 'tau_lib', -150);
 
     % --- 아래 줄 · 직접 만든 PID ---------------------------------------
     add_sum(m, 'SumE_hand', '+-', [x(2) ROW2]);
@@ -145,9 +145,9 @@ function build_p2(ROW)
     feed_from(m, 'ym_hand', 'SumE_hand', 2, 90);
     feed_from(m, 'noise',   'SumY_hand', 2, 90, '2');
     drop_tag(m, 'Plant_hand', 1, 'y_hand', 170);
-    drop_tag(m, 'PID_byhand', 1, 'u_hand', 170);
+    drop_tag(m, 'PID_byhand', 1, 'tau_hand', 170);
 
-    addLogging(m, {'y_lib','u_lib','y_hand','u_hand'}, [x(6)+80 ROW2+200]);
+    addLogging(m, {'y_lib','tau_lib','y_hand','tau_hand'}, [x(6)+80 ROW2+200]);
     addDcompare(m, [x(1) ROW2+200]);
     paint(m, {'Ref','command'; 'SensorNoise','env'; ...
               'SumE_lib','control'; 'PID_lib','control'; 'Plant_lib','plant'; ...
@@ -259,14 +259,14 @@ end
 % PID 를 블록으로 직접 조립한 서브시스템
 %
 %        e ─┬─ Kp ──────────────────────────────┐
-%           ├─ Ki ─→ SumI ─→ 1/s ───────────────┼─→ SumU ─→ Sat ─→ u
+%           ├─ Ki ─→ SumI ─→ 1/s ───────────────┼─→ SumU ─→ Sat ─→ tau
 %           └─ Kd ─→ Nf·s/(s+Nf) ───────────────┘        │
-%                      ↑ Kb·(u_sat − u_raw) ←── SumAW ←──┘
+%                      ↑ Kb·(tau_sat − tau_raw) ←── SumAW ←──┘
 %
 %   Kb 가 안티와인드업 되감기 이득이다. 0 이면 되감기가 없다.
 % =====================================================================
 function addPIDbyhand(mdl, name, pos, v)
-    s = add_subsys(mdl, name, pos, {'e'}, {'u'}, gnc_colour('control'));
+    s = add_subsys(mdl, name, pos, {'e'}, {'tau'}, gnc_colour('control'));
 
     % P 갈래가 맨 위의 주선(主線)이고, I 와 D 는 아래에서 합류한다.
     % 둥근 합산점의 2번 입력은 원의 **아래쪽**에 있다. 그래서 아래에서
@@ -275,7 +275,7 @@ function addPIDbyhand(mdl, name, pos, v)
     RAW = 440; RDET = 500; RBK = 560;     % 되감기 경로 세 줄
 
     set_param([s '/e'], 'Position', [ 45 RP-7  75 RP+7]);
-    set_param([s '/u'], 'Position', [805 RP-7 835 RP+7]);
+    set_param([s '/tau'], 'Position', [805 RP-7 835 RP+7]);
 
     blk(s, 'simulink/Math Operations/Gain', 'Kp_gain', 200, RP, 50, 36, {'Gain', v.P});
     blk(s, 'simulink/Math Operations/Gain', 'Ki_gain', 200, RI, 50, 36, {'Gain', v.I});
@@ -288,13 +288,13 @@ function addPIDbyhand(mdl, name, pos, v)
         {'Numerator', ['[' v.N ' 0]'], 'Denominator', ['[1 ' v.N ']']});
 
     add_sum(s, 'SumPI', '++', [540 RP]);          % P + I
-    add_sum(s, 'SumU',  '++', [620 RP]);          % (P+I) + D  = u_raw
+    add_sum(s, 'SumU',  '++', [620 RP]);          % (P+I) + D  = tau_raw
     blk(s, 'simulink/Discontinuities/Saturation', 'Sat', 700, RP, 30, 30, ...
         {'UpperLimit', v.Lim, 'LowerLimit', ['-' v.Lim]});
 
-    %  1번(왼쪽)에 u_raw, 2번(아래)에 u_sat 을 넣는다. 아래쪽 포트는 밑에서만
+    %  1번(왼쪽)에 tau_raw, 2번(아래)에 tau_sat 을 넣는다. 아래쪽 포트는 밑에서만
     %  접근할 수 있으므로, 위에 있는 Sat 이 그쪽으로 간다 — 그 한 선만 두 번 꺾인다.
-    add_sum(s, 'SumAW', '-+', [760 RAW]);         % -u_raw + u_sat
+    add_sum(s, 'SumAW', '-+', [760 RAW]);         % -tau_raw + tau_sat
     blk(s, 'simulink/Math Operations/Gain', 'Kb_gain', 560, RBK, 50, 36, ...
         {'Gain', v.Kb, 'Orientation','left'});    % 출력이 왼쪽을 본다
 
@@ -305,14 +305,14 @@ function addPIDbyhand(mdl, name, pos, v)
     lane_line(s, 'e', 1, 'Kd_gain', 1, ex(1));
     add_line(s, 'Ki_gain/1', 'SumI/1');
     straight(s, {'SumI','Integ'; 'Kd_gain','PseudoD'; ...
-                 'Kp_gain','SumPI'; 'SumPI','SumU'; 'SumU','Sat'; 'Sat','u'});
+                 'Kp_gain','SumPI'; 'SumPI','SumU'; 'SumU','Sat'; 'Sat','tau'});
     lane_line(s, 'Integ',   1, 'SumPI', 2, 540);   % I 는 아래에서 올라온다
     lane_line(s, 'PseudoD', 1, 'SumU',  2, 620);   % D 도 아래에서 올라온다
-    %  u_raw 는 왼쪽 포트로 곧장 — 꺾임 1회
+    %  tau_raw 는 왼쪽 포트로 곧장 — 꺾임 1회
     ux = port_xy(s, 'SumU', 'Outport', 1);
     lane_line(s, 'SumU', 1, 'SumAW', 1, ux(1));
 
-    %  u_sat 은 아래쪽 포트라 밑에서 올라와야 한다 — 이 모델에서 유일한 2회 꺾임
+    %  tau_sat 은 아래쪽 포트라 밑에서 올라와야 한다 — 이 모델에서 유일한 2회 꺾임
     a = port_xy(s, 'Sat',   'Outport', 1);
     b = port_xy(s, 'SumAW', 'Inport',  2);
     add_line(s, [a; a(1) RDET; b(1) RDET; b]);
@@ -334,7 +334,7 @@ function addPIDbyhand(mdl, name, pos, v)
         '  = 미분 + 저역통과필터. 이것을 pseudo-derivative 라고 부른다.' newline ...
         '' newline ...
         '적분기 되감기 (안티와인드업)' newline ...
-        '  Sat 에서 잘려 나간 만큼 (u_sat - u_raw) 을 Kb 배 해서 적분기 입력에 더한다.' newline ...
+        '  Sat 에서 잘려 나간 만큼 (tau_sat - tau_raw) 을 Kb 배 해서 적분기 입력에 더한다.' newline ...
         '  포화 중에는 이 값이 음수라 적분기가 더 쌓이지 못한다.' newline ...
         '  Kb = 0 으로 두면 되감기가 사라진다. 그것이 와인드업이다.'], 45, RBK+90);
 end

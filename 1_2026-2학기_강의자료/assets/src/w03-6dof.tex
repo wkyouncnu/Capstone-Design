@@ -59,19 +59,19 @@
 \draw[accent, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
       plot[domain=40:340, samples=60, variable=\t]
       ({2.05}, {0.30*cos(\t)}, {0.30*sin(\t)});
-\node[accent, font=\scriptsize, anchor=south] at (2.05,0,-0.42) {$K$ — 횡경사};
+\node[accent, font=\scriptsize, anchor=south] at (2.05,0,-0.42) {$K$ — 횡동요 모멘트};
 
 % y 축 둘레 : z -> x
 \draw[accent, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
       plot[domain=40:340, samples=60, variable=\t]
       ({0.30*sin(\t)}, {1.85}, {0.30*cos(\t)});
-\node[accent, font=\scriptsize, anchor=south] at (0,1.85,-0.42) {$M$ — 종경사};
+\node[accent, font=\scriptsize, anchor=south] at (0,1.85,-0.42) {$M$ — 종동요 모멘트};
 
 % z 축 둘레 : x -> y
 \draw[accent, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}]
       plot[domain=40:340, samples=60, variable=\t]
       ({0.30*cos(\t)}, {0.30*sin(\t)}, {1.90});
-\node[accent, font=\scriptsize, anchor=west] at (0,0.52,1.90) {$N$ — 선수각};
+\node[accent, font=\scriptsize, anchor=west] at (0,0.52,1.90) {$N$ — 선수동요 모멘트};
 
 % 축선을 호 중심까지 점선으로 — "이 축 둘레" 임을 보이게 한다
 \draw[soft, line width=0.3pt, densely dotted] (1.5,0,0) -- (2.05,0,0);
@@ -95,12 +95,12 @@
 \node[anchor=north west, font=\scriptsize] at (0,44) {%
   \begin{tabular}{@{}lllll@{}}
     \textbf{\#} & \textbf{자유도} & \textbf{힘 · 모멘트} & \textbf{속도} & \textbf{위치 · 자세}\\[2pt]
-    1 & 전후 (surge) & $X$ & $u$ & $x$\\
-    2 & 좌우 (sway)  & $Y$ & $v$ & $y$\\
-    3 & 상하 (heave) & $Z$ & $w$ & $z$\\
-    4 & 횡경사 (roll)  & $K$ & $p$ & $\phi$\\
-    5 & 종경사 (pitch) & $M$ & $q$ & $\theta$\\
-    6 & 선수각 (yaw)   & $N$ & $r$ & $\psi$\\
+    1 & 전후동요 (surge) & $X$ & $u$ & $x$\\
+    2 & 좌우동요 (sway) & $Y$ & $v$ & $y$\\
+    3 & 상하동요 (heave) & $Z$ & $w$ & $z$\\
+    4 & 횡동요 (roll) & $K$ & $p$ & $\phi$\\
+    5 & 종동요 (pitch) & $M$ & $q$ & $\theta$\\
+    6 & 선수동요 (yaw) & $N$ & $r$ & $\psi$\\
   \end{tabular}};
 
 \node[anchor=north west, align=left, text width=78mm, font=\scriptsize] at (0,-6) {%

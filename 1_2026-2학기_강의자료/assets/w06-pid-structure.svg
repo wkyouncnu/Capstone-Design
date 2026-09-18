@@ -45,7 +45,7 @@
   <polyline points="435,315 576,315 576,228" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#a2)"/>
 
   <rect x="680" y="178" width="180" height="54" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.6"/>
-  <text x="770" y="210" font-size="16" fill="#334155" text-anchor="middle">제어입력 u</text>
+  <text x="770" y="210" font-size="16" fill="#334155" text-anchor="middle">제어입력 τ</text>
   <line x1="620" y1="205" x2="674" y2="205" stroke="#475569" stroke-width="1.8" marker-end="url(#a2)"/>
 
   <text x="30" y="385" font-size="15" fill="#64748b">P 는 "지금", I 는 "과거", D 는 "곧 다가올 것"을 본다. 세 시점을 더하는 것이 PID 다.</text>

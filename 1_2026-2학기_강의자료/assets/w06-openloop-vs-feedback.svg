@@ -64,7 +64,7 @@
   <polyline points="430,381 205,381 205,301" fill="none" stroke="#1d4ed8" stroke-width="1.8" marker-end="url(#ar)"/>
 
   <text x="252" y="264" font-size="15" fill="#dc2626" text-anchor="middle">오차 e</text>
-  <text x="465" y="264" font-size="15" fill="#92400e" text-anchor="middle">u</text>
+  <text x="465" y="264" font-size="15" fill="#92400e" text-anchor="middle">τ</text>
   <text x="685" y="264" font-size="15" fill="#115e59" text-anchor="middle">y</text>
   <text x="212" y="345" font-size="15" fill="#1d4ed8">측정값을 되돌려 목표에서 뺀다 — 이것이 "되먹임"</text>
 </svg>

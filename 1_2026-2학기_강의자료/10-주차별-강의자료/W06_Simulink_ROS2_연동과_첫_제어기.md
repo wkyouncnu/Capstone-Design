@@ -155,12 +155,18 @@ Blank Message ──► Bus Assignment ──► Publish
 
 ### 어느 필드를 쓰는가
 
-```
-twist.twist.linear.x   →  u   전후 속도 [m/s]   (본 주차 사용)
-twist.twist.linear.y   →  v   좌우 속도 (좌현 +)
-twist.twist.angular.z  →  r   선수각속도 (반시계 +)
-pose.pose.orientation  →  쿼터니언 → 선수각 psi
-```
+| ROS 필드 | ROS 에서의 뜻 | 제어식의 기호 | 바꾸는 법 |
+|---|---|---|---|
+| `twist.twist.linear.x` | 선체 앞쪽 속도 | $u$ 전후 속도 | $u = $ `linear.x` (그대로) |
+| `twist.twist.linear.y` | 선체 **좌현** 쪽 속도 | $v$ 좌우 속도 (**우현** $+$) | $v = -$`linear.y` |
+| `twist.twist.angular.z` | $\omega_z$ — **반시계** $+$ | $r$ 요각속도 (**시계** $+$) | $r = -\,\omega_z$ |
+| `pose.pose.orientation` | 쿼터니언 → $\psi_{\text{ENU}}$ (동에서 반시계) | $\psi$ 선수각 (북에서 시계) | $\psi = 90^\circ - \psi_{\text{ENU}}$ |
+
+> [!warning] ROS 가 주는 값에 제어식의 글자를 바로 붙이지 않는다
+> ROS 의 선체축은 $x$ 선수·$y$ **좌현**·$z$ **위**(FLU), 제어식은 $x$ 선수·$y$ **우현**·$z$ **아래**(FRD)다.
+> $y$ 와 $z$ 가 뒤집혀 있으므로 옆 속도와 요각속도는 **부호가 반대**다 (4주차 센서 배치 절, 3주차 ENU→NED).
+> 그래서 이 주차 모델의 `Quat2Yaw` 블록은 `r = -wz` 로 뒤집어서 내보낸다 — 헤딩 제어기의 $-K_d\,r$ 이
+> 감쇠가 되려면 $r$ 이 선수각과 같은 방향(시계 $+$)이어야 하기 때문이다.
 
 > [!note] twist 는 **선체 기준**이다
 > - ROS 규약상 twist 는 `child_frame_id`(= `wamv/base_link`) 기준
@@ -295,14 +301,14 @@ set_param('W06_1_straight','EnablePacing','on','PacingRate','1');
 - 오차는 목표값에서 측정값을 뺀 것
 
 $$
-e(t) = r(t) - y(t)
+e(t) = y_d(t) - y(t)
 $$
 
 - 제어입력은 그 오차를 **세 가지로 읽어 더한 것**
 
 $$
-u(t) \;=\; \underbrace{K_p\, e(t)}_{\text{지금}}
-\;+\; \underbrace{K_i \int_0^{t} e(\tau)\,d\tau}_{\text{과거}}
+\tau(t) \;=\; \underbrace{K_p\, e(t)}_{\text{지금}}
+\;+\; \underbrace{K_i \int_0^{t} e(\sigma)\,d\sigma}_{\text{과거}}
 \;+\; \underbrace{K_d\, \frac{de(t)}{dt}}_{\text{앞으로}}
 $$
 
@@ -312,11 +318,19 @@ $$
 C(s) \;=\; K_p \;+\; \frac{K_i}{s} \;+\; K_d\, s
 $$
 
-> [!note] 실제 블록은 $K_d s$ 를 그대로 쓰지 않는다
-> 순수 미분 $s$ 대신 **필터를 씌운 미분** $K_d \dfrac{N s}{s + N}$ 를 쓴다.
-> 이유는 실습 F-3 절에서 직접 재 본다. `N` 이 PID 블록의 **Filter coefficient** 다.
+| 기호 | 뜻 | 이 과목에서 흔히 보는 교과서 표기 |
+|---|---|---|
+| $y_d$ | 목표값 (desired) | $r$ |
+| $y$ | 측정값 · 출력 | $y$ |
+| $e$ | 오차 | $e$ |
+| $\tau$ | 제어입력 — 힘이나 모멘트 | $u$ |
 
-![PID 세 갈래](../assets/w06-pid-structure.svg)
+> [!warning] 제어 교과서의 $r$ 과 $u$ 를 여기서는 쓰지 않는다
+> 제어 교과서는 목표값을 $r$, 제어입력을 $u$ 로 쓴다. 그런데 이 과목에서 $r$ 은 **요각속도**,
+> $u$ 는 **전후 속도**다 — 바로 이 주차의 속도 루프가 $u_{\text{ref}} - u$ 를 쓴다.
+> 한 페이지에서 $u$ 가 속도이기도 하고 제어입력이기도 하면 읽을 수가 없다.
+> 그래서 목표값은 $y_d$, 제어입력은 $\tau$ 로 쓴다 (대학원 강의 · Fossen 과 같은 표기).
+> 실습 모델 `W06_P1` · `W06_P2` 의 제어입력 신호도 `tau` 로 이름 붙였다.
 
 ### 오차 하나를 세 가지 방식으로 읽는다
 
@@ -863,9 +877,9 @@ W06_pid_compare('hand')
 - 기준 환경 실측값
 
 ```
-    y_max_abs_diff    u_max_abs_diff
-    ______________    ______________
-      7.7716e-16        6.5281e-14
+    y_max_abs_diff    tau_max_abs_diff
+    ______________    ________________
+      7.7716e-16         6.5281e-14
 ```
 
 - 출력의 최대 차이가 **10⁻¹⁶**, 즉 배정밀도 실수의 반올림 한계다
@@ -986,7 +1000,7 @@ W06_pid_compare('AW')
    - 응답이 빨라지다가 출렁이기 시작하는 지점을 찾는다
    - 그 직전까지가 이 시스템이 감당하는 속도다
 2. **`Kd`** 를 더해 오버슈트를 깎는다
-   - 제어입력(`Scope_all` 의 `u`)이 떨리기 시작하면 `Nf` 를 **낮춘다**
+   - 제어입력(`Scope_all` 의 `tau`)이 떨리기 시작하면 `Nf` 를 **낮춘다**
 3. **`Ki`** 를 조금씩 더해 남는 오차를 없앤다
    - 정착시간이 늘어나면 너무 많이 넣은 것이다
 4. 포화가 있으면 **안티와인드업을 켠다** (`Kb > 0`)

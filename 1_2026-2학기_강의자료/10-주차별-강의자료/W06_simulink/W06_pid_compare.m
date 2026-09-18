@@ -44,7 +44,7 @@ for k = 1:numel(values)
     in = in.setVariable(name, values(k));
     out = sim(in);
 
-    t = out.log_y.Time;  y = squeeze(out.log_y.Data);  u = squeeze(out.log_u.Data);
+    t = out.log_y.Time;  y = squeeze(out.log_y.Data);  u = squeeze(out.log_tau.Data);
     tag = sprintf('%s = %g', name, values(k));
     plot(ax1, t, y, 'LineWidth',1.6, 'DisplayName',tag);
     plot(ax2, t, u, 'LineWidth',1.6, 'DisplayName',tag);
@@ -52,7 +52,7 @@ for k = 1:numel(values)
 end
 plot(ax1, [0 10], [1 1], 'k--', 'DisplayName','목표값');
 finishPanel(ax1, ax2, sprintf('%s 만 바꿨을 때 (플랜트 1/(s^2+2s+2))', label), ...
-            '출력 y', '제어입력 u');
+            '출력 y', '제어입력 τ');
 
 T = vertcat(rows{:});  disp(T);
 end
@@ -65,18 +65,18 @@ mdl = 'W06_P2_pid_byhand'; load_system(mdl);
 out = sim(Simulink.SimulationInput(mdl));
 
 t  = out.log_y_lib.Time;
-yl = squeeze(out.log_y_lib.Data);   ul = squeeze(out.log_u_lib.Data);
-yh = squeeze(out.log_y_hand.Data);  uh = squeeze(out.log_u_hand.Data);
+yl = squeeze(out.log_y_lib.Data);   ul = squeeze(out.log_tau_lib.Data);
+yh = squeeze(out.log_y_hand.Data);  uh = squeeze(out.log_tau_hand.Data);
 
 [ax1, ax2] = twoPanel('W06 PID - 직접 만든 것 vs 라이브러리');
 plot(ax1, t, yl, 'LineWidth',2.4, 'DisplayName','라이브러리 PID 블록');
 plot(ax1, t, yh, '--', 'LineWidth',1.6, 'DisplayName','직접 만든 PID');
 plot(ax2, t, ul, 'LineWidth',2.4, 'DisplayName','라이브러리 PID 블록');
 plot(ax2, t, uh, '--', 'LineWidth',1.6, 'DisplayName','직접 만든 PID');
-finishPanel(ax1, ax2, '두 곡선이 겹치면 블록 안의 것과 같다', '출력 y', '제어입력 u');
+finishPanel(ax1, ax2, '두 곡선이 겹치면 블록 안의 것과 같다', '출력 y', '제어입력 τ');
 
 T = table(max(abs(yl-yh)), max(abs(ul-uh)), ...
-    'VariableNames', {'y_max_abs_diff','u_max_abs_diff'});
+    'VariableNames', {'y_max_abs_diff','tau_max_abs_diff'});
 disp(T);
 end
 
@@ -94,19 +94,19 @@ for k = 1:numel(Nlist)
     in  = in.setVariable('Nf2', Nlist(k));
     out = sim(in);
     t = out.log_y_hand.Time;
-    y = squeeze(out.log_y_hand.Data);  u = squeeze(out.log_u_hand.Data);
+    y = squeeze(out.log_y_hand.Data);  u = squeeze(out.log_tau_hand.Data);
 
     tag = sprintf('Nf = %g', Nlist(k));
     plot(ax1, t, y, 'LineWidth',1.4, 'DisplayName',tag);
     plot(ax2, t, u, 'LineWidth',1.0, 'DisplayName',tag);
 
     mk = metrics(t, y, evalin('base','r_step'), tag);
-    mk = addvars(mk, max(abs(diff(u))), 'NewVariableNames', {'du_max'});
-    mk = addvars(mk, std(u(t > t(end)*0.5)), 'NewVariableNames', {'u_std'});
+    mk = addvars(mk, max(abs(diff(u))), 'NewVariableNames', {'dtau_max'});
+    mk = addvars(mk, std(u(t > t(end)*0.5)), 'NewVariableNames', {'tau_std'});
     rows{k} = mk;
 end
 finishPanel(ax1, ax2, '미분 필터 계수 Nf — 클수록 순수 미분에 가깝다', ...
-            '출력 y', '제어입력 u');
+            '출력 y', '제어입력 τ');
 
 T = vertcat(rows{:});  disp(T);
 end
@@ -127,7 +127,7 @@ for k = 1:numel(Kbs)
     in  = in.setVariable('noise_var', 0);       % 잡음은 끄고 적분기만 본다
     out = sim(in);
     t = out.log_y_hand.Time;
-    y = squeeze(out.log_y_hand.Data);  u = squeeze(out.log_u_hand.Data);
+    y = squeeze(out.log_y_hand.Data);  u = squeeze(out.log_tau_hand.Data);
 
     plot(ax1, t, y, 'LineWidth',1.6, 'DisplayName',name{k});
     plot(ax2, t, u, 'LineWidth',1.6, 'DisplayName',name{k});
@@ -135,7 +135,7 @@ for k = 1:numel(Kbs)
 end
 plot(ax1, [0 20], [1 1], 'k--', 'DisplayName','목표값');
 plot(ax2, [0 20], evalin('base','u_max')*[1 1], 'k--', 'DisplayName','제어입력 한계');
-finishPanel(ax1, ax2, '올라가는 동안 제어입력이 한계에 붙는 경우', '출력 y', '제어입력 u');
+finishPanel(ax1, ax2, '올라가는 동안 제어입력이 한계에 붙는 경우', '출력 y', '제어입력 τ');
 
 T = vertcat(rows{:});  disp(T);
 end
