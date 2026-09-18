@@ -106,7 +106,7 @@ animate_every = 0.25;   % 다시 그리는 간격 [시뮬 초]
 boat_scale    = 1.5;    % 선체 확대 배율 (원이 작으므로 7주차보다 작게)
 
 %% ====================================================================
-%  9. VRX 스폰 위치 (실습 C 에서만 씀)
+%  9. VRX 스폰 위치 (실습 D 에서만 씀)
 % =====================================================================
 origin_north =  162;   % competition.launch.py 의 스폰 ENU y (2026-09-15 실측 확인)
 origin_east  = -532;
@@ -125,13 +125,20 @@ if p_c > 0, dir_name = '시계방향'; else, dir_name = '반시계방향'; end
 fprintf('W08 설정 완료\n');
 fprintf('  로이터 중심 (N,E) = (%g, %g),  반경 %g m\n', center_north, center_east, r_d);
 fprintf('  p_c = %+.3f  ->  %s,  목표 속도 %g m/s\n', p_c, dir_name, u_ref);
+% 시나리오의 마지막 단계는 450 s 에 시작한다. 2 바퀴에서 멈추면 둘째 단계도 못 본다
+%   -> 시나리오를 켜면 정지 조건을 끄고 600 s 돈다
+T_stop = 300;
+if use_schedule
+    required_turns = 0;
+    T_stop = 600;
+end
 if required_turns > 0
     fprintf('  %g 바퀴 돌면 정지\n', required_turns);
 else
     fprintf('  계속 회전 (정지 조건 없음)\n');
 end
 if use_schedule
-    fprintf('  시나리오 켜짐 — 도중에 방향·속도·반경이 바뀐다\n');
+    fprintf('  시나리오 켜짐 — 도중에 방향·속도·반경이 바뀐다 (600 s 실행)\n');
 end
 
 %% ====================================================================
@@ -146,6 +153,6 @@ setappdata(0, 'W08_skip_run', false);
 if auto_run && ~skip_run
     fprintf('\n오프라인 모델 실행 중  (auto_run = 0 으로 두면 실행하지 않는다)\n');
     load_system('W08_0_offline');
-    out = sim('W08_0_offline');
+    out = sim('W08_0_offline', 'StopTime', num2str(T_stop));
     W08_plot(out, sprintf('%s / r_d = %g m / u = %g m/s', dir_name, r_d, u_ref));
 end

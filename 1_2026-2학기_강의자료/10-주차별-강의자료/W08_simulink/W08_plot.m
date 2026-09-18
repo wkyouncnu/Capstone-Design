@@ -28,8 +28,8 @@ gate  = out.log_gate.Data;    u    = out.log_u.Data;
 ucmd  = out.log_u_cmd.Data;   beta = out.log_beta.Data;
 FL    = out.log_FL.Data;      FR   = out.log_FR.Data;
 
-% 원에 도달한 시각 = 반경 오차가 처음으로 5% 안에 든 때
-tol = 0.05*rd + 1;
+% 원에 도달한 시각 = 반경 오차가 처음으로 r_d 의 30 % 안에 든 때 (회전수 세기 시작)
+tol = 0.3*rd;          % 원 도달 판정 — 모델의 TurnCount 와 같은 값
 k_in = find(abs(rdist - rd) <= tol, 1);
 if isempty(k_in), S.t_enter = NaN; k_in = 1; else, S.t_enter = t(k_in); end
 
@@ -37,8 +37,8 @@ if isempty(k_in), S.t_enter = NaN; k_in = 1; else, S.t_enter = t(k_in); end
 k_done = find(gate < 0.5, 1);
 if isempty(k_done), S.t_done = NaN; k_end = numel(t); else, S.t_done = t(k_done); k_end = k_done; end
 
-% 정착 구간 = 도달 후 10초 뒤부터 정지 전까지
-k0 = min(k_in + round(10/(t(2)-t(1))), k_end);
+% 정착 구간 = 도달 후 30초 뒤부터 정지 전까지
+k0 = min(k_in + round(30/(t(2)-t(1))), k_end);
 seg = k0:k_end;
 if numel(seg) < 10, seg = k_in:k_end; end
 
@@ -49,7 +49,7 @@ S.std_re  = std(re);
 S.turns   = turns(k_end);
 S.mean_u  = mean(u(seg));
 
-figure('Name',['W08  ' ttl], 'Position',[70 50 1220 800], 'Color','w');
+S.fig = figure('Name',['W08  ' ttl], 'Position',[70 50 1220 800], 'Color','w');
 
 % ---- 1. 궤적 --------------------------------------------------------
 subplot(2,3,[1 4]);

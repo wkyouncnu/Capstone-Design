@@ -44,7 +44,7 @@ S.max_ye     = max(abs(ye(1:k)));
 S.mean_beta  = mean(abs(beta(s:k))) * 180/pi;
 S.mean_u     = mean(u(s:k));
 
-figure('Name', ['W07  ' ttl], 'Position', [80 60 1200 780], 'Color','w');
+S.fig = figure('Name',['W07  ' ttl], 'Position', [80 60 1200 780], 'Color','w');
 
 % ---- 1. 궤적 --------------------------------------------------------
 subplot(2,3,[1 4]);

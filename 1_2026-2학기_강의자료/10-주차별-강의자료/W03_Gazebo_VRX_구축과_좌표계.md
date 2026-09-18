@@ -34,8 +34,8 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 > [!important] 시작 전 확인
 > - 2주차 ROS 2 설치가 끝나 있어야 함
 > - `ros2 run demo_nodes_cpp talker` 가 되는지 먼저 확인할 것
-> - 저장공간 20 GB 이상: `df -h` 로 확인
-> - **빌드에 30\~60분 걸림.** 충전기를 꽂고, 절전 모드로 두지 말 것
+> - 저장공간 여유 20 GB 이상 (이번 주차 설치분 기준. 학기 전체 권장 여유는 강의계획서 기준 40 GB): `df -h` 로 확인
+> - **VRX 빌드는 2분 안팎(기준 환경 실측), 오래된 노트북은 10분 이상.** 패키지 내려받기까지 포함하면 더 걸리므로 충전기를 꽂고, 절전 모드로 두지 말 것
 
 ---
 
@@ -56,14 +56,15 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 | 항목 | 내용 |
 |---|---|
 | 환경 | 2주차에 만든 **ROS 2 Humble** (`ros2 topic list` 가 동작해야 함) |
-| 저장공간 | **20 GB 이상** — Gazebo Garden + VRX 빌드에 필요 (실측 `vrx_ws` 904 MB + 의존 패키지) |
-| 전원 | **충전기 지참**. 노트북에서는 빌드가 10분 이상 걸릴 수 있다 |
+| 저장공간 | **여유 20 GB 이상** — Gazebo Garden + VRX 빌드에 필요 (실측 `vrx_ws` 904 MB + 의존 패키지). 학기 전체 권장 여유는 40 GB (강의계획서) |
+| 전원 | **충전기 지참**. 오래된 노트북에서는 빌드가 10분 이상 걸릴 수 있음 |
 | 그래픽 | GUI 가 뜨는지 1주차 2-4절로 미리 확인 |
 | 실습 코드 | 2주차 `usv_basics` 저장소 — <https://github.com/wkyouncnu/usv_basics> |
 
-> [!caution] 이번 주차에는 빌드 시간이 길다
-> `colcon build` 를 걸어 놓고 그동안 1부 이론(좌표계)을 듣는 순서로 진행한다.
-> **수업 시작하자마자 빌드를 먼저 건다.**
+> [!caution] 설치 단계 전체는 시간이 걸린다
+> - `colcon build` 자체는 기준 환경에서 2분 안팎이나, `apt install` · `rosdep install` 내려받기가 네트워크에 따라 길어짐
+> - 설치 명령을 걸어 놓고 그동안 1부 이론(좌표계)을 듣는 순서로 진행한다
+> - **수업 시작하자마자 2-1 설치를 먼저 건다.**
 
 ---
 
@@ -92,7 +93,8 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 4. ROS 2 토픽으로 발행
 ```
 
-- 기본 스텝: 1 ms
+- 기본 스텝: 4 ms — `sydney_regatta.sdf` 의 `<max_step_size>0.004</max_step_size>` (볼트 사본 기준)
+  - 직접 확인: `grep -n max_step_size ~/vrx_ws/src/vrx/vrx_gz/worlds/sydney_regatta.sdf`
 
 > [!note] 본 제어기는 이 루프의 **밖**에 있음
 > - Simulink나 Python 노드가 토픽으로 상태를 받아 명령을 돌려줌
@@ -107,8 +109,8 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 | **RTF (Real Time Factor)** | 시뮬레이션 시간 ÷ 실제 시간 |
 
 - RTF = 1.0 → 실시간과 같은 속도
-- VRX + 무거운 센서 → 보통 **0.3 \~ 0.7**
-- Gazebo 창 하단에 표시됨
+- VRX 기본 런치 기준 환경 실측 → **35\~50 %** (데스크톱) · **90 % 이상** (노트북 + `ogre` 옵션, §2-3)
+- Gazebo 창 오른쪽 아래에 **백분율(%)** 로 표시됨. 본 문서도 % 로 적음 (1.0 = 100 %)
 
 > [!warning] 알고리즘의 오류가 아니라 처리 속도 문제일 수 있다
 > 노트북 성능이 낮으면 RTF가 떨어짐. **항상 RTF를 먼저 확인**할 것.
@@ -145,7 +147,7 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 > - 좌 · 우 각 1개, 선미(x = −2.374 m)에 좌우로 ±1.027 m 벌어져 있음
 > - 장착각을 지정하지 않았으므로 **선수 방향으로 고정**
 > - 좌우 추력 차이로 방향을 바꾸는 **차동 추진(differential thrust)**
-> - 3주차 실습에서 이미 이렇게 조종해 봤음
+> - 2부 2-5 · 2-6 절에서 이 방식으로 조종함
 
 - 변환 흐름
 
@@ -227,7 +229,7 @@ $$
 > [!note] 뺐다고 없어지는 것은 아니다
 > 제어 대상에서 뺄 뿐, 배는 여전히 그 방향으로 움직인다.
 > 파도가 커지면 Roll·Pitch 가 커지고, 그만큼 **Surge·Sway 측정값에 잡음이 섞인다.**
-> 8주차에서 거친 월드(`wayfinding2`)로 바꿔 보면 이 영향이 눈에 보인다.
+> 바람·파랑이 켜진 월드(`practice_2023_wayfinding2_task`, 4주차 2-3 참조)로 바꿔 보면 이 영향이 눈에 보인다.
 - 7주차에 Fossen 운동방정식으로 정식화함
 
 ---
@@ -236,19 +238,23 @@ $$
 
 ![ENU와 NED](../assets/w03-frames.svg)
 
-### 세 개의 좌표계
+### 지구 고정 두 개 · 몸체 고정 두 개
 
 | 좌표계 | 축 | 각도 기준 | 누가 쓰는가 |
 |---|---|---|---|
 | **ENU** | x=동, y=북, z=위 | 동쪽 기준 반시계 | **ROS · Gazebo** |
 | **NED** | x=북, y=동, z=아래 | 북쪽 기준 시계 | **선박 · 항공 제어** |
-| **Body** | x=선수, y=우현, z=아래 | — | 배와 함께 움직임 |
+| **Body (FRD)** | x=선수, y=우현, z=아래 | — | 선박 제어 이론의 몸체 속도 $u, v, r$ |
+| **Body (ROS, FLU)** | x=선수, y=**좌현**, z=**위** | — | ROS `base_link` (REP-103). IMU · odometry 의 몸체 속도 |
 
-> [!caution] 되돌릴 수 없는 조작
-> - VRX(ROS/Gazebo)는 **ENU** 로 데이터를 줌
-> - 본 과목 제어 이론과 Simulink 모델은 **NED** 기준임
+- ENU 와 짝을 이루는 몸체 좌표계는 FLU, NED 와 짝을 이루는 몸체 좌표계는 FRD 임
+- 둘 다 x 는 선수. **y 와 z 가 반대**임
+
+> [!caution] 변환을 빠뜨려도 오류 메시지가 나지 않는다
+> - VRX(ROS/Gazebo)는 **ENU · FLU** 로 데이터를 줌
+> - 본 과목 제어 이론과 Simulink 모델은 **NED · FRD** 기준임
 > - 변환을 빠뜨리면 배가 반대로 돌거나 90도 어긋난 방향으로 감
-> - **그런데 에러가 나지 않음.** 동작만 예상과 달라진일 뿐임
+> - **그런데 에러가 나지 않음.** 동작만 예상과 달라질 뿐임
 
 ### 변환 공식
 
@@ -270,9 +276,37 @@ $$
 **각속도**
 
 $$
-r_{\text{NED}} = -\,r_{\text{ENU}}
-\qquad (z \text{축 방향이 반대이므로 부호가 뒤집힘})
+r_{\text{FRD}} = -\,r_{\text{FLU}}
+\qquad (\text{몸체 } z \text{축이 FLU 는 위, FRD 는 아래이므로 부호가 뒤집힘})
 $$
+
+- 본 과목에서는 이 값을 흔히 $r_{\text{NED}} = -r_{\text{ENU}}$ 로 줄여 씀. ROS 가 주는 각속도는 **몸체(FLU) 축** 성분임
+
+**자세 세 각과 몸체 속도 — 전부 모으면**
+
+$$
+\phi_{\text{NED}} = \phi_{\text{ENU}}, \quad
+\theta_{\text{NED}} = -\,\theta_{\text{ENU}}, \quad
+\psi_{\text{NED}} = 90^{\circ} - \psi_{\text{ENU}}
+$$
+
+$$
+u_{\text{FRD}} = u_{\text{FLU}}, \quad
+v_{\text{FRD}} = -\,v_{\text{FLU}}, \quad
+p_{\text{FRD}} = p_{\text{FLU}}, \quad
+q_{\text{FRD}} = -\,q_{\text{FLU}}, \quad
+r_{\text{FRD}} = -\,r_{\text{FLU}}
+$$
+
+| 성분 | 부호 | 이유 |
+|---|---|---|
+| $\phi$, $u$, $p$ | 그대로 | x 축(선수)은 두 몸체 좌표계에서 같음 |
+| $\theta$, $v$, $q$ | 뒤집힘 | y 축이 좌현 ↔ 우현 |
+| $r$ | 뒤집힘 | z 축이 위 ↔ 아래 |
+| $\psi$ | $90^{\circ}$ 에서 뺌 | 기준축(동 ↔ 북)과 회전 방향(반시계 ↔ 시계)이 함께 바뀜 |
+
+- ROS 쿼터니언을 1-6 의 식으로 풀면 나오는 $(\phi, \theta, \psi)$ 는 **ENU 에 대한 FLU 의 자세**임. NED 값으로 쓰려면 위 식을 거쳐야 함
+- 3부 Simulink 모델의 `v = -by`, `r = -wz` 가 이 표의 두 줄임
 
 ---
 
@@ -280,8 +314,8 @@ $$
 
 ![몸체 속도와 지구 속도](../assets/w03-body-vs-ned-velocity.svg)
 
-같은 속도 하나를 두 좌표계로 읽은 것이다. 기호가 넷이라 다른 값처럼 보이지만
-**화살표는 하나**다.
+- 같은 속도 하나를 두 좌표계로 읽은 것임
+- 기호가 넷이라 다른 값처럼 보이지만 **화살표는 하나**임
 
 | 기호 | 어느 축에서 재는가 | 배를 돌리면 |
 |---|---|---|
@@ -323,11 +357,18 @@ $$
 
 ### 잘못했을 때의 증상
 
+- NED 기준 헤딩 제어기에 VRX 값을 넣었을 때
+
 | 빠뜨린 것 | 증상 |
 |---|---|
-| x/y 교환 | 북쪽으로 가라고 했는데 동쪽으로 감 |
-| z 부호 | 좌선회 명령에 우선회함 |
-| 각도 변환 | 헤딩이 90도 어긋난 채로 **그럭저럭 따라감** ← 가장 위험 |
+| N · E 교환 | 항적이 $N = E$ 대각선에 대해 거울상. 북쪽으로 보내면 동쪽으로 감 |
+| 각도 변환 전체 ($\psi = \psi_{\text{ENU}}$ 그대로) | 측정각이 $90^{\circ} - \psi$ 라 각의 증감이 반대 → **되먹임 부호가 뒤집혀** 목표에서 멀어지는 쪽으로 계속 돎 |
+| $90^{\circ}$ 만 빠뜨림 ($\psi = -\psi_{\text{ENU}}$) | 부호는 맞으므로 안정적으로 수렴하나 헤딩이 정확히 **$90^{\circ}$ 어긋난 채** 따라감 ← 가장 위험 |
+| $r$ 부호 | 감쇠항이 반대로 작용 → 목표 부근 진동 증가 · 발산 |
+| $D$ 부호 | 수평 3자유도에서는 드러나지 않음. 고도 · 깊이를 쓰는 순간 뒤집힘 |
+
+- 증상이 뚜렷한 실수(발산)는 바로 발견됨
+- $90^{\circ}$ 만 빠뜨린 경우는 **안정적으로 동작하므로** 지나치기 쉬움
 
 > [!warning] 부분적으로 동작하는 상태가 가장 위험하다
 > 근사적으로 동작하므로 지나치기 쉬우나, 조건이 바뀌면 성능이 급격히 저하됨.
@@ -372,7 +413,7 @@ $$
 
 | 기호 | 뜻 |
 |---|---|
-| $\varphi,\ \lambda,\ h$ | 위도 · 경도 · 고도 |
+| $\varphi,\ \lambda,\ h$ | 위도 · 경도 · 고도. **각은 라디안**으로 넣음 (도 단위면 $\pi/180$ 을 곱함) |
 | $\varphi_0,\ \lambda_0,\ h_0$ | 기준점의 위도 · 경도 · 고도 |
 | $R_M,\ R_N$ | 자오선 · 묘유선 곡률반경 |
 
@@ -446,9 +487,11 @@ $$
 
 ![같은 세 각, 다른 순서](W03_simulink/img/W03_euler_order.png)
 
-- 정상 출력 (MSS 가 경로에 있으면 `MSS Rzyx` 줄이 하나 더 나온다)
+- 정상 출력 (MSS 가 경로에 **없으면** `MSS Rzyx` 줄이 빠진다)
 
 ```
+세 각  psi = 90 deg,  theta = 30 deg,  phi = 30 deg
+
 선수(x_b)가 가리키는 방향 [N  E  D]
   z-y-x (선박 규약) : [  0.000   0.866  -0.500]
   x-y-z (순서 바꿈) : [  0.000   0.866   0.500]
@@ -458,6 +501,8 @@ $$
 선박 규약을 읽는 두 방법
   움직이는 축 (요 -> 피치 -> 롤) 과 식의 차이 : 0.00e+00
   고정된 축   (롤 -> 피치 -> 요) 과 식의 차이 : 0.00e+00
+
+그림: img/W03_euler_order.png
 ```
 
 | 읽는 법 | 뜻 |
@@ -478,8 +523,8 @@ $$
 
 ### ② 쿼터니언 — 컴퓨터가 좋아함
 
-쿼터니언은 **"어느 축으로, 얼마나 돌렸는가"** 를 네 숫자로 적은 것이다.
-회전축 단위벡터를 $\mathbf{n} = (n_x, n_y, n_z)$, 회전각을 $\alpha$ 라 하면
+- 쿼터니언 = **"어느 축으로, 얼마나 돌렸는가"** 를 네 숫자로 적은 것
+- 회전축 단위벡터 $\mathbf{n} = (n_x, n_y, n_z)$, 회전각 $\alpha$ 일 때
 
 $$
 q \;=\; \Bigl(\underbrace{\cos\tfrac{\alpha}{2}}_{w},\;
@@ -522,7 +567,8 @@ z &= c_\phi c_\theta s_\psi - s_\phi s_\theta c_\psi
 \end{aligned}
 $$
 
-여기서 $c_\phi = \cos\tfrac{\phi}{2}$, $s_\phi = \sin\tfrac{\phi}{2}$ 이며 $\theta, \psi$ 도 같다.
+- 여기서 $c_\phi = \cos\tfrac{\phi}{2}$, $s_\phi = \sin\tfrac{\phi}{2}$ 이며 $\theta, \psi$ 도 같음
+- ROS 쿼터니언을 넣으면 **ENU 에 대한 FLU 의 자세**가 나옴. NED 로 옮기는 식은 1-5 의 "자세 세 각과 몸체 속도"
 
 > [!caution] 순서 관례가 두 가지임
 > - ROS · Gazebo: `(x, y, z, w)` — **w가 마지막**
@@ -595,6 +641,8 @@ $$
       +-- imu_link
 ```
 
+- 위 그림은 일반적인 ROS 로봇의 트리임 (REP-105)
+- **VRX 기본 런치에는 `map` · `odom` 이 없음.** 뿌리는 `wamv/wamv/base_link` 임 (아래 실측 표)
 - TF2가 푸는 문제
   - **"LiDAR가 자기 앞 10 m에서 부표를 봤다. 그 부표는 지도상 어디인가?"**
 
@@ -609,7 +657,7 @@ $$
 
 ```bash
 ros2 run tf2_tools view_frames
-`
+```
 
 - 5초간 듣고 현재 폴더에 `frames_<날짜>.pdf` 를 만든다. 그 PDF 를 열면 트리 전체가 보인다
 - 기준 환경 결과: **프레임 36개** (노트북 재측정 2026-09-15: 35개 — 발행 시점에 따라 1개 차이가 날 수 있음)
@@ -632,7 +680,8 @@ ros2 run tf2_tools view_frames
 > [!note] 왜 `optical` 프레임이 따로 있는가
 > 로봇공학은 x 를 앞으로 보지만, 영상처리는 z 를 앞(광축)으로 본다.
 > 두 관습이 충돌하므로 카메라마다 90° 씩 돌린 프레임을 하나 더 둔다.
-> 12주차 영상처리에서 좌표가 안 맞으면 **이 프레임을 잘못 쓴 것**이 대부분이다.
+> 13주차 영상처리에서 좌표가 안 맞으면 **이 프레임을 잘못 쓴 것**이 대부분이다.
+
 ### 명령어
 
 ```bash
@@ -698,15 +747,15 @@ gz sim -v 4 shapes.sdf
 ### 1단계 — 폴더 만들고 내려받기
 
 ```bash
-mkdir -p \~/vrx_ws/src
-cd \~/vrx_ws/src
+mkdir -p ~/vrx_ws/src
+cd ~/vrx_ws/src
 git clone https://github.com/osrf/vrx.git
 ```
 
 ### 2단계 — 브랜치 지정 (가장 중요)
 
 ```bash
-cd \~/vrx_ws/src/vrx
+cd ~/vrx_ws/src/vrx
 git checkout humble
 ```
 
@@ -735,7 +784,7 @@ git branch --show-current
 git describe --tags
 ```
 
-- 기준 환경 실측 — VRX **2.4.0-2** (2.4.1 준비 커밋 `dc30ed8d`)
+- 기준 환경 실측 — VRX **2.4.0 이후 커밋 `dc30ed8d`** (2.4.0 태그에서 2커밋 뒤, 2.4.1 직전)
 
 ```
 2.4.0-2-gdc30ed8d
@@ -752,7 +801,7 @@ git describe --tags
 ### 3단계 — 의존성 설치
 
 ```bash
-cd \~/vrx_ws
+cd ~/vrx_ws
 rosdep install --from-paths src --ignore-src -r -y
 ```
 
@@ -801,7 +850,7 @@ Summary: 5 packages finished [39.7s]
 - 플러그인이 실제로 만들어졌는지 확인한다
 
 ```bash
-ls \~/vrx_ws/install/lib/*.so | head -5
+ls ~/vrx_ws/install/lib/*.so | head -5
 ```
 
 ```
@@ -815,8 +864,8 @@ ls \~/vrx_ws/install/lib/*.so | head -5
 ### 5단계 — 환경 자동 적용
 
 ```bash
-echo "source \~/vrx_ws/install/setup.bash" >> \~/.bashrc
-source \~/.bashrc
+echo "source ~/vrx_ws/install/setup.bash" >> ~/.bashrc
+source ~/.bashrc
 ```
 
 > [!note] 2주차 `capstone_ws` 와 함께 쓰기
@@ -826,12 +875,25 @@ source \~/.bashrc
 
 ## 2-3. 첫 실행 — 배를 물에 띄운다
 
+### 실행 명령
+
+```bash
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
+```
+
+- 시드니 레가타 해역에 WAM-V가 떠 있으면 성공
+- 이 터미널은 **실습 내내 켜 둔다.** 이후 명령은 새 터미널(또는 새 분할)에서 실행
+
+> [!tip] 창이 표시되기까지 시간이 소요된다
+> 처음 실행하면 모델을 온라인에서 받음. 몇 분 기다릴 것.
+> 받은 모델은 `~/.gz/fuel/` 에 저장되어 다음부터는 빠름.
+
 > [!important] 성공했을 때 이런 화면이 나온다
 
 ![VRX 정상 실행 화면 — sydney_regatta 월드의 WAM-V](../assets/w03-gazebo-vrx-overview.png)
 
-- 기준 환경에서 직접 실행해 캡처한 것이다 (VRX 2.4.1 · Gazebo Garden 7.9.0)
-- 창이 뜨는 데 **1~2분** 걸린다. 검은 화면이 유지되어도 그동안은 정상이다
+- 기준 환경에서 직접 실행해 캡처한 것이다 (VRX 2.4.0 이후 커밋 `dc30ed8d` · Gazebo Garden 7.9.0)
+- 창이 뜨는 데 **1\~2분** 걸린다. 검은 화면이 유지되어도 그동안은 정상이다
 
 ### 이 다섯 가지가 보이면 성공이다
 
@@ -841,15 +903,18 @@ source \~/.bashrc
 | 2 | **부표**가 놓여 있다 | 빨강·검정·초록·흰색 원뿔과 주황 구 |
 | 3 | **해안과 나무**가 보인다 | 화면 위쪽. 시드니 레가타 센터 |
 | 4 | **부두**가 있다 | 왼쪽 위 회색 구조물 |
-| 5 | 오른쪽 아래 **RTF** 가 0이 아니다 | 예: `37 %` — 시간이 흐르고 있다는 뜻 |
+| 5 | 오른쪽 아래 **RTF** 가 0이 아니다 | 예: `37 %` — 시간이 흐르고 있다는 뜻. 기준은 아래 "RTF 판단 기준" |
+| 6 | **파도가 움직인다** | 파랑 플러그인 동작 중 |
+| 7 | **배가 파도를 따라 흔들린다** | 유체력 · 부력 플러그인 동작 중 |
 
 > [!warning] 배가 가라앉거나 하늘로 솟구치면
 > 물리 플러그인이 로드되지 않은 것이다. 터미널에서 `Hydrodynamics` 관련 오류를 찾는다.
-> 대개 `--force-version 7` 이 빠졌거나 Gazebo 버전이 섞인 경우다.
+> `gz sim --versions` 에 7.x 외의 버전이 함께 나오면 Gazebo 버전이 섞인 것이다.
 
 ### 카메라를 배 가까이 가져가기
 
-기본 시점은 배에서 멀다. 마우스로 옮겨도 되지만, 명령으로 하면 확실하다.
+- 기본 시점은 배에서 멂. 마우스로 옮겨도 되지만, 명령으로 하면 재현됨
+- VRX 를 띄운 채 **새 터미널**에서 실행
 
 ```bash
 gz service -s /gui/follow --reqtype gz.msgs.StringMsg --reptype gz.msgs.Boolean --timeout 4000 --req 'data: "wamv"'
@@ -883,17 +948,9 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | 확대·축소 | 휠 스크롤 |
 | 물체 정보 | 왼쪽 버튼 클릭 → 오른쪽 **Component inspector** |
 
-### 실행 명령
-
-```bash
-ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
-```
-
-- 시드니 레가타 해역에 WAM-V가 떠 있으면 성공
-
 ### RTF 가 1 % 미만이면 — 카메라 렌더링 병목
 
-- 창은 떴는데 오른쪽 아래 실시간 계수가 **`0.2 %` ~ `1 %`** 이면 배가 사실상 멈춘 상태임
+- 창은 떴는데 오른쪽 아래 실시간 계수가 **`0.2 %` \~ `1 %`** 이면 배가 사실상 멈춘 상태임
 - 이 상태에서는 §2-5·§2-6 에서 추력을 줘도 **움직임이 보이지 않음**
 - 새 터미널에서 수치로 확인
 
@@ -930,27 +987,20 @@ real_time_factor: 0.98737029965454381
 | **기본 명령** (카메라 3대) | **0.26 %** |
 | 기본 + `--render-engine-server ogre` | **98 %** (GUI 포함 90 %) |
 
-- 판단 기준
-  - RTF 가 **10 % 이상**이면 기본 명령 그대로 사용
-  - RTF 가 **1 % 미만**이면 이후 모든 주차에서 위 옵션을 붙여 실행
+- **RTF 판단 기준** (본 과목 전체에서 이 기준 하나만 씀)
+
+| RTF | 조치 |
+|---|---|
+| **10 % 이상** | 기본 명령 그대로 사용 |
+| **1\~10 %** | 브라우저 · 화면 녹화 등 다른 프로그램을 끄고 다시 확인. 그래도 낮으면 워크스테이션 사용 |
+| **1 % 미만** | 이후 모든 주차에서 위 `ogre` 옵션을 붙여 실행 |
+
 - 카메라 토픽은 옵션을 붙여도 그대로 발행됨 (`front_left_camera_sensor/image_raw` 수신 확인)
 
 > [!note] 원인을 이렇게 좁혔다
 > - GUI 없이(`headless:=True`) 실행해도 0.26 % → GUI 문제가 아님
 > - 소프트웨어 렌더링(`LIBGL_ALWAYS_SOFTWARE=1`)이 오히려 3배 빠름(0.85 %) → GPU 경유 렌더링 병목
 > - 센서를 하나씩 켜 보니 **카메라를 켜는 순간** 떨어짐 → 표의 결과
-
-### 확인할 것 3가지
-
-| 확인 | 의미 |
-|---|---|
-| 파도가 움직이는가 | 파랑 플러그인 동작 중 |
-| 배가 파도를 따라 흔들리는가 | 유체력 · 부력 플러그인 동작 중 |
-| 창 하단 RTF 값 | 1.0에 가까울수록 좋음. 0.3 이하면 무거운 것 |
-
-> [!tip] 창이 표시되기까지 시간이 소요된다
-> 처음 실행하면 모델을 온라인에서 받음. 몇 분 기다릴 것.
-> 받은 모델은 `~/.gz/fuel/` 에 저장되어 다음부터는 빠름.
 
 ---
 
@@ -971,9 +1021,36 @@ ros2 topic list | grep thrusters
 
 ### 센서 확인
 
+- 필터링 정상 출력 (일부, 4주차 §2-2 실측)
+
+```
+/wamv/sensors/gps/gps/fix
+/wamv/sensors/imu/imu/data
+/wamv/sensors/lidars/lidar_wamv_sensor/points
+/wamv/sensors/lidars/lidar_wamv_sensor/scan
+/wamv/thrusters/left/pos
+/wamv/thrusters/left/thrust
+/wamv/thrusters/right/pos
+/wamv/thrusters/right/thrust
+```
+
 ```bash
 ros2 topic echo /wamv/sensors/gps/gps/fix --once
 ```
+
+- 정상 출력 (일부, 4주차 §2-3 실측)
+
+```
+header:
+  frame_id: wamv/wamv/gps_wamv_link/navsat
+status:
+  status: 0
+latitude: -33.72242651051122
+longitude: 150.67398709806955
+altitude: 1.2479525180533528
+```
+
+- 위도 −33.72, 경도 150.67 이면 시드니 레가타 월드임
 
 ```bash
 ros2 topic hz /wamv/sensors/gps/gps/fix
@@ -983,9 +1060,33 @@ ros2 topic hz /wamv/sensors/gps/gps/fix
 ros2 topic echo /wamv/sensors/imu/imu/data --once
 ```
 
+- 정상 출력 (일부, 4주차 §2-3 실측)
+
+```
+header:
+  frame_id: wamv/wamv/imu_wamv_link/imu_wamv_sensor
+orientation:
+  x: -0.002985170390113125
+  y: 0.0052473626483582015
+  z: 0.4794804920417796
+  w: 0.8775317724700065
+```
+
+- `orientation` 은 **쿼터니언** `(x, y, z, w)` 임. 3부 `W03_1_frame_check` 가 이 값을 샘플로 씀
+
 ```bash
 ros2 topic hz /wamv/sensors/lidars/lidar_wamv_sensor/points
 ```
+
+- `hz` 정상 출력 기준 (4주차 §2-3 실측, `average rate` 값)
+
+| 토픽 | 데스크톱 (RTF 37 %) | 노트북 (RTF 84 %, `ogre` 옵션) | 설계값 |
+|---|---|---|---|
+| GPS | 7.3 Hz | 19.3 Hz | 20 Hz |
+| IMU | 36.2 Hz | 93.2 Hz | 100 Hz |
+| 3D LiDAR | 0.70 Hz | 2.5 Hz | 10 Hz |
+
+- `hz` 는 **벽시계 기준**으로 셈. RTF 만큼 설계값보다 느리게 나오는 것이 정상임
 
 > [!caution] LiDAR 토픽에는 `echo` 를 사용하지 않는다
 > 초당 수십만 개의 점이 글자로 쏟아져 터미널이 마비됨.
@@ -995,6 +1096,13 @@ ros2 topic hz /wamv/sensors/lidars/lidar_wamv_sensor/points
 
 ```bash
 ros2 topic info /wamv/sensors/imu/imu/data --verbose
+```
+
+- 정상 출력에서 볼 줄 (VRX 센서 토픽은 전부 `RELIABLE`, 4주차 §2-3 실측)
+
+```
+Publisher count: 1
+  Reliability: RELIABLE
 ```
 
 - `Reliability` 값을 **적어 둘 것**
@@ -1029,12 +1137,16 @@ ros2 topic pub --rate 10 /wamv/thrusters/left/thrust std_msgs/msg/Float64 "{data
 ```
 
 ```bash
-ros2 topic pub --rate 10 /wamv/thrusters/right/thrust std_msgs/msg/Float64 "{data: 300.0}"
+ros2 topic pub --rate 10 /wamv/thrusters/right/thrust std_msgs/msg/Float64 "{data: 250.0}"
 ```
+
+- 본 과목은 추진기 한 대의 명령을 **250 N 이하**로 씀 (6주차부터 제어기가 ±250 N 에서 포화)
+  - VRX 플러그인 자체의 한계는 편당 2353.6 N 이라 더 큰 값도 들어가지만, 이후 주차와 조건을 맞추기 위해 250 N 을 넘기지 않음
 
 ### 정지
 
-- `data: 0.0` 으로 바꾸거나 `Ctrl + C`
+- 두 터미널 모두 `data: 0.0` 을 발행한 뒤 `Ctrl + C`
+- **`Ctrl + C` 만으로는 멈추지 않음** — 추진기 플러그인은 마지막으로 받은 값을 유지함
 
 ### 관찰 과제 (필수)
 
@@ -1049,7 +1161,7 @@ ros2 topic pub --rate 10 /wamv/thrusters/right/thrust std_msgs/msg/Float64 "{dat
 > - **응답이 느림**
 > - **옆으로 흐름** (sway — 배는 자동차가 아님)
 >
-> 11주차에 충돌회피를 설계할 때 이 관찰을 반드시 기억할 것.
+> 12주차에 충돌회피를 설계할 때 이 관찰을 반드시 기억할 것.
 > 육상 로봇용 회피 알고리즘을 그대로 가져오면 실패하는 이유가 여기 있음.
 
 ---
@@ -1081,7 +1193,7 @@ ros2 topic pub --rate 10 /wamv/thrusters/right/thrust std_msgs/msg/Float64 "{dat
 - 2주차에 받은 저장소에 노드가 추가되어 있다. **최신으로 갱신**한다
 
 ```bash
-cd \~/capstone_ws/src/usv_basics
+cd ~/capstone_ws/src/usv_basics
 git pull
 ```
 
@@ -1105,7 +1217,7 @@ Fast-forward
 ### 2단계 — 빌드
 
 ```bash
-cd \~/capstone_ws
+cd ~/capstone_ws
 colcon build --symlink-install
 source install/setup.bash
 ros2 pkg executables usv_basics
@@ -1151,8 +1263,8 @@ def on_timer(self):
 
 | 왜 이렇게 했는가 | 이유 |
 |---|---|
-| 키를 눌러도 **계속 발행**한다 | 추진기 플러그인은 마지막 값을 유지한다. 한 번만 보내면 계속 간다 |
-| 종료(`q`) 할 때 **0 을 보낸다** | 안 보내면 창을 닫아도 배가 계속 나아간다 |
+| 키 값을 **10 Hz 로 계속** 발행한다 | 늦게 연결된 구독자나 유실된 메시지가 있어도 최신 명령이 곧 도착함 |
+| 종료(`q`) 할 때 **0 을 보낸다** | 추진기 플러그인은 마지막 값을 유지함. 안 보내면 창을 닫아도 배가 계속 나아간다 |
 | 토픽 이름을 **파라미터**로 뺐다 | 4주차에서 배 이름이 바뀌어도 코드를 안 고친다 |
 
 - 엔터 없이 키 한 글자를 받기 위해 터미널을 **cbreak 모드**로 바꾼다
@@ -1201,7 +1313,7 @@ ros2 run usv_basics wamv_teleop_key
 
 ### 화면으로 확인 — 실제로 이렇게 움직인다
 
-- 카메라를 배에 붙여 두면 따라다닌다 (아래 §카메라 고정 참조)
+- 카메라를 배에 붙여 두면 따라다닌다 (§2-3 "카메라를 배 가까이 가져가기", 오프셋은 아래 "카메라를 배에 고정하기")
 
 **출발 상태**
 
@@ -1227,11 +1339,7 @@ ros2 run usv_basics wamv_teleop_key
 ### 카메라를 배에 고정하기
 
 - 손으로 마우스를 끌면 매번 화면이 달라진다. **명령으로 고정**하면 재현된다
-
-```bash
-gz service -s /gui/follow --reqtype gz.msgs.StringMsg --reptype gz.msgs.Boolean \
-  --timeout 4000 --req 'data: "wamv"'
-```
+- 따라가기(`/gui/follow`)는 §2-3 에서 이미 켰음. 여기서는 **오프셋만** 바꿔 배 뒤쪽 위에서 내려다봄
 
 ```bash
 gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Boolean \
@@ -1256,8 +1364,10 @@ data: true
 - 처음부터 다른 값으로 띄우려면
 
 ```bash
-ros2 run usv_basics wamv_teleop_key --ros-args -p thrust:=400.0
+ros2 run usv_basics wamv_teleop_key --ros-args -p thrust:=250.0
 ```
+
+- 250 N 은 본 과목이 쓰는 추진기 한 대의 상한임 (§2-5 참조)
 
 - 다른 배(4주차에서 이름을 바꾼 경우)에 붙이려면
 
@@ -1275,7 +1385,10 @@ ros2 run usv_basics wamv_teleop_key --ros-args \
 | 2 | `a` 를 누른 **순간**과 배가 돌기 시작하는 순간의 시간차 |
 | 3 | `w` 만 눌렀는데 옆으로 흐르는가 (`ros2 topic echo /wamv/sensors/gps/gps/fix` 로 위치 확인) |
 
-> [!important] 과제 3 에서 쓸 숫자가 여기서 나온다
+- 관찰 3 은 위경도 소수점 아래 넷째 자리 이하에서 변하므로 눈으로 읽기 어려움
+  - 3-4 절처럼 참값 오도메트리를 켠 경우 `ros2 topic echo /wamv/sensors/position/ground_truth_odometry --field twist.twist.linear` 로 몸체 속도를 봄. `y` 가 0 이 아니면 옆으로 흐르는 것임
+
+> [!important] 수업 진도 체크의 "관찰 기록" 에 쓸 숫자가 여기서 나온다
 > 눈으로만 보지 말고 **`ros2 topic echo` 로 값을 받아 적을 것.**
 
 ---
@@ -1291,7 +1404,7 @@ ros2 run usv_basics wamv_teleop_key --ros-args \
 - VRX 쪽 조이스틱 스크립트의 위치는 아래에서 확인할 수 있다
 
 ```bash
-ls \~/vrx_ws/src/vrx/vrx_gz/launch/
+ls ~/vrx_ws/src/vrx/vrx_gz/launch/
 ```
 
 ```
@@ -1307,7 +1420,7 @@ usv_joy_teleop.py      vrx_environment.launch.py
 - VRX 에는 **채점까지 되는 과제 월드**가 함께 들어 있다
 
 ```bash
-ls \~/vrx_ws/src/vrx/vrx_gz/worlds/ | head
+ls ~/vrx_ws/src/vrx/vrx_gz/worlds/ | head
 ```
 
 | 월드 | 본 과목에서 |
@@ -1349,9 +1462,11 @@ rviz2
 ```
 
 1. 좌하단 **Add** → **TF** 추가
-2. 좌측 **Global Options → Fixed Frame** 을 최상위 프레임으로 설정
-3. **Add** → **PointCloud2** → Topic 을 LiDAR 토픽으로 지정
-4. 배를 움직이면서 프레임과 점군이 함께 움직이는지 확인
+2. 좌측 **Global Options → Fixed Frame** 을 `wamv/wamv/base_link` (트리의 뿌리)로 설정
+3. **Add** → **PointCloud2** → Topic 을 `/wamv/sensors/lidars/lidar_wamv_sensor/points` 로 지정
+4. 2-6 절의 키보드 조종으로 배를 돌리면서 화면을 봄
+   - TF 축은 **제자리에 있고**, 점군(부표 · 해안)이 **반대 방향으로 돎**
+   - 기본 런치에는 지구 고정 프레임(`map`, `odom`)이 없어 배를 기준으로 그리기 때문임
 
 > [!tip] RViz2 의 부하가 큰 경우
 > LiDAR 표시는 끄고 TF만 볼 것.
@@ -1360,7 +1475,8 @@ rviz2
 
 # 3부 · Simulink — 좌표 변환을 눈으로 확인한다
 
-1부에서 쓴 변환식을 **블록으로 만들어 돌려 본다.** 모델 네 개가 한 단계씩 올라간다.
+- 1부에서 쓴 변환식을 **블록으로 만들어 돌려 봄**
+- 모델 네 개가 한 단계씩 올라감
 
 ```matlab
 >> W03_setup            % 기준점 · 시나리오 · 샘플링
@@ -1388,14 +1504,19 @@ rviz2
 
 ```matlab
 >> W03_setup
->> sim('W03_1_frame_check')
+>> out = sim('W03_1_frame_check');
+>> [out.log_N.Data(end) out.log_E.Data(end) out.log_D.Data(end)]
+>> rad2deg([out.log_yaw_enu.Data(end) out.log_psi.Data(end)])
 ```
+
+- `sim` 만으로는 모델 창이 열리지 않아 `Display` 가 보이지 않음. 위처럼 로그에서 값을 꺼내 봄
+- 화면으로 보려면 `open_system('W03_1_frame_check')` 후 **Run** → 오른쪽 `Display` 확인
 
 ### 실측 결과
 
 | 값 | 결과 | 어떻게 확인하는가 |
 |---|---|---|
-| `N` | **37.955** m | 위도가 $3.42\times10^{-4}$ 도 북쪽 → $\times R_M$ |
+| `N` | **37.955** m | 위도가 $3.42\times10^{-4}$ 도 북쪽 → $3.42\times10^{-4} \times \pi/180 \times R_M$ ($R_M \approx 6.355\times10^{6}$ m) $\approx 37.96$ m |
 | `E` | **−0.323** m | 경도가 거의 같으므로 0 에 가깝다 |
 | `D` | **−0.064** m | 고도가 기준보다 **높으므로 음수** |
 | `yaw_enu` | **1.0001** rad = 57.30° | 쿼터니언에서 뽑은 ENU 방위 |
@@ -1404,7 +1525,7 @@ rviz2
 > [!important] 이 표의 마지막 두 줄이 이 모델의 전부다
 > $\psi_{\text{NED}} = 90^{\circ} - \psi_{\text{ENU}}$ 가 **숫자로** 맞는지 본다.
 > 57.30 + 32.70 = 90.00 이 되면 변환이 맞은 것이다.
-> 손으로 계산해 보고 화면의 `Display` 와 맞춰 볼 것.
+> 손으로 계산해 보고 위 명령의 출력(또는 화면의 `Display`)과 맞춰 볼 것.
 
 > [!caution] `D` 가 음수인 것이 정상이다
 > NED 의 `D` 는 **아래**가 양수다. 배가 기준 고도보다 위에 있으면 `D < 0` 이다.
@@ -1440,14 +1561,33 @@ rviz2
 ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 ```
 
+1. `W03_setup.m` 의 `ros_domain_id` 를 WSL 의 `echo $ROS_DOMAIN_ID` 값(2주차에서 정한 값)으로 바꾼다
+   - MATLAB 이 WSL 토픽을 못 보면 네트워크 조건을 [[WSL-VRX-환경구축]] §8.2 (미러 네트워크 · RMW)로 확인
+2. MATLAB 에서 실행
+
 ```matlab
 % MATLAB
 >> W03_setup
->> open_system('W03_2_vrx_nav')      % Run 을 누른다
+>> W03_vrx_run('W03_2_vrx_nav')
 ```
 
-- `valid` 가 1 이 되어야 값이 의미가 있다. 0 이면 토픽이 오지 않는 것이다
-- 배가 가만히 있으면 `N`, `E` 가 거의 변하지 않는다. 2-5 절 명령으로 밀어 본다
+- `W03_vrx_run(model, T_end)` 이 하는 일
+
+| 순서 | 동작 | 화면 출력 |
+|---|---|---|
+| 1 | GPS · IMU 토픽이 보이는지 확인. 없으면 오류로 멈춤 | `1) VRX 토픽 확인` |
+| 2 | GPS 헤더 스탬프 ÷ 벽시계로 **RTF 를 10초간 측정** (0.05\~1.0 으로 자름) | `RTF = …  ->  페이싱 비율을 이 값으로 둔다` |
+| 3 | 페이싱 비율 = 측정 RTF, 정지 시간 = `T_end` 로 모델 실행 | `3) W03_2_vrx_nav 실행 (30초)` |
+| 4 | (`W03_3_vrx_drive` 일 때만) 좌 · 우 추진기에 0 N 을 5번 송신 | `추력 0 송신 완료` |
+| 5 | 결과 그림과 수치 | — |
+
+- 인자: `model` 생략 시 `'W03_3_vrx_drive'`, `T_end` 생략 시 `W03_setup` 의 `T_end` (30초)
+- `valid` 가 1 이 되어야 값이 의미가 있다. 0 이면 토픽이 오지 않는 것이다 (대개 `ROS_DOMAIN_ID` 불일치)
+- 배가 가만히 있으면 `N`, `E` 가 거의 변하지 않는다. 실행 중 2-6 절 키보드 노드로 밀어 본다
+
+> [!note] 모델 창에서 Run 으로 돌려도 되나, 페이싱 비율이 `1` 로 고정되어 있음
+> Gazebo RTF 가 1 보다 낮으면 모델이 시뮬레이터보다 앞서 감 (6주차 1-4).
+> `W03_vrx_run` 은 이 값을 측정 RTF 로 바꿔 실행함
 
 ---
 
@@ -1457,6 +1597,17 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 
 - `Thrusters` 가 `/wamv/thrusters/{left,right}/thrust` 로 발행한다
 - 추력은 `W03_setup` 의 `scenario` 로 고른다
+  - 바꾸는 법: `W03_setup.m` 의 `scenario = 1;` 을 `2` 로 고친 뒤 `W03_setup` 을 다시 실행
+
+### 실행
+
+```matlab
+>> W03_setup
+>> W03_vrx_run                 % 기본 모델이 W03_3_vrx_drive
+```
+
+- 끝나면 `W03_vrx_run` 이 **추력 0 을 보냄**. 추진기 플러그인은 마지막 값을 유지하므로, 모델 창에서 Run 으로만 돌리면 끝난 뒤에도 배가 계속 감
+  - 그 경우 §2-5 "정지" 처럼 0 을 직접 발행
 
 | `scenario` | 좌 | 우 | 기대 |
 |---|---|---|---|
@@ -1465,7 +1616,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 
 > [!important] 이 모델의 목적은 속도가 아니라 **부호**다
 > 좌선회에서 `psi_NED` 가 **줄어드는지** 본다. 늘어난다면 어딘가에서 부호가
-> 한 번 더 뒤집힌 것이다 — 3주차 과제가 바로 이것을 수치로 증명하게 한다.
+> 한 번 더 뒤집힌 것이다 — 과제 3 의 검증 2 에서 이것을 수치로 증명한다.
 
 ---
 
@@ -1473,12 +1624,12 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 
 ![4단계 모델](W03_simulink/img/W03_4_teleop.png)
 
-2-6 절의 `wamv_teleop_key` 와 **같은 일**을 하는 Simulink 판이다.
-다른 점은 누른 값이 Simulink 안에 있어, **명령과 응답을 한 화면에서 함께 본다**는 것이다.
+- 2-6 절의 `wamv_teleop_key` 와 **같은 일**을 하는 Simulink 판임
+- 다른 점: 누른 값이 Simulink 안에 있어 **명령과 응답을 한 화면에서 함께 봄**
 
 ### 버튼 — 신호가 아니라 파라미터를 누른다
 
-`TeleopPad` 를 더블클릭하면 화살표 버튼 네 개가 나온다.
+- `TeleopPad` 를 더블클릭하면 화살표 버튼 네 개가 나옴
 
 | 버튼 | 좌 추력 | 우 추력 | 결과 |
 |---|---|---|---|
@@ -1523,10 +1674,47 @@ $$
 
 ### 실행 순서
 
+> [!important] 이 모델은 참값 오도메트리를 쓴다 — 기본 런치에는 없음
+> - `OdomNav` 가 `/wamv/sensors/position/ground_truth_odometry` (`nav_msgs/Odometry`) 하나로 위치 · 자세 · 몸체 속도를 받음
+> - 기본 런치(`world:=sydney_regatta` 만)로 띄우면 이 토픽이 없어 모든 값이 0 에 머묾
+> - 6주차 §A 와 같은 절차로 켠 뒤 실행할 것. `ground_truth_enabled:=True` 를 런치 인자로 주면 **조용히 무시됨**
+
+1. WAM-V 모델 파일을 복사하고 `ground_truth_enabled` 를 `true` 로 바꾼다
+
 ```bash
-# 터미널 1 — VRX
-ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
+mkdir -p ~/capstone_ws/wamv
+cp ~/vrx_ws/src/vrx/vrx_urdf/wamv_gazebo/urdf/wamv_gazebo.urdf.xacro ~/capstone_ws/wamv/w3_wamv.urdf.xacro
+sed -i 's#ground_truth_enabled" default="false"#ground_truth_enabled" default="true"#' ~/capstone_ws/wamv/w3_wamv.urdf.xacro
+grep ground_truth_enabled ~/capstone_ws/wamv/w3_wamv.urdf.xacro | head -1
 ```
+
+- 정상 출력
+
+```
+  <xacro:arg name="ground_truth_enabled" default="true" />
+```
+
+2. 고친 파일로 VRX 를 띄운다 (터미널 1)
+
+```bash
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/w3_wamv.urdf.xacro
+```
+
+> [!warning] 위 명령은 **한 줄**이다. RTF 가 1 % 미만인 환경은 끝에 `"extra_gz_args:=--render-engine-server ogre"` 를 붙인다
+
+3. 토픽을 확인한다 (터미널 2)
+
+```bash
+ros2 topic list | grep ground_truth
+```
+
+- 정상 출력
+
+```
+/wamv/sensors/position/ground_truth_odometry
+```
+
+4. MATLAB 에서 모델을 연다
 
 ```matlab
 % MATLAB
@@ -1534,9 +1722,14 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 >> open_system('W03_4_teleop')
 ```
 
-1. **Run** 을 누른다 (정지 시간은 `T_end_teleop`, 기본 300 초)
-2. `TeleopPad` 를 더블클릭해 버튼 창을 연다
-3. 버튼을 눌러 가며 왼쪽 항적과 오른쪽 네 줄을 함께 본다
+5. 페이싱 비율을 Gazebo RTF 로 맞춘다. 모델은 `1` 로 만들어져 있음
+   - WSL 에서 `gz topic -e -t /stats -n 1 | grep real_time_factor` 로 RTF 확인 (예: `0.45`)
+   - MATLAB 에서 `set_param('W03_4_teleop','PacingRate','0.45')` — 숫자는 측정값으로
+   - 맞추지 않으면 아래 관찰 과제의 "몇 초" 가 시뮬레이터 시간과 어긋남
+
+6. **Run** 을 누른다 (정지 시간은 `T_end_teleop`, 기본 300 초)
+7. `TeleopPad` 를 더블클릭해 버튼 창을 연다
+8. 버튼을 눌러 가며 왼쪽 항적과 오른쪽 네 줄을 함께 본다
 
 ### 관찰 과제
 
@@ -1595,7 +1788,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 - [ ] `competition.launch.py world:=sydney_regatta` 로 WAM-V 스폰
 - [ ] 파도가 움직이고 배가 흔들리는 것을 확인
 - [ ] GPS / IMU 토픽을 `echo`, `hz` 로 확인
-- [ ] LiDAR 토픽의 QoS `Reliability` 를 확인하고 적어 두었다
+- [ ] IMU 토픽의 QoS `Reliability` 를 확인하고 적어 두었다
 - [ ] `ros2 topic pub` 으로 배를 **직진**시켰다
 - [ ] `ros2 topic pub` 으로 배를 **선회**시켰다
 - [ ] `git pull` 로 `usv_basics` 를 갱신하고 빌드했다
@@ -1604,10 +1797,11 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 - [ ] `gz service` 로 카메라를 배에 고정해 봤다
 - [ ] `q` 로 종료하면 배가 **선다**는 것을 확인했다
 - [ ] `view_frames` 로 TF 트리 PDF 를 생성했다
-- [ ] RViz2 에서 TF 를 표시했다
+- [ ] RViz2 에서 TF 를 표시하고, 배를 돌릴 때 점군이 반대로 도는 것을 보았다
 - [ ] `W03_setup` → `sim('W03_1_frame_check')` 로 **`yaw_enu` + `psi` = 90°** 를 확인했다
-- [ ] `W03_2_vrx_nav` 에서 `valid` 가 1 이 되는 것을 확인했다
-- [ ] `W03_3_vrx_drive` 의 `scenario` 를 1·2 로 바꿔 **`psi` 의 증감 방향**을 확인했다
+- [ ] `W03_vrx_run('W03_2_vrx_nav')` 에서 `valid` 가 1 이 되는 것을 확인했다
+- [ ] `W03_vrx_run` 으로 `scenario` 1·2 를 돌려 **`psi` 의 증감 방향**을 확인했다
+- [ ] `ground_truth_enabled` 를 켠 urdf 로 VRX 를 띄우고 `ground_truth_odometry` 토픽을 확인했다
 - [ ] `W03_4_teleop` 을 돌리고 버튼으로 배를 몰았다
 - [ ] 좌선회 버튼에서 **`r` 이 먼저 서고 그 다음 `psi` 가 도는** 순서를 보았다
 
@@ -1637,14 +1831,15 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 
 1. GPS의 LLA를 **flat-earth 근사**로 NED 위치 `(N, E, D)` [m] 로 변환
    - 기준점 `lla0` 는 파라미터로 받거나, 첫 수신값을 기준으로 삼을 것
-2. IMU 쿼터니언 → **오일러각 (roll, pitch, yaw)** [rad]
+2. IMU 쿼터니언 → **오일러각** $(\phi, \theta, \psi)_{\text{ENU}}$ [rad] → $(\phi,\ -\theta,\ 90^{\circ} - \psi)_{\text{NED}}$
    - 순서 `(x, y, z, w)` 주의
-3. ENU 기준 yaw → **NED 기준 선수각** 으로 변환하고 -180 ~ +180 도로 정리
+   - 변환식은 1-5 "자세 세 각과 몸체 속도"
+3. NED 선수각을 −180\~+180 도로 정리
 
 **발행**
 
 - `/usv/pose_ned` (`geometry_msgs/PoseStamped` 또는 자유 형식)
-- 로그로 `N, E, roll, pitch, yaw_NED` 를 1 Hz 출력
+- 로그로 `N, E, roll_NED, pitch_NED, yaw_NED` 를 1 Hz 출력
 
 ### ② 검증 — 이 과제의 절반
 
@@ -1661,15 +1856,16 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 |---|---|
 | 배를 **북쪽**으로 직진 | N 값이 증가하는가? 선수각이 0도에 가까운가? |
 | 배를 **동쪽**으로 직진 | E 값이 증가하는가? 선수각이 +90도에 가까운가? |
+| **좌선회** (좌 −200 N / 우 +200 N) | 선수각이 감소하는가? |
 
 - 스크린샷 또는 로그로 제출
 
 **검증 3 — 각도 정리**
 
 - 배를 한 바퀴 이상 선회
-- 선수각이 179도 → -180도 로 넘어가는 지점에서 **값이 튀지 않는가?**
+- 선수각이 +179° 에서 −179° 로 넘어갈 때 범위를 벗어난 값(예: 181°, −190°)이 나오지 않는가?
 
-### ③ 분석 (5~10줄)
+### ③ 분석 (5\~10줄)
 
 1. ENU → NED 변환을 **빠뜨렸다면** 배는 어떻게 움직이겠는가? 구체적으로
 2. 쿼터니언 순서를 혼동하면 어떤 증상이 나타나는가?
@@ -1680,7 +1876,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 | 항목 | 배점 |
 |---|---|
 | 노드 정상 동작 (구독 · 변환 · 발행) | 30% |
-| **검증 1~3 수행 및 수치 제시** | 40% |
+| **검증 1\~3 수행 및 수치 제시** | 40% |
 | 분석의 정확성 | 20% |
 | 코드 가독성 (변환 함수 분리, 좌표계 주석) | 10% |
 
@@ -1696,7 +1892,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 | `colcon build` 중 프로세스가 죽음 | 메모리 부족 | `--parallel-workers 2`, `.wslconfig` 메모리 상향 |
 | 빌드는 됐는데 실행 시 플러그인 오류 | **브랜치 미지정** | `cd ~/vrx_ws/src/vrx && git checkout humble` 후 재빌드 |
 | Gazebo 창이 안 뜨고 멈춤 | WSLg 미작동 | `wsl --update` → `xeyes` 확인 |
-| Gazebo가 매우 느림 (RTF < 0.2) | GPU 미사용 / RAM 부족 | 다른 프로그램 종료, 워크스테이션 사용 |
+| Gazebo가 매우 느림 (RTF 1\~10 %) | GPU 미사용 / RAM 부족 | 다른 프로그램 종료, 그래도 낮으면 워크스테이션 사용 (§2-3 RTF 판단 기준) |
 | **RTF 가 1 % 미만** (창·배는 정상으로 보임) | WSL D3D12 경로의 카메라 센서 렌더링 병목 (Intel 그래픽에서 재현) | `"extra_gz_args:=--render-engine-server ogre"` 를 붙여 실행 (§2-3) |
 | `ros2 topic list` 에 wamv 토픽이 없음 | 환경 미적용 | `source ~/vrx_ws/install/setup.bash` |
 | `ros2 topic pub` 했는데 배가 안 움직임 | 토픽명 불일치 | `ros2 topic list \| grep thrusters` 로 정확한 이름 확인 |
@@ -1712,7 +1908,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 | 로그는 찍히는데 배가 안 움직임 | 토픽 이름 불일치 | `ros2 topic list \| grep thrust` 로 확인 후 `-p left_topic:=...` 로 지정 |
 | 로그는 찍히는데 배가 안 움직임 (2) | VRX 가 **일시정지** 상태 | Gazebo 왼쪽 아래 재생(▶) 버튼 |
 | 창을 닫았는데 배가 계속 감 | `q` 가 아니라 창을 강제로 닫음 | `q` 로 종료한다. 이미 갔으면 `ros2 topic pub --once` 로 0 을 보낸다 |
-| 배가 너무 느리다 / 빠르다 | 추력 기본값 | 실행 중 `+` / `-`, 또는 `-p thrust:=400.0` |
+| 배가 너무 느리다 / 빠르다 | 추력 기본값 | 실행 중 `+` / `-`, 또는 `-p thrust:=250.0` (본 과목 상한) |
 | `termios.error: (25, 'Inappropriate ioctl for device')` | 터미널이 아닌 곳에서 실행 (파이프·스크립트) | **터미널에서 직접** 실행한다 |
 
 ---
@@ -1738,7 +1934,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 | `W03_animate.m` | 2·3단계의 항적 그림 |
 | `W03_teleop_plot.m` | 4단계의 항적 + $\psi, u, v, r$ 그림 |
 | `W03_euler_order.m` | 같은 세 각을 두 순서로 돌려 자세가 달라지는 것을 그린다 (1-6절) |
-| `W03_vrx_run.m` | VRX 기동 · 정리 명령 모음 |
+| `W03_vrx_run.m` | 2 · 3단계 실행기 — 토픽 확인 → RTF 측정 → 페이싱 = RTF 로 실행 → (3단계만) 추력 0 송신 → 그림 |
 
 ### 공식 문서
 
@@ -1753,12 +1949,12 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 
 - [[ENU와-NED를-섞으면-조용히-틀린다]] — 이번 주차 이론의 핵심
 - [[배는-급정지하지-않는다]] — 2-5 관찰 과제의 배경
-- [[WSL-VRX-환경구축]] §4~§5 — 설치 절차
+- [[WSL-VRX-환경구축]] §4\~§5 — 설치 절차
 - [[VRX-월드와-패키지]] — 월드 목록과 토픽 정리
 
 ### 강의자료 폴더
 
-- **`2_지난학기_강의자료/2025/11_동역학모델.pdf`** — NED / Body 프레임, 운동학과 동역학의 구분. **이번 주차 1-4 ~ 1-6의 이론적 배경. 반드시 읽을 것**
+- **`2_지난학기_강의자료/2025/11_동역학모델.pdf`** — NED / Body 프레임, 운동학과 동역학의 구분. **이번 주차 1-4 \~ 1-6의 이론적 배경. 반드시 읽을 것**
 
 ### 교재
 

@@ -83,8 +83,10 @@ origin_east  = -532;
 Ts_ctrl = 0.05;
 
 n_wp = numel(wp_north);
-if loiter_wp < 2 || loiter_wp > n_wp
-    error('loiter_wp 는 2 이상 %d 이하여야 합니다.', n_wp);
+% 마지막 웨이포인트는 안 된다 — 로이터 진입과 임무 종료가 같은 스텝에 참이 되어
+% 전이 순서상 로이터가 먼저 뽑히고, 로이터가 끝나면 다시 같은 점에서 로이터에 든다 (무한 반복)
+if loiter_wp < 2 || loiter_wp > n_wp - 1
+    error('loiter_wp 는 2 이상 %d 이하여야 합니다 (마지막 웨이포인트 제외).', n_wp - 1);
 end
 
 % 로이터 중심은 지정한 웨이포인트에 고정한다.

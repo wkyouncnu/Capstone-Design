@@ -43,7 +43,7 @@ else
     S.mean_re_lo = mean(abs(rlo(j) - lrd));
 end
 
-figure('Name',['W09  ' ttl], 'Position',[60 40 1240 820], 'Color','w');
+S.fig = figure('Name',['W09  ' ttl], 'Position',[60 40 1240 820], 'Color','w');
 
 % ---- 1. 궤적 (모드별 색) ----------------------------------------------
 subplot(2,3,[1 4]); hold on; grid on; axis equal;

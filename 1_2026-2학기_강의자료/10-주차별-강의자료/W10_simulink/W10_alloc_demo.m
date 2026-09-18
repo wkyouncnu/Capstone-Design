@@ -126,7 +126,7 @@ else
     if ad <= pi/2
         Do = sign(di)*dmax;         To =  Ti*cos(ad - dmax);
     else
-        Do = sign(di)*(dmax - pi);  To = -Ti*cos(pi - dmax - ad);
+        Do = -sign(di)*dmax;        To = -Ti*cos(pi - dmax - ad);
         Do = atan2(sin(Do), cos(Do));
     end
 end

@@ -65,12 +65,14 @@ k0   = find(t >= 0.5, 1);        % 첫 샘플은 odom 이 아직 안 와서 못 
 psi0 = eta(k0,3);
 fprintf('   VRX 초기 선수각 %.2f deg\n', rad2deg(psi0));
 
-x0 = evalin('base','x0');   x0(6) = psi0;   assignin('base','x0', x0);
+x0old = evalin('base','x0');   x0 = x0old;   x0(6) = psi0;   assignin('base','x0', x0);
 animOld = evalin('base','animate');         assignin('base','animate', 0);
 load_system('W10_0_offline');
-set_param('W10_0_offline','StopTime', num2str(T_end));
-o2 = sim('W10_0_offline');
+o2 = sim('W10_0_offline', 'StopTime', num2str(T_end));   % 모델에 저장된 정지 시간은 건드리지 않는다
 assignin('base','animate', animOld);
+assignin('base','x0', x0old);   % 되돌린다 — 이 뒤에 오프라인을 다시 돌려도 W10_setup 조건 그대로
+So = W10_plot(o2, '오프라인 대조 (VRX 초기 선수각)');   % 오프라인 지표를 같은 형식으로 찍는다
+S.offline = rmfield(So, intersect(fieldnames(So), {'fig'}));
 
 t2  = o2.log_eta.Time;
 eo  = squeeze(o2.log_eta.Data)';

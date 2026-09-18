@@ -34,7 +34,7 @@ summary: WAM-V URDF·Xacro 구조, 센서 배치 수정, Mapviz 위성지도, �
 > [!important] 시작 전 확인
 > - 3주차 VRX 설치가 끝나 있어야 함
 > - `ros2 launch vrx_gz competition.launch.py world:=sydney_regatta` 로 배가 떠야 함
-> - 안 되는 학생은 **지금 손 들 것.** 이번 주차 실습은 전부 VRX가 돌아가는 것을 전제로 함
+> - 안 되는 학생은 **수업 시작 전 조교에게 알릴 것.** 이번 주차 실습은 전부 VRX가 돌아가는 것을 전제로 함
 
 ---
 
@@ -66,7 +66,7 @@ summary: WAM-V URDF·Xacro 구조, 센서 배치 수정, Mapviz 위성지도, �
 ### 조립 순서
 
 ```
-component_config.yaml   (어떤 센서를 어디에 달까)
+wamv_gazebo.urdf.xacro  (센서·추진기 호출 — 학생이 고치는 파일)
 thruster 배치 xacro     (추진기 배치)
         |
         v
@@ -151,6 +151,7 @@ b = 1.027\ \text{m}
 $$
 
 - NED 기준이라 $N > 0$ 이면 **우선회**(시계방향)다. 왼쪽을 더 세게 밀면 뱃머리가 오른쪽으로 돈다
+- 위 $N$ 은 몸체축 FRD($y$ 우현, $z$ 아래) 기준이다. 표의 FLU 좌표(좌현 $y=+1.027$)를 그대로 넣어 $N = x F_y - y F_x$ 로 계산하면 부호가 반대로 나온다 → 1-3 경고표
 - 제어기는 거꾸로 쓴다 — 필요한 $X$ 와 $N$ 을 정하고 두 추력을 푼다
 
 $$
@@ -159,21 +160,21 @@ F_L = \frac{X}{2} + \frac{N}{2b},
 F_R = \frac{X}{2} - \frac{N}{2b}
 $$
 
-| 주는 값 | 결과 |
+| 주는 값 [N] | 결과 |
 |---|---|
 | `F_L = F_R = 200` | 직진 |
 | `F_L = 50`, `F_R = 300` | **좌선회** (오른쪽이 더 밀어서 뱃머리가 왼쪽으로) |
 | `F_L = 300`, `F_R = 50` | 우선회 |
 
 - 3주차 실습에서 손으로 해 본 것이 바로 이 식이다
-- 7주차에 이 역변환을 제어기 안에 넣는다
+- 6주차에 이 역변환을 제어기 안에 넣는다
 
 > [!important] 2추진기는 **과소구동(underactuated)** 이다
 > - 제어하고 싶은 것은 3자유도 (전후 · 좌우 · 선수각)
 > - 그런데 독립 입력은 **2개**뿐 (좌 추력, 우 추력)
 > - → **횡방향(sway)을 직접 제어할 수 없다**
 > - 옆으로 가려면 뱃머리를 돌려서 가야 함
-> - 11주차 충돌회피 설계의 핵심 제약 → [[배는-급정지하지-않는다]]
+> - 12주차 충돌회피 설계의 핵심 제약 → [[배는-급정지하지-않는다]]
 
 > [!note] 사실 이 추진기는 돌아갈 수 있다
 > - `engine.xacro` 의 조인트는 `revolute`, 한계 `lower="-pi" upper="pi"`
@@ -221,7 +222,7 @@ $$
 | 우 추진기 | −2.374 | **−1.027** | 0.318 | 반폭 1.027 m |
 
 - 위 값은 **VRX 실행 중 TF 에서 측정**한 것이다 (2026-09-06). 추정치가 아니다
-- 측정 방법은 §2-3 에 있다
+- 측정 방법은 §2-4 4단계(`tf2_echo`)에 있다
 
 > [!note] Livox Mid-360 은 기본 VRX 에 없다
 > - 이전 판에 있던 Livox 행은 연구실이 센서를 추가한 개조 모델의 값이었음
@@ -233,8 +234,9 @@ $$
 
 | 요소 | 의미 |
 |---|---|
-| G · I · L 원 | GPS · IMU · 3D LiDAR 위치 |
-| 주황 점 3개 | 카메라 3대 |
+| 이름이 붙은 점 | GPS(파랑) · IMU(보라) · 3D LiDAR(적갈) |
+| 청록 점 3개 | 카메라 3대 |
+| 주황 사각형 | 추진기 |
 | 청록 부채꼴 | 카메라 · LiDAR 유효 시야 |
 | 붉은 부채꼴 | **후방 사각지대** |
 
@@ -265,7 +267,7 @@ $$
 | **근거리 사각지대** | 센서가 높이 있을수록 발밑이 안 보임 | **바로 앞 부표를 못 봄** |
 
 > [!important] 왜 지금 이걸 다루는가
-> - 10\~11주차 충돌회피에서 **"분명히 앞에 있는데 안 잡히는"** 상황을 반드시 만남
+> - 11\~12주차 LiDAR 처리 · 충돌회피에서 **"분명히 앞에 있는데 안 잡히는"** 상황을 반드시 만남
 > - 그때 알고리즘을 의심하기 전에 **센서 배치를 먼저 의심**해야 함
 > - 이번 주차 직접 옮겨 보면 그 감각이 생김
 
@@ -288,8 +290,8 @@ $$
 
 1. Gazebo가 센서를 시뮬레이션 → **gz 토픽**으로 발행
 2. `ros_gz_bridge` 가 gz 토픽을 **ROS 2 토픽**으로 변환
-3. 내 노드가 구독해서 처리
-4. 내 노드가 추진기 명령을 **ROS 2 토픽**으로 발행
+3. 사용자 노드가 구독해서 처리
+4. 사용자 노드가 추진기 명령을 **ROS 2 토픽**으로 발행
 5. `ros_gz_bridge` 가 다시 **gz 토픽**으로 변환
 6. Gazebo의 추진기 플러그인이 힘으로 적용
 
@@ -390,7 +392,7 @@ wc -l topics_all.txt
 36 topics_all.txt
 ```
 
-- 기준 노트북 실측 36개 (`/wamv` 26개 + 기본·과제 토픽 10개, 2026-09-15). 1\~2개 차이는 정상
+- 기준 환경 실측값 36개 (`/wamv` 26개 + 기본·과제 토픽 10개, 2026-09-15). 1\~2개 차이는 정상
 
 ### wamv 토픽만 추리기
 
@@ -411,8 +413,8 @@ grep "^/wamv" topics_all.txt | sort | tee topics_wamv.txt
 /wamv/thrusters/right/thrust
 ```
 
-> [!note] 내 화면의 목록이 위와 조금 달라도 정상
-> 센서 설정이나 URDF가 다르면 이름이 달라짐. **내가 본 것을 적는 것**이 과제다.
+> [!note] 학습자 화면의 목록이 위와 조금 달라도 정상
+> 센서 설정이나 URDF가 다르면 이름이 달라짐. **직접 관찰한 값을 적는 것**이 과제다.
 
 ### 토픽 하나씩 조사
 
@@ -444,7 +446,7 @@ ros2 topic echo /wamv/sensors/imu/imu/data --once | head -8
 
 ### 자동화 (선택)
 
-- 손으로 하기 지겨우면 아래를 써도 됨
+- 반복 입력을 줄이려면 아래를 써도 됨
 
 ```bash
 for t in $(grep "^/wamv" topics_all.txt); do
@@ -474,7 +476,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 > [!warning] `ground_truth_enabled:=True` 를 런치 인자로 주면 **조용히 무시된다**
 > - `competition.launch.py` 의 인자는 `world` · `sim_mode` · `bridge_competition_topics` · `config_file` · `robot` · `headless` · `urdf` · `paused` · `competition_mode` · `extra_gz_args` 뿐임
 > - 없는 인자를 줘도 오류가 나지 않음 → `ground_truth_odometry` 토픽도 생기지 않음
-> - 참값 위치 토픽이 필요하면 **6주차 §urdf 수정 절차**를 따른다
+> - 참값 위치 토픽이 필요하면 **6주차 §A (ground truth odometry 켜기)** 를 따른다
 > - 인자 목록 확인: `ros2 launch vrx_gz competition.launch.py --show-args`
 
 ---
@@ -551,6 +553,7 @@ orientation_covariance:
 
 - `orientation` 은 **쿼터니언**이다. 오일러각(roll·pitch·yaw)이 아니다
 - 위 값을 yaw 로 바꾸면 약 **57.3°** — 배가 스폰 직후 향하는 방향이다
+  - 이 값은 **ENU** yaw (동쪽에서 반시계). NED 선수각으로는 $90° - 57.3° = 32.7°$
 
 ```python
 # 쿼터니언 -> yaw [deg]
@@ -613,13 +616,13 @@ Publisher count: 1
 > - `ros_gz_bridge` 가 기본 QoS(RELIABLE)로 발행하기 때문
 > - `/wamv`·`/vrx` 토픽 전체를 조사한 결과 발행자가 있는 25개 모두 RELIABLE (2026-09-15)
 > - "고빈도 센서는 BEST_EFFORT" 는 일반적인 실선 드라이버 관행이며, **이 시뮬레이터에는 해당하지 않음**
-> - 따라서 **내 노드에서 직접 `ros2 topic info --verbose` 로 확인한 값**을 믿는다
+> - 따라서 **작성한 노드가 구독할 토픽을 직접 `ros2 topic info --verbose` 로 확인한 값**을 믿는다
 
 ---
 
 ### 2-3-5. 카메라
 
-이미지 자체는 터미널에 찍지 않는다. **규격 정보**만 확인한다.
+- 이미지 자체는 터미널에 찍지 않는다. **규격 정보**만 확인한다
 
 ```bash
 ros2 topic echo --once /wamv/sensors/cameras/front_left_camera_sensor/camera_info | head -16
@@ -644,7 +647,13 @@ k:
 | 해상도 | **1280 × 720** | |
 | `distortion_model` | `plumb_bob` | 표준 렌즈 왜곡 모델 |
 | `d` 전부 0 | 왜곡이 없다 | 시뮬레이터라서 이상적인 렌즈다 |
-| `k[0]` = 762.72 | 초점거리 $f_x$ [px] | 12주차 영상처리에서 쓴다 |
+| `k[0]` = 762.72 | 초점거리 $f_x$ [px] | 13주차 영상처리에서 쓴다 |
+
+- $f_x$ 는 가로 해상도와 수평 시야각(`wamv_camera.xacro` 의 `horizontal_fov` = 1.3963 rad = 80°)에서 나온다
+
+$$
+f_x = \frac{W/2}{\tan(\mathrm{HFOV}/2)} = \frac{640}{\tan 40°} = 762.72\ \text{px}
+$$
 
 - 영상은 RViz2 나 `rqt_image_view` 로 본다
 
@@ -678,7 +687,7 @@ ros2 topic echo --once /vrx/debug/wind/direction
 
 - 기준 환경 결과: **`data: 0.0`** / **`data: 240.0`**
 - `sydney_regatta` 는 **바람이 꺼져 있다**. 풍향값은 있지만 풍속이 0이라 힘이 생기지 않는다
-- 바람을 켜려면 월드를 바꾼다 → 8주차 `practice_2023_wayfinding2_task`
+- 바람을 켜려면 월드를 바꾼다 → 10주차 `practice_2023_wayfinding2_task`
 
 ---
 
@@ -698,28 +707,31 @@ ros2 topic hz /wamv/sensors/imu/imu/data
 | 3D LiDAR | **0.70 Hz** | **2.5 Hz** | 10 Hz | 점이 많아 `ros2 topic hz` 자체가 따라가지 못함 |
 | 바람 | **7.6 Hz** | **9.7 Hz** | 20 Hz | |
 
-- 두 열의 비율이 대체로 RTF 비율(0.84 ÷ 0.37 ≈ 2.3)과 같음 → 센서가 아니라 시뮬레이터 속도가 결정함
+- IMU·GPS·camera_info 는 두 열의 비율이 약 2.6 으로 비슷함 (IMU 2.57 · GPS 2.64 · camera_info 2.61) → 시뮬레이터 속도가 주로 결정
+  - RTF 비율(0.84 ÷ 0.37 ≈ 2.3)보다는 조금 크다. 노트북 열의 IMU 93.2 Hz 도 $100 \times 0.84 = 84$ Hz 보다 높다 → RTF 표시값만으로 주기가 정확히 맞아떨어지지는 않음
+- 바람(1.3)·LiDAR(3.6)는 비율이 달라 다른 병목도 있음 (§2-8-1)
 
 > [!warning] 설계값보다 느리게 나오는 것이 정상이다
 > `ros2 topic hz` 는 **벽시계 기준**으로 센다. 시뮬레이터가 실시간의 37 %(RTF ≈ 0.37) 속도로
 > 돌고 있으면 100 Hz 센서는 벽시계로 약 37 Hz 로 보인다.
-> **센서가 고장 난 것이 아니라 시뮬레이터가 느린 것이다.**
+> **센서가 고장 난 것이 아니라 시뮬레이터가 느린 것이 주원인이다.**
 >
 > - 확인법 — Gazebo 창 오른쪽 아래의 RTF 표시를 본다
-> - 실측: RTF 36\~39 % 일 때 위 표의 값이 나왔다
+> - 실측: 데스크톱 열은 RTF 36\~39 % 일 때의 값이다
+> - RTF 가 1 에 가까워도 설계값에 못 미칠 수 있다 — §2-8-1 에서는 RTF 0.99 에서 설계값의 약 3/4 가 왔다
 > - 6주차에서 Simulink 페이싱을 이 RTF 에 맞추는 이유가 여기 있다
 
 ---
 
 ### 2-3-8. RViz2 로 눈으로 확인하기
 
-숫자만으로는 LiDAR 가 제대로 도는지 알 수 없다. 그림으로 본다.
+- 숫자만으로는 LiDAR 가 제대로 도는지 알 수 없다. 그림으로 본다
 
 ```bash
 ros2 run rviz2 rviz2
 ```
 
-RViz2 가 뜨면 아래 순서로 설정한다.
+- RViz2 가 뜨면 아래 순서로 설정한다
 
 1. 왼쪽 **Displays** 패널 → **Global Options** → **Fixed Frame** 을 `wamv/wamv/base_link` 로
 2. 왼쪽 아래 **Add** → **By topic** → LiDAR 토픽의 **PointCloud2** 선택
@@ -811,9 +823,9 @@ nano ~/capstone_ws/wamv/my_wamv.urdf.xacro
 
 - 저장 `Ctrl+O` → `Enter` → 종료 `Ctrl+X`
 
-> [!caution] `z` 를 **1.35 m 이하**로 주면 Gazebo 서버가 죽는다
+> [!caution] `z` 를 **1.3465 m 이하**로 주면 Gazebo 서버가 죽는다 (여유를 두어 1.4 이상 권장)
 > - LiDAR 는 갑판(z = 1.2965 m)에 세운 **기둥 위**에 달림
-> - 기둥 길이 = `z − 1.2965 − 0.05` (`wamv_3d_lidar.xacro` 63행)
+> - 기둥 길이 = `z − 1.2965 − 0.05` (`wamv_3d_lidar.xacro` 63행) → 길이 $> 0 \Leftrightarrow z > 1.3465$
 > - `z="0.9"` 이면 기둥 길이 **−0.45 m** → 물리엔진이 음수 길이 원기둥을 거부
 > - 증상: 창은 뜨지만 **토픽이 영영 안 나옴**. 터미널에 아래 줄이 찍힘 (실측)
 >
@@ -884,7 +896,7 @@ rviz2
 
 - RViz2는 **로봇 기준** 좌표계로 봄
 - Mapviz는 **위경도 지도 위**에 실제 항적을 그림
-- 9주차 웨이포인트 추종에서 "실제로 해당 경로를 갔는가"를 눈으로 확인할 때 필수
+- 7주차 웨이포인트 유도(·9주차 미션)에서 "실제로 해당 경로를 갔는가"를 눈으로 확인할 때 필수
 
 ### 1단계 — 설치
 
@@ -968,6 +980,7 @@ curl -s -o /tmp/tile.png -w "%{http_code}\n" "http://localhost:8080/wmts/gm_laye
 ```
 
 - 정상 출력: `200`
+- 이 타일(`17/120000/77000`)은 시드니 레가타가 아니라 호주 내륙(남위 30°, 동경 149.6° 부근)이다. **서버가 응답하는지**만 확인하는 용도다
 
 ### 5단계 — 원점을 시드니로 둔 런치 파일 만들기
 
@@ -1027,13 +1040,13 @@ ros2 launch ~/capstone_ws/mapviz/mapviz_sydney.launch.py
 
 1. 좌하단 **add** 클릭
 2. 목록 최하단 **tile_map** 선택 → **OK**
-3. **Base URL** 에 입력
+3. **Source** → `Custom WMTS Source...` 선택
+4. 뜬 창의 **Base URL** 에 아래를 입력하고 **Max Zoom** 을 19 로 → **Save** 로 이름 `mapproxy` 저장
 
 ```
 http://localhost:8080/wmts/gm_layer/gm_grid/{level}/{x}/{y}.png
 ```
 
-4. **Max Zoom** 을 19로 (선택)
 5. 다시 **add** → **navsat** 선택 → Topic 을 GPS 토픽으로 지정
 6. 배를 움직이면 지도 위에 궤적이 그려짐
 
@@ -1056,7 +1069,7 @@ http://localhost:8080/wmts/gm_layer/gm_grid/{level}/{x}/{y}.png
 
 ---
 
-## 2-6. VRX 과제 월드 — 15주 뒤 무엇을 하게 되는가
+## 2-6. VRX 과제 월드 — 학기 말에 무엇을 하게 되는가
 
 > [!important] VRX 에는 **채점까지 되는 과제 월드 12종**이 들어 있다
 > 지금까지 쓴 `sydney_regatta` 는 아무 과제도 없는 **연습용 수면**이다.
@@ -1103,6 +1116,8 @@ ros2 launch vrx_gz competition.launch.py world:=stationkeeping_task
 | WAM-V 가 떠 있다 | 가운데 쌍동선 |
 | 색색의 표식 부표 | 오른쪽 위 |
 | 물가의 원통 부표 | 왼쪽 |
+
+- 오른쪽 아래의 `−87.01 %` 는 RTF 표시가 순간적으로 잘못 찍힌 것이다. RTF 는 음수가 될 수 없다. 실제 속도는 §2-3-7 처럼 토픽 주기로 확인한다
 
 ### 채점 인터페이스 — `/vrx/task/info`
 
@@ -1157,7 +1172,7 @@ ros2 topic echo --once /vrx/task/info
 > 위 실측에서 **53** 이 찍혀 있다. 배가 가만히 있어도 파랑에 밀려 접촉하면 센다.
 > Term Project 에서 이 값이 평가에 들어가므로, **출발 전 값을 먼저 확인**할 것.
 
-### 바람 — 외란이 이미 켜져 있다
+### 바람 — 디버그 토픽으로 읽는다
 
 ```bash
 ros2 topic echo --once /vrx/debug/wind/speed
@@ -1174,7 +1189,8 @@ data: 240.0
 ```
 
 - `speed` 는 순간값이라 0 이 나올 수 있다. `direction` 은 도(°) 단위
-- 10주차 DP 실습에서 이 두 값을 **바꿔 가며** 제어기를 시험한다
+- 이 토픽은 시뮬레이터가 내보내는 **출력**이라, 여기에 값을 써서 바람을 바꿀 수는 없다
+- 10주차에서는 오프라인 모델(`W10_setup.m`)과 world 교체로 바람을 바꾼다
 
 > [!note] `competition_mode:=True` 로 띄우면 이 디버그 토픽이 사라진다
 > 대회 상황을 흉내 내는 옵션이다. 수업에서는 **기본값(False)** 그대로 쓴다.
@@ -1215,6 +1231,7 @@ QoS profile:
 ### 기록
 
 - VRX 가 도는 상태에서 **새 터미널**을 연다
+- 기록 전에 `ros2 topic info /wamv/sensors/imu/imu/data --verbose` 의 `Publisher count` 가 **1** 인지 확인한다. 이전 실행이 남아 브리지가 여러 개면 메시지가 몇 배로 기록된다 (막혔을 때 절)
 
 ```bash
 ros2 bag record -o ~/w04_bag \
@@ -1249,19 +1266,7 @@ ros2 bag record -o ~/w04_bag \
 ros2 bag info ~/w04_bag
 ```
 
-- 정상 출력 (기준 환경 실측, 19초 기록)
-
-```
-Files:             w04_bag_0.db3
-Bag size:          1.3 MiB
-Storage id:        sqlite3
-Duration:          19.144692000s
-Messages:          3532
-Topic information: Topic: /wamv/sensors/imu/imu/data | Type: sensor_msgs/msg/Imu | Count: 2938
-                   Topic: /wamv/sensors/gps/gps/fix | Type: sensor_msgs/msg/NavSatFix | Count: 594
-```
-
-- 다른 노트북 재측정 (2026-09-15, RTF 0.99, 20초 기록)
+- 정상 출력 (일부, 2026-09-15 실측, RTF 0.99, 20초 기록)
 
 ```
 Bag size:          817.5 KiB
@@ -1271,14 +1276,14 @@ Topic information: Topic: /wamv/sensors/gps/gps/fix | Type: sensor_msgs/msg/NavS
                    Topic: /wamv/sensors/imu/imu/data | Type: sensor_msgs/msg/Imu | Count: 1729
 ```
 
-- IMU : GPS 비율은 두 환경 모두 **약 5 : 1**. 절대 개수는 RTF 에 따라 달라진다
+- IMU : GPS 비율은 **약 5 : 1** ($1729 \div 345 \approx 5.0$). 절대 개수는 RTF 에 따라 달라진다
 
 | 읽는 법 | 뜻 |
 |---|---|
-| `Storage id: sqlite3` | ROS 1 의 `.bag` 과 달리 **SQLite 데이터베이스**다 |
-| `Messages: 3532` | 19초 동안 3532건 |
-| IMU 2938 / GPS 594 | 약 **5 : 1**. IMU 가 그만큼 빠르다 |
-| `Bag size: 1.3 MiB` | LiDAR·카메라를 넣으면 **수백 MB** 로 뛴다. 주의 |
+| 저장 형식 `sqlite3` | 전체 출력의 `Storage id` 줄. ROS 1 의 `.bag` 과 달리 **SQLite 데이터베이스**다 (Humble 기본값) |
+| `Messages: 2074` | 20초 동안 2074건 |
+| IMU 1729 / GPS 345 | 약 **5 : 1**. IMU 가 그만큼 빠르다 |
+| `Bag size: 817.5 KiB` | LiDAR·카메라를 넣으면 **수백 MB** 로 뛴다. 주의 |
 
 ### 재생
 
@@ -1315,6 +1320,9 @@ ros2 topic echo /wamv/sensors/gps/gps/fix
 - 2-3-7 절의 발행 주기와 2주차 2-9 절의 QoS 불일치를 **Simulink 모델로 다시** 잰다
 - 6주차부터는 제어기가 Simulink 안에서 토픽을 받는다. 터미널에서 본 숫자와 **Simulink 가 받는 숫자가 같은지** 먼저 확인해 두는 절이다
 
+- 배포 폴더 = 받은 `1_2026-2학기_강의자료` 폴더 안 `10-주차별-강의자료` 의 Windows 경로
+- `W04_setup.m` 19행의 `ros_domain_id` 를 WSL 의 `echo $ROS_DOMAIN_ID` 값(팀 번호, 2주차)으로 고친 뒤 실행한다. 아래 정상 출력의 `8` 은 기준 환경 값이다
+
 ```matlab
 cd('<배포 폴더>/W04_simulink')
 W04_setup
@@ -1330,7 +1338,7 @@ W04_setup 완료 — Ts = 0.005 s (200 Hz), 측정 20초, ROS_DOMAIN_ID=8
 |---|---|
 | `Ts = 0.005 s (200 Hz)` | IMU 100 Hz 를 세려면 모델이 그보다 빨라야 한다 |
 | `측정 20초` | 짧으면 주기가 흔들린다. 벽시계로 20 초를 센다 (Simulation Pacing 켬) |
-| `ROS_DOMAIN_ID=8` | WSL 의 `~/.bashrc` 와 같아야 토픽이 보인다 |
+| `ROS_DOMAIN_ID=8` | WSL 의 `~/.bashrc` 와 같아야 토픽이 보인다. 다르면 2-8-1 은 전부 0, 2-8-2 는 Reliable · Best effort 둘 다 0 이 나온다 |
 
 ### 2-8-1. 센서 세 개의 수신 주기 — `W04_1_sensor_rates` (VRX 필요)
 
@@ -1368,7 +1376,7 @@ S = W04_rates_run(20);
 | 읽는 법 | 뜻 |
 |---|---|
 | Simulink ≈ `ros2 topic hz` | **Simulink 가 받는 것이 토픽에 실제로 오는 것과 같다.** 이 모델의 목적이 이것이다 |
-| RTF 0.99 인데 비율 0.75 | 2-3-7 절에서는 "RTF 가 주기를 정한다" 고 했다. 이 PC 에서는 RTF 가 거의 1 인데도 3/4 만 온다. **RTF 말고도 병목이 있다**는 뜻이다 — 원인은 이 측정만으로 가를 수 없다 |
+| RTF 0.99 인데 비율 0.75 | 2-3-7 절에서는 "RTF 가 주기를 주로 정한다" 고 했다. 이 PC 에서는 RTF 가 거의 1 인데도 3/4 만 온다. **RTF 말고도 병목이 있다**는 뜻이다 — 원인은 이 측정만으로 가를 수 없다 |
 | 바람만 0.46 | 바람만 비율이 다르다. 세 비율이 같지 않으면 원인이 시뮬레이터 속도 하나가 아니다 |
 
 > [!important] 6주차에서 이 숫자가 왜 중요한가
@@ -1425,7 +1433,7 @@ out = sim('W04_2_qos_test');     % 20 초, 벽시계
 | 순서 | 한 일 | 확인 방법 |
 |---|---|---|
 | 1 | VRX 파일 구조 파악 | `ls vrx_urdf/wamv_gazebo/urdf/components/` |
-| 2 | 추진기 배치 Xacro 읽기 | 네 개 좌표를 그림으로 그림 |
+| 2 | 추진기 배치 Xacro 읽기 | 두 추진기 좌표를 그림으로 그림 |
 | 3 | 토픽 전수조사 | `topics_wamv.txt` 생성 |
 | 4 | 센서 위치 변경 | `my_wamv.urdf.xacro` + `urdf:=` 실행 |
 | 5 | LiDAR 높이 변경 결과 관찰 | RViz2 점군 비교 |
@@ -1442,7 +1450,7 @@ out = sim('W04_2_qos_test');     % 20 초, 벽시계
 
 ### 이론 이해
 
-- [ ] WAM-V가 yaml → Xacro → URDF → SDF 순으로 조립되는 것을 안다
+- [ ] `wamv_gazebo.urdf.xacro` → xacro 처리 → URDF → SDF 순으로 조립되는 것을 안다
 - [ ] `wamv_aft_thrusters.xacro` 의 두 줄이 무엇을 뜻하는지 설명할 수 있다
 - [ ] **차동 추진**으로 방향을 바꾸는 원리(X 와 N 의 역변환)를 설명할 수 있다
 - [ ] 2추진기가 **과소구동**이라 sway 를 직접 제어할 수 없다는 것을 안다
@@ -1469,6 +1477,7 @@ out = sim('W04_2_qos_test');     % 20 초, 벽시계
 - [ ] `world:=stationkeeping_task` 로 과제 월드를 띄웠다
 - [ ] `/vrx/task/info` 에서 `name` · `state` · `score` · `num_collisions` 를 읽었다
 - [ ] `state` 가 `initial → ready → running` 으로 바뀌는 것을 보았다
+  - VRX 기동 직후부터 `ros2 topic echo /vrx/task/info | grep -A6 "name: state"` 를 켜 두고 `string_value` 변화를 본다
 - [ ] `/vrx/debug/wind/direction` 값을 확인했다
 - [ ] `ros2 bag record` 로 GPS·IMU 를 기록했다
 - [ ] `ros2 bag info` 로 메시지 수와 용량을 확인했다
@@ -1501,7 +1510,7 @@ out = sim('W04_2_qos_test');     % 20 초, 벽시계
 | `/wamv/sensors/imu/imu/data` | | | | | | |
 | ... | | | | | | |
 
-- **방향**: 내 노드 기준. 센서는 `구독`, 추진기 명령은 `발행`
+- **방향**: 작성한 노드 기준. 센서는 `구독`, 추진기 명령은 `발행`
 - **발행 주기**: `ros2 topic hz` 로 5초 이상 측정한 average rate
 - **QoS**: `ros2 topic info --verbose` 의 Reliability 값
 
@@ -1509,7 +1518,7 @@ out = sim('W04_2_qos_test');     % 20 초, 벽시계
 
 | 항목 | 내용 |
 |---|---|
-| 바꾼 값 | LiDAR z: 1.8 → 1.4 (또는 팀이 정한 값. **1.35 초과**) |
+| 바꾼 값 | LiDAR z: 1.8 → 1.4 (또는 팀이 정한 값. **1.3465 초과**, 1.4 이상 권장) |
 | 변경 전 점군 | 스크린샷 |
 | 변경 후 점군 | 스크린샷 |
 | 관찰 | 근거리 / 원거리 / 수면 반사 각각 어떻게 달라졌는가 |
@@ -1540,10 +1549,9 @@ out = sim('W04_2_qos_test');     % 20 초, 벽시계
 | `urdf:=` 가 무시됨 | 절대경로가 아님 | `$HOME/...` 또는 전체 경로로 지정 |
 | 센서를 바꿨는데 그대로임 | `config_file:=` 로 넘김 | 모델 지정은 **`urdf:=`** 임 |
 | xacro 처리 오류 | XML 문법 오류 | 닫는 태그와 따옴표 확인 |
-| `urdf:=` 로 띄웠더니 창은 뜨는데 토픽이 안 나옴 | LiDAR `z` 가 1.35 m 이하 → 서버 충돌 (`Assertion '0.0 < _height' failed`) | `z` 를 1.4 이상으로 (§2-4 3단계) |
-| `ground_truth_enabled:=True` 를 줬는데 토픽이 없음 | 존재하지 않는 런치 인자라 무시됨 | 6주차 urdf 수정 절차 |
+| `urdf:=` 로 띄웠더니 창은 뜨는데 토픽이 안 나옴 | LiDAR `z` 가 1.3465 m 이하 → 서버 충돌 (`Assertion '0.0 < _height' failed`) | `z` 를 1.4 이상으로 (§2-4 3단계) |
+| `ground_truth_enabled:=True` 를 줬는데 토픽이 없음 | 존재하지 않는 런치 인자라 무시됨 | 6주차 §A (ground truth odometry 켜기) |
 | Mapviz 에 **엉뚱한 지역** 지도가 뜨고 항적이 없음 | 기본 런치의 원점이 미국 텍사스(SwRI) | `mapviz_sydney.launch.py` 로 실행 (§2-5 5단계) |
-| yaml 수정 후 반영 안 됨 | 들여쓰기 오류 | yaml 은 **공백 들여쓰기만** 허용. 탭 금지 |
 | `docker: permission denied` | 그룹 미적용 | `sudo usermod -aG docker $USER` 후 `wsl --shutdown` |
 | `docker: Cannot connect to the Docker daemon` | 데몬 미실행 | `sudo service docker start` |
 | Mapviz 지도가 회색 | mapproxy 미실행 / 인터넷 끊김 | `docker ps` 확인, 브라우저로 `localhost:8080` 확인 |
@@ -1569,7 +1577,7 @@ Publisher count: 5
 > 1이 아니면 그 상태에서 잰 `hz` 는 전부 틀린 값이다. 정리하고 다시 잰다.
 
 ```bash
-pkill -9 -f vrx_gz
+pkill -9 -f '[v]rx_gz'
 ```
 
 ```bash
@@ -1579,7 +1587,7 @@ ros2 daemon stop
 - 그런 다음 VRX 를 다시 띄운다
 
 > [!caution] `pkill -f` 패턴에 자기 명령줄이 걸리지 않게 한다
-> `pkill -f 'vrx_gz'` 라고 쳐도 **그 명령줄 자체에 `vrx_gz` 가 들어 있어** 자기 셸이 먼저 죽는다.
+> `pkill -f 'vrx_gz'` 를 `bash -c` · `wsl ... -lc` 로 넘기면 **그 명령줄 자체에 `vrx_gz` 가 들어 있어** 셸이 먼저 죽는다.
 > 대괄호를 한 글자 씌우면 정규식이 자기 자신과 일치하지 않는다.
 >
 > ```bash

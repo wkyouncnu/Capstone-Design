@@ -54,7 +54,7 @@ out = sim(m);
 
 S     = W08_plot(out, 'VRX 로이터링');
 S.RTF = RTF;
-saveFig(gcf, 'W08_1_vrx_result.png');
+saveFig(S.fig, 'W08_1_vrx_result.png');    % gcf 는 추진기 창이다 — 궤적 창을 저장한다
 
 if ~do_compare, return; end
 fprintf('5) 같은 초기 선수각으로 오프라인 모델 실행\n');
@@ -64,12 +64,14 @@ k0 = find(out.log_psi.Time >= 0.5, 1);   % 첫 샘플은 odom 이 아직 안 와
 psi0 = out.log_psi.Data(k0);
 fprintf('   VRX 초기 선수각 %.2f deg\n', rad2deg(psi0));
 
-x0 = evalin('base','x0');   x0(6) = psi0;   assignin('base','x0', x0);
+x0old = evalin('base','x0');   x0 = x0old;   x0(6) = psi0;   assignin('base','x0', x0);
 animOld = evalin('base','animate');         assignin('base','animate', 0);
 load_system('W08_0_offline');
-set_param('W08_0_offline','StopTime', num2str(T_end));
-o2 = sim('W08_0_offline');
+o2 = sim('W08_0_offline', 'StopTime', num2str(T_end));   % 모델에 저장된 정지 시간은 건드리지 않는다
 assignin('base','animate', animOld);
+assignin('base','x0', x0old);   % 되돌린다 — 이 뒤에 오프라인을 다시 돌려도 W08_setup 조건 그대로
+So = W08_plot(o2, '오프라인 대조 (VRX 초기 선수각)');   % 오프라인 지표를 같은 형식으로 찍는다
+S.offline = rmfield(So, intersect(fieldnames(So), {'fig'}));
 
 qn = o2.log_pn.Data;  qe = o2.log_pe.Data;  t2 = o2.log_pn.Time;
 

@@ -48,7 +48,7 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 6. **turtlesim** 으로 네 가지 통신을 직접 조작
 7. `ros2` 명령어로 실행 중인 노드와 토픽을 조사
 8. **rqt_graph · Topic Monitor · rqt_console · RViz2** 를 띄워 상태를 눈으로 확인
-9. **내 손으로 노드를 작성**해서 데이터를 주고받기
+9. **노드를 직접 작성**해서 데이터를 주고받기
 10. **QoS 불일치**를 재현하고 원인을 진단
 11. **표본화 주기**가 왜 중요한지 설명
 12. MATLAB 에 없는 메시지를 **중계 노드**로 표준 형식에 옮겨 발행
@@ -80,7 +80,7 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 
 ## 이 문서를 읽는 순서
 
-> [!tip] 이 주차는 분량이 많다 (PDF 94쪽). 전부를 한 번에 읽을 필요는 없다
+> [!tip] 이 주차는 분량이 많다 (PDF 90쪽 이상). 전부를 한 번에 읽을 필요는 없다
 > 설치 절은 **수업 전에**, 참고 절은 **필요할 때** 찾아본다. 수업 시간에는 가운데 줄만 따라간다.
 
 | 언제 | 절 | 무엇을 얻는가 |
@@ -196,7 +196,8 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 
 > [!important] 본 과목의 90%는 토픽이다
 > 나머지 셋은 "이런 것이 있고, 언제 쓰는지" 를 알아 두는 수준으로 충분하다.
-> 다만 **9주차 미션 상태기계**에서 액션이, **7주차 게인 튜닝**에서 파라미터가 다시 나온다.
+> 다만 **9주차 Stateflow 미션**의 상태 전환이 액션의 goal → feedback → result 와 같은 발상이다 (ROS 액션을 쓰지는 않는다).
+> 파라미터는 5주차 이후 직접 작성하는 ROS 노드에서 쓴다. Simulink 제어기의 게인은 `W0X_setup.m` 변수로 다룬다.
 
 ---
 
@@ -273,7 +274,7 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 | **cancel** | 중간에 그만두게 한다 |
 
 - 쓰는 곳 — 이동, 도킹, 탐색처럼 **오래 걸리는 일**
-- **9주차 미션 상태기계**가 정확히 이 형태다
+- **9주차 Stateflow 미션**의 상태 전환이 goal → feedback → result 와 같은 발상이다 (ROS 액션을 쓰지는 않는다)
 
 ---
 
@@ -289,7 +290,7 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 | `ros2 param set <노드> <이름> <값>` | 값 변경 |
 | `ros2 param dump <노드>` | 전체를 YAML 로 저장 |
 
-- 6주차 이후 **PID 게인**을 이렇게 다룬다
+- 5주차 이후 직접 작성하는 ROS 노드에서 쓴다. Simulink 제어기의 **게인**은 `W0X_setup.m` 변수로 다룬다
 
 > [!note] 네 가지를 한 문장으로
 > **토픽**은 방송, **서비스**는 전화, **액션**은 택배 배송 조회, **파라미터**는 설정 화면이다.
@@ -304,7 +305,7 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 
 ```
 capstone_ws/                  ← ① 워크스페이스 (작업 상자)
-├── src/                        내가 쓴 코드만 여기에 둔다
+├── src/                        직접 작성한 코드만 여기에 둔다
 │   └── usv_basics/           ← ② 패키지 (배포 단위)
 │       ├── package.xml         이름·의존성·라이선스
 │       ├── setup.py            실행파일 등록
@@ -412,10 +413,10 @@ entry_points={
 | 명령 | 무엇을 등록하는가 |
 |---|---|
 | `source /opt/ros/humble/setup.bash` | ROS 2 가 기본 제공하는 패키지 (`demo_nodes_cpp` 등) |
-| `source ~/capstone_ws/install/setup.bash` | **내가 만든 패키지** |
+| `source ~/capstone_ws/install/setup.bash` | **학습자가 만든 패키지** |
 
 - 두 줄을 `~/.bashrc` 에 넣어 두면 터미널을 새로 열 때마다 자동 적용된다
-- 새 터미널에서 내 패키지가 안 보이면 **두 번째 줄을 안 한 것**이다
+- 새 터미널에서 직접 만든 패키지가 안 보이면 **두 번째 줄을 안 한 것**이다
 
 ---
 
@@ -448,7 +449,7 @@ std_msgs/Header header
 ```
 
 > [!warning] `stamp` 와 `frame_id` 는 필수 항목이다
-> - `stamp` 가 없으면 GPS(10 Hz)와 IMU(100 Hz)를 **융합할 수 없음**.
+> - `stamp` 가 없으면 GPS(20 Hz)와 IMU(100 Hz)를 **융합할 수 없음**.
 >   어느 시점끼리 짝지어야 하는지 알 수 없기 때문
 > - `frame_id` 가 없으면 LiDAR가 본 장애물이 **배 기준인지 지구 기준인지** 알 수 없음
 > - 3주차 TF2에서 다시 나옴
@@ -464,7 +465,7 @@ std_msgs/Header header
 
 - ROS 2에는 중앙 관리자가 없음 → 노드들이 네트워크에서 **서로를 자동으로 찾음**
 - 실습실에서 20명이 동시에 작업하면 → **모두의 노드가 서로 보임**
-- 결과: 옆 사람의 추력 명령이 내 배를 움직임
+- 결과: 옆 사람의 추력 명령이 자기 배를 움직임
 
 ### 해결 — `ROS_DOMAIN_ID`
 
@@ -530,7 +531,7 @@ echo $ROS_DOMAIN_ID
 > [!caution] 프로그램은 죽지 않는다. 조용히 아무것도 안 받는다
 > - `ros2 topic list` → 토픽이 **보인다**
 > - `ros2 topic hz` → 데이터가 **흐른다고 나온다**
-> - **내 노드만** 콜백이 한 번도 안 불린다
+> - **구독 노드만** 콜백이 한 번도 안 불린다
 > - 종료 코드도 정상이고 예외도 없다. 자기 콜백 코드를 의심하며 시간을 버리게 된다
 
 - 다만 Humble 은 **경고 한 줄**을 찍어 준다. 이 문장을 알아보는 것이 이번 절의 목표다
@@ -574,18 +575,18 @@ ros2 topic info /토픽이름 --verbose
 
 ### 센서는 연속 신호를 잘라서 준다
 
-| 센서 | 주기 | VRX |
+| 센서 | 주파수 | VRX (설계값, 4주차 2-3-7) |
 |---|---|---|
 | IMU | 100\~200 Hz | 100 Hz |
-| GNSS | 1\~10 Hz | 10 Hz |
+| GNSS | 1\~20 Hz | 20 Hz |
 | LiDAR | 10\~20 Hz | 10 Hz |
-| 카메라 | 15\~30 Hz | 20 Hz |
-| **제어기** | 10\~100 Hz | 100 Hz |
+| 카메라 | 15\~30 Hz | 30 Hz |
+| **제어기** | 10\~100 Hz | 설계자가 정함 |
 
 ### 표본화 정리 (Nyquist)
 
-- 최대 주파수 `f_max` 인 신호를 잃지 않으려면
-- 표본화 주파수가 **`f_s > 2 × f_max`** 여야 함
+- 최대 주파수 $f_{\max}$ 인 신호를 잃지 않으려면
+- 표본화 주파수가 $f_s > 2 f_{\max}$ 여야 함
 
 ### 에일리어싱 — 조건을 어기면
 
@@ -595,9 +596,9 @@ ros2 topic info /토픽이름 --verbose
 
 | 요소 | 의미 |
 |---|---|
-| 회색 촘촘한 파형 | 실제 신호 9 Hz |
-| 빨간 점 | 0.1초마다 읽은 값 (10 Hz 표본화) |
-| 빨간 굵은 곡선 | 본 과목에서 **관측하게 되는** 신호 — 1 Hz |
+| 파란 촘촘한 파형 | 실제 신호 9 Hz |
+| 검은 점 | 0.1초마다 읽은 값 (10 Hz 표본화) |
+| 주황 점선 | 표본값만으로 **보이는** 신호 — 1 Hz |
 
 - **결론**: 9 Hz 신호를 10 Hz로 읽으면 **존재하지 않는 1 Hz 신호**가 보임
 
@@ -617,7 +618,7 @@ ros2 topic info /토픽이름 --verbose
 ### 지연 (Latency)
 
 ```
-물리량 발생 → 센서 측정 → 드라이버 → 전송 → 내 노드 → 처리 → 명령
+물리량 발생 → 센서 측정 → 드라이버 → 전송 → 수신 노드 → 처리 → 명령
   t=0         t=2ms      t=5ms    t=8ms   t=10ms   t=15ms  t=16ms
 ```
 
@@ -743,21 +744,18 @@ humble
 > 동작에는 문제가 없지만 지저분하므로 VS Code 로 열어 지운다.
 >
 > ```bash
-> code \~/.bashrc
+> code ~/.bashrc
 > ```
 >
 > - 중복 확인 — 각각 **1** 이 나와야 한다
 >
 > ```bash
-> grep -c "opt/ros/humble/setup.bash" \~/.bashrc
-> grep -c "ROS_DOMAIN_ID" \~/.bashrc
+> grep -c "opt/ros/humble/setup.bash" ~/.bashrc
+> grep -c "ROS_DOMAIN_ID" ~/.bashrc
 > ```
 
-- 워크스페이스를 만든 뒤에는 **한 줄을 더** 넣는다 (§2-7 에서 다시 나온다)
-
-```bash
-echo "source ~/capstone_ws/install/setup.bash" >> ~/.bashrc
-```
+- 워크스페이스 줄(`source ~/capstone_ws/install/setup.bash`)은 **첫 빌드 뒤** §2-7 에서 넣는다
+  - 빌드 전에 넣으면 새 터미널마다 `No such file or directory` 가 찍힌다
 
 ### 5단계 — rosdep 초기화
 
@@ -774,7 +772,7 @@ rosdep update
 
 > [!important] 무엇이 어디에 설치되는지 먼저 이해할 것
 > - **VS Code** → **Windows** 에 설치한다
-> - **ROS 2 · 내 코드** → **WSL 안(Ubuntu)** 에 있다
+> - **ROS 2 · 학습자 코드** → **WSL 안(Ubuntu)** 에 있다
 > - 둘을 잇는 것이 **WSL 확장**이다. 이 확장이 없으면 Windows 쪽 파일만 편집하게 된다
 
 ![무엇이 Windows 에 있고 무엇이 WSL 에 있는가](../assets/w02-where-installed.svg)
@@ -784,7 +782,7 @@ rosdep update
 | Windows 쪽 VS Code | PowerShell 에서 `code --version` |
 | WSL 확장 | PowerShell 에서 `code --list-extensions` |
 | WSL 쪽 ROS 2 | 우분투에서 `printenv ROS_DISTRO` → `humble` |
-| WSL 쪽 내 코드 | 우분투에서 `ls ~/capstone_ws` |
+| WSL 쪽 학습자 코드 | 우분투에서 `ls ~/capstone_ws` |
 
 - 앞 절의 `apt install` 이 도는 동안 **동시에 진행해도 된다**. 서로 방해하지 않는다
 
@@ -859,10 +857,12 @@ ms-vscode-remote.remote-wsl
 - **방법 1 — 우분투 터미널에서 (권장)**
 
 ```bash
+mkdir -p ~/capstone_ws/src
 cd ~/capstone_ws
 code .
 ```
 
+- 빈 폴더(`src` 하나)가 열리는 것이 정상. `build` `install` `log` 는 §2-7 빌드 뒤에 생긴다
 - 처음 실행하면 VS Code 서버가 WSL 안에 자동 설치된다 (1\~2분)
 
 - **방법 2 — VS Code 안에서**
@@ -891,7 +891,7 @@ WSL: Ubuntu-22.04
 |---|---|---|
 | 1 | **왼쪽 아래 파란 칸** `WSL: Ubuntu-22.04` | **가장 중요.** 우분투 안을 편집 중이라는 표시 |
 | 2 | 왼쪽 세로 막대 | 활동 표시줄 — 탐색기 · 검색 · 소스 제어 · 실행 · 확장 |
-| 3 | 왼쪽 넓은 칸 | **탐색기.** `build` `install` `log` `src` 가 보인다 |
+| 3 | 왼쪽 넓은 칸 | **탐색기.** 그림은 §2-7 빌드 뒤 화면이라 `build` `install` `log` `src` 가 보인다 |
 | 4 | 가운데 | **편집기.** 파이썬 문법이 색으로 구분된다 |
 | 5 | 맨 아래 오른쪽 | 줄·열 번호, 인코딩(`UTF-8`), 줄바꿈(`LF`), 언어(`Python`) |
 
@@ -901,7 +901,7 @@ WSL: Ubuntu-22.04
 
 > [!warning] 위쪽에 노란 띠로 "Restricted Mode" 가 뜨면
 > VS Code 가 **처음 여는 폴더를 신뢰하지 않는 상태**다. 이 상태에서는 작업 실행이 막힌다.
-> 띠의 **Manage** → **Trust** 를 눌러 신뢰하도록 바꾼다. 내 폴더일 때만 푼다.
+> 띠의 **Manage** → **Trust** 를 눌러 신뢰하도록 바꾼다. 직접 만든 폴더일 때만 푼다.
 
 > [!note] 상태 표시줄의 `LF` / `CRLF`
 > 리눅스 스크립트가 `CRLF` 로 저장되면 WSL 에서 실행되지 않는다.
@@ -983,7 +983,7 @@ cnu@DESKTOP-XXXXXX:~/capstone_ws$
 | 확인 항목 | 화면에서 |
 |---|---|
 | 주소창이 `\\wsl.localhost\Ubuntu-22.04\home\cnu\capstone_ws` | WSL 안을 보고 있다 |
-| `build` `install` `log` `src` | `colcon build` 가 만든 폴더 |
+| `build` `install` `log` | §2-7 의 `colcon build` 가 만든 폴더 (`src` 는 직접 만든 것) |
 | 파일을 **끌어다 놓기**로 복사 가능 | 바탕화면 ↔ WSL 양방향 |
 
 - 우분투 터미널에서 **탐색기를 바로 여는 명령**도 있다
@@ -1070,7 +1070,7 @@ ros2 run demo_nodes_py listener
 | 확인 항목 | 화면에서 |
 |---|---|
 | 두 칸의 숫자가 **같이** 올라간다 | 연결 성공 |
-| 대괄호 안 숫자가 **초 단위 시각** | 두 로그의 시각 차이가 약 0.001 s → 지연이 1 ms 수준 |
+| 대괄호 안 숫자가 **초 단위 시각** | 첫 메시지(약 0.010 s)를 뺀 나머지는 두 로그의 시각 차이가 약 0.001 s → 지연이 1 ms 수준 |
 | 왼쪽은 `Publishing`, 오른쪽은 `I heard` | 발행·구독이 각각 동작 |
 
 > [!tip] 위 과정에서 일어난 일
@@ -1100,7 +1100,7 @@ ros2 run turtlesim turtlesim_node
 | 확인 항목 | 화면에서 |
 |---|---|
 | 파란 정사각형 창이 뜬다 | 정상 |
-| 가운데에 거북이 한 마리 | 이름은 `turtle1` |
+| 가운데에 거북이 한 마리 | 이름은 `turtle1`. 거북이 그림·색은 실행마다 무작위 |
 | 창이 안 뜬다 | GUI 문제. 1주차 2-4절 `xeyes` 로 복귀 |
 
 - **다른 터미널**에서 무엇이 생겼는지 본다
@@ -1234,8 +1234,8 @@ turtlesim.srv.Spawn_Response(name='turtle2')
 
 | 확인 항목 | 화면에서 |
 |---|---|
-| 왼쪽 위에 **노란 거북이** | `turtle2` 가 생겼다 |
-| 가운데 원형 궤적과 초록 거북이 | 2단계에서 움직인 `turtle1` |
+| 왼쪽 위에 거북이 한 마리 더 | `turtle2` 가 생겼다 (그림의 노란색은 무작위) |
+| 가운데 원형 궤적과 다른 거북이 | 2단계에서 움직인 `turtle1` |
 
 - 위치를 바로 옮기는 서비스도 있다
 
@@ -1331,8 +1331,9 @@ ros2 param dump /turtlesim
     use_sim_time: false
 ```
 
-> [!note] 6주차 이후 PID 게인을 이렇게 다룬다
+> [!note] 파라미터는 직접 작성하는 ROS 노드에서 쓴다
 > 코드를 고쳐 다시 빌드하는 대신 **파라미터로 빼 두면 실행 중에 바꿔 가며 튜닝**할 수 있다.
+> 5주차 이후 직접 작성하는 ROS 노드가 대상이다. Simulink 제어기의 게인은 `W0X_setup.m` 변수로 다룬다.
 
 ---
 
@@ -1365,11 +1366,14 @@ float32 delta
 float32 remaining
 ```
 
+> [!warning] 3단계 teleport 로 거북이가 이미 1.57 rad 를 보고 있으면 목표를 받자마자 끝난다
+> 이때 `delta` 는 0 에 가깝다. 회전을 보려면 먼저 `turtle_teleop_key` 의 방향키로 거북이를 돌려 둔다.
+
 ```bash
 ros2 action send_goal /turtle1/rotate_absolute turtlesim/action/RotateAbsolute "{theta: 1.57}" --feedback
 ```
 
-- 정상 출력 (기준 환경 실측, 뒷부분)
+- 정상 출력 (기준 환경 실측, 뒷부분) — 시작 선수각이 약 −1.17 rad 이던 상태에서 받은 것
 
 ```
 Feedback:
@@ -1387,13 +1391,13 @@ Goal finished with status: SUCCEEDED
 | 나오는 것 | 뜻 |
 |---|---|
 | `Feedback: remaining` | **진행 중** 보고. 남은 각도가 줄어든다 |
-| `Result: delta` | 결과. 실제로 돌아간 각도 |
+| `Result: delta` | 결과. 시작 각 − 끝 각 (rad). 부호는 회전 방향과 반대 — 위 출력은 반시계로 약 2.74 rad 돌았다는 뜻 |
 | `Goal finished with status: SUCCEEDED` | 성공 종료 |
 
 > [!important] 액션을 쓰는 이유가 여기 있다
 > 서비스였다면 다 돌 때까지 **아무 소식이 없다.**
 > 액션은 **남은 각도를 계속 알려 주고**, 중간에 취소할 수도 있다.
-> 9주차 미션 상태기계에서 "저 웨이포인트까지 가라" 가 정확히 이 형태다.
+> 9주차 Stateflow 미션의 상태 전환이 goal → feedback → result 와 같은 발상이다 (ROS 액션을 쓰지는 않는다).
 
 ---
 
@@ -1653,14 +1657,14 @@ demo_nodes_cpp content_filtering_subscriber
 
 ### 실습 — 공식 예제로 확인하기
 
-ROS 2 개발팀이 관리하는 **공식 예제 저장소**를 그대로 받아 쓴다.
+- ROS 2 개발팀이 관리하는 **공식 예제 저장소**를 그대로 받아 쓴다
 
 ```bash
 cd ~
 git clone -b humble https://github.com/ros2/examples.git ros2_examples
 ```
 
-- 출처 — [`ros2/examples`](https://github.com/ros2/examples) (Apache License 2.0), 태그 `0.15.5`
+- 출처 — [`ros2/examples`](https://github.com/ros2/examples) (Apache License 2.0), `humble` 브랜치 (작성 시점 최신 태그 `0.15.5`)
 - 이 과목에서는 `rclpy/topics/` 아래의 두 파일만 쓴다
 - 빌드하지 않고 **파이썬 파일을 직접 실행**해도 된다. 의존성이 `rclpy` 와 `std_msgs` 뿐이다
 
@@ -1739,7 +1743,7 @@ ros2 bag play rosbag2_2026_09_10-14_30_00
 ```
 
 > [!note] 왜 중요한가
-> 11주차에 충돌회피 알고리즘을 비교할 때
+> 12주차에 충돌회피 알고리즘을 비교할 때
 > **같은 LiDAR 데이터를 반복 재생**해서 알고리즘만 바꿔 비교함.
 > 공정한 비교의 필수 도구임.
 
@@ -1798,7 +1802,7 @@ ros2 run rqt_graph rqt_graph
 |---|---|
 | 왼쪽 위 **파란 회전 화살표** | 새로고침. **자동 갱신되지 않는다** |
 | `Nodes only` 드롭다운 | `Nodes/Topics (all)` 로 바꾸면 토픽이 사각형으로 따로 보인다 |
-| `Hide:` 체크박스들 | `Debug`·`Params` 를 끄면 화면이 단순해진다 |
+| `Hide:` 체크박스들 | 체크된 항목을 **숨긴다.** 기본값(모두 체크)을 유지하면 화면이 단순하다 |
 
 > [!tip] 비어 있으면 세 가지를 의심한다
 > 1. 노드가 죽었다 → `ros2 node list` 로 확인
@@ -1824,8 +1828,9 @@ ros2 run rqt_topic rqt_topic
 | `Hz` | 초당 수신 횟수 | **2.00** — `simple_talker` 가 0.5 s 주기이므로 일치 |
 | `Value` | 현재 값 | `'USV alive: 356'` |
 
-> [!important] `ros2 topic hz` 와 같은 값이 나와야 한다
-> 두 값이 다르면 **발행자가 둘 이상** 켜져 있는 것이다.
+> [!important] `Hz` 는 코드의 주기와 같은 값이 나와야 한다
+> `Hz` 가 코드의 주기(`create_timer(0.5)` → 2.0)와 다르면 **발행자가 둘 이상** 켜져 있는 것이다.
+> `ros2 topic hz` 도 구독자이므로 같은 값(두 배)을 보여 준다. 비교 기준은 코드다.
 > 실제로 `simple_talker` 를 두 번 실행하면 `Hz` 가 약 4.0 으로 찍힌다.
 
 ---
@@ -1895,7 +1900,7 @@ rviz2
 
 ---
 
-## 2-7. 내 패키지 만들기
+## 2-7. 패키지 만들기
 
 > [!important] 두 가지 길이 있다. **수업에서는 ①로 진행한다**
 > | 길 | 무엇을 하는가 | 언제 |
@@ -1939,12 +1944,12 @@ sudo apt update && sudo apt install -y git
 |---|---|
 | 프롬프트가 `~/capstone_ws/src$` | **받는 위치가 맞다** |
 | `Cloning into 'usv_basics'...` | 내려받기 시작 |
-| `Receiving objects: 100% (19/19)` | 파일 19개 수신 완료 |
+| `Receiving objects: 100%` | 내려받기 완료 (괄호 안 숫자는 git 객체 수. 저장소 갱신에 따라 달라짐) |
 | `ls usv_basics` 결과에 `package.xml` `setup.py` | 제대로 받아졌다 |
 | **왼쪽 탐색기에 `src/usv_basics` 가 생김** | VS Code 가 자동으로 알아본다 |
 | 맨 아래 `main` | git 저장소로 인식됨 |
 
-- 아이디·비밀번호를 묻지 않는다. **공개 저장소**이므로 그냥 받아진다
+- 아이디·비밀번호를 묻지 않는다. **공개 저장소**이므로 별도 인증 없이 받아진다
 
 **2단계 — 빌드한다**
 
@@ -1963,15 +1968,15 @@ ros2 pkg executables usv_basics
 | `Finished <<< usv_basics [0.61s]` | 빌드 성공 |
 | `Summary: 1 package finished` | 패키지 1개 |
 | 탐색기에 `build` `install` `log` 가 생김 | colcon 이 만든 것 |
-| 실행파일 4개가 나열됨 | 등록 완료 |
+| 실행파일 6개가 나열됨 | 등록 완료. 3주차 `wamv_teleop_key` · §2-10 `turtle_pose_relay` 까지 들어 있다 |
 
 > [!warning] `src` 안에서 `colcon build` 를 하면 안 된다
 > `src/` 안에 또 `build/` `install/` `log/` 가 생겨 버린다.
 > 그렇게 되면 세 폴더를 지우고 **한 단계 위에서 다시** 빌드한다.
 >
 > ```bash
-> rm -rf \~/capstone_ws/src/build \~/capstone_ws/src/install \~/capstone_ws/src/log
-> cd \~/capstone_ws && colcon build --symlink-install
+> rm -rf ~/capstone_ws/src/build ~/capstone_ws/src/install ~/capstone_ws/src/log
+> cd ~/capstone_ws && colcon build --symlink-install
 > ```
 
 **3단계 — VS Code 로 연다**
@@ -2073,7 +2078,7 @@ Summary: 1 package finished [1.04s]
 > [!tip] `--symlink-install` 사용을 권장한다
 > Python 파일이 링크로 연결되어 **코드를 고칠 때마다 다시 빌드할 필요가 없음**.
 
-- 자동 적용 등록
+- 자동 적용 등록 — **한 번만** 실행한다 (`grep -c capstone_ws ~/.bashrc` 가 1)
 
 ```bash
 echo "source ~/capstone_ws/install/setup.bash" >> ~/.bashrc
@@ -2260,7 +2265,7 @@ entry_points={
 },
 ```
 
-- 네 개를 모두 등록한 뒤의 실제 화면이다 (오른쪽은 `package.xml`)
+- 아래는 §2-9 까지 마친 뒤의 실제 화면이다 (`entry_points` 4줄, 오른쪽은 `package.xml`)
 
 ![setup.py 의 entry_points 와 package.xml](../assets/w02-code-setup.png)
 
@@ -2300,7 +2305,7 @@ entry_points={
 
 | 조각 | 대응하는 것 | 틀리면 |
 |---|---|---|
-| `simple_talker` (등호 왼쪽) | `ros2 run usv_basics **simple_talker**` | `No executable found` |
+| `simple_talker` (등호 왼쪽) | `ros2 run usv_basics simple_talker` 의 마지막 인자 | `No executable found` |
 | `usv_basics.simple_talker` | `usv_basics/simple_talker.py` (`.py` 없이) | `ModuleNotFoundError` |
 | `:main` | 그 파일의 `def main()` | `AttributeError` |
 
@@ -2331,11 +2336,9 @@ Summary: 1 package finished [1.04s]
 ros2 pkg executables usv_basics
 ```
 
-- 정상 출력
+- 정상 출력 (이 시점에는 두 줄. §2-9 를 마치면 `qos_test_pub` · `qos_test_sub` 가 더해진다)
 
 ```
-usv_basics qos_test_pub
-usv_basics qos_test_sub
 usv_basics simple_listener
 usv_basics simple_talker
 ```
@@ -2501,7 +2504,8 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 ros2 run usv_basics qos_test_pub
 ```
 
-- 발행자 쪽 출력 (기준 환경 실측) — **첫 줄이 경고**다
+- 발행자 쪽 출력 (기준 환경 실측) — 구독자를 켜는 순간 발행자 화면에 **경고 한 줄**이 끼어든다
+  - 아래는 두 노드를 거의 동시에 켠 경우라 경고가 첫 줄이다. 발행자를 먼저 켜면 `published` 여러 줄 뒤에 나온다
 
 ```
 [WARN] [1788862828.210020463] [qos_test_pub]: New subscription discovered on topic 'qos_topic', requesting incompatible QoS. No messages will be sent to it. Last incompatible policy: RELIABILITY
@@ -2524,7 +2528,7 @@ ros2 run usv_basics qos_test_sub
 | 발행자는 계속 `published` 를 찍는다 | 보내는 쪽은 정상 동작한다 |
 | 구독자는 `received` 가 **한 줄도 없다** | 8초 실행 중 수신 **0건** (실측) |
 | 프로그램이 죽지 않는다 | 예외도 없고 종료도 안 한다 |
-| **경고 한 줄이 맨 위에 있다** | 이것을 못 보고 지나가는 것이 문제다 |
+| **경고 한 줄이 끼어 있다** | 이것을 못 보고 지나가는 것이 문제다 |
 
 > [!tip] 경고를 놓쳤다면 `rqt_console` 로 본다
 > §2-6 의 `rqt_console` 에서 **Exclude Messages → `Info` 를 끄면** 경고만 남는다.
@@ -2532,10 +2536,29 @@ ros2 run usv_basics qos_test_sub
 **2. 진단**
 
 ```bash
-	ros2 topic info /qos_topic --verbose
+ros2 topic info /qos_topic --verbose
 ```
 
 - 출력에서 `Endpoint type: PUBLISHER` 와 `SUBSCRIPTION` 각각의 `Reliability` 를 비교한다
+- 볼 줄만 추린 형태 (나머지 줄은 `...` 로 생략)
+
+```
+Publisher count: 1
+
+Node name: qos_test_pub
+...
+Endpoint type: PUBLISHER
+...
+  Reliability: BEST_EFFORT
+...
+Subscription count: 1
+
+Node name: qos_test_sub
+...
+Endpoint type: SUBSCRIPTION
+...
+  Reliability: RELIABLE
+```
 - 실측에서는 발행자가 `BEST_EFFORT`, 구독자가 `RELIABLE` 로 서로 다르게 나온다
 
 **3. 수정**
@@ -2560,8 +2583,8 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 
 | 상태 | 8초 동안 구독자가 받은 줄 수 (실측) |
 |---|---|
-| 불일치 (`BEST_EFFORT` ← `RELIABLE`) | **0** |
-| 일치 (`BEST_EFFORT` ← `BEST_EFFORT`) | **35** |
+| 불일치 — 발행 `BEST_EFFORT` / 구독 `RELIABLE` | **0** |
+| 일치 — 발행 `BEST_EFFORT` / 구독 `BEST_EFFORT` | **35** |
 
 > [!important] 0 과 35 의 차이를 만든 것은 코드 한 단어다
 > 알고리즘도 배선도 바뀌지 않았다. QoS 정책 이름 하나만 바뀌었다.
@@ -2570,7 +2593,7 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 > 실선의 LiDAR·카메라 드라이버는 `BEST_EFFORT` 로 발행하는 경우가 많다.
 > **다만 VRX 의 `ros_gz_bridge` 토픽은 전부 `RELIABLE` 이다** (2026-09-15 실측 25개 전수조사).
 > 그래서 외우지 말고 `ros2 topic info <토픽> --verbose` 로 **매번 확인**하는 습관을 들인다.
-> `ros2 topic echo` 로는 보이는데 내 노드만 못 받으면 **가장 먼저 QoS를 의심**할 것.
+> `ros2 topic echo` 로는 보이는데 직접 작성한 노드만 못 받으면 **가장 먼저 QoS를 의심**할 것.
 
 ---
 
@@ -2586,7 +2609,7 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 | 용어 | 뜻 | 비유 |
 |---|---|---|
 | **메시지 형식** (message type) | 토픽에 실리는 데이터의 구조. `turtlesim/msg/Pose` 처럼 `패키지/msg/이름` | 서류 양식 |
-| **내장 형식** | MATLAB ROS Toolbox 가 처음부터 알고 있는 형식. `ros2 msg list` 로 확인 | 이미 인쇄해 둔 양식 |
+| **내장 형식** | MATLAB ROS Toolbox 가 처음부터 알고 있는 형식. MATLAB 명령 창의 `ros2 msg list` 로 확인 (우분투의 `ros2 interface list` 와 다름) | 이미 인쇄해 둔 양식 |
 | **중계 노드** (relay) | 한 토픽을 받아 **다른 형식**으로 옮겨 담아 다시 내보내는 노드 | 서류를 다른 양식에 옮겨 적는 직원 |
 
 ### 문제 상황 — 토픽은 보이는데 받을 수 없다
@@ -2610,7 +2633,7 @@ ros2 topic list -t
 - MATLAB 명령 창에서 `/turtle1/pose` 를 구독하면 아래 오류가 난다 (MATLAB R2024b 실측)
 
 ```matlab
-node = ros2node("/probe", 8);
+node = ros2node("/probe", 7);   % 두 번째 인자 = 자기 팀 Domain ID
 sub  = ros2subscriber(node, "/turtle1/pose", "turtlesim/Pose");
 ```
 
@@ -2618,7 +2641,7 @@ sub  = ros2subscriber(node, "/turtle1/pose", "turtlesim/Pose");
 turtlesim/Pose은(는) 인식할 수 없는 메시지 유형입니다. 사용 가능한 유형을 보려면 ros2 msg list을(를) 사용하십시오.
 ```
 
-| 메시지 형식 | MATLAB R2024b 내장 여부 (`ros2 msg list` 358종 중) |
+| 메시지 형식 | MATLAB R2024b 내장 여부 (MATLAB `ros2 msg list` 358종 중) |
 |---|---|
 | `turtlesim/msg/Pose` | **없음** |
 | `geometry_msgs/msg/Pose2D` | 있음 |
@@ -2777,7 +2800,7 @@ if __name__ == '__main__':
 > 저장소에 이 파일이 들어 있다. 아래 한 줄로 최신 상태를 받고 **3단계(빌드)** 로 건너뛴다.
 >
 > ```bash
-> cd \~/capstone_ws/src/usv_basics && git pull
+> cd ~/capstone_ws/src/usv_basics && git pull
 > ```
 >
 > - 출력에 `turtle_pose_relay.py` 가 들어 있으면 받아진 것이다
@@ -2819,7 +2842,7 @@ if __name__ == '__main__':
 
 ### 2단계 — 실행파일 등록
 
-- `setup.py` 의 `console_scripts` 에 한 줄 추가 (32행)
+- `setup.py` 의 `console_scripts` 에 한 줄 추가 (저장소 기준 32행)
 
 ```python
 'turtle_pose_relay = usv_basics.turtle_pose_relay:main',
@@ -2829,7 +2852,7 @@ if __name__ == '__main__':
 
 | 화면에서 확인할 것 | 무엇 |
 |---|---|
-| 27\~31행 | §2-8 · 3주차에 등록한 기존 실행파일 5개 |
+| 27\~31행 | 저장소 기준 기존 실행파일 5개 — §2-8 · §2-9 의 4개 + 3주차 `wamv_teleop_key`. 직접 만든 경우는 4개 |
 | **32행** `'turtle_pose_relay = usv_basics.turtle_pose_relay:main',` | 이번에 추가한 줄. **끝의 쉼표** 확인 |
 
 - `package.xml` 의 `<depend>` 에 두 줄 추가 — 이 노드가 쓰는 메시지 패키지
@@ -2861,6 +2884,7 @@ ros2 pkg executables usv_basics
 ```
 
 - 정상 출력 — `turtle_pose_relay` 가 목록에 있어야 한다
+  - 직접 만든 경우 5줄. 저장소에서 받았다면 3주차의 `wamv_teleop_key` 까지 6줄 (아래)
 
 ```
 usv_basics qos_test_pub
@@ -2967,7 +2991,8 @@ average rate: 62.504
 | MATLAB | **R2024b** + Simulink + **ROS Toolbox** (학교 라이선스) |
 | 모델 폴더 | 강의자료 `10-주차별-강의자료/W02_simulink/` — 이 폴더를 통째로 복사해 쓴다 |
 | 우분투 쪽 | turtlesim + 중계 노드가 **떠 있어야** 한다 (§2-10 4단계) |
-| Domain ID | 우분투의 `echo $ROS_DOMAIN_ID` 값 — `W02_setup.m` 에 같은 값을 넣는다 |
+| Domain ID | 우분투의 `echo $ROS_DOMAIN_ID` 값 — `W02_setup.m` 과 Simulink ROS 네트워크 프로필에 같은 값을 넣는다 |
+| 네트워크 | `.wslconfig` 에 `networkingMode=mirrored` → `wsl --shutdown` ([[WSL-VRX-환경구축]] §8.2) |
 
 ### 폴더에 들어 있는 것
 
@@ -3038,11 +3063,13 @@ $$
 
 1. MATLAB 을 연다
 2. 위쪽 **현재 폴더** 주소줄에서 `W02_simulink` 폴더로 이동한다
-3. `W02_setup.m` 을 열어 **Domain ID 를 우분투와 같게** 고친다 (22행)
+3. `W02_setup.m` 을 열어 **Domain ID 를 우분투와 같게** 고친다 (21행)
 
 ```matlab
 ros_domain_id = '8';        % 우분투의 echo $ROS_DOMAIN_ID 값
 ```
+
+- 파일의 `'8'` 은 기준 환경의 값이다. 자기 팀 번호(§1-5 의 예에서는 `7`)로 바꾼다. 아래 정상 출력의 `8` 도 같은 이유다
 
 4. 명령 창에서 실행
 
@@ -3056,7 +3083,9 @@ W02_setup
 W02_setup 완료 — 목표 (9.00, 2.00, 90.0 deg), ROS_DOMAIN_ID=8
 ```
 
-5. 우분투의 토픽이 MATLAB 에서 보이는지 확인
+5. Simulink 쪽 도메인 확인 — 툴스트립 **시뮬레이션 → ROS 네트워크** 의 Domain ID 를 우분투 값과 같게 한다 (6주차 B-1 과 같은 절차)
+   - Simulink ROS 2 블록은 `ROS_DOMAIN_ID` 환경변수가 아니라 **이 프로필 값**을 읽는다. `W02_setup` 의 `setenv` 만으로는 모델이 값을 받지 못한다
+6. 우분투의 토픽이 MATLAB 에서 보이는지 확인
 
 ```matlab
 ros2("topic","list")
@@ -3101,6 +3130,7 @@ build_w02_models
 ```
 
 - `Automated layout might not improve upon original layout` 경고가 몇 줄 섞여 나온다. **무시해도 된다**
+- 폴더를 볼트 밖으로 복사해 쓰면 `tidy_model` 등 배치 정리 함수가 없다는 경고가 모델마다 나온다. 모델 생성과는 무관하므로 무시해도 된다
 
 > [!tip] 모델을 만지다 망가뜨렸을 때
 > `W02_setup` → `build_w02_models` 두 줄이면 처음 상태로 돌아온다. 마음껏 고쳐 볼 것.
@@ -3195,7 +3225,7 @@ S = W02_plot(out, '오프라인')
 | 왼쪽 주황 윤곽 선체 + 시각 | 이동 0.8 마다 한 척. **간격이 점점 좁아진다** = 목표에 가까울수록 감속 |
 | 왼쪽 초록 선체 + 좌표 | 마지막 자세. 빨간 점선(목표)과 겹친다 |
 | 오른쪽 위 거리 | 약 5 초에 0 근처 |
-| 오른쪽 가운데 $\theta$ | 먼저 −50° 로 돌아 목표를 향하고(모드 1), 도착 뒤 90° 로 돈다(모드 2) |
+| 오른쪽 가운데 $\theta$ | 먼저 약 −46° 로 돌아 목표를 향하고(모드 1), 도착 뒤 90° 로 돈다(모드 2). $\operatorname{atan2}(2-5.544,\ 9-5.544) = -45.7^\circ$ |
 | 오른쪽 아래 mode | 1 → 2 (5.20 s) → 3 (6.95 s) |
 
 ### 5단계 — 실제 turtlesim 을 움직인다 (`W02_3_goto_turtlesim`)
@@ -3289,7 +3319,7 @@ S = W02_plot(out, 'turtlesim')
 | 완료 (모드 3) | 6.95 s | 6.20 s | −0.75 s |
 
 - 측정 조건 — 목표 `(9.0, 2.0, 90°)`, 출발 `(5.544, 5.544, 0°)`, 제어 주기 0.05 s, 20 초 실행의 **마지막 샘플**
-- **위치 오차 · 선수각 오차는 두 곳이 같다** — 둘 다 판정 기준(`tol_d = 0.05`, `tol_th = 1°`) 안에서 멈췄다
+- **두 곳 모두 판정 기준**(`tol_d = 0.05`, `tol_th = 1°`) **안에서 멈췄다** — 선수각 오차 차이 0.07° 는 기준 1° 보다 작다
 - **시각은 실행할 때마다 흔들린다.** 같은 모델을 한 번 더 돌린 기록
 
 | turtlesim 실행 | 위치 오차 | 선수각 오차 | 위치 도착 | 완료 |
@@ -3334,7 +3364,7 @@ theta_goal = deg2rad(180);   % 화면 왼쪽
 | 6 | 조사 명령어 사용 | `ros2 topic list` / `hz` / `info --verbose` |
 | 7 | **rqt_graph · Topic Monitor · rqt_console · RViz2** | 창 4개가 뜬다 |
 | 8 | 워크스페이스와 패키지 생성 | `colcon build` → `1 package finished` |
-| 9 | 내 노드 작성 및 통신 | `received: USV alive: 0` |
+| 9 | 노드 직접 작성 및 통신 | `received: USV alive: 0` |
 | 10 | QoS 불일치 재현 · 진단 · 해결 | 수신 0건 → 35건 |
 | 11 | **중계 노드** `turtle_pose_relay` | `/turtle1/pose2d [geometry_msgs/msg/Pose2D]` · 62.5 Hz |
 | 12 | **Simulink 로 turtlesim 목표 자세 제어** | 오프라인 위치오차 0.048 · turtlesim 0.048 |
@@ -3410,12 +3440,16 @@ theta_goal = deg2rad(180);   % 화면 왼쪽
 - 토픽 `/sim/imu`, 타입 `sensor_msgs/Imu`, **50 Hz** 발행
 - `angular_velocity.z` 에 아래 신호를 실을 것
 
-```
-w_z(t) = 0.5 * sin(2*pi*0.5*t)    저주파  0.5 Hz  (실제 선회 운동)
-       + 0.2 * sin(2*pi*9.0*t)    고주파  9 Hz   (파랑 진동)
-       + n(t)                     가우시안 잡음, 표준편차 0.02
-       + 0.01                     상수 바이어스
-```
+$$
+\omega_z(t) = 0.5\sin(2\pi\cdot 0.5\,t) + 0.2\sin(2\pi\cdot 9\,t) + n(t) + 0.01
+$$
+
+| 항 | 뜻 |
+|---|---|
+| $0.5\sin(2\pi\cdot 0.5\,t)$ | 저주파 0.5 Hz — 실제 선회 운동 |
+| $0.2\sin(2\pi\cdot 9\,t)$ | 고주파 9 Hz — 파랑 진동 |
+| $n(t)$ | 가우시안 잡음, 표준편차 0.02 |
+| $0.01$ | 상수 바이어스 |
 
 - `header.stamp` 를 현재 시각으로 정확히 채울 것
 - `header.frame_id = "imu_link"`
@@ -3442,7 +3476,7 @@ w_z(t) = 0.5 * sin(2*pi*0.5*t)    저주파  0.5 Hz  (실제 선회 운동)
 3. 이 문제가 실제 배의 헤딩 제어기에서 어떤 증상으로 나타나겠는가?
 
 > [!tip] 힌트
-> 에일리어싱된 주파수 = `|f_신호 − k × f_표본화|` 중 나이퀴스트 주파수 이하인 값 (k는 정수)
+> 에일리어싱된 주파수 $f_a = \lvert f - k f_s \rvert \le f_s/2$ 를 만족하는 값 ($f$ 신호 주파수, $f_s$ 표본화 주파수, $k$ 정수)
 
 ### 평가 기준
 
@@ -3470,14 +3504,14 @@ w_z(t) = 0.5 * sin(2*pi*0.5*t)    저주파  0.5 Hz  (실제 선회 운동)
 | `No executable found` | `setup.py` 의 `console_scripts` 미등록 또는 실행파일 이름 오타 | `ros2 pkg executables usv_basics` 로 확인 |
 | 코드를 고쳤는데 반영 안 됨 | `--symlink-install` 없이 빌드 | 옵션 붙여 재빌드 |
 | `colcon build` 에서 `setup.py` 오류 | `entry_points` 오타 | `패키지명.파일명:main` 형식 확인 |
-| `WARNING: Be aware that there are nodes in the graph that share an exact name` | **같은 노드를 두 번 실행** | 하나를 `Ctrl + C` 로 끈다. `ros2 topic hz` 값이 배로 뛰는 것이 신호 |
+| `ros2 node list` 실행 시 `WARNING: Be aware that there are nodes in the graph that share an exact name` | **같은 노드를 두 번 실행** | 하나를 `Ctrl + C` 로 끈다. `ros2 topic hz` 값이 배로 뛰는 것이 신호 |
 | `sudo rosdep init` 이 실패 | 이미 초기화됨 | 무시하고 `rosdep update` 진행 |
 
 ### 토픽이 안 보이거나 데이터가 안 온다
 
 | 증상 | 원인 | 해결 |
 |---|---|---|
-| 내 토픽만 목록에 없음 | **`ROS_DOMAIN_ID` 불일치** | 두 터미널에서 `echo $ROS_DOMAIN_ID` 비교 |
+| 직접 띄운 토픽만 목록에 없음 | **`ROS_DOMAIN_ID` 불일치** | 두 터미널에서 `echo $ROS_DOMAIN_ID` 비교 |
 | 옆자리 학생의 토픽이 보임 | Domain ID 가 같음 | 팀 번호로 변경 후 `source ~/.bashrc` |
 | **토픽은 보이는데 데이터를 못 받음** | **QoS 불일치** | `ros2 topic info <토픽> --verbose` 로 `Reliability` 비교 |
 | `incompatible QoS ... Last incompatible policy: RELIABILITY` | 위와 같음 | §2-9 참조 |
@@ -3490,6 +3524,8 @@ w_z(t) = 0.5 * sin(2*pi*0.5*t)    저주파  0.5 Hz  (실제 선회 운동)
 | `ModuleNotFoundError: No module named 'turtlesim'` | 우분투에 turtlesim 이 없음 | `sudo apt install -y ros-humble-turtlesim` |
 | 중계 노드가 첫 줄만 찍고 `first relay` 가 안 나옴 | turtlesim 이 안 떠 있음 | `ros2 run turtlesim turtlesim_node` |
 | MATLAB 에서 토픽은 보이는데 Simulink 값이 계속 0 | 우분투 노드가 멈춘 채 **목록에만 남음** · Domain ID 불일치 | 우분투에서 `ros2 topic hz /turtle1/pose2d` 확인 → 노드 재실행 · `W02_setup.m` 의 `ros_domain_id` 확인 |
+| `ros2("topic","list")` 에는 보이는데 모델 값이 0 | Simulink ROS 네트워크 프로필의 Domain ID 가 다름 | **시뮬레이션 → ROS 네트워크** 에서 우분투 값과 맞춘다 (§2-11 1단계 5) |
+| MATLAB `ros2("topic","list")` 에 `/parameter_events` · `/rosout` 만 보임 | WSL 미러 네트워크 미설정 | `.wslconfig` 에 `networkingMode=mirrored` → `wsl --shutdown` ([[WSL-VRX-환경구축]] §8.2) |
 | 거북이가 안 움직이고 결과가 `위치오차 9.2195` | 위와 같음 — 한 번도 자세를 못 받아 `valid = 0` 으로 정지 | 위와 같음. 9.2195 는 (0,0) 에서 (9,2) 까지 거리 |
 | `먼저 W02_setup 을 실행하십시오.` | 설정 변수가 없음 | `W02_setup` 실행 후 다시 |
 | 모델을 고치다 망가뜨림 | — | `W02_setup` → `build_w02_models` |
@@ -3626,4 +3662,4 @@ which code
 - 준비물
   - 이번 주차에 작성한 ROS 2 환경
   - **저장공간 20 GB 이상** (VRX 빌드에 필요)
-  - 빌드에 30\~60분 걸리므로 충전기 지참
+  - VRX 빌드는 기준 환경에서 약 1\~2분 (3주차 실측). 패키지 내려받기가 더 오래 걸리므로 충전기 지참
