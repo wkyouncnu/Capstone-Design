@@ -2,10 +2,19 @@
 %
 %   bash _tools/tikz2svg.sh assets/src/w10-dp-loop.tex assets/w10-dp-loop.svg
 %
-% 요점 세 가지를 한 그림에 담는다.
+% 요점 네 가지를 한 그림에 담는다.
 %   1) 기준모델이 목표와 제어기 사이에 있다 (계단 목표를 완만하게 만든다)
 %   2) 파랑 필터는 되먹임 경로에 있다 (제어기로 들어가는 신호를 거른다)
 %   3) 외란은 선박에 직접 들어간다 (제어기가 보지 못한다)
+%   4) 제어기는 오차만 받지 않는다. 속도 nu 와 선수각 psi 도 받는다
+%
+% 부호는 본문 §1-8 과 같다 — eta_tilde = eta - eta_d (Fossen 2011, 12.2.10).
+%   그래서 합산점에서 되먹임 eta 가 +, 목표 eta_d 가 - 다.
+%   tau = -J^T(psi) [Kp eta_tilde + Ki int eta_tilde] - Kd nu
+%
+% 고친 것 (2026-09-18). 이전 그림은 합산점이 eta_d - eta 를 만들어 본문과
+% 부호가 반대였고, 제어기에 nu 와 psi 가 들어가지 않았다. 그림대로 만들면
+% 되먹임 부호가 뒤집히고 감쇠항 -Kd nu 를 만들 수 없다.
 
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
@@ -16,8 +25,8 @@
 % ---- 앞먹임 경로 -----------------------------------------------------------
 \node[blk]                        (ref)  {목표 위치};
 \node[gblk, right=10mm of ref]    (rm)   {기준모델};
-\node[sum,  right=9mm of rm]      (s1)   {};
-\node[cblk, right=9mm of s1]      (dp)   {DP 제어기};
+\node[sum,  right=10mm of rm]     (s1)   {};
+\node[cblk, right=11mm of s1]     (dp)   {DP 제어기};
 \node[tblk, right=10mm of dp]     (al)   {추력 배분};
 \node[pblk, right=10mm of al]     (sh)   {선박};
 
@@ -27,7 +36,9 @@
 \draw[sig] (dp)  -- node[sname, above] {$\boldsymbol{\tau}$} (al);
 \draw[sig] (al)  -- node[sname, above] {$\mathbf{f}$} (sh);
 
-\node[note, below=1.2mm of s1] {$-$};
+% 합산점 부호 — eta_tilde = eta - eta_d
+\node[note, anchor=south east] at ($(s1.west)+(-0.3mm,0.6mm)$) {$-$};
+\node[note, anchor=north west] at ($(s1.south)+(0.6mm,-0.3mm)$) {$+$};
 
 % ---- 외란 -----------------------------------------------------------------
 \node[blk, draw=warn, above=11mm of sh] (dist) {외란};
@@ -35,20 +46,27 @@
 \draw[sig, warn] (dist) -- (sh);
 
 % ---- 되먹임 경로 -----------------------------------------------------------
-\node[nblk, below=13mm of al]  (nav)  {항법};
-\node[nblk, left=12mm of nav]  (filt) {파랑 필터};
+\node[nblk, below=16mm of al]  (nav)  {항법};
+\node[nblk, left=16mm of nav]  (filt) {파랑 필터};
 
-\coordinate (shb) at ($(sh.south)+(0,-13mm)$);
+\coordinate (shb) at ($(sh.south)+(0,-16mm)$);
 \draw[wire] (sh.south) -- (shb);
-\draw[sig]  (shb) -| (nav.east);
+\draw[sig]  (shb) -- (nav.east);
 \draw[sig]  (nav) -- node[sname, below] {$\boldsymbol{\eta},\ \boldsymbol{\nu}$} (filt);
-\draw[sig]  (filt.west) -| (s1.south);
+
+% 위치 eta -> 합산점
+\draw[sig]  (filt.west) -| node[sname, pos=0.25, below] {$\boldsymbol{\eta}$} (s1.south);
+
+% 속도 nu 와 선수각 psi -> 제어기 (감쇠항 -Kd nu, 회전 J^T(psi))
+\draw[sig]  (filt.north) -- node[sname, right] {$\boldsymbol{\nu},\ \psi$} (filt.north |- dp.south);
 
 % ---- 설명 -----------------------------------------------------------------
 \node[note, below=1.5mm of rm.south, text width=26mm, align=center]
      {계단 목표를\\완만하게};
 \node[note, below=1.5mm of filt.south, text width=28mm, align=center]
      {파도 성분만 걸러낸다};
+\node[note, anchor=south, text width=60mm, align=center] at ($(s1.north)+(8mm,8mm)$)
+     {$\tilde{\boldsymbol{\eta}} = \boldsymbol{\eta} - \boldsymbol{\eta}_d$ \quad (본문 1-8절과 같은 부호)};
 
 \end{tikzpicture}
 \end{document}

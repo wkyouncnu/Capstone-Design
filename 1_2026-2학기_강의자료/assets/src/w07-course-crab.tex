@@ -3,6 +3,15 @@
 %   bash _tools/tikz2svg.sh assets/src/w07-course-crab.tex assets/w07-course-crab.svg
 %
 % 요점: 조류가 있으면 뱃머리가 향한 방향과 배가 실제로 가는 방향이 어긋난다.
+%
+% 좌표는 계산한 값이다 (TikZ 각은 동쪽에서 반시계, 방위각은 북에서 시계).
+%   psi 선  (24,38) : TikZ 57.72 deg -> 방위 32.28 deg
+%   chi 선  (40,30) : TikZ 36.87 deg -> 방위 53.13 deg
+%   beta = chi - psi = 20.85 deg
+%   세 호 모두 북 기준선 또는 psi 선에서 시작한다. 동쪽에서 재지 않는다.
+%
+% 고친 것 (2026-09-18). 이전 그림은 chi 호와 beta 호가 모두 동쪽에서
+% chi 선까지(36.9 deg)를 재고 있었다. beta 는 psi 와 chi 사이(20.9 deg)다.
 
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
@@ -13,36 +22,42 @@
 \coordinate (o) at (0,0);
 
 % ---- 북 기준선 -------------------------------------------------------------
-\draw[axis, densely dashed, -{Stealth[length=4pt,width=3pt]}] (o) -- (0,44);
-\node[font=\small, anchor=south] at (0,45) {$N$};
+\draw[axis, densely dashed, -{Stealth[length=4pt,width=3pt]}] (o) -- (0,46);
+\node[font=\small, anchor=south] at (0,47) {$N$};
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (o) -- (50,0);
+\node[font=\small, anchor=west] at (51,0) {$E$};
 
-% ---- 선수각 psi ------------------------------------------------------------
-\draw[sig, line width=0.7pt] (o) -- (24,38);
-\node[font=\small, anchor=south west] at (24,38) {$\psi$};
-\node[note, anchor=west] at (26,35) {선수각 — 뱃머리가 향한 방향};
-\draw[axis] (o) ++(0,14) arc (90:58:14mm);
-\node[note] at (5.5,15.5) {$\psi$};
+% ---- 선수각 psi — 북에서 뱃머리까지 ---------------------------------------
+\draw[sig, line width=0.8pt] (o) -- (24,38);
+\node[font=\small, anchor=south east] at (24,38.5) {뱃머리};
+\draw[axis] (o) ++(0,13) arc (90:57.72:13);
+\node[note] at (4.3,15.8) {$\psi$};
 
-% ---- 침로각 chi ------------------------------------------------------------
-\draw[sig, flow, line width=0.7pt] (o) -- (40,30);
-\node[font=\small, flow, anchor=south west] at (40,30) {$\chi$};
-\node[note, flow, anchor=west] at (42,27) {침로각 — 배가 실제로 가는 방향};
-\draw[axis] (o) ++(20,0) arc (0:36.9:20mm) ;
+% ---- 침로각 chi — 북에서 실제 진행 방향까지 -------------------------------
+\draw[sig, flow, line width=0.8pt] (o) -- (40,30);
+\node[font=\small, flow, anchor=west] at (40.5,30) {진행 방향};
+\draw[flow] (o) ++(0,21) arc (90:36.87:21);
+\node[note, flow] at (11.2,23.6) {$\chi$};
 
-% ---- 크랩각 beta -----------------------------------------------------------
-\draw[axis, errc] (o) ++(30,0) arc (0:36.9:30mm);
-\node[note, errc] at (28,10) {$\beta$};
-\node[note, errc, anchor=west] at (30,6) {크랩각};
+% ---- 크랩각 beta — 뱃머리와 진행 방향 사이 --------------------------------
+\draw[errc, line width=0.8pt] (16.02,25.36) arc (57.72:36.87:30);
+\node[note, errc] at (25.2,27.1) {$\beta$};
 
-% ---- 조류 ------------------------------------------------------------------
-\draw[sig, flow, densely dashed] (16,26) -- ++(16,-6);
-\node[note, flow, anchor=north] at (26,20) {조류};
+% ---- 조류 — 배를 우현 쪽으로 민다 -----------------------------------------
+\draw[sig, flow, densely dashed] (28,8)  -- ++(14,-5);
+\draw[sig, flow, densely dashed] (28,14) -- ++(14,-5);
+\node[note, flow, anchor=west] at (43,5) {조류};
+
+% ---- 읽는 법 ---------------------------------------------------------------
+\node[note, anchor=west] at (66,44) {$\psi$ = 선수각 — 뱃머리가 향한 방향};
+\node[note, flow, anchor=west] at (66,39) {$\chi$ = 침로각 — 배가 실제로 가는 방향};
+\node[note, errc, anchor=west] at (66,34) {$\beta$ = 크랩각 — 둘의 차이};
+\node[note, anchor=west] at (66,28) {세 각 모두 \textbf{북}에서 시계방향으로 잰다};
 
 % ---- 식 --------------------------------------------------------------------
 \node[font=\small, anchor=west] at (0,-12) {$\chi = \psi + \beta$};
 \node[font=\small, anchor=west] at (26,-12) {$\beta = \operatorname{atan2}(v,\ u)$};
 \node[note, anchor=west] at (72,-12) {$u,\ v$ = 선체 기준 전후 · 좌우 속도};
-
 \node[wnote, anchor=west, text width=118mm] at (0,-22)
      {선수각 $\psi$ 만 제어하면 배는 경로에서 옆으로 밀린 채 나아간다.
       조류에서 경로 이탈이 남는 이유다};
