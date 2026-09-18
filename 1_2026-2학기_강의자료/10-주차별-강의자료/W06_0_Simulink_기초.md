@@ -30,7 +30,7 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 
 - **과목**: 캡스톤디자인 (2026-2) · 충남대학교 자율운항시스템공학과
 - **이번 주차 학습 내용**: Simulink 를 **직접 만들어 본다**. 열두 개의 빈칸 모델을 채운다
-- **구성**: 1일차 A~F (문법 3시간) · 2일차 G~L (7~9주차에서 쓰는 블록 3시간)
+- **구성**: 1일차 A~F (문법 3시간) · 2일차 G~M (7~9주차에서 쓰는 블록 3시간)
 
 > [!important] 시작 전 확인
 > - MATLAB **R2024b + Simulink** 가 설치되어 있을 것
@@ -47,7 +47,7 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 > | | 절 | 무엇을 |
 > |---|---|---|
 > | **1일차** (3시간) | A~F | Simulink 문법 — 블록·서브시스템·버스·PID·로깅 |
-> | **2일차** (3시간) | G~L | **7~9주차 모델에 실제로 들어 있는 블록들** |
+> | **2일차** (3시간) | G~M | **7~9주차 모델에 실제로 들어 있는 블록들** |
 >
 > 2일차는 "쓸모 있는 블록 모음"이 아니라 **본 과목의 모델을 읽기 위한 어휘**다.
 > `Unit Delay` 를 모르면 9주차 대수 루프를 이해할 수 없고,
@@ -80,7 +80,7 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 | 소프트웨어 | MATLAB R2024b + Simulink |
 | 필요 없는 것 | ROS 2, WSL, Gazebo, VRX, 인터넷 |
 | 배포 파일 | `W06_0_simulink/` 폴더 (모델 24개 + 생성 스크립트 2개) |
-| 소요 시간 | **3시간 x 2회** (1일차 A~F, 2일차 G~L) |
+| 소요 시간 | **3시간 x 2회** (1일차 A~F, 2일차 G~M) |
 
 ---
 
@@ -148,7 +148,7 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 
 - Simulink 블록은 수백 개다. 그중 **실제로 쓰는 것만** 골랐다
 - 고른 기준: 본 과목의 기존 모델들이 실제로 사용하는 블록
-- **Stateflow 차트는 이번 주차 없다** — 9주차 미션에서 본격적으로 쓴다. 첫걸음은 이 문서의 SB13
+- **Stateflow 는 M절(SB13)에서 첫걸음만 본다** — 본격적으로는 9주차 미션에서 쓴다
 - **ROS 2 블록도 이번 주차 없다** — 6주차에 이번 주차에 학습한 내용 위에 얹는다
 
 ---
@@ -773,7 +773,7 @@ K_gain = 5;
 # 2일차 · 7~9주차에서 실제로 쓰는 블록들
 
 > [!important] 이후 절은 **2일차(3시간)** 다
-> 1일차(A~F)가 Simulink 문법이라면, 2일차(G~L)는 **본 과목의 모델을 읽기 위한 최소 어휘**다.
+> 1일차(A~F)가 Simulink 문법이라면, 2일차(G~M)는 **본 과목의 모델을 읽기 위한 최소 어휘**다.
 > 아래 표의 블록들은 전부 7~9주차 모델 안에 실제로 들어 있다.
 
 ## 이 블록들이 어디에 쓰이는가
@@ -798,7 +798,7 @@ cd('<배포 폴더>/W06_0_simulink')
 build_w06_1_models
 ```
 
-- `SB7` ~ `SB12` 의 `_done` / `_todo` 12개가 만들어진다
+- `SB7` ~ `SB13` 의 `_done` / `_todo` 14개가 만들어진다
 - 1일차 모델(`SB1`~`SB6`)은 `build_w06_0_models` 가 만든다
 
 ---
@@ -1155,7 +1155,7 @@ open_system('my_usv_lib');
 ### L-4. 코드로 모델을 만든다 — 본 과목의 방식
 
 > [!important] 본 과목의 모든 모델은 **손으로 그리지 않았다**
-> `build_w06_1_models.m` 이 지금 연 12개를 전부 만들었다.
+> `build_w06_1_models.m` 이 지금 연 모델을 전부 만들었다.
 > 7~9주차 모델도 `build_w07_models.m` 같은 스크립트가 만든다.
 
 - 왜 그렇게 하는가
@@ -1191,6 +1191,73 @@ tidy_layout('SB9_continuous_done')
 5. Icon 탭에 식을 표시해 보기
 6. **`build_w06_1_models.m` 을 열어** `makeLagSubsystem` 함수를 읽는다.
    방금 손으로 한 일을 코드가 어떻게 하는지 대조할 것
+
+## M. 상태기계 — Stateflow 첫걸음 (25분)
+
+![완성본](W06_0_simulink/img/SB13_stateflow_done.png)
+
+### M-1. 왜 블록이 아니라 상태기계인가
+
+- J절의 Switch 는 **지금 입력**만 보고 고른다. 과거를 모른다
+- 미션은 과거가 필요하다 — "이미 출발했는가", "도착한 적이 있는가"
+- 이 **기억**을 그림으로 그린 것이 상태기계(state machine)다. Simulink 에서는 **Stateflow** 차트로 만든다
+
+| 용어 | 뜻 | 이 모델에서 |
+|---|---|---|
+| 상태 (State) | 지금 무엇을 하고 있는가. **한 번에 하나만** 켜져 있다 | `Wait` · `Go` · `Stop` |
+| 전이 (Transition) | 언제 다음 상태로 넘어가는가. 화살표 위의 조건 | `after(3, sec)` · `[arrived > 0.5]` |
+| 기본 전이 | 처음에 어느 상태에서 시작하는가. 점에서 나오는 화살표 | → `Wait` |
+| `en:` | 그 상태에 **들어가는 순간** 한 번 실행 | `mode = 2; u_cmd = 1.5;` |
+
+### M-2. 차트 읽기
+
+![Mission 차트](W06_0_simulink/img/SB13_chart.png)
+
+- **대기 3초 → 1.5 m/s 로 전진 → 30 m 에 닿으면 정지**
+- 차트 밖에는 배 대신 적분기 하나(`Dist`)가 있다. 속도 지령을 적분해 간 거리를 낸다
+- `Dist >= 30` 을 비교한 결과가 다시 차트로 들어간다 — **차트의 출력이 돌아와 차트의 전이를 결정한다**
+
+### M-3. 실행
+
+```matlab
+out = sim('SB13_stateflow_done');
+```
+
+- 정상 결과 (2026-09-18 실행)
+
+| 사건 | 시각 | 값 |
+|---|---|---|
+| `Wait` → `Go` | **3.00 s** | `after(3, sec)` 그대로 |
+| `Go` → `Stop` | **23.05 s** | 거리 30.07 m |
+| 끝 | 30 s | 30.07 m 에서 멈춰 있다 |
+
+| 읽는 법 | 뜻 |
+|---|---|
+| 23.05 s | 3 s + 30 m ÷ 1.5 m/s = 23.00 s 에 한 스텝(0.05 s)이 더해졌다. 도착을 **본 다음 스텝**에 넘어가기 때문이다 |
+| 30.07 m | 그 한 스텝 동안 0.07 m 를 더 갔다. 이산 시스템에서 판단은 늘 한 박자 늦다 (H절) |
+
+### M-4. 왜 `[arrived > 0.5]` 인가 — 9주차가 이렇게 쓰는 이유
+
+- `Relational Operator` 는 참·거짓(boolean)을 낸다. 이 모델은 그것을 `Data Type Conversion` 으로 **0 또는 1 의 double** 로 바꿔 넣는다
+- 9주차의 도착 신호도 MATLAB Function 이 계산한 **double** 로 들어온다. 그래서 `== 1` 이 아니라 `> 0.5` 로 읽는다
+  - 실수를 `==` 로 비교하면 계산 오차로 0.9999… 가 나올 때 틀린다
+  - `> 0.5` 는 0 과 1 사이 어디든 한가운데를 가른다 — 참·거짓을 **안전하게** 읽는 관용구다
+
+> [!important] 9주차 `MissionFSM` 과 같은 구조다
+> 9주차 차트는 상태가 `WpFollow` · `Loiter` · `Finish` 셋이고, 전이 조건이
+> `[at_loiter > 0.5]` · `[turns >= req_turns]` · `[at_end > 0.5]` 다.
+> 이 모델의 `Wait` · `Go` · `Stop` 과 `after(3, sec)` · `[arrived > 0.5]` 를 이름만 바꾼 것이다.
+
+### M-5. 해 볼 것 (`SB13_stateflow_todo`)
+
+1. 차트를 연다. `Wait`, `Go` 두 상태만 있다
+2. 오른쪽에 상태를 하나 그리고 이름을 `Stop` 으로, 안에 `en: mode = 3; u_cmd = 0;` 을 적는다
+3. `Go` 에서 `Stop` 으로 화살표를 끌고 조건 `[arrived > 0.5]` 를 적는다
+4. 실행해서 위 표의 23.05 s · 30.07 m 가 나오는지 확인한다
+   - `Stop` 을 만들기 전에 돌리면 배는 **멈추지 않는다** — 30 초에 40.50 m 까지 간다 (실측)
+5. `after(3, sec)` 를 `after(8, sec)` 로 바꾸면 도착 시각은? 먼저 계산하고 돌려서 맞춰 본다
+
+---
 
 # 마무리
 
@@ -1240,7 +1307,7 @@ tidy_layout('SB9_continuous_done')
 - [ ] `SB5_pid_todo` — P → PI → 포화 → 안티와인드업 순서로 4번 실행
 - [ ] `SB6_param_todo` — 변수화, 로깅, Data Inspector 겹쳐 보기
 
-### 2일차 이론 이해 (G~L)
+### 2일차 이론 이해 (G~M)
 
 - [ ] 벡터와 버스의 차이를 표로 설명할 수 있다
 - [ ] `Unit Delay` 가 **대수 루프를 끊는 원리**를 설명할 수 있다
@@ -1248,8 +1315,9 @@ tidy_layout('SB9_continuous_done')
 - [ ] `Multiport Switch` 로 모드를 고를 때 **둘 다 계산하는 이유**를 말할 수 있다
 - [ ] `Enabled` 와 `Triggered` 의 차이를 실측 숫자로 설명할 수 있다
 - [ ] 모델을 **코드로 생성**하는 세 가지 이유를 말할 수 있다
+- [ ] 상태·전이·`en:` 이 각각 무엇인지, 그리고 참·거짓을 `> 0.5` 로 읽는 이유를 말할 수 있다
 
-### 2일차 실습 완료 (G~L)
+### 2일차 실습 완료 (G~M)
 
 - [ ] `SB7_signal_todo` — Mux·Demux·Selector 로 `2` 뽑기
 - [ ] `SB8_discrete_todo` — 누적기 10초 뒤 `10.05`
@@ -1259,6 +1327,7 @@ tidy_layout('SB9_continuous_done')
 - [ ] `SB10_logic_todo` — 60초 설정인데 15초에 멈추는 것 확인
 - [ ] `SB11_enabled_todo` — Enabled `201` 대 Triggered `5` 확인
 - [ ] `SB12_reuse_todo` — 마스크를 만들고 tau 두 값으로 비교
+- [ ] `SB13_stateflow_todo` — `Stop` 상태와 `[arrived > 0.5]` 전이를 더해 23.05 s 에 멈추게 했다
 
 ### 관찰 기록
 
@@ -1339,7 +1408,7 @@ tidy_layout('SB9_continuous_done')
 
 ### ① 여섯 개 빈칸본 완성
 
-- `SB7` ~ `SB12` 의 `_todo` 를 모두 채운다
+- `SB7` ~ `SB13` 의 `_todo` 를 모두 채운다
 - 각 모델의 **Scope 또는 Display 스크린샷**을 첨부한다
 
 ### ② 검증 — 필수
@@ -1432,7 +1501,7 @@ tidy_layout('SB9_continuous_done')
 ```matlab
 cd('<배포 폴더>/W06_0_simulink')
 build_w06_0_models      % 1일차 SB1~SB6
-build_w06_1_models      % 2일차 SB7~SB12
+build_w06_1_models      % 2일차 SB7~SB13
 ```
 
 - 해당 모델이 모두 새로 만들어진다. **`_todo` 에 하던 작업은 사라진다**
@@ -1502,8 +1571,9 @@ tidy_layout('SB9_continuous_done')
 | `W06_0_simulink/SB10_logic_todo.slx` · `_done.slx` | J. Switch · Multiport Switch · Stop |
 | `W06_0_simulink/SB11_enabled_todo.slx` · `_done.slx` | K. Enabled · Triggered 서브시스템 |
 | `W06_0_simulink/SB12_reuse_todo.slx` · `_done.slx` | L. 마스크 |
+| `W06_0_simulink/SB13_stateflow_todo.slx` · `_done.slx` | M. Stateflow 첫걸음 |
 | `W06_0_simulink/build_w06_0_models.m` | 1일차 12개 모델 생성 |
-| `W06_0_simulink/build_w06_1_models.m` | 2일차 12개 모델 생성 |
+| `W06_0_simulink/build_w06_1_models.m` | 2일차 14개 모델 생성 |
 | `W06_0_simulink/tidy_layout.m` | 배치·색 복구 |
 
 ---
@@ -1515,7 +1585,7 @@ tidy_layout('SB9_continuous_done')
   - `Subscribe` — 토픽을 받아 **버스**로 내보냄 → 이번 주차 D절
   - `Blank Message` + `Bus Assignment` — 메시지 채우기 → 이번 주차 D절
   - `Publish` — 토픽으로 발행
-- 2일차 G~L 절의 블록도 곧바로 쓰인다
+- 2일차 G~M 절의 블록도 곧바로 쓰인다
   - `Unit Delay` — 웨이포인트 번호 되먹임 (7주), 대수 루프 차단 (9주)
   - `Transfer Fcn` — 모터 1차 지연 (7주 `Thrusters`)
   - `Multiport Switch` — 유도법칙 갈아 끼우기 (9주 `ModeSwitch`)

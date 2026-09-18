@@ -1,10 +1,10 @@
 function build_w06_1_models()
-% BUILD_W06_1_MODELS  6주차 보충 2일차(G~L절) 모델 12개를 만든다.
+% BUILD_W06_1_MODELS  6주차 보충 2일차(G~M절) 모델 14개를 만든다.
 %
 %   >> build_w06_1_models
 %
 %   1일차 모델(SB1~SB6)은 build_w06_0_models.m 이 만든다.
-%   여기서 만드는 것은 SB7~SB12 이며, 7~9주차에서 **실제로 쓰는** 블록들이다.
+%   여기서 만드는 것은 SB7~SB13 이며, 7~9주차에서 **실제로 쓰는** 블록들이다.
 %
 %     SB7  신호 묶기·풀기      Mux / Demux / Selector / Reshape
 %     SB8  이산 시스템         샘플타임 / Unit Delay / 멀티레이트
@@ -12,6 +12,7 @@ function build_w06_1_models()
 %     SB10 판단                Relational / Switch / Multiport Switch / Stop
 %     SB11 조건부 실행         Enabled / Triggered Subsystem
 %     SB12 재사용              Mask / 라이브러리
+%     SB13 상태기계            Stateflow 첫걸음 (9주차 미션 차트의 축소판)
 %
 %   각 주제마다 `_done` (완성본) 과 `_todo` (학생이 채울 것) 두 개가 나온다.
 
@@ -25,22 +26,18 @@ function build_w06_1_models()
     build_SB10_done();  build_SB10_todo();
     build_SB11_done();  build_SB11_todo();
     build_SB12_done();  build_SB12_todo();
+    build_SB13_done();  build_SB13_todo();
 
     % 배치와 색을 정리한다
-    for k = 7:12
+    for k = 7:13
         d = dir(sprintf('SB%d_*.slx', k));
         for j = 1:numel(d)
             [~, mName] = fileparts(d(j).name);
             try
-
                 tidy_model(mName);
-
                 paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
-
                 check_colour(mName);
-
                 export_model_pngs(mName);
-
             catch e, warning(e.message); end
         end
     end
@@ -523,4 +520,109 @@ function makeLagSubsystem(m, name, tauVal, pos)
     mk.Display = 'disp(sprintf(''1/(%gs+1)'', tau))';
     mk.Description = ['1차 지연.  dy/dt = (u - y)/tau' newline ...
                       '7주차 모터 응답 모델과 같은 식이다.'];
+end
+
+% =====================================================================
+% M. SB13 — Stateflow 첫걸음 (9주차 미션 차트의 축소판)
+% =====================================================================
+%   대기 -> 전진 -> 정지. 상태 셋, 전이 둘.
+%     대기 -> 전진  : after(3, sec)        — 시간이 조건이다 (타이머)
+%     전진 -> 정지  : [arrived > 0.5]      — 신호가 조건이다
+%   두 번째 조건이 9주차 [at_end > 0.5] 와 같은 모양이다. 도착 여부가
+%   0/1 의 double 로 들어오기 때문에 > 0.5 로 읽는다.
+function build_SB13_done()
+    m = 'SB13_stateflow_done'; fresh(m);
+    sb13_common(m, true);
+    note(m, sprintf(['[M] Stateflow 첫걸음\n' ...
+        '상태(State) — 지금 무엇을 하고 있는가. 한 번에 하나만 켜져 있다\n' ...
+        '전이(Transition) — 언제 다음 상태로 넘어가는가. 화살표의 [ ] 가 조건이다\n' ...
+        '  Wait -> Go   : after(3, sec)    3초가 지나면 (타이머)\n' ...
+        '  Go   -> Stop : [arrived > 0.5]  30 m 에 닿으면\n' ...
+        'en: 는 그 상태에 들어가는 순간 한 번 실행된다\n' ...
+        '\n' ...
+        'arrived 는 0 또는 1 인 double 이다. 그래서 > 0.5 로 읽는다.\n' ...
+        '9주차 MissionFSM 의 [at_end > 0.5] 와 같은 이유다.']), 40, 420);
+    finish(m);
+end
+
+function build_SB13_todo()
+    m = 'SB13_stateflow_todo'; fresh(m);
+    sb13_common(m, false);
+    note(m, sprintf(['[M] 할 일\n' ...
+        '1. Mission 차트를 더블클릭해 연다. Wait, Go 두 상태가 있다\n' ...
+        '2. 오른쪽에 상태 하나를 그리고 이름을 Stop 으로\n' ...
+        '   en: mode = 3; u_cmd = 0;   을 적는다\n' ...
+        '3. Go 에서 Stop 으로 화살표를 끌고 조건 [arrived > 0.5] 를 적는다\n' ...
+        '4. 실행 — mode 가 1 -> 2 -> 3 으로 바뀌고, 23 초쯤 배가 멈춰야 한다\n' ...
+        '5. after(3, sec) 를 after(8, sec) 로 바꾸면 도착 시각이 얼마가 되는가?']), ...
+        40, 420);
+    finish(m);
+end
+
+function sb13_common(m, withStop)
+    Ts = '0.05';
+    add_block('sflib/Chart', [m '/Mission'], 'Position', [200 60 360 200]);
+    ch = sfroot().find('-isa','Stateflow.Chart','Path',[m '/Mission']);
+    ch.ActionLanguage = 'MATLAB';
+    ch.ChartUpdate    = 'DISCRETE';
+    ch.SampleTime     = Ts;
+
+    d = Stateflow.Data(ch); d.Name = 'arrived'; d.Scope = 'Input';  d.Port = 1;
+    o = Stateflow.Data(ch); o.Name = 'mode';    o.Scope = 'Output'; o.Port = 1;
+    o = Stateflow.Data(ch); o.Name = 'u_cmd';   o.Scope = 'Output'; o.Port = 2;
+
+    s1 = Stateflow.State(ch);  s1.Name = 'Wait';
+    s1.LabelString = ['Wait' newline 'en: mode = 1; u_cmd = 0;'];
+    s1.Position = [40 80 170 70];
+    s2 = Stateflow.State(ch);  s2.Name = 'Go';
+    s2.LabelString = ['Go' newline 'en: mode = 2; u_cmd = 1.5;'];
+    s2.Position = [290 80 170 70];
+
+    td = Stateflow.Transition(ch);
+    td.Destination = s1;  td.DestinationOClock = 0;
+    td.SourceEndPoint = [125 30];  td.MidPoint = [125 55];
+
+    t1 = Stateflow.Transition(ch);
+    t1.Source = s1;  t1.SourceOClock = 3;
+    t1.Destination = s2;  t1.DestinationOClock = 9;
+    t1.LabelString = 'after(3, sec)';
+    t1.MidPoint = [250 105];
+
+    if withStop
+        s3 = Stateflow.State(ch);  s3.Name = 'Stop';
+        s3.LabelString = ['Stop' newline 'en: mode = 3; u_cmd = 0;'];
+        s3.Position = [540 80 170 70];
+        t2 = Stateflow.Transition(ch);
+        t2.Source = s2;  t2.SourceOClock = 3;
+        t2.Destination = s3;  t2.DestinationOClock = 9;
+        t2.LabelString = '[arrived > 0.5]';
+        t2.MidPoint = [500 105];
+    end
+
+    % 배 — 속도 지령을 적분해 간 거리를 낸다
+    B(m,'simulink/Discrete/Discrete-Time Integrator','Dist',[460 120 510 160], ...
+      'SampleTime', Ts);
+    B(m,'simulink/Sources/Constant','Goal',[460 220 510 250],'Value','30');
+    B(m,'simulink/Logic and Bit Operations/Relational Operator','Reached', ...
+      [580 150 620 190],'Operator','>=');
+    B(m,'simulink/Signal Attributes/Data Type Conversion','ToDouble', ...
+      [680 155 740 185],'OutDataTypeStr','double');
+
+    B(m,'simulink/Sinks/Scope','Scope',[600 40 640 100],'NumInputPorts','2');
+    B(m,'simulink/Sinks/To Workspace','log_mode',[460 20 530 45], ...
+      'VariableName','log_mode','SaveFormat','Timeseries','SampleTime',Ts);
+    B(m,'simulink/Sinks/To Workspace','log_dist',[600 110 670 135], ...
+      'VariableName','log_dist','SaveFormat','Timeseries','SampleTime',Ts);
+
+    wire(m,'Mission/1','Scope/1');
+    wire(m,'Mission/1','log_mode/1');
+    wire(m,'Mission/2','Dist/1');
+    wire(m,'Dist/1','Scope/2');
+    wire(m,'Dist/1','log_dist/1');
+    wire(m,'Dist/1','Reached/1');
+    wire(m,'Goal/1','Reached/2');
+    wire(m,'Reached/1','ToDouble/1');
+    wire(m,'ToDouble/1','Mission/1');
+
+    setSolverD(m,'30');
 end

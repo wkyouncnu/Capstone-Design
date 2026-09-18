@@ -94,6 +94,8 @@ case {'SB11_enabled_done','SB11_enabled_todo'}
     role = {'EnSub','ros'; 'TrigSub','ros'};
 case {'SB12_reuse_done','SB12_reuse_todo'}
     role = {'Lag_fast','plant'; 'Lag_slow','plant'};
+case {'SB13_stateflow_done','SB13_stateflow_todo'}
+    role = {'Mission','mission'; 'Dist','plant'};
 
 % ---- 7~10주차 · 유도·제어 사슬 ------------------------------------------
 case {'W07_0_offline','W07_1_vrx','W08_0_offline','W08_1_vrx', ...
