@@ -58,6 +58,7 @@ set_param(m, 'EnablePacing','on', 'PacingRate', num2str(RTF), ...
              'StopTime', num2str(T_end));
 out = sim(m);
 
+fprintf('4) 결과 그림\n');
 S     = W10_plot(out, 'VRX DP');
 S.RTF = RTF;
 saveFig(gcf, 'W10_1_vrx_result.png');

@@ -58,6 +58,7 @@ set_param(m, 'EnablePacing','on', 'PacingRate', num2str(RTF), ...
              'StopTime', num2str(T_end));
 out = sim(m);
 
+fprintf('4) 결과 그림\n');
 S     = W09_plot(out, 'VRX 미션 — WP -> 로이터 -> WP');
 S.RTF = RTF;
 saveFig(S.fig, 'W09_1_vrx_result.png');    % gcf 는 추진기 창이다 — 궤적 창을 저장한다

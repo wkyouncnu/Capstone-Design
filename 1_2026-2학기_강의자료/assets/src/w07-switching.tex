@@ -33,10 +33,12 @@
   \node[note, pathc, below=0.8mm] at (10,40) {$k$};
   \node[note, pathc, above=1.2mm] at (56,40) {$k+1$};
 
-  \fill[pathc, opacity=0.13] (44,14) rectangle (56,48);
+  % d - x_e < R 는 x_e > d - R 인 반평면이다. k+1 을 지나친 뒤에도 참이므로 오른쪽 끝이 없다
+  \fill[pathc, opacity=0.13] (44,14) rectangle (69,48);
   \draw[pathc, densely dashed, line width=0.5pt] (44,14) -- (44,48);
-  \draw[pathc, densely dashed, line width=0.5pt] (56,14) -- (56,48);
-  \node[note, pathc, anchor=south] at (50,48.5) {$R$};
+  \draw[pathc, line width=0.4pt, <->] (44,50) -- (56,50);
+  \node[note, pathc, anchor=south] at (50,50.3) {$R$};
+  \node[note, pathc, anchor=west, align=left] at (57.5,20) {지나쳐도\\참};
 
   \coordinate (sh) at (47,16);
   \draw[errc, line width=0.9pt] (47,40) -- (sh);

@@ -74,7 +74,7 @@ F_max     = 500;        % 추력 포화 [N]
 %  5. 오프라인 플랜트 계수 — Gazebo 와 같은 값
 %     출처: wamv_gazebo_dynamics_plugin.xacro (SimpleHydrodynamics)
 %           wamv_base.urdf.xacro (질량·관성)
-%     확인: 정상상태 400 N -> u = 1.333 m/s. Gazebo 실측 1.331 m/s
+%     확인: 정상상태 400 N -> u = 1.333 m/s. Gazebo 실측 1.332 m/s (6주차 J절)
 % =====================================================================
 m_usv  = 211;    % 총 질량 [kg]      = base_link 180 + 엔진 2x15 + 프로펠러 2x0.5
 Izz    = 653;    % 요 관성 [kg m^2]  = base_link 446 + 엔진 이동항

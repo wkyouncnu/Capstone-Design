@@ -460,7 +460,7 @@ done | tee topics_type.txt
 ## 2-3. 센서별 실행 결과 확인 — 무엇이 나와야 정상인가
 
 > [!important] 이 절의 모든 출력은 실제로 받은 것이다
-> 아래 표와 화면은 기준 환경(VRX 2.4.1 · Gazebo Garden 7.9.0 · ROS 2 Humble)에서
+> 아래 표와 화면은 기준 환경(VRX 2.4.0-2 `dc30ed8d` · Gazebo Garden 7.9.0 · ROS 2 Humble)에서
 > `sydney_regatta` 월드를 띄우고 직접 실행해 기록한 것이다. 값이 다르면 그 차이가 곧 단서다.
 
 ### 준비 — 시뮬레이터를 띄운 상태에서 시작한다

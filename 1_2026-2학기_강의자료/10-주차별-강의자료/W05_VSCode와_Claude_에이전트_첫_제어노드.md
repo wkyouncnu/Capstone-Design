@@ -539,7 +539,7 @@ nano CLAUDE.md
 
 ## 환경
 - ROS 2 **Humble** (Jazzy 전용 API 금지)
-- Gazebo Garden + VRX 2.4.1
+- Gazebo Garden + VRX 2.4.0-2 (`dc30ed8d`)
 - Python 3.10, rclpy
 - 워크스페이스: `~/capstone_ws`
 

@@ -68,6 +68,7 @@ set_param(m, 'EnablePacing','on', 'PacingRate', num2str(RTF), ...
 out = sim(m);
 
 %% 4. 결과 그림 -------------------------------------------------------
+fprintf('4) 결과 그림\n');
 S     = W07_plot(out, sprintf('VRX / %s 유도', modeName()));
 S.RTF = RTF;
 saveFig(S.fig, 'W07_1_vrx_result.png');    % gcf 는 추진기 창이다 — 궤적 창을 저장한다
