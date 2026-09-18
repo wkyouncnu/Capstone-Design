@@ -7,9 +7,10 @@
 %   그 점에 지구를 **접하는 평면**을 세우면 N-E-D 가 된다. D 는 지구 중심을 향한다.
 %
 % 투영
-%   정사영. 카메라가 경도 0 위, 적도에서 T 만큼 올라간 자리에 있다.
-%     screen_x = R cos(phi) sin(lambda)
-%     screen_y = R ( cos(T) sin(phi) - sin(T) cos(phi) cos(lambda) )
+%   정사영. 카메라가 경도 LC 위, 적도에서 T 만큼 올라간 자리에 있다.
+%     screen_x = R cos(phi) sin(lambda - LC)
+%     screen_y = R ( cos(T) sin(phi) - sin(T) cos(phi) cos(lambda - LC) )
+%   LC = 0 이면 본초자오선이 화면 한가운데 직선이 되어 극축과 겹친다 (2026-09-18 고침, LC = -25)
 %   3차원 단위벡터 (vx,vy,vz) 는
 %     screen_x = vy,   screen_y = -sin(T) vx + cos(T) vz
 
@@ -23,10 +24,11 @@
 \pgfmathsetmacro{\T}{22}        % 카메라 올라간 각 [deg]
 \pgfmathsetmacro{\pP}{34}       % 점 P 의 위도 [deg]
 \pgfmathsetmacro{\lP}{48}       % 점 P 의 경도 [deg]
+\pgfmathsetmacro{\LC}{-25}      % 카메라 경도 [deg]
 
 % 화면 좌표 — #1 = 위도, #2 = 경도
-\newcommand{\SX}[2]{\R*cos(#1)*sin(#2)}
-\newcommand{\SY}[2]{\R*(cos(\T)*sin(#1) - sin(\T)*cos(#1)*cos(#2))}
+\newcommand{\SX}[2]{\R*cos(#1)*sin((#2)-\LC)}
+\newcommand{\SY}[2]{\R*(cos(\T)*sin(#1) - sin(\T)*cos(#1)*cos((#2)-\LC))}
 
 % =========================== 지구 ==========================================
 \begin{scope}[shift={(0,0)}]
@@ -35,21 +37,21 @@
   \draw[soft, line width=0.45pt] (0,0) circle (\R);
 
   % ---- 적도 : 앞(실선) · 뒤(점선) ----
-  \draw[soft, line width=0.35pt, densely dotted, samples=80, domain=90:270, variable=\t]
+  \draw[soft, line width=0.35pt, densely dotted, samples=80, domain=\LC+90:\LC+270, variable=\t]
        plot ({\SX{0}{\t}}, {\SY{0}{\t}});
-  \draw[errc, line width=0.7pt, samples=80, domain=-90:90, variable=\t]
+  \draw[errc, line width=0.7pt, samples=80, domain=\LC-90:\LC+90, variable=\t]
        plot ({\SX{0}{\t}}, {\SY{0}{\t}});
   \node[font=\scriptsize, errc, anchor=north] at ({\SX{0}{-62}}, {\SY{0}{-62}-1.5}) {적도};
 
   % ---- 본초자오선 (경도 0) ----
   \draw[guid, line width=0.7pt, samples=60, domain=-90:90, variable=\t]
        plot ({\SX{\t}{0}}, {\SY{\t}{0}});
-  \node[font=\scriptsize, guid, anchor=east] at ({\SX{-62}{0}-1}, {\SY{-62}{0}}) {본초자오선};
+  \node[font=\scriptsize, guid, anchor=west] at ({\SX{-40}{0}+1.5}, {\SY{-40}{0}}) {본초자오선};
 
   % ---- P 의 자오선과 위도선 ----
   \draw[soft, line width=0.45pt, samples=60, domain=-90:90, variable=\t]
        plot ({\SX{\t}{\lP}}, {\SY{\t}{\lP}});
-  \draw[soft, line width=0.35pt, densely dashed, samples=70, domain=-90:90, variable=\t]
+  \draw[soft, line width=0.35pt, densely dashed, samples=70, domain=\LC-90:\LC+90, variable=\t]
        plot ({\SX{\pP}{\t}}, {\SY{\pP}{\t}});
 
   % ---- 극축 ----
@@ -90,16 +92,16 @@
 
   \pgfmathsetmacro{\Rr}{22}
   % P 의 3차원 단위벡터
-  \pgfmathsetmacro{\px}{cos(\pP)*cos(\lP)}
-  \pgfmathsetmacro{\py}{cos(\pP)*sin(\lP)}
+  \pgfmathsetmacro{\px}{cos(\pP)*cos(\lP-\LC)}
+  \pgfmathsetmacro{\py}{cos(\pP)*sin(\lP-\LC)}
   \pgfmathsetmacro{\pz}{sin(\pP)}
   % 북 : d(위치)/d(위도)
-  \pgfmathsetmacro{\nx}{-sin(\pP)*cos(\lP)}
-  \pgfmathsetmacro{\ny}{-sin(\pP)*sin(\lP)}
+  \pgfmathsetmacro{\nx}{-sin(\pP)*cos(\lP-\LC)}
+  \pgfmathsetmacro{\ny}{-sin(\pP)*sin(\lP-\LC)}
   \pgfmathsetmacro{\nz}{cos(\pP)}
   % 동 : d(위치)/d(경도)
-  \pgfmathsetmacro{\ex}{-sin(\lP)}
-  \pgfmathsetmacro{\ey}{cos(\lP)}
+  \pgfmathsetmacro{\ex}{-sin(\lP-\LC)}
+  \pgfmathsetmacro{\ey}{cos(\lP-\LC)}
   \pgfmathsetmacro{\ez}{0}
   % 화면 투영
   \pgfmathsetmacro{\NX}{\ny}                       \pgfmathsetmacro{\NY}{-sin(\T)*\nx + cos(\T)*\nz}

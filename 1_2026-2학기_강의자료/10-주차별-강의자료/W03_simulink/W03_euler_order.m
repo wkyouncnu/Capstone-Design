@@ -74,8 +74,10 @@ for k = 1:2
         quiver3(0,0,0, 2.2*R(1,j), 2.2*R(2,j), 2.2*R(3,j), 0, 'Color', c{j}, 'LineWidth', 2);
         text(2.45*R(1,j), 2.45*R(2,j), 2.45*R(3,j), lab{j}, 'Color', c{j}, 'FontSize', 10);
     end
-    set(gca, 'ZDir','reverse', 'YDir','normal');
-    view([-40 22]); axis tight; camzoom(1.25);
+    % NED 는 오른손 좌표다. MATLAB 축은 z 가 위라서, D 를 아래로 보이려면 두 축(Y, Z)을
+    % 함께 뒤집어야 한다 (x 축 둘레 180° 회전). Z 만 뒤집으면 거울상이 된다 — 2026-09-18 수정.
+    set(gca, 'YDir','reverse', 'ZDir','reverse');
+    view([-140 22]); axis tight; camzoom(1.25);
     title(sprintf('%s\n\\psi=%g°, \\theta=%g°, \\phi=%g°', cases{k,2}, psi_d, theta_d, phi_d));
 end
 d = fullfile(fileparts(mfilename('fullpath')), 'img');
