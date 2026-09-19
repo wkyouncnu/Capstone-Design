@@ -1,8 +1,12 @@
-% assets/w06-0-blocks-map.svg — 이번 주차에 배우는 블록 지도
+% assets/w06-0-blocks-map.svg — 6주차 기초에서 배우는 블록 지도 (1일차 A~F, 2일차 G~M)
 %
 %   bash _tools/tikz2svg.sh assets/src/w06-0-blocks-map.tex assets/w06-0-blocks-map.svg
 %
-% 요점: Simulink 블록은 수백 개지만 실제로 쓰는 것은 이 네 묶음뿐이다.
+% 요점: Simulink 블록은 수백 개지만 본 과목 모델이 실제로 쓰는 것은 이만큼이다.
+%       칸마다 그 블록을 배우는 절을 적는다.
+%
+% 고친 것 (2026-09-19) — 예전 그림은 1일차 네 묶음뿐이었고 캡션이 "Stateflow 는 다루지 않는다"
+% 였는데, 2일차 M 절이 Stateflow 첫걸음이다. 2일차 일곱 묶음을 넣고 캡션을 본문(1-5)과 맞췄다.
 
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
@@ -10,59 +14,49 @@
 \begin{document}
 \begin{tikzpicture}[x=1mm, y=1mm]
 
-\def\CW{62}
-\def\CH{46}
+\def\CW{44}
+\def\CH{27}
 
-% ---- A ---------------------------------------------------------------------
-\node[draw=guid, line width=0.7pt, rounded corners=1.5mm,
-      minimum width=\CW mm, minimum height=\CH mm] (a) at (0,0) {};
-\node[font=\small\bfseries, guid, anchor=north west] at ($(a.north west)+(3mm,-3mm)$)
-     {A · 신호를 만들고 본다};
-\node[anchor=north west, font=\scriptsize, align=left] at ($(a.north west)+(3mm,-9mm)$)
-     {\texttt{Constant} — 고정된 값\\
-      \texttt{Step} — 어느 시각에 뛰는 값\\
-      \texttt{Sine Wave} — 사인파\\
-      \texttt{Digital Clock} — 지금 시각\\
-      \texttt{Scope} / \texttt{Display} — 눈으로 확인};
+% #1 이름  #2 x  #3 y  #4 색  #5 제목  #6 목록
+\newcommand{\grp}[6]{%
+  \node[draw=#4, line width=0.7pt, rounded corners=1.5mm,
+        minimum width=\CW mm, minimum height=\CH mm] (#1) at (#2,#3) {};
+  \node[font=\small\bfseries, #4, anchor=north west] at ($(#1.north west)+(2.5mm,-2.5mm)$) {#5};
+  \node[anchor=north west, font=\scriptsize, align=left] at ($(#1.north west)+(2.5mm,-8mm)$) {#6};
+}
 
-% ---- B ---------------------------------------------------------------------
-\node[draw=ctrl, line width=0.7pt, rounded corners=1.5mm,
-      minimum width=\CW mm, minimum height=\CH mm] (b) at (70,0) {};
-\node[font=\small\bfseries, ctrl, anchor=north west] at ($(b.north west)+(3mm,-3mm)$)
-     {B · 계산한다};
-\node[anchor=north west, font=\scriptsize, align=left] at ($(b.north west)+(3mm,-9mm)$)
-     {\texttt{Gain} — 곱하기\\
-      \texttt{Sum} — 더하기 / 빼기\\
-      \texttt{Product} — 곱하기 / 나누기\\
-      \texttt{Saturation} — 위아래로 자르기\\
-      \texttt{MATLAB Function} — 코드로};
+\node[font=\small\bfseries, anchor=west] at (-24,20) {1일차 — Simulink 문법 (A\,--\,F)};
 
-% ---- C ---------------------------------------------------------------------
-\node[draw=nav, line width=0.7pt, rounded corners=1.5mm,
-      minimum width=\CW mm, minimum height=\CH mm] (c) at (0,-54) {};
-\node[font=\small\bfseries, nav, anchor=north west] at ($(c.north west)+(3mm,-3mm)$)
-     {C · 선을 정리한다};
-\node[anchor=north west, font=\scriptsize, align=left] at ($(c.north west)+(3mm,-9mm)$)
-     {\texttt{Subsystem} — 여러 블록을 한 칸에\\
-      \texttt{In1} / \texttt{Out1} — 그 칸의 입출력\\
-      \texttt{Goto} / \texttt{From} — 선 없이 잇기\\
-      \texttt{Bus Creator} — 여러 개를 한 줄로\\
-      \texttt{Bus Selector} / \texttt{Assignment}};
+\grp{a}{0}{0}{guid}{신호 만들고 보기 · A}
+  {\texttt{Constant} · \texttt{Step}\\ \texttt{Sine Wave}\\ \texttt{Digital Clock}\\ \texttt{Scope} · \texttt{Display}}
+\grp{b}{48}{0}{ctrl}{계산 · A B E}
+  {\texttt{Gain} · \texttt{Sum}\\ \texttt{Saturation}\\ \texttt{MATLAB Function}\\ \texttt{PID Controller}}
+\grp{c}{96}{0}{nav}{선 정리 · C D}
+  {\texttt{Subsystem} · \texttt{In1}/\texttt{Out1}\\ \texttt{Goto} / \texttt{From}\\ \texttt{Bus Creator}\\ \texttt{Bus Selector} / \texttt{Assignment}}
+\grp{d}{144}{0}{soft}{기록 · F}
+  {\texttt{To Workspace}\\ 신호 로깅 (선 우클릭)\\ Data Inspector\\ 변수 이름으로 파라미터}
 
-% ---- D ---------------------------------------------------------------------
-\node[draw=plant, line width=0.7pt, rounded corners=1.5mm,
-      minimum width=\CW mm, minimum height=\CH mm] (d) at (70,-54) {};
-\node[font=\small\bfseries, plant, anchor=north west] at ($(d.north west)+(3mm,-3mm)$)
-     {D · 시간을 기억한다};
-\node[anchor=north west, font=\scriptsize, align=left] at ($(d.north west)+(3mm,-9mm)$)
-     {\texttt{Unit Delay} — 한 스텝 전 값\\
-      \texttt{Discrete-Time Integrator}\\
-      \texttt{Discrete Transfer Fcn}\\[3pt]
-      이 셋이 있어야 \textbf{제어기}가 된다};
+\node[font=\small\bfseries, anchor=west] at (-24,-19) {2일차 — 7\,--\,9주차 모델을 읽는 어휘 (G\,--\,M)};
 
-\node[note, anchor=north, text width=140mm, align=center] at (35,-82)
-     {Simulink 블록은 수백 개다. 그중 이 과목에서 실제로 쓰는 것만 골랐다.
-      Stateflow 차트와 ROS 2 블록은 이번 주차에 다루지 않는다};
+\grp{g}{0}{-38}{nav}{벡터 · G}
+  {\texttt{Mux} · \texttt{Demux}\\ \texttt{Selector}\\ 벡터 한 줄에\\ 연산이 통째로}
+\grp{h}{48}{-38}{plant}{이산 · H}
+  {\texttt{Unit Delay}\\ 샘플타임 색\\ \texttt{Rate Transition}\\ 대수 루프}
+\grp{i}{96}{-38}{plant}{연속 · I}
+  {\texttt{Integrator}\\ \texttt{Transfer Fcn}\\ 솔버와 스텝\\ (운동방정식 자리)}
+\grp{j}{144}{-38}{ctrl}{판단 · J}
+  {\texttt{Switch}\\ \texttt{Multiport Switch}\\ \texttt{Stop Simulation}}
+
+\grp{k}{24}{-70}{guid}{조건부 실행 · K}
+  {\texttt{Enabled Subsystem}\\ \texttt{Triggered Subsystem}\\ 멈춘 동안 유지 / 초기화}
+\grp{l}{72}{-70}{soft}{재사용 · L}
+  {Mask (대화상자 만들기)\\ 라이브러리 · 링크\\ 코드로 모델 만들기}
+\grp{m}{120}{-70}{warn}{상태기계 · M}
+  {Stateflow Chart\\ 상태 · 전이 · 조건\\ 9주차 미션의 첫걸음}
+
+\node[note, anchor=north, text width=170mm, align=center] at (72,-86)
+     {Simulink 블록은 수백 개다. 본 과목의 모델이 실제로 쓰는 것만 골랐다.
+      ROS 2 블록(Subscribe · Publish)은 이 보충 자료에서 다루지 않고 6주차 본편에서 이 위에 얹는다};
 
 \end{tikzpicture}
 \end{document}

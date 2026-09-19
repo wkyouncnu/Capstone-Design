@@ -32,6 +32,7 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 - **이번 주차 학습 내용**: ① 시뮬레이터 설치 ② **배를 물에 띄우고 직접 조종** ③ 좌표계 정리
 
 > [!important] 시작 전 확인
+> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-7)
 > - 2주차 ROS 2 설치가 끝나 있어야 함
 > - `ros2 run demo_nodes_cpp talker` 가 되는지 먼저 확인할 것
 > - 저장공간 여유 20 GB 이상 (이번 주차 설치분 기준. 학기 전체 권장 여유는 강의계획서 기준 40 GB): `df -h` 로 확인
@@ -2254,7 +2255,7 @@ ros2 topic list | grep ground_truth
 | 파일 | 하는 일 |
 |---|---|
 | `W03_setup.m` | 기준점 · 시나리오 · 샘플링 · `teleop_thrust` |
-| `build_w03_models.m` | 모델 네 개를 다시 만듦 |
+| `build_w03_models.m` | 모델 다섯 개를 다시 만듦 |
 | `W03_0_offline.slx` | **운동모델** + 버튼 조종 (VRX 불필요). 4단계와 같은 버튼 |
 | `W03_offline_run.m` | 0단계 스크립트 실행 — `W03_setup` 의 추력으로 30 초, 3단계와 같은 그림 · 수치 |
 | `W03_1_frame_check.slx` | 변환식 검산 (VRX 불필요) |

@@ -1366,24 +1366,35 @@ float32 delta
 float32 remaining
 ```
 
-> [!warning] 3단계 teleport 로 거북이가 이미 1.57 rad 를 보고 있으면 목표를 받자마자 끝남
-> 이때 `delta` 는 0 에 가까움. 회전을 보려면 먼저 `turtle_teleop_key` 의 방향키로 거북이를 돌려 둠
+> [!note] 3단계 teleport 로 거북이는 지금 1.57 rad (위쪽)를 보고 있음
+> 그래서 목표를 **반대쪽 −1.57 rad** 로 줌. 목표가 지금 각과 같으면 받자마자 끝나 `delta` 가 0 에 가까움
 
 ```bash
-ros2 action send_goal /turtle1/rotate_absolute turtlesim/action/RotateAbsolute "{theta: 1.57}" --feedback
+ros2 action send_goal /turtle1/rotate_absolute turtlesim/action/RotateAbsolute "{theta: -1.57}" --feedback
 ```
 
-- 정상 출력 (기준 환경 실측, 뒷부분) — 시작 선수각이 약 −1.17 rad 이던 상태에서 받은 것
+- 정상 출력 (2026-09-19 기준 환경 실측, 1.57 rad 에서 시작. 가운데 Feedback 은 줄임)
 
 ```
-Feedback:
-    remaining: 0.030385255813598633
+Waiting for an action server to become available...
+Sending goal:
+     theta: -1.57
+
+Goal accepted with ID: 62eaffdf9f504a28a2c4998ab187aeda
 
 Feedback:
-    remaining: 0.014385342597961426
+    remaining: -3.140000104904175
+
+Feedback:
+    remaining: -3.124000072479248
+
+...
+
+Feedback:
+    remaining: -0.004000067710876465
 
 Result:
-    delta: -2.7360000610351562
+    delta: 3.135999917984009
 
 Goal finished with status: SUCCEEDED
 ```
@@ -1391,7 +1402,7 @@ Goal finished with status: SUCCEEDED
 | 나오는 것 | 뜻 |
 |---|---|
 | `Feedback: remaining` | **진행 중** 보고. 남은 각도가 줄어듦 |
-| `Result: delta` | 결과. 시작 각 − 끝 각 (rad). 부호는 회전 방향과 반대 — 위 출력은 반시계로 약 2.74 rad 돌았다는 뜻 |
+| `Result: delta` | 결과. 시작 각 − 끝 각 (rad) $= 1.57 - (-1.566) = 3.136$. 양수 = 각이 줄어든 쪽(시계방향)으로 약 180° 돌았다는 뜻 |
 | `Goal finished with status: SUCCEEDED` | 성공 종료 |
 
 > [!important] 액션을 쓰는 이유가 여기 있음
@@ -1993,6 +2004,43 @@ code .
 > §2-9 의 불일치를 재현하려면 `ReliabilityPolicy.BEST_EFFORT` 를
 > **`ReliabilityPolicy.RELIABLE` 로 직접 바꿔** 보면 됨. 고치는 방향이 반대일 뿐 실험은 같음
 
+### 강의자료 저장소 — 한 번 받고, 매주 `git pull`
+
+- 주차 문서 · Simulink 모델 · MATLAB 스크립트는 강의자료 저장소 하나에 모여 있고 **수업 중에도 계속 갱신됨**
+  - <https://github.com/wkyouncnu/Capstone-Design> · 공개 · 로그인 불필요
+- 받는 곳은 `usv_basics` 와 같음 — **VS Code 의 WSL 창 터미널** (`` Ctrl + ` ``)
+
+**처음 한 번 — clone**
+
+```bash
+git config --global core.quotepath false      # 한글 파일 이름이 \355\... 로 깨져 보이지 않게
+cd ~
+git clone https://github.com/wkyouncnu/Capstone-Design.git
+```
+
+- 약 320 MB (2026-09-19 기준). 처음 한 번만 걸림
+- 주차 문서는 `~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/`
+
+**매주 수업 전 — pull**
+
+```bash
+cd ~/Capstone-Design
+git pull
+```
+
+| 출력 | 뜻 |
+|---|---|
+| `Updating b690ad2..ce9c217` · `Fast-forward` · 바뀐 파일 목록 | 새 판을 받았음 — 정상 |
+| `Already up to date.` | 이미 최신 — 정상 |
+| `error: Your local changes to the following files would be overwritten by merge:` | 받은 파일을 고쳐 둔 상태 → `git stash` → `git pull` → `git stash pop` |
+
+- **다시 `git clone` 하지 않음.** 같은 자리에 또 받으면 `already exists` 로 멈추고, 지우고 받으면 고친 것이 사라짐
+- MATLAB 은 이 폴더를 `\\wsl.localhost\Ubuntu-22.04\home\<사용자명>\Capstone-Design\...` 경로로 그대로 엶
+- 전체 절차 · 실측 출력 · 충돌 처리 → [[강의자료는-한-번-받고-git-pull-로-갱신한다]]
+
+> [!tip] `usv_basics` 도 같은 방법으로 갱신함
+> `cd ~/capstone_ws/src/usv_basics && git pull` 뒤 `cd ~/capstone_ws && colcon build --symlink-install` (3주차 2-6)
+
 ### 워크스페이스 생성
 
 ```bash
@@ -2064,13 +2112,13 @@ colcon build --symlink-install
 source install/setup.bash
 ```
 
-- 정상 출력 (기준 환경 실측, 패키지가 비어 있을 때)
+- 정상 출력 (2026-09-19 기준 환경 실측, 패키지가 비어 있을 때). 시간은 PC 마다 다르며 1 초 안팎이면 정상
 
 ```
 Starting >>> usv_basics
-Finished <<< usv_basics [0.77s]
+Finished <<< usv_basics [0.60s]
 
-Summary: 1 package finished [1.04s]
+Summary: 1 package finished [0.90s]
 ```
 
 - 빌드 후 `~/capstone_ws` 에 **`build/` · `install/` · `log/`** 세 폴더가 새로 생김
@@ -2325,9 +2373,9 @@ source install/setup.bash
 
 ```
 Starting >>> usv_basics
-Finished <<< usv_basics [0.77s]
+Finished <<< usv_basics [0.56s]
 
-Summary: 1 package finished [1.04s]
+Summary: 1 package finished [0.71s]
 ```
 
 - 등록이 제대로 됐는지 확인
@@ -2893,9 +2941,9 @@ source install/setup.bash
 
 ```
 Starting >>> usv_basics
-Finished <<< usv_basics [0.74s]
+Finished <<< usv_basics [0.56s]
 
-Summary: 1 package finished [1.06s]
+Summary: 1 package finished [0.70s]
 ```
 
 ```bash
@@ -3523,7 +3571,7 @@ $$
 | `No executable found` | `setup.py` 의 `console_scripts` 미등록 또는 실행파일 이름 오타 | `ros2 pkg executables usv_basics` 로 확인 |
 | 코드를 고쳤는데 반영 안 됨 | `--symlink-install` 없이 빌드 | 옵션 붙여 재빌드 |
 | `colcon build` 에서 `setup.py` 오류 | `entry_points` 오타 | `패키지명.파일명:main` 형식 확인 |
-| `ros2 node list` 실행 시 `WARNING: Be aware that there are nodes in the graph that share an exact name` | **같은 노드를 두 번 실행** | 하나를 `Ctrl + C` 로 끔. `ros2 topic hz` 값이 배로 뛰는 것이 신호 |
+| `ros2 node list` 실행 시 `WARNING: Be aware that are nodes in the graph that share an exact name, this can have unintended side effects.` (Humble 원문 그대로 — `there` 가 빠져 있음, 2026-09-19 실측) | **같은 노드를 두 번 실행** | 하나를 `Ctrl + C` 로 끔. `ros2 topic hz` 값이 배로 뛰는 것이 신호 |
 | `sudo rosdep init` 이 실패 | 이미 초기화됨 | 무시하고 `rosdep update` 진행 |
 
 ### 토픽이 안 보이거나 데이터가 안 온다

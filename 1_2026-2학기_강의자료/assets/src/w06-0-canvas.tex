@@ -4,6 +4,9 @@
 %
 % 요점: 창은 복잡해 보이지만 실제로 쓰는 곳은 네 군데뿐이다.
 %       실제 화면은 6주차 문서의 캡처를 볼 것.
+%
+% 고친 것 (2026-09-19) — 상태 표시줄 솔버를 ode4 로 적었었다. A 절에서 만든 첫 모델(SB1)은
+% 1-4 절 규칙대로 FixedStepDiscrete 이므로 그 이름으로 바꿨다.
 
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
@@ -44,7 +47,7 @@
 % ---- ④ 상태 표시줄 -------------------------------------------------------
 \draw[plant, line width=0.8pt, fill=plant!6] (40,0) rectangle (150,12);
 \node[font=\small\bfseries, plant, anchor=west] at (42.5,6) {\textcircled{4} 상태 표시줄};
-\node[font=\scriptsize, anchor=west] at (86,6) {확대율 \quad 솔버 \texttt{ode4}};
+\node[font=\scriptsize, anchor=west] at (80,6) {확대율 \texttt{100\%} \quad 솔버 \texttt{FixedStepDiscrete}};
 
 % ---- 설명 -----------------------------------------------------------------
 \node[note, anchor=north west, text width=150mm] at (0,-6)

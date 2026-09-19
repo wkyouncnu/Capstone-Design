@@ -41,6 +41,9 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 전반부는 **Gazebo 운동모델 위에서 Simulink 제어기로 배를 움직이는 것**,
 후반부는 **VSCode + Claude 에이전트로 LiDAR·영상 인지 노드를 직접 만드는 것**이다.
 
+- 과목 전체 원칙 — 예제마다 **오프라인 운동모델로 먼저**, VRX(Gazebo)는 그다음 (3주차 1-8 절 WAM-V 3자유도 운동모델을 3\~10주차가 함께 씀)
+- 기호 — 북·동 위치 $x$, $y$ (코드 `x_n`, `y_n`), $N$ 은 요 모멘트 전용
+
 ---
 
 ## 📅 주차별 강의자료 — `10-주차별-강의자료/`
@@ -49,11 +52,11 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 |---|---|---|---|
 | 1 | [[W01_개발환경_구축과_USV_자율운항_개관]] | 3장 · PDF 19쪽 | 인지·판단·제어 · KABOAT/VRX 임무 · WSL2 · 리눅스 기본기 |
 | 2 | [[W02_ROS2_기초_노드와_토픽]] | 46장 | VS Code+WSL · 노드·토픽·**서비스·액션·파라미터** · **turtlesim** · rqt와 RViz2 · QoS · **중계 노드와 Simulink 목표 자세 제어** · **모델 3개 배포** |
-| 3 | [[W03_Gazebo_VRX_구축과_좌표계]] | 10장 | Gazebo·VRX 설치 · 6자유도 · ENU/NED · TF2 · **키보드 조종(차동 추진)** |
-| 4 | [[W04_VRX_심화_모델구조와_토픽조사]] | 5장 | WAM-V URDF·Xacro · 센서 배치 · 토픽 전수조사 · Mapviz · **과제 월드와 채점** · **ros2 bag** |
-| 5 | [[W05_VSCode와_Claude_에이전트_첫_제어노드]] | 3장 · PDF 21쪽 | VS Code 설치 · Claude Code 연동 · 첫 제어 노드 · **MATLAB MCP** 연동 |
+| 3 | [[W03_Gazebo_VRX_구축과_좌표계]] | 10장 | Gazebo·VRX 설치 · 6자유도 · ENU/NED · TF2 · **키보드 조종(차동 추진)** · **WAM-V 3자유도 운동모델** · **모델 5개 배포 (오프라인 버튼 조종 `W03_0_offline` 먼저)** |
+| 4 | [[W04_VRX_심화_모델구조와_토픽조사]] | 5장 | WAM-V URDF·Xacro · 센서 배치 · 토픽 전수조사 · Mapviz · **과제 월드와 채점** · **ros2 bag** · **센서 모델** · **모델 3개 배포 (오프라인 `W04_0_offline` 먼저)** |
+| 5 | [[W05_VSCode와_Claude_에이전트_첫_제어노드]] | 3장 · PDF 21쪽 | VS Code 설치 · Claude Code 연동 · 첫 제어 노드 (**`wamv_sim.py` 먼저, VRX 다음**) · **MATLAB MCP** 연동 |
 | 6 전 | [[W06_0_Simulink_기초]] | 12장 · PDF 42쪽 | **Simulink 속성 입문 (3시간 x 2회)** · 1일차 블록·솔버·MATLAB Function·Subsystem·버스·PID·로깅 · 2일차 Mux·Unit Delay·Integrator·Switch·Enabled·Mask · **모델 26개 배포 (빈칸본 13 + 완성본 13)** |
-| 6 | [[W06_Simulink_ROS2_연동과_첫_제어기]] | 10장 · PDF 41쪽 | **PID 입문 — 직접 조립·pseudo-derivative·안티와인드업** · Simulink↔ROS 2 연동 · 직진·선회·헤딩·속도 제어 · **오프라인 WAM-V** · **모델 8개 배포** |
+| 6 | [[W06_Simulink_ROS2_연동과_첫_제어기]] | 10장 · PDF 41쪽 | **PID 입문 — 직접 조립·pseudo-derivative·안티와인드업** · Simulink↔ROS 2 연동 · 직진·선회·헤딩·속도 제어 · **오프라인 쌍둥이 먼저 → VRX** · **모델 10개 배포 (VRX 4 + 오프라인 3 + PID 입문 3)** |
 | 7 | [[W07_웨이포인트_유도_atan2와_LOS]] | 3장 · PDF 24쪽 | 웨이포인트 유도 atan2 vs LOS · 조류 실험 · **오프라인+VRX 모델 2개** |
 | 8 | [[W08_한점을_중심으로_도는_로이터링]] | PDF 20쪽 | 벡터필드 로이터링 · 방향·속도·반경 변경 · **오프라인+VRX 모델 2개** |
 | 9 | [[W09_Stateflow_미션_웨이포인트와_로이터링]] | PDF 18쪽 | **Stateflow 미션 FSM** · WP → 로이터 → WP · **오프라인+VRX 모델 2개** |

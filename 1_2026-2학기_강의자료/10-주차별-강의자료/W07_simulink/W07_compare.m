@@ -16,8 +16,8 @@ load_system('W07_0_offline');
 CASES = { ...
     'atan2 / 조류 없음',   1,   0.0,   90; ...
     'LOS   / 조류 없음',   2,   0.0,   90; ...
-    'atan2 / 조류 0.5',    1,   0.5,   90; ...
-    'LOS   / 조류 0.5',    2,   0.5,   90};
+    'atan2 / 조류 0.4',    1,   0.4,   90; ...
+    'LOS   / 조류 0.4',    2,   0.4,   90};
 
 nC = size(CASES,1);
 res = struct([]);
@@ -76,7 +76,7 @@ for p = 1:2
         plot(traj{i}(:,1), traj{i}(:,2), sty{i}, 'Color', col{i}, 'LineWidth',1.6);
     end
     xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
-    if p == 1, title('조류 없음'); else, title('조류 0.5 m/s @ 90\circ'); end
+    if p == 1, title('조류 없음'); else, title('조류 0.4 m/s @ 90\circ'); end
     legend([{'계획 경로','웨이포인트'}, res(idx).name], 'Location','best','FontSize',8);
 end
 

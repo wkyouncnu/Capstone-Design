@@ -32,6 +32,7 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 - **이번 주차 학습 내용**: ① VS Code + Claude Code 환경 구축 ② 에이전트로 **첫 제어 노드** 만들기 ③ **직접 검증해서 고치기** ④ **MATLAB MCP** 로 Simulink 조작
 
 > [!important] 시작 전 확인
+> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-7)
 > - 4주차 **토픽 전수조사표**를 가져올 것. 이번 주차 에이전트에게 줄 자료임
 > - VRX가 실행되는 상태여야 함
 > - **Claude 계정이 필요함** — 아래 준비물 표를 반드시 먼저 볼 것

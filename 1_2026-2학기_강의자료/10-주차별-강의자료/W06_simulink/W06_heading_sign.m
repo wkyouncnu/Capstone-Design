@@ -71,15 +71,28 @@ fprintf('\n  D 항이 하는 일은 **감쇠를 더하는 것**이다. 부호를
 fprintf('  Kd 에 비례해 오버슈트가 커지는 것이 그 증거다. 남는 감쇠가 음수가 되어도\n');
 fprintf('  2차 항력(Nrr)이 버텨 발산까지 가지는 않지만, 응답은 쓸 수 없게 된다.\n\n');
 
-figure('Name','헤딩 D 항 비교','Color','w');
+% 경우마다 색을 고정한다 — 위아래 두 패널에서 같은 경우가 같은 색이어야 읽힌다
+col = [0.00 0.45 0.74; 0.85 0.33 0.10; 0.47 0.67 0.19];
+h = figure('Name','헤딩 D 항 비교','Color','w','Position',[80 80 900 620]);
 subplot(2,1,1); hold on; grid on;
-plot(t, psi_ref*180/pi, 'k--', 'LineWidth',1.2);
-for c = 1:3, plot(t, PSI(:,c)*180/pi, 'LineWidth',1.2); end
-ylabel('\psi [deg]'); ylim([-90 180]);
-legend(['목표', name], 'Location','southeast');
+plot(t, psi_ref*180/pi, 'k--', 'LineWidth',1.2, 'DisplayName','목표');
+sty = {'-','--','-'};  lw = [3.0 1.6 1.4];     % (A) 와 (B) 는 겹친다 — (A) 를 굵게, (B) 를 점선으로
+for c = 1:3, plot(t, PSI(:,c)*180/pi, sty{c}, 'Color',col(c,:), 'LineWidth',lw(c), 'DisplayName',name{c}); end
+ylabel('\psi [deg]'); ylim([-10 90]); xlim([0 15]);
+legend('Location','southeast');
+title('계단 45° — (A) 와 (B) 는 겹치고, (C) 는 감쇠가 깎여 크게 넘친다', 'FontWeight','normal');
 subplot(2,1,2); hold on; grid on;
-for c = 1:3, plot(t, NCMD(:,c), 'LineWidth',1.2); end
-xlabel('시간 [s]'); ylabel('N [N m]'); legend(name, 'Location','southeast');
+for c = 1:3
+    plot(t, NRAW(:,c), ':', 'Color',col(c,:), 'LineWidth',1.1, 'HandleVisibility','off');
+    plot(t, NCMD(:,c), sty{c}, 'Color',col(c,:), 'LineWidth',lw(c), 'DisplayName',name{c});
+end
+yline( Nmax, 'k--', 'HandleVisibility','off');  yline(-Nmax, 'k--', 'HandleVisibility','off');
+xlim([0 15]); ylim([-1000 7500]);
+xlabel('시간 [s]'); ylabel('N [N m]');
+legend('Location','northeast');
+title('실선 = 포화 뒤 지령, 점선 = 포화 전 (B 의 계단 순간 킥이 보인다)', 'FontWeight','normal');
+exportgraphics(h, fullfile(fileparts(mfilename('fullpath')), 'img', 'W06_heading_dterm.png'), 'Resolution', 110);
+fprintf('그림: img/W06_heading_dterm.png\n');
 
 % =========================================================================
 function [psi_hist, N_hist, Nraw_hist] = run_case(c, t, psi_ref, Kp, Kd, ...

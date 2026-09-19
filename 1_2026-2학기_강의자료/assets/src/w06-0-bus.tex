@@ -4,6 +4,9 @@
 %
 % 요점: 묶을 때 이름이 붙고, 풀 때 그 이름으로 꺼낸다.
 %       중첩된 버스는 꺼낼 때 전체 경로를 적어야 한다.
+%
+% 고친 것 (2026-09-19) — Bus Creator 를 주황 상자로, Inner/Outer 를 따로 보라 상자로 그렸었다.
+% Simulink 에서 Bus Creator 는 검은 세로 막대이고 Inner/Outer 는 그 막대(블록)의 이름이자 나가는 선의 이름이다.
 
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
@@ -21,18 +24,19 @@
 \node[note, left=1mm of s2] {$y$};
 \node[note, left=1mm of s3] {$z$};
 
-\node[tblk, minimum width=8mm, minimum height=26mm] (bc) at (26,11) {};
-\node[note, rotate=90] at (26,11) {Bus Creator};
+\node[draw=ink, fill=ink, minimum width=2.2mm, minimum height=26mm, inner sep=0pt] (bc) at (26,11) {};
+\node[note, anchor=north, align=center] at (26,-2.8) {\texttt{Inner}\\(Bus Creator)};
 
 \draw[sig] (s1.east) -- (s1.east -| bc.west);
 \draw[sig] (s2.east) -- (s2.east -| bc.west);
 \draw[sig] (s3.east) -- (s3.east -| bc.west);
 
-\node[blk, draw=nav, minimum width=18mm, minimum height=9mm] (inner) at (54,11) {\texttt{Inner}};
-\draw[sig, line width=1.1pt] (bc.east) -- (inner.west);
-\node[note, above] at (40,13) {세 개가 한 줄로};
+\coordinate (inner) at (58,11);
+\draw[wire, line width=1.1pt] (bc.east) -- (inner);
+\node[font=\scriptsize\ttfamily, above] at (44,11.3) {Inner};
+\node[note, below] at (44,10.2) {세 개가 한 줄로};
 
-\node[note, anchor=west, text width=44mm] at (-6,-8)
+\node[note, anchor=west, text width=44mm] at (-6,-17)
      {\textbf{선 이름이 곧 원소 이름이 된다.}
       이름 없는 선을 묶으면 \texttt{signal1} 같은 이름이 자동으로 붙어
       나중에 찾기 어렵다};
@@ -43,12 +47,14 @@
 \node[blk, minimum width=16mm, minimum height=7mm] (st) at (86,2) {12:34};
 \node[note, left=1mm of st] {\texttt{stamp}};
 
-\node[tblk, minimum width=8mm, minimum height=22mm] (bc2) at (110,11) {};
-\draw[sig, line width=1.1pt] (inner.east) -- ++(6mm,0) |- (104,18) -- (104,18 -| bc2.west);
+\node[draw=ink, fill=ink, minimum width=2.2mm, minimum height=22mm, inner sep=0pt] (bc2) at (110,11) {};
+\node[note, anchor=north, align=center] at (110,-1.2) {\texttt{Outer}\\(Bus Creator)};
+\draw[sig, line width=1.1pt] (inner) -- ++(4mm,0) |- (104,18) -- (104,18 -| bc2.west);
 \draw[sig] (st.east) -- (st.east -| bc2.west);
 
-\node[blk, draw=accent, minimum width=18mm, minimum height=9mm] (outer) at (136,11) {\texttt{Outer}};
-\draw[sig, line width=1.3pt] (bc2.east) -- (outer.west);
+\coordinate (outer) at (140,11);
+\draw[sig, line width=1.3pt] (bc2.east) -- (outer);
+\node[font=\scriptsize\ttfamily, above] at (126,11.3) {Outer};
 
 \node[note, anchor=north west, align=left] at (78,-6)
      {\texttt{Outer} 의 구조\\
@@ -60,9 +66,10 @@
 % ===================== 풀기 =====================
 \node[font=\small\bfseries, anchor=west] at (-6,-34) {③ 꺼낸다 — Bus Selector};
 
-\node[blk, draw=accent, minimum width=18mm, minimum height=9mm] (o2) at (12,-46) {\texttt{Outer}};
-\node[tblk, minimum width=8mm, minimum height=18mm] (bs) at (46,-46) {};
-\node[note, rotate=90] at (46,-46) {Bus Selector};
+\coordinate (o2) at (8,-46);
+\node[font=\scriptsize\ttfamily, above] at (22,-45.7) {Outer};
+\node[draw=ink, fill=ink, minimum width=2.2mm, minimum height=18mm, inner sep=0pt] (bs) at (46,-46) {};
+\node[note, anchor=north] at (46,-55.5) {Bus Selector};
 \node[blk, minimum width=13mm, minimum height=7mm] (out) at (76,-46) {2};
 
 \draw[sig, line width=1.3pt] (o2) -- (bs.west);

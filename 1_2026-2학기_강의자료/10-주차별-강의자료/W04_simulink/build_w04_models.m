@@ -38,6 +38,15 @@ function build_w04_models()
 
             tidy_model(mName);
 
+            %  입출력이 많은 서브시스템은 미리보기의 안쪽 포트 이름이 겉 포트 이름과
+            %  겹쳐 읽히지 않는다 (W04_2 의 rel_new/be_new). 그런 상자만 미리보기를 끈다
+            load_system(mName);
+            for nm = {'QosSubscribers','RxCount','SensorSubscriber','SensorModel','RateMeter'}
+                b = [mName '/' nm{1}];
+                if getSimulinkBlockHandle(b) > 0, set_param(b, 'ContentPreviewEnabled','off'); end
+            end
+            save_system(mName);  close_system(mName, 0);
+
             paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
 
             check_colour(mName);

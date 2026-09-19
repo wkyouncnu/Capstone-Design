@@ -10,6 +10,8 @@ function T = W06_pid_compare(kind)
 %   W06_pid_compare('boat')   배에서 안티와인드업 유무      (W06_P3_boat_speed)
 %
 %   반환값 T 는 측정값 표다. 과제에 그대로 옮겨 적으면 된다.
+%   hand · D · AW · boat 는 강의노트 그림을 img/ 에 다시 저장한다
+%   (W06_P2_hand_vs_lib, W06_P2_derivative, W06_P2_antiwindup, W06_P3_boat).
 %
 %   base workspace 의 변수는 건드리지 않는다.
 %   (Simulink.SimulationInput 으로 그 실행에만 값을 밀어 넣는다)
@@ -74,6 +76,7 @@ plot(ax1, t, yh, '--', 'LineWidth',1.6, 'DisplayName','직접 만든 PID');
 plot(ax2, t, ul, 'LineWidth',2.4, 'DisplayName','라이브러리 PID 블록');
 plot(ax2, t, uh, '--', 'LineWidth',1.6, 'DisplayName','직접 만든 PID');
 finishPanel(ax1, ax2, '두 곡선이 겹치면 블록 안의 것과 같다', '출력 y', '제어입력 τ');
+saveImg(ax1, 'W06_P2_hand_vs_lib.png');
 
 T = table(max(abs(yl-yh)), max(abs(ul-uh)), ...
     'VariableNames', {'y_max_abs_diff','tau_max_abs_diff'});
@@ -85,7 +88,8 @@ end
 % =====================================================================
 function T = sweepFilter()
 mdl = 'W06_P2_pid_byhand'; load_system(mdl);
-Nlist = [5 20 200];
+Nlist = [200 20 5];      % 가장 요란한 200 을 먼저 그려 뒤에 깐다 — 5 · 20 이 가려지지 않게
+col   = [0.75 0.75 0.75; 0.85 0.33 0.10; 0.00 0.45 0.74];
 
 [ax1, ax2] = twoPanel('W06 PID - 미분 필터');
 rows = cell(numel(Nlist),1);
@@ -97,8 +101,8 @@ for k = 1:numel(Nlist)
     y = squeeze(out.log_y_hand.Data);  u = squeeze(out.log_tau_hand.Data);
 
     tag = sprintf('Nf = %g', Nlist(k));
-    plot(ax1, t, y, 'LineWidth',1.4, 'DisplayName',tag);
-    plot(ax2, t, u, 'LineWidth',1.0, 'DisplayName',tag);
+    plot(ax1, t, y, 'Color',col(k,:), 'LineWidth',1.4, 'DisplayName',tag);
+    plot(ax2, t, u, 'Color',col(k,:), 'LineWidth',1.0, 'DisplayName',tag);
 
     mk = metrics(t, y, evalin('base','r_step'), tag);
     mk = addvars(mk, max(abs(diff(u))), 'NewVariableNames', {'dtau_max'});
@@ -107,8 +111,9 @@ for k = 1:numel(Nlist)
 end
 finishPanel(ax1, ax2, '미분 필터 계수 Nf — 클수록 순수 미분에 가깝다', ...
             '출력 y', '제어입력 τ');
+saveImg(ax1, 'W06_P2_derivative.png');
 
-T = vertcat(rows{:});  disp(T);
+T = vertcat(rows{end:-1:1});  disp(T);     % 표는 Nf 작은 것부터
 end
 
 % =====================================================================
@@ -136,6 +141,7 @@ end
 plot(ax1, [0 20], [1 1], 'k--', 'DisplayName','목표값');
 plot(ax2, [0 20], evalin('base','u_max')*[1 1], 'k--', 'DisplayName','제어입력 한계');
 finishPanel(ax1, ax2, '올라가는 동안 제어입력이 한계에 붙는 경우', '출력 y', '제어입력 τ');
+saveImg(ax1, 'W06_P2_antiwindup.png');
 
 T = vertcat(rows{:});  disp(T);
 end
@@ -147,6 +153,7 @@ function T = sweepBoat()
 mdl = 'W06_P3_boat_speed'; load_system(mdl);
 Kbs  = [0 2];
 name = {'Kb_u = 0  (안티와인드업 없음)','Kb_u = 2  (되감기 켬)'};
+col  = [0.85 0.33 0.10; 0.00 0.45 0.74];    % 두 패널에서 같은 조건은 같은 색
 
 [ax1, ax2] = twoPanel('W06 PID - 배 속도 제어');
 rows = cell(numel(Kbs),1);
@@ -159,8 +166,8 @@ for k = 1:numel(Kbs)
     u = squeeze(out.log_u.Data);
     X = squeeze(out.log_X.Data);
 
-    plot(ax1, t, u, 'LineWidth',1.6, 'DisplayName',name{k});
-    plot(ax2, t, X, 'LineWidth',1.6, 'DisplayName',name{k});
+    plot(ax1, t, u, 'Color',col(k,:), 'LineWidth',1.6, 'DisplayName',name{k});
+    plot(ax2, t, X, 'Color',col(k,:), 'LineWidth',1.6, 'DisplayName',name{k});
 
     seg = t >= 30;                       % 목표가 1.0 m/s 로 내려온 뒤
     rows{k} = table(string(name{k}), max(u(seg)), settle(t(seg), u(seg), 1.0, 0.02), ...
@@ -172,6 +179,7 @@ plot(ax1, [0 60], [1.0 1.0], 'k--', 'DisplayName','도달 가능 목표 1.0');
 plot(ax2, [0 60], evalin('base','X_max')*[1 1], 'k--', 'DisplayName','추력 한계');
 finishPanel(ax1, ax2, '도달할 수 없는 목표 뒤에 도달할 수 있는 목표', ...
             '선속도 u [m/s]', '전체 추력 X [N]');
+saveImg(ax1, 'W06_P3_boat.png');
 
 T = vertcat(rows{:});  disp(T);
 end
@@ -183,6 +191,13 @@ function [ax1, ax2] = twoPanel(name)
 figure('Name',name,'Color','w');
 ax1 = subplot(2,1,1); hold(ax1,'on'); grid(ax1,'on');
 ax2 = subplot(2,1,2); hold(ax2,'on'); grid(ax2,'on');
+end
+
+function saveImg(ax, fname)
+% 강의노트 그림을 img/ 에 다시 저장한다. gcf 가 아니라 이 패널의 창을 저장한다
+f = ancestor(ax, 'figure');
+exportgraphics(f, fullfile(fileparts(mfilename('fullpath')), 'img', fname), 'Resolution', 110);
+fprintf('그림: img/%s\n', fname);
 end
 
 function finishPanel(ax1, ax2, ttl, y1, y2)
