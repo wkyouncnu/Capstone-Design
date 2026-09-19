@@ -1,14 +1,18 @@
-function n = check_lines(mdl, verbose)
-%CHECK_LINES  도면을 읽을 수 없게 만드는 세 가지를 찾아 보고한다.
+function [n, v] = check_lines(mdl, verbose)
+%CHECK_LINES  도면을 읽을 수 없게 만드는 여섯 가지를 찾아 보고한다.
 %
 %   n = check_lines('W06_P3_boat_speed')
 %   check_lines('W06_P3_boat_speed', true)      % 건건이 나열한다
+%   [n, v] = check_lines(m)      % v = [겹침 블록관통 꺾임3회+ 매달림 사선 블록겹침]
 %
-%   네 가지 / the four findings
+%   여섯 가지 / the six findings
 %     1) 겹친 선      — 같은 직선 위를 나누어 쓰는 두 선. 인쇄하면 한 선이다
 %     2) 블록 관통    — 자기와 무관한 블록의 사각형을 가로지르는 선
 %     3) 꺾임 3회 이상 — 눈이 선을 놓친다. 2회는 따로 세어 보여 준다
 %     4) 매달린 선    — 한쪽 끝이 포트에 붙지 않은 선. 이어져 **보이는데** 끊겨 있다
+%     5) 사선         — 가로도 세로도 아닌 구간. 포트 높이가 몇 px 어긋난 흔적이다
+%     6) 블록겹침     — 블록 사각형끼리, 블록 이름표(블록 아래 글자 줄)가 다른 블록에,
+%                      주석(Note)이 블록이나 이름표에 겹친 것. 한 서브시스템 안에서만 본다
 %
 %   왜 이 셋인가 / why these three
 %       읽는 사람은 선을 **눈으로 따라간다.** 겹친 선은 따라갈 수 없고, 블록을
@@ -20,9 +24,17 @@ function n = check_lines(mdl, verbose)
 %       that turns twice is indistinguishable from its neighbours. All three
 %       make the diagram claim a connection that does not exist.
 %
-%     5) 사선         — 가로도 세로도 아닌 구간. 포트 높이가 몇 px 어긋난 흔적이다
+%   합격선은 겹침 0 · 블록관통 0 · 꺾임3회+ 0 · 매달림 0 · 사선 0 · 블록겹침 0 이다.
+%   꺾임 2회와 "이름표 위를 지나는 선" 은 따로 세어 보여 주고 최소로 줄인다.
 %
-%   합격선은 겹침 0 · 블록관통 0 · 꺾임3회+ 0 · 매달림 0 · 사선 0 이다. 꺾임 2회는 최소로 줄인다.
+%   블록겹침을 왜 세는가 / why block clashes are counted
+%       선 검사는 블록이 **어디에 있는지**를 묻지 않는다. 종착 블록을 한 열에 쌓거나
+%       태그를 포트 아래에 매달면 이웃 블록과 포개지고, 포트 간격이 글자 높이보다
+%       좁으면 이름표가 아래 블록에 가려진다 (2026-09-19 PoseSubscriber 의 orgN 이
+%       orgE 에 가려짐). 선은 전부 깨끗한데 블록 이름을 읽을 수 없다.
+%       이름표 크기는 어림이다 — 글자 폭 (ASCII 6.5 px, 한글 12 px) 과 블록 폭 중 큰 쪽
+%       x 줄 수 x 14 px. ShowName 이 off 인 블록은 이름표가 없다.
+%
 %
 %   매달린 선을 왜 세는가 / why dangling lines are counted
 %       `add_line` 에 점만 주면 Simulink 가 끝점의 좌표로 포트를 찾는데, 몇 픽셀만
@@ -38,26 +50,32 @@ function n = check_lines(mdl, verbose)
 %     블록 관통  — 받는 블록을 통로의 **오른쪽**에 놓는다 (drop_tag 참조)
 %     꺾임      — 통로 x 를 **출발 포트의 x** 또는 **도착 포트의 x** 와 같게 한다.
 %                  그러면 길이 0 인 구간이 지워지고 꺾임이 한 번만 남는다
+%     블록겹침  — 배치로 푼다. 쌓는 도구가 옆 블록과 이름표 자리를 피하게 하고,
+%                  포트 간격이 좁아 이름표가 가려지면 받는 블록의 키를 키운다
 
 if nargin < 2, verbose = false; end
 
 opened = false;
 if ~bdIsLoaded(mdl), load_system(mdl); opened = true; end
 
+
 sys = [{mdl}; find_system(mdl, 'LookUnderMasks','all', 'BlockType','SubSystem')];
-n   = 0;  nc = 0;  nb = 0;  nk = 0;  n2 = 0;  nd = 0;  ns = 0;
+n   = 0;  nc = 0;  nb = 0;  nk = 0;  n2 = 0;  nd = 0;  ns = 0;  no = 0;  nl = 0;
 
 for s = 1:numel(sys)
     [a, b, c, d, e, f] = check_one(sys{s}, verbose);
     nc = nc + a;  nb = nb + b;  nk = nk + c;  n2 = n2 + d;  nd = nd + e;  ns = ns + f;
+    [a, b] = check_blocks(sys{s}, verbose);
+    no = no + a;  nl = nl + b;
 end
-n = nc + nb + nk + nd + ns;
+n = nc + nb + nk + nd + ns + no;
+v = [nc nb nk nd ns no];
 
 if opened, close_system(mdl, 0); end
 
 if verbose || n > 0
-    fprintf('  %-26s 겹침 %d · 블록관통 %d · 꺾임3회+ %d · 매달림 %d · 사선 %d   (꺾임2회 %d)\n', ...
-            mdl, nc, nb, nk, nd, ns, n2);
+    fprintf(['  %-26s 겹침 %d · 블록관통 %d · 꺾임3회+ %d · 매달림 %d · 사선 %d · 블록겹침 %d' ...
+             '   (꺾임2회 %d · 이름표 위 선 %d)\n'], mdl, nc, nb, nk, nd, ns, no, n2, nl);
 end
 end
 
@@ -252,4 +270,105 @@ catch
     b = '?';
 end
 s = strrep(sprintf('%s -> %s', a, b), newline, ' ');
+end
+
+% -------------------------------------------------------------------------
+function [no, nl] = check_blocks(sys, verbose)
+%CHECK_BLOCKS  (6) 블록겹침. 블록끼리 · 이름표 대 블록 · 주석 대 블록/이름표.
+%   nl 은 따로 세는 참고값 — 자기와 무관한 선이 이름표 위를 지나는 수.
+no = 0;  nl = 0;
+%  Stateflow 차트·MATLAB Function 의 안에는 보이지 않는 Simulink 블록이 있다
+try
+    if ~strcmp(get_param(sys,'Type'),'block_diagram') && ...
+       ~strcmp(get_param(sys,'SFBlockType'),'NONE'), return, end
+catch
+end
+b = find_system(sys, 'SearchDepth',1, 'Type','Block');
+b = b(~strcmp(b, sys));                 % 자기 서브시스템 경계는 뺀다
+k = numel(b);
+R = zeros(k,4);  T = nan(k,4);  H = zeros(k,1);
+for i = 1:k
+    R(i,:) = get_param(b{i}, 'Position');
+    H(i)   = get_param(b{i}, 'Handle');
+    T(i,:) = name_box(b{i}, R(i,:));
+end
+nm = @(x) strrep(get_param(x,'Name'), newline, ' ');
+say = @(what, x, y) fprintf('    [블록겹침] %-38s %s : %s  /  %s\n', ...
+                            strrep(sys,newline,' '), what, x, y);
+for i = 1:k
+    for j = i+1:k
+        if ov(R(i,:), R(j,:)) > 1
+            no = no + 1;
+            if verbose, say('블록끼리', nm(b{i}), nm(b{j})); end
+        end
+    end
+    if isnan(T(i,1)), continue, end
+    for j = 1:k
+        if j == i, continue, end
+        if ov(T(i,:), R(j,:)) > 1
+            no = no + 1;
+            if verbose, say('이름표가 가려짐', nm(b{i}), nm(b{j})); end
+        end
+    end
+end
+%  주석 (Note). 위치는 [왼 위 오른 아래]
+a = find_system(sys, 'FindAll','on', 'SearchDepth',1, 'Type','annotation');
+for q = 1:numel(a)
+    try, r = get_param(a(q), 'Position'); catch, continue, end
+    if numel(r) < 4, continue, end
+    for i = 1:k
+        if ov(r, R(i,:)) > 1 || (~isnan(T(i,1)) && ov(r, T(i,:)) > 1)
+            no = no + 1;
+            if verbose, say('주석', '(Note)', nm(b{i})); end
+        end
+    end
+end
+%  참고값 — 이름표 위를 지나는 남의 선
+L = find_system(sys, 'FindAll','on', 'SearchDepth',1, 'Type','line');
+for q = 1:numel(L)
+    p = get_param(L(q), 'Points');
+    own = own_blocks(L(q));
+    for i = 1:k
+        if isnan(T(i,1)) || any(own == H(i)), continue, end
+        for s = 1:size(p,1)-1
+            if seg_hits_box(p(s,:), p(s+1,:), T(i,:) + [-1 -1 1 1])
+                nl = nl + 1;
+                if verbose
+                    fprintf('    (이름표 위 선) %-34s %s  ->  %s 의 이름\n', ...
+                            strrep(sys,newline,' '), line_name(L(q)), nm(b{i}));
+                end
+                break
+            end
+        end
+    end
+end
+end
+
+function t = name_box(blk, r)
+%NAME_BOX  블록 이름이 차지하는 자리 (어림). 이름을 숨긴 블록은 NaN.
+t = nan(1,4);
+if strcmp(get_param(blk,'ShowName'), 'off'), return, end
+parts = strsplit(get_param(blk,'Name'), newline);
+w = 0;
+for k = 1:numel(parts)
+    c = double(parts{k});
+    w = max(w, sum(c < 128)*6.5 + sum(c >= 128)*12);
+end
+h   = 14*numel(parts);
+alt = strcmp(get_param(blk,'NamePlacement'), 'alternate');
+if any(strcmp(get_param(blk,'Orientation'), {'right','left'}))
+    ww = max(w, r(3)-r(1));  cx = (r(1)+r(3))/2;
+    if alt, y = [r(2)-2-h, r(2)-2]; else, y = [r(4)+2, r(4)+2+h]; end
+    t = [cx-ww/2 y(1) cx+ww/2 y(2)];
+else
+    cy = (r(2)+r(4))/2;
+    if alt, x = [r(1)-2-w, r(1)-2]; else, x = [r(3)+2, r(3)+2+w]; end
+    t = [x(1) cy-h/2 x(2) cy+h/2];
+end
+end
+
+function a = ov(p, q)
+%OV  두 사각형이 겹친 폭과 높이 중 작은 쪽 [px]. 테두리가 닿기만 하면 0.
+a = min(max(0, min(p(3),q(3)) - max(p(1),q(1))), ...
+        max(0, min(p(4),q(4)) - max(p(2),q(2))));
 end

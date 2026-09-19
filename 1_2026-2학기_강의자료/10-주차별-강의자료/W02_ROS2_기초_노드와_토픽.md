@@ -205,18 +205,6 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 
 ![노드와 토픽](../assets/w02-pubsub.svg)
 
-### 어느 명령이 그림의 어디를 보여 주는가
-
-| 명령 | 그림에서 보이는 것 |
-|---|---|
-| `ros2 node list` | 타원 — 살아 있는 노드 이름 |
-| `ros2 topic list` | 사각형 — 오가는 토픽 이름 |
-| `ros2 topic info <토픽>` | 그 토픽에 붙은 발행자·구독자 수와 QoS |
-| `ros2 topic echo <토픽>` | 흐르는 내용. **구독자를 하나 더 붙이는 것과 같음** |
-| `rqt_graph` | 그림 전체 (연결 관계) |
-
-- `echo` 가 구독자로 동작하기 때문에, 켜 두면 그래프에 노드가 하나 더 생김
-
 ### 용어
 
 | 용어 | 뜻 | 비유 |
@@ -232,6 +220,18 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 1. **발행자는 누가 듣는지 모름.** 구독자도 누가 보내는지 모름
 2. **한 토픽을 여러 노드가 동시에 구독** 가능
 3. **토픽 이름 + 메시지 타입 + QoS** 가 전부 맞아야 연결됨
+
+### 어느 명령이 그림의 어디를 보여 주는가
+
+| 명령 | 그림에서 보이는 것 |
+|---|---|
+| `ros2 node list` | 타원 — 살아 있는 노드 이름 |
+| `ros2 topic list` | 사각형 — 오가는 토픽 이름 |
+| `ros2 topic info <토픽>` | 그 토픽에 붙은 발행자·구독자 수와 QoS |
+| `ros2 topic echo <토픽>` | 흐르는 내용. **구독자를 하나 더 붙이는 것과 같음** |
+| `rqt_graph` | 그림 전체 (연결 관계) |
+
+- `echo` 가 구독자로 동작하기 때문에, 켜 두면 그래프에 노드가 하나 더 생김
 
 ---
 
@@ -1760,158 +1760,7 @@ ros2 bag play rosbag2_2026_09_10-14_30_00
 
 ---
 
-## 2-6. 화면으로 보는 도구 — rqt 와 RViz2
-
-> [!important] 명령줄만으로는 "누가 누구에게" 를 못 봄
-> `ros2 topic list` 는 토픽 **이름**만 줌. 연결 관계·값의 변화·경고 로그는
-> 아래 네 도구로 봄. 전부 `ros-humble-desktop` 에 이미 들어 있음
-
-| 도구 | 무엇을 보는가 | 실행 명령 |
-|---|---|---|
-| **rqt_graph** | 노드–토픽 연결 관계 | `ros2 run rqt_graph rqt_graph` |
-| **Topic Monitor** | 토픽의 주기·대역폭·**현재 값** | `ros2 run rqt_topic rqt_topic` |
-| **rqt_console** | 모든 노드의 로그를 한곳에서 | `ros2 run rqt_console rqt_console` |
-| **RViz2** | 좌표계·센서 데이터의 **3차원 시각화** | `rviz2` |
-
-> [!note] 창은 Windows 에 뜨지만 실행되는 곳은 우분투
-> WSLg 가 우분투의 창을 Windows 화면에 그려 줌. 1주차에서 `xeyes` 로 확인한 그 기능임
-> 창이 안 뜨면 GUI 문제이지 ROS 문제가 아님 — 1주차 2-4절로 돌아감
-
-### 준비 — 노드를 두 개 띄워 둔다
-
-- 아래 실습은 §2-8 에서 만든 노드를 켠 상태를 가정함. 아직이면 데모 노드로 대신함
-
-```bash
-ros2 run demo_nodes_cpp talker
-```
-
-```bash
-ros2 run demo_nodes_py listener
-```
-
----
-
-### ① rqt_graph — 연결 관계
-
-```bash
-ros2 run rqt_graph rqt_graph
-```
-
-![rqt_graph — 발행자 · 토픽 · 구독자](../assets/w02-rqt-graph.png)
-
-- 위 화면은 §2-8 의 `simple_talker` · `simple_listener` 를 실제로 띄우고 캡처한 것
-
-| 모양 | 뜻 |
-|---|---|
-| **타원** | 노드 (`/simple_talker`, `/simple_listener`) |
-| **화살표 위의 글자** | 토픽 (`/usv_chatter`) |
-| **화살표 방향** | 데이터가 흐르는 방향 |
-
-- 화면 위쪽 조작
-
-| 위치 | 하는 일 |
-|---|---|
-| 왼쪽 위 **파란 회전 화살표** | 새로고침. **자동 갱신되지 않음** |
-| `Nodes only` 드롭다운 | `Nodes/Topics (all)` 로 바꾸면 토픽이 사각형으로 따로 보임 |
-| `Hide:` 체크박스들 | 체크된 항목을 **숨김.** 기본값(모두 체크)을 유지하면 화면이 단순함 |
-
-> [!tip] 비어 있으면 세 가지를 의심함
-> 1. 노드가 죽었음 → `ros2 node list` 로 확인
-> 2. 새로고침을 안 눌렀음 → 파란 화살표
-> 3. `ROS_DOMAIN_ID` 가 다름 → `echo $ROS_DOMAIN_ID`
-
----
-
-### ② Topic Monitor — 값이 실제로 바뀌는지
-
-```bash
-ros2 run rqt_topic rqt_topic
-```
-
-![Topic Monitor — 주기와 현재 값](../assets/w02-rqt-topic.png)
-
-- **왼쪽 체크박스를 켜야** 측정이 시작됨. 켜지 않으면 `not monitored` 로 남음
-- 토픽 이름 왼쪽 **삼각형**을 누르면 메시지 내부 필드까지 펼쳐짐
-
-| 열 | 뜻 | 위 화면의 값 |
-|---|---|---|
-| `Type` | 메시지 타입 | `std_msgs/msg/String` |
-| `Hz` | 초당 수신 횟수 | **2.00** — `simple_talker` 가 0.5 s 주기이므로 일치 |
-| `Value` | 현재 값 | `'USV alive: 356'` |
-
-> [!important] `Hz` 는 코드의 주기와 같은 값이 나와야 함
-> `Hz` 가 코드의 주기(`create_timer(0.5)` → 2.0)와 다르면 **발행자가 둘 이상** 켜져 있는 것임
-> `ros2 topic hz` 도 구독자이므로 같은 값(두 배)을 보여 줌. 비교 기준은 코드
-> 실제로 `simple_talker` 를 두 번 실행하면 `Hz` 가 약 4.0 으로 찍힘
-
----
-
-### ③ rqt_console — 로그를 한곳에서
-
-```bash
-ros2 run rqt_console rqt_console
-```
-
-![rqt_console — 모든 노드의 로그](../assets/w02-rqt-console.png)
-
-- 모든 노드가 `/rosout` 으로 보낸 로그가 여기에 모임
-
-| 열 | 뜻 |
-|---|---|
-| `#` | 도착 순서 |
-| `Message` | 로그 내용 |
-| `Severity` | `Debug` · `Info` · `Warn` · `Error` · `Fatal` |
-| `Node` | 어느 노드가 찍었는가 |
-| `Stamp` | 시각 |
-
-- 가운데 **Exclude Messages** 에서 `Info` 를 눌러 끄면 **경고만** 남음
-
-> [!important] QoS 경고를 찾는 가장 확실한 방법
-> §2-9 의 QoS 불일치 경고는 `[INFO]` 홍수에 묻혀 터미널에서 놓치기 쉬움
-> 여기서 `Severity` 를 `Warn` 으로 걸러 보면 한눈에 보임
-
----
-
-### ④ RViz2 — 3차원으로 보는 도구
-
-```bash
-rviz2
-```
-
-![RViz2 첫 실행 화면](../assets/w02-rviz2.png)
-
-- 처음 켜면 **격자(Grid)만** 있는 빈 화면이 정상. 아직 보여 줄 데이터가 없음
-
-| 화면의 위치 | 이름 | 하는 일 |
-|---|---|---|
-| 왼쪽 위 | **Displays** | 무엇을 그릴지 목록. `Add` 로 추가 |
-| 가운데 | **3D 뷰** | 마우스 왼쪽 드래그 = 회전, 휠 = 확대 |
-| 오른쪽 | **Views** | 카메라 종류와 거리 |
-| 아래 | **Time** | ROS 시각과 실제 시각 |
-| 맨 아래 왼쪽 | 상태 문구 | `RViz is ready.` 가 나오면 정상 |
-
-- 왼쪽 `Global Status: Warn` 과 `Fixed Frame` 의 `No tf data` 는 **지금은 정상**
-  - 좌표계(TF)를 발행하는 노드가 아직 없기 때문
-  - 3주차에서 VRX 를 띄우면 이 경고가 사라짐
-
-> [!note] 이번 주차에는 띄워 보는 것까지가 목표
-> RViz2 를 제대로 쓰는 것은 **3주차(좌표계·TF)** 와 **4주차(센서 토픽)** 의 내용임
-> 지금은 "이런 도구가 있고, 실행하면 이런 화면이 나온다" 를 확인함
-
----
-
-### 네 도구를 한 번에 확인하는 순서
-
-1. `ros2 run demo_nodes_cpp talker` 를 켬
-2. `rqt_graph` → 타원 하나가 보임
-3. `ros2 run demo_nodes_py listener` 를 켬 → **새로고침** → 타원 둘과 화살표
-4. `rqt_topic` → `/chatter` 체크 → `Hz` 가 약 1.0
-5. `rqt_console` → `Publishing:` 로그가 쌓임
-6. `rviz2` → 격자 화면과 `RViz is ready.`
-
----
-
-## 2-7. 패키지 만들기
+## 2-6. 패키지 만들기
 
 > [!important] 두 가지 길이 있음. **수업에서는 ①로 진행함**
 > | 길 | 무엇을 하는가 | 언제 |
@@ -2134,7 +1983,7 @@ echo "source ~/capstone_ws/install/setup.bash" >> ~/.bashrc
 
 ---
 
-## 2-8. 첫 노드 작성
+## 2-7. 첫 노드 작성
 
 > [!important] 이 절부터는 VS Code 로 파일을 만듦
 > §2-2 에서 `code .` 로 `~/capstone_ws` 를 열어 둔 상태여야 함
@@ -2444,6 +2293,157 @@ average rate: 2.000
 | 발행 주기 | 2 Hz (`0.5 s`) | `average rate: 2.000` |
 | 간격 흔들림 | 작을수록 좋음 | `std dev: 0.00022 s` |
 | 발행–수신 지연 | 1 ms 수준 | 로그 시각 차 `0.0001~0.0005 s` |
+
+---
+
+## 2-8. 화면으로 보는 도구 — rqt 와 RViz2
+
+> [!important] 명령줄만으로는 "누가 누구에게" 를 못 봄
+> `ros2 topic list` 는 토픽 **이름**만 줌. 연결 관계·값의 변화·경고 로그는
+> 아래 네 도구로 봄. 전부 `ros-humble-desktop` 에 이미 들어 있음
+
+| 도구 | 무엇을 보는가 | 실행 명령 |
+|---|---|---|
+| **rqt_graph** | 노드–토픽 연결 관계 | `ros2 run rqt_graph rqt_graph` |
+| **Topic Monitor** | 토픽의 주기·대역폭·**현재 값** | `ros2 run rqt_topic rqt_topic` |
+| **rqt_console** | 모든 노드의 로그를 한곳에서 | `ros2 run rqt_console rqt_console` |
+| **RViz2** | 좌표계·센서 데이터의 **3차원 시각화** | `rviz2` |
+
+> [!note] 창은 Windows 에 뜨지만 실행되는 곳은 우분투
+> WSLg 가 우분투의 창을 Windows 화면에 그려 줌. 1주차에서 `xeyes` 로 확인한 그 기능임
+> 창이 안 뜨면 GUI 문제이지 ROS 문제가 아님 — 1주차 2-4절로 돌아감
+
+### 준비 — 노드를 두 개 띄워 둔다
+
+- 아래 실습은 §2-7 에서 만든 노드를 켠 상태를 가정함. 아직이면 데모 노드로 대신함
+
+```bash
+ros2 run demo_nodes_cpp talker
+```
+
+```bash
+ros2 run demo_nodes_py listener
+```
+
+---
+
+### ① rqt_graph — 연결 관계
+
+```bash
+ros2 run rqt_graph rqt_graph
+```
+
+![rqt_graph — 발행자 · 토픽 · 구독자](../assets/w02-rqt-graph.png)
+
+- 위 화면은 §2-7 의 `simple_talker` · `simple_listener` 를 실제로 띄우고 캡처한 것
+
+| 모양 | 뜻 |
+|---|---|
+| **타원** | 노드 (`/simple_talker`, `/simple_listener`) |
+| **화살표 위의 글자** | 토픽 (`/usv_chatter`) |
+| **화살표 방향** | 데이터가 흐르는 방향 |
+
+- 화면 위쪽 조작
+
+| 위치 | 하는 일 |
+|---|---|
+| 왼쪽 위 **파란 회전 화살표** | 새로고침. **자동 갱신되지 않음** |
+| `Nodes only` 드롭다운 | `Nodes/Topics (all)` 로 바꾸면 토픽이 사각형으로 따로 보임 |
+| `Hide:` 체크박스들 | 체크된 항목을 **숨김.** 기본값(모두 체크)을 유지하면 화면이 단순함 |
+
+> [!tip] 비어 있으면 세 가지를 의심함
+> 1. 노드가 죽었음 → `ros2 node list` 로 확인
+> 2. 새로고침을 안 눌렀음 → 파란 화살표
+> 3. `ROS_DOMAIN_ID` 가 다름 → `echo $ROS_DOMAIN_ID`
+
+---
+
+### ② Topic Monitor — 값이 실제로 바뀌는지
+
+```bash
+ros2 run rqt_topic rqt_topic
+```
+
+![Topic Monitor — 주기와 현재 값](../assets/w02-rqt-topic.png)
+
+- **왼쪽 체크박스를 켜야** 측정이 시작됨. 켜지 않으면 `not monitored` 로 남음
+- 토픽 이름 왼쪽 **삼각형**을 누르면 메시지 내부 필드까지 펼쳐짐
+
+| 열 | 뜻 | 위 화면의 값 |
+|---|---|---|
+| `Type` | 메시지 타입 | `std_msgs/msg/String` |
+| `Hz` | 초당 수신 횟수 | **2.00** — `simple_talker` 가 0.5 s 주기이므로 일치 |
+| `Value` | 현재 값 | `'USV alive: 356'` |
+
+> [!important] `Hz` 는 코드의 주기와 같은 값이 나와야 함
+> `Hz` 가 코드의 주기(`create_timer(0.5)` → 2.0)와 다르면 **발행자가 둘 이상** 켜져 있는 것임
+> `ros2 topic hz` 도 구독자이므로 같은 값(두 배)을 보여 줌. 비교 기준은 코드
+> 실제로 `simple_talker` 를 두 번 실행하면 `Hz` 가 약 4.0 으로 찍힘
+
+---
+
+### ③ rqt_console — 로그를 한곳에서
+
+```bash
+ros2 run rqt_console rqt_console
+```
+
+![rqt_console — 모든 노드의 로그](../assets/w02-rqt-console.png)
+
+- 모든 노드가 `/rosout` 으로 보낸 로그가 여기에 모임
+
+| 열 | 뜻 |
+|---|---|
+| `#` | 도착 순서 |
+| `Message` | 로그 내용 |
+| `Severity` | `Debug` · `Info` · `Warn` · `Error` · `Fatal` |
+| `Node` | 어느 노드가 찍었는가 |
+| `Stamp` | 시각 |
+
+- 가운데 **Exclude Messages** 에서 `Info` 를 눌러 끄면 **경고만** 남음
+
+> [!important] QoS 경고를 찾는 가장 확실한 방법
+> §2-9 의 QoS 불일치 경고는 `[INFO]` 홍수에 묻혀 터미널에서 놓치기 쉬움
+> 여기서 `Severity` 를 `Warn` 으로 걸러 보면 한눈에 보임
+
+---
+
+### ④ RViz2 — 3차원으로 보는 도구
+
+```bash
+rviz2
+```
+
+![RViz2 첫 실행 화면](../assets/w02-rviz2.png)
+
+- 처음 켜면 **격자(Grid)만** 있는 빈 화면이 정상. 아직 보여 줄 데이터가 없음
+
+| 화면의 위치 | 이름 | 하는 일 |
+|---|---|---|
+| 왼쪽 위 | **Displays** | 무엇을 그릴지 목록. `Add` 로 추가 |
+| 가운데 | **3D 뷰** | 마우스 왼쪽 드래그 = 회전, 휠 = 확대 |
+| 오른쪽 | **Views** | 카메라 종류와 거리 |
+| 아래 | **Time** | ROS 시각과 실제 시각 |
+| 맨 아래 왼쪽 | 상태 문구 | `RViz is ready.` 가 나오면 정상 |
+
+- 왼쪽 `Global Status: Warn` 과 `Fixed Frame` 의 `No tf data` 는 **지금은 정상**
+  - 좌표계(TF)를 발행하는 노드가 아직 없기 때문
+  - 3주차에서 VRX 를 띄우면 이 경고가 사라짐
+
+> [!note] 이번 주차에는 띄워 보는 것까지가 목표
+> RViz2 를 제대로 쓰는 것은 **3주차(좌표계·TF)** 와 **4주차(센서 토픽)** 의 내용임
+> 지금은 "이런 도구가 있고, 실행하면 이런 화면이 나온다" 를 확인함
+
+---
+
+### 네 도구를 한 번에 확인하는 순서
+
+1. `ros2 run demo_nodes_cpp talker` 를 켬
+2. `rqt_graph` → 타원 하나가 보임
+3. `ros2 run demo_nodes_py listener` 를 켬 → **새로고침** → 타원 둘과 화살표
+4. `rqt_topic` → `/chatter` 체크 → `Hz` 가 약 1.0
+5. `rqt_console` → `Publishing:` 로그가 쌓임
+6. `rviz2` → 격자 화면과 `RViz is ready.`
 
 ---
 

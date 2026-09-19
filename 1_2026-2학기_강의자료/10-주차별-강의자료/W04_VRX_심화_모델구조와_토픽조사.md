@@ -430,7 +430,7 @@ cat vrx_urdf/vrx_gazebo/config/wamv_config/example_component_config.yaml   # 참
 ```
 
 - 카메라 · GPS · IMU · LiDAR 의 위치를 yaml 로 적는 형식의 **예시 파일**
-- 실제로 이번 주차 고칠 것은 이 yaml 이 아니라 **`wamv_gazebo.urdf.xacro`** 임 (2-3절)
+- 실제로 이번 주차 고칠 것은 이 yaml 이 아니라 **`wamv_gazebo.urdf.xacro`** 임 (2-4절)
 
 ---
 
