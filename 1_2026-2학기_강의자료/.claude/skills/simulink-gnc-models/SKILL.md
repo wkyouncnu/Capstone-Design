@@ -221,6 +221,11 @@ check_lines(모델, true)      % 겹침 · 블록 관통 · 꺾임 3회+ · 매�
   - 점 목록의 끝점을 블록 **테두리** 좌표로 줌 → 포트는 테두리 몇 px 바깥.
     `draw_line` 이 끝점을 실제 포트로 당기고 이웃 점을 따라 옮김 (snap_ends).
     `add_line(sys, 점목록)` 을 직접 쓸 때는 분기 시작점을 **본선 위 한 점**으로 줄 것
+  - MATLAB Function 은 코드를 넣으면 포트가 생기며 블록이 자람 → 코드를 넣은 **뒤**
+    `Position` 을 다시 줄 것 (저장 전후로 포트 간격이 달라짐)
+  - 보조 도구: `fit_span` (여러 출력 포트를 받는 블록 입력 높이에 맞춤), `align_to`
+    (블록 하나를 옮겨 두 포트 높이를 맞춤), `square_lines` (블록 크기가 바뀐 뒤 기운 끝
+    토막을 직각으로 — `mss_style`·`tidy_model`·`settle_links` 끝에서 자동 호출)
 - 하나라도 남으면 `references/line-routing.md` 를 읽고 **배치로** 푼다. 배선으로 풀지 않는다
 
 

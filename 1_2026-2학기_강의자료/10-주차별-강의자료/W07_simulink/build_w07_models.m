@@ -56,6 +56,12 @@ function build_w07_models()
         load_system(m); check_lines(m, false); export_diagram(m);
         close_system(m, 0);
     end
+
+    %  강의노트가 쓰는 서브시스템 도면 (img/Guidance.png 등). 모델과 함께 다시 뽑는다
+    for nm = {'Guidance','InnerLoop','MotionModel','Thrusters'}
+        f = export_diagram('W07_0_offline', '', nm{1});
+        movefile(f, fullfile(here, 'img', [nm{1} '.png']), 'f');
+    end
     fprintf('\n완료. 생성된 모델:\n');
     d = dir('W07_*.slx');
     for k = 1:numel(d), fprintf('  %s\n', d(k).name); end

@@ -34,7 +34,9 @@ function build_w06_1_models()
         for j = 1:numel(d)
             [~, mName] = fileparts(d(j).name);
             try
-                tidy_model(mName);
+                %  SB11 은 빌더가 좌표를 직접 준다. tidy 는 매번 다른 배치를 내며
+                %  0 과 1~3 건 사이를 오갔다 (2026-09-19). 손으로 놓은 쪽이 결정적이다
+                if ~strcmp(mName, 'SB11_enabled_done'), tidy_model(mName); end
                 paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
                 check_colour(mName);
                 export_model_pngs(mName);
@@ -377,28 +379,47 @@ end
 function build_SB11_done()
     m = 'SB11_enabled_done'; fresh(m);
 
-    B(m,'simulink/Sources/Constant','One',[40 60 90 90],'Value','1');
-    B(m,'simulink/Sources/Pulse Generator','Pulse',[40 160 90 210], ...
+    %  배치 — 좌표를 직접 준다 (tidy 를 쓰지 않는다. 위 루프 참조)
+    %    y = 40   Pulse 줄. enable·trigger 는 블록 **위쪽** 포트라 위에서 내려온다
+    %    y = 150  EnSub 줄       y = 290  TrigSub 줄 (오른쪽으로 비켜 놓아 세로선이 EnSub 를 넘지 않음)
+    %    y = 430  Pulse -> Sc/3 이 모든 블록 아래로 돈다
+    B(m,'simulink/Sources/Pulse Generator','Pulse',[40 20 90 60], ...
       'Period','4','PulseWidth','50','SampleTime','0.05');
+    B(m,'simulink/Sources/Constant','One',[160 135 210 165],'Value','1');
 
     add_block('simulink/Ports & Subsystems/Enabled Subsystem', [m '/EnSub'], ...
-              'Position',[220 40 320 130]);
+              'Position',[300 110 400 190]);
     fillAccumulator(m, 'EnSub');
 
     add_block('simulink/Ports & Subsystems/Triggered Subsystem', [m '/TrigSub'], ...
-              'Position',[220 230 320 320]);
+              'Position',[460 250 560 330]);
     fillAccumulator(m, 'TrigSub');
 
-    B(m,'simulink/Sinks/Scope','Sc',[430 130 470 200]);
+    B(m,'simulink/Sinks/Scope','Sc',[660 130 700 450]);
     set_param([m '/Sc'],'NumInputPorts','3');
 
-    wire(m,'One/1','EnSub/1');
-    wire(m,'Pulse/1','EnSub/enable');
-    wire(m,'One/1','TrigSub/1');
-    wire(m,'Pulse/1','TrigSub/Trigger');
-    wire(m,'EnSub/1','Sc/1');
-    wire(m,'TrigSub/1','Sc/2');
-    wire(m,'Pulse/1','Sc/3');
+    %  포트 높이는 읽어서 맞춘다 (계산하면 몇 px 어긋나 사선이 된다)
+    e1 = port_xy(m,'EnSub','Inport',1);  eo = port_xy(m,'EnSub','Outport',1);
+    t1 = port_xy(m,'TrigSub','Inport',1); to = port_xy(m,'TrigSub','Outport',1);
+    fit_span(m, 'Sc', 'Inport', eo(2), eo(2) + 2*(to(2)-eo(2)));
+    align_to(m, 'One',   'Outport', e1);
+    align_to(m, 'Pulse', 'Outport', 40);
+
+    ph = @(b) get_param([m '/' b], 'PortHandles');
+    one = ph('One');  pul = ph('Pulse');  en = ph('EnSub');  tr = ph('TrigSub');  sc = ph('Sc');
+    a  = port_xy(m,'One','Outport',1);
+    pp = port_xy(m,'Pulse','Outport',1);
+    ee = get_param(en.Enable,  'Position');
+    tt = get_param(tr.Trigger, 'Position');
+    s1 = port_xy(m,'Sc','Inport',1); s2 = port_xy(m,'Sc','Inport',2); s3 = port_xy(m,'Sc','Inport',3);
+
+    draw_line(m, one.Outport(1), en.Inport(1));                                   % 직선
+    draw_line(m, one.Outport(1), tr.Inport(1), [a; a(1)+35 a(2); a(1)+35 t1(2); t1]);  % 가지, 꺾임 1회
+    draw_line(m, pul.Outport(1), en.Enable,  [pp; ee(1) pp(2); ee]);               % 위에서 내려옴
+    draw_line(m, pul.Outport(1), tr.Trigger, [pp; tt(1) pp(2); tt]);
+    draw_line(m, pul.Outport(1), sc.Inport(3), [pp; pp(1)+35 pp(2); pp(1)+35 s3(2); s3]); % 아래로 돈다
+    draw_line(m, en.Outport(1), sc.Inport(1), [eo; s1]);
+    draw_line(m, tr.Outport(1), sc.Inport(2), [to; s2]);
 
     setSolverD(m,'20');
     note(m, sprintf(['[K] 조건부 실행 서브시스템\n' ...
@@ -407,7 +428,7 @@ function build_SB11_done()
         'Triggered: 신호가 **올라가는 순간에만 한 번** 돈다\n' ...
         '  -> Enabled 는 계단처럼 쭉쭉 오르고, Triggered 는 한 칸씩만 오른다\n' ...
         '6주차의 ROS Subscribe 는 IsNew 를 enable 로 쓰면 딱 이 구조가 된다\n' ...
-        '  "새 메시지가 왔을 때만 계산한다"']), 40, 400);
+        '  "새 메시지가 왔을 때만 계산한다"']), 40, 490);   % Pulse -> Sc/3 이 y=430 을 지난다
     finish(m);
 end
 
@@ -436,16 +457,23 @@ function fillAccumulator(m, sub)
     ln = find_system(p,'SearchDepth',1,'FindAll','on','Type','line');
     for i = numel(ln):-1:1, try, delete_line(ln(i)); catch, end, end
 
-    add_block('simulink/Math Operations/Sum', [p '/SumA'], ...
-              'Inputs','++','Position',[160 60 190 100]);
+    %  둥근 Sum: 1번은 왼쪽, 2번은 아래. 되먹임은 아래에서 올라온다 (line-routing.md 4)
+    %  Unit Delay 는 왼쪽을 보게 돌려 아래 줄에 둔다 — 선이 전부 꺾임 1회
+    add_sum(p, 'SumA', '++', [160 80]);
     add_block('simulink/Discrete/Unit Delay', [p '/UD'], ...
-              'SampleTime','-1','Position',[160 160 200 200]);
-    set_param([p '/In1'], 'Position',[40 65 70 95]);
-    set_param([p '/Out1'],'Position',[300 65 330 95]);
-    add_line(p,'In1/1','SumA/1','autorouting','on');
-    add_line(p,'SumA/1','UD/1','autorouting','on');
-    add_line(p,'UD/1','SumA/2','autorouting','on');
-    add_line(p,'SumA/1','Out1/1','autorouting','on');
+              'SampleTime','-1','Position',[200 150 240 190], 'Orientation','left');
+    set_param([p '/In1'], 'Position',[40 73 70 87]);
+    set_param([p '/Out1'],'Position',[300 73 330 87]);
+    align_to(p, 'In1',  'Outport', port_xy(p,'SumA','Inport',1));
+    align_to(p, 'Out1', 'Inport',  port_xy(p,'SumA','Outport',1));
+    ph = @(b) get_param([p '/' b], 'PortHandles');
+    si = ph('SumA');  ud = ph('UD');  i1 = ph('In1');  o1 = ph('Out1');
+    so = port_xy(p,'SumA','Outport',1);  s2 = port_xy(p,'SumA','Inport',2);
+    ui = port_xy(p,'UD','Inport',1);     uo = port_xy(p,'UD','Outport',1);
+    draw_line(p, i1.Outport(1), si.Inport(1));                                % 직선
+    draw_line(p, si.Outport(1), o1.Inport(1));                                % 직선
+    draw_line(p, si.Outport(1), ud.Inport(1),  [so; ui(1)+20 so(2); ui(1)+20 ui(2); ui]); % 가지
+    draw_line(p, ud.Outport(1), si.Inport(2),  [uo; s2(1) uo(2); s2]);        % 아래에서 올라옴
 end
 
 % =====================================================================

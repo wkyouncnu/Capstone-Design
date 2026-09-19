@@ -91,21 +91,3 @@ add_block('built-in/Note', [s '/note'], 'Position', [80 700], 'Text', sprintf([ 
     '그대로 변환해 위치가 스폰 원점만큼(약 568 m) 튄다.'], topic));
 end
 
-% -------------------------------------------------------------------------
-function fit_span(sys, blk, kind, y1, yN)
-%FIT_SPAN  블록의 첫 포트가 Y1, 마지막 포트가 YN 에 오도록 키와 자리를 맞춘다.
-%   Simulink 가 포트를 테두리에서 들여놓는 여백은 블록 종류마다 다르므로
-%   재고, 고치고, 다시 잰다. 두세 번이면 1 px 안으로 들어온다.
-b = [sys '/' blk];
-h = get_param(b, 'PortHandles');
-n = numel(h.(kind));
-for it = 1:6
-    p  = get_param(b, 'Position');
-    f  = port_xy(sys, blk, kind, 1);
-    l  = port_xy(sys, blk, kind, n);
-    if abs(f(2)-y1) < 0.5 && abs(l(2)-yN) < 0.5, return, end
-    top = p(2) - (f(2) - y1);
-    bot = p(4) - (l(2) - yN);
-    set_param(b, 'Position', round([p(1) top p(3) bot]));
-end
-end

@@ -521,8 +521,11 @@ function fixOfflineLayout(m)
 
     ss = [m '/MotionModel'];
     % tidy 가 만든 되먹임 태그 쌍을 지우고 선으로 잇는다
+    %  태그 이름은 tidy 가 고른 배치에 따라 EOM_1 도 되고 Integ_1 도 된다. 둘 다 찾는다
     tags = [find_system(ss,'SearchDepth',1,'BlockType','Goto','GotoTag','EOM_1'); ...
-            find_system(ss,'SearchDepth',1,'BlockType','From','GotoTag','EOM_1')];
+            find_system(ss,'SearchDepth',1,'BlockType','From','GotoTag','EOM_1'); ...
+            find_system(ss,'SearchDepth',1,'BlockType','Goto','GotoTag','Integ_1'); ...
+            find_system(ss,'SearchDepth',1,'BlockType','From','GotoTag','Integ_1')];
     for k = 1:numel(tags)
         ph = get_param(tags{k}, 'LineHandles');
         delete_line([ph.Inport(:); ph.Outport(:)]');

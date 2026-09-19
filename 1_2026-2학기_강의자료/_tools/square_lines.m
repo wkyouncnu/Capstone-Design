@@ -16,6 +16,8 @@ function n = square_lines(mdl)
 %        From·Constant·Inport·Clock / Goto·Outport·Terminator·Display·To Workspace)
 %        이면 그 블록을 위아래로 옮겨 포트 높이를 맞춘다. 둘 다 아니면 남겨 두고
 %        check_lines 가 보고하게 한다 — 빌더의 배치를 고쳐야 하는 경우다.
+%     3) 몇 px 짜리 계단 (가로-세로-가로, 세로 15 px 이하) — 사선과 원인이 같다.
+%        2) 와 같이 잎 블록을 옮겨 곧은 한 토막으로 만든다 (꺾임 2 -> 0).
 %
 %   돌려주는 값은 고친 선의 수다.
 
@@ -42,7 +44,15 @@ end
 function k = fix_one(sys, h)
 k = 0;
 p = get_param(h, 'Points');
-if ~any(is_diag(p)), return, end
+if ~any(is_diag(p))
+    %  사선은 아니지만 몇 px 짜리 계단(가로-세로-가로, 세로 15 px 이하)도 같은 원인이다.
+    %  잎 블록을 옮겨 곧은 한 토막으로 만든다 (꺾임 2 -> 0)
+    if size(p,1) == 4 && is_h(p(1,:),p(2,:)) && is_v(p(2,:),p(3,:)) && is_h(p(3,:),p(4,:)) ...
+            && abs(p(3,2)-p(2,2)) <= 15 && p(4,1) > p(1,1)
+        k = fix_straight(sys, h, p([1 4],:));
+    end
+    return
+end
 
 if size(p,1) == 2
     k = fix_straight(sys, h, p);
@@ -88,13 +98,18 @@ if isempty(db) || numel(db) ~= 1 || db <= 0 || sb <= 0, return, end
 dy = round(p(2,2) - p(1,2));
 dx = round(p(2,1) - p(1,1));
 if abs(dx) < abs(dy), return, end              % 가로선이어야 할 것만 다룬다
-if is_leaf(sb)
+%  옮긴 자리가 다른 블록과 겹치면 옮기지 않는다
+if is_leaf(sb) && can_move(sys, sb, dy)
     move(sb, dy);
-elseif is_leaf(db)
+elseif is_leaf(db) && can_move(sys, db, -dy)
     move(db, -dy);
 else
     return
 end
+%  옮긴 뒤 두 포트가 같은 높이면 한 토막으로 다시 놓는다 (남은 계단·사선 점을 지운다)
+sp = get_param(h, 'SrcPortHandle');  dp = get_param(h, 'DstPortHandle');
+a = get_param(sp, 'Position');  b = get_param(dp, 'Position');
+if abs(a(2)-b(2)) < 0.5, set_param(h, 'Points', [a; b]); end
 if ~any(is_diag(get_param(h,'Points'))), k = 1; end
 end
 
@@ -109,6 +124,24 @@ end
 lh = get_param(b, 'LineHandles');
 c = [lh.Inport(:); lh.Outport(:)];
 tf = sum(c > 0) == 1;
+end
+
+function tf = can_move(sys, b, dy)
+%  옮긴 사각형(이름 자리 10 px 포함)이 같은 층의 다른 블록과 겹치지 않는가
+r = get_param(b, 'Position') + [0 dy 0 dy] + [0 -2 0 12];
+o = find_system(sys, 'SearchDepth',1, 'Type','Block');
+tf = true;
+for i = 1:numel(o)
+    h = get_param(o{i}, 'Handle');
+    if h == b || strcmp(o{i}, sys), continue, end
+    q = get_param(h, 'Position');
+    if min(r(3),q(3)) - max(r(1),q(1)) > 0 && min(r(4),q(4)) - max(r(2),q(2)) > 0
+        %  이미 겹쳐 있던 것은 탓하지 않는다
+        p = get_param(b, 'Position') + [0 -2 0 12];
+        if min(p(3),q(3)) - max(p(1),q(1)) > 0 && min(p(4),q(4)) - max(p(2),q(2)) > 0, continue, end
+        tf = false;  return
+    end
+end
 end
 
 function move(b, dy)
