@@ -35,13 +35,16 @@ set_param([s '/Sel'], 'OutputSignals', ...
      'pose.pose.orientation.z,pose.pose.orientation.w,' ...
      'twist.twist.linear.x,twist.twist.linear.y,twist.twist.angular.z']);
 
-%  Nav 를 Bus Selector 의 아홉 출력 + 원점 둘을 받도록 만든다
+%  Nav 를 Bus Selector 의 아홉 출력 + 원점 둘을 받도록 만든다.
+%  입력 11 개의 간격이 52 px 이상이어야 orgN · orgE 두 Constant(키 30) 사이에
+%  이름표(14 px) 자리가 남는다. 460 px 이던 때는 간격이 42 px 라 orgN 의 이름이
+%  orgE 에 가려졌다 (2026-09-19). 키 = 52 x (11-1) + 40 = 560 px (row_feed 의 권고)
 add_block('simulink/User-Defined Functions/MATLAB Function', ...
-          [s '/Nav'], 'Position', [520 180 700 640]);
+          [s '/Nav'], 'Position', [520 180 700 740]);
 ch = sfroot().find('-isa','Stateflow.EMChart','Path',[s '/Nav']);
 ch.Script = navCode;
 %  포트가 생기며 블록이 자라고, 그때의 포트 위치는 저장 뒤와 다르다. 다시 놓는다
-set_param([s '/Nav'], 'Position', [520 180 700 640]);
+set_param([s '/Nav'], 'Position', [520 180 700 740]);
 
 %  Bus Selector 의 아홉 출력을 Nav 의 1~9 번 입력 높이에 **정확히** 맞춘다.
 %  두 블록의 포트 간격이 다르면 아홉 선이 전부 몇 px 기운 사선이 된다
@@ -82,7 +85,7 @@ for k = 1:numel(outs)
     add_line(s, sprintf('Nav/%d',k), [outs{k} '/1']);
 end
 
-add_block('built-in/Note', [s '/note'], 'Position', [80 700], 'Text', sprintf([ ...
+add_block('built-in/Note', [s '/note'], 'Position', [80 820], 'Text', sprintf([ ...
     '항법 — Gazebo 의 odometry 를 읽어 NED 항법량으로 바꾼다.\n' ...
     '  토픽 %s\n' ...
     '\n' ...

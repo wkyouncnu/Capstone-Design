@@ -126,9 +126,12 @@ for rr = 1:nRow
         if nt > 0, g = max(g, 26*nt + 130); end
         x = x + W(k) + g;
     end
-    yTop = yc + max(hMax/2, max(D(idx))) + 90;
+    %  태그 더미는 **각 블록의 아래 테두리**에서 D 만큼 내려간다. 줄 가운데(yc)에서 재면
+    %  키 큰 블록의 태그가 다음 줄에 닿아 이름표가 가려진다 (2026-09-19 W07_0 의
+    %  Go_psi_ref 가 MotionModel 에 — check_lines 의 (6) 블록겹침)
+    yTop = yc + max(hMax/2, max(H(idx)/2 + D(idx))) + 60;
 end
-yBot = yTop - 90;
+yBot = yTop - 60;
 
 % --- 3.5) 줄이 바뀌는 자리는 태그 한 쌍으로 -----------------------------
 %   오른쪽 끝에서 왼쪽 끝으로 선을 끌면 도면을 통째로 가로지른다. 사슬이 줄을

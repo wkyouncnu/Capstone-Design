@@ -27,8 +27,17 @@ function blk = drop_tag(sys, src, sk, name, dy)
 W = 60; H = 22; GAP = 30;
 
 a  = port_xy(sys, src, 'Outport', sk);
-y  = round(a(2) + dy);
 x1 = round(a(1) + GAP);
+
+%  그 자리에 이미 다른 블록·선이 있으면 같은 방향으로 10 px 씩 더 민다.
+%  포개진 태그는 선 검사를 모두 통과하지만 도면에서 읽을 수 없다 (spot_free.m).
+sg = sign(dy);  ok = false;
+for t = 0:40
+    y = round(a(2) + dy + sg*10*t);
+    if sg == 0 || spot_free(sys, [x1, y-H/2, x1+W, y+H/2], ['Go_' name], ...
+                            [a; a(1) y; x1 y], {src}), ok = true; break, end
+end
+if ~ok, y = round(a(2) + dy); end              % 빈자리가 없으면 원래 자리 (검사가 보고한다)
 
 blk = [sys '/Go_' name];
 add_block('simulink/Signal Routing/Goto', blk, ...

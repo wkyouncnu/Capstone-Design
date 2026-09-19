@@ -24,8 +24,19 @@ if nargin < 6 || isempty(sfx), sfx = '1'; end
 W = 60; H = 22; GAP = 40;
 
 b  = port_xy(sys, dst, 'Inport', dk);
-y  = round(b(2) + dy);
 x2 = round(b(1) - GAP);              % From 의 오른쪽 테두리(출력 포트)
+r  = get_param([sys '/' dst], 'Position');
+sidePort = b(1) <= r(1) || b(1) >= r(3);
+
+%  그 자리에 이미 다른 블록·선이 있으면 같은 방향으로 10 px 씩 더 민다 (drop_tag 와 같다)
+sg = sign(dy);  ok = false;
+for t = 0:40
+    y = round(b(2) + dy + sg*10*t);
+    if sidePort, pts = [x2 y; x2 b(2); b]; else, pts = [x2 y; b(1) y; b]; end
+    if sg == 0 || spot_free(sys, [x2-W, y-H/2, x2, y+H/2], ['Fr_' name '_' sfx], ...
+                            pts, {dst}), ok = true; break, end
+end
+if ~ok, y = round(b(2) + dy); end              % 빈자리가 없으면 원래 자리 (검사가 보고한다)
 
 blk = [sys '/Fr_' name '_' sfx];
 add_block('simulink/Signal Routing/From', blk, ...
@@ -34,8 +45,6 @@ add_block('simulink/Signal Routing/From', blk, ...
 %  포트가 블록의 **옆면**에 있으면 선은 가로로 들어가야 한다. 세로로 먼저 내려가고
 %  마지막에 가로로 붙인다. 포트가 **아래쪽**에 있으면 반대다 — 가로로 간 뒤 세로로
 %  올라간다. 이것을 구분하지 않으면 마지막 토막이 사선이 되어 포트에 비스듬히 붙는다.
-r = get_param([sys '/' dst], 'Position');
-sidePort = b(1) <= r(1) || b(1) >= r(3);
 
 if sidePort
     pts = [x2 y; x2 b(2); b];
