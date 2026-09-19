@@ -309,7 +309,7 @@ $$
 
 ---
 
-### 속도는 **어느 축에서** 잰 것인가 — `u`·`v` 와 `V_N`·`V_E`
+### 속도는 **어느 축에서** 잰 것인가 — $u$·$v$ 와 $\dot{x}$·$\dot{y}$
 
 ![몸체 속도와 지구 속도](../assets/w03-body-vs-ned-velocity.svg)
 
@@ -320,37 +320,37 @@ $$
 |---|---|---|
 | `u` (서지) | **Body** — 선수 방향 | 값이 그대로 |
 | `v` (스웨이) | **Body** — 우현 방향 | 값이 그대로 |
-| `V_N` | **NED** — 북쪽 성분 | 값이 바뀜 |
-| `V_E` | **NED** — 동쪽 성분 | 값이 바뀜 |
+| $\dot{x}$ | **NED** — 북쪽 성분 (북쪽 위치 $x$ 의 변화율) | 값이 바뀜 |
+| $\dot{y}$ | **NED** — 동쪽 성분 (동쪽 위치 $y$ 의 변화율) | 값이 바뀜 |
 
 $$
 \begin{aligned}
-V_N &= u\cos\psi - v\sin\psi \\
-V_E &= u\sin\psi + v\cos\psi
+\dot{x} &= u\cos\psi - v\sin\psi \\
+\dot{y} &= u\sin\psi + v\cos\psi
 \end{aligned}
 $$
 
 그림의 네 칸이 말하는 것.
 
-| 칸 | 조건 | $u$ | $v$ | $V_N$ | $V_E$ | 읽는 법 |
+| 칸 | 조건 | $u$ | $v$ | $\dot{x}$ | $\dot{y}$ | 읽는 법 |
 |---|---|---|---|---|---|---|
 | (1) | $\psi = 0^{\circ}$ | 1.00 | 0 | 1.00 | 0 | 북쪽을 보고 북쪽으로 |
-| (2) | $\psi = 90^{\circ}$ | 1.00 | 0 | 0 | 1.00 | **$u$ 는 그대로인데** $V_N$ 이 0 |
+| (2) | $\psi = 90^{\circ}$ | 1.00 | 0 | 0 | 1.00 | **$u$ 는 그대로인데** $\dot{x}$ 가 0 |
 | (3) | $\psi = 45^{\circ}$ | 1.00 | 0 | 0.71 | 0.71 | $u$ 하나가 두 성분으로 |
 | (4) | $\psi = 0^{\circ}$, 옆으로 밀림 | 1.00 | 0.50 | 1.00 | 0.50 | 북쪽을 보는데 **북동으로 감** |
 
-- (1)(2)(3) 은 $u$ 가 모두 `1.00` 임. 바뀐 것은 **선수각뿐**인데 `V_N`, `V_E` 가 달라짐
-- 거꾸로 (4) 는 선수각이 (1) 과 같은데 `V_E` 가 생겼음. 배가 **옆으로 밀렸기** 때문임
+- (1)(2)(3) 은 $u$ 가 모두 `1.00` 임. 바뀐 것은 **선수각뿐**인데 $\dot{x}$, $\dot{y}$ 가 달라짐
+- 거꾸로 (4) 는 선수각이 (1) 과 같은데 $\dot{y}$ 가 생겼음. 배가 **옆으로 밀렸기** 때문임
 
 > [!important] 선수각과 침로각은 다르다
 > - **선수각** $\psi$ — 배가 **어디를 보는가**. 쿼터니언에서 나옴
-> - **침로각** $\chi = \operatorname{atan2}(V_E,\ V_N)$ — 배가 **어디로 가는가**
+> - **침로각** $\chi = \operatorname{atan2}(\dot{y},\ \dot{x})$ — 배가 **어디로 가는가**
 > - 둘의 차이가 **크랩각** $\beta = \operatorname{atan2}(v,\ u)$ 이며 $\chi = \psi + \beta$ 임
 > - 옆바람이나 조류가 있으면 $v \neq 0$ 이 되어 둘이 벌어짐.
 >   7주차 LOS 유도에서 이 보정을 넣음
 
-> [!caution] 속도 되먹임에 `V_N`, `V_E` 를 쓰지 않는다
-> 속도 제어기는 **`u` 를 되먹임.** `V_N`, `V_E` 는 배를 돌릴 때마다 값이 바뀌므로
+> [!caution] 속도 되먹임에 $\dot{x}$, $\dot{y}$ 를 쓰지 않는다
+> 속도 제어기는 **`u` 를 되먹임.** $\dot{x}$, $\dot{y}$ 는 배를 돌릴 때마다 값이 바뀌므로
 > 게인이 따라다니지 못함. `u` 는 배를 어느 쪽으로 돌리든 "앞으로 얼마나 빠른가"
 > 하나만 뜻함
 
@@ -395,7 +395,7 @@ $$
 > 어디서나 약 111 km 로 거의 같음
 >
 > 위도선(동서 방향)은 극으로 갈수록 **작아지는 원**임. 그 반지름이
-> $R\cos\varphi$ 이므로 경도 1도의 거리도 $\cos\varphi$ 배로 줄어듦
+> $R_E\cos\varphi$ ($R_E$ = 지구 반지름) 이므로 경도 1도의 거리도 $\cos\varphi$ 배로 줄어듦
 > 적도에서 111 km 인 것이 위도 $60^{\circ}$ 에서는 절반, 극에서는 0 이 됨
 
 - GPS는 위도 · 경도 · 고도(LLA)를 줌
@@ -416,6 +416,7 @@ $$
 | $\varphi_0,\ \lambda_0,\ h_0$ | 기준점의 위도 · 경도 · 고도 |
 | $R_M,\ R_N$ | 자오선 · 묘유선 곡률반경 |
 
+- 여기 $R_N$ 의 N 은 묘유선(normal) 이며 북쪽 · 요 모멘트 $N$ 이 아님. 측지 표준 기호라 그대로 둠
 - MATLAB에서는 한 줄
 
 ```matlab
@@ -526,32 +527,34 @@ $$
 - 회전축 단위벡터 $\mathbf{n} = (n_x, n_y, n_z)$, 회전각 $\alpha$ 일 때
 
 $$
-q \;=\; \Bigl(\underbrace{\cos\tfrac{\alpha}{2}}_{w},\;
-\underbrace{n_x \sin\tfrac{\alpha}{2}}_{x},\;
-\underbrace{n_y \sin\tfrac{\alpha}{2}}_{y},\;
-\underbrace{n_z \sin\tfrac{\alpha}{2}}_{z}\Bigr),
-\qquad w^2 + x^2 + y^2 + z^2 = 1
+\mathbf{q} \;=\; \Bigl(\underbrace{\cos\tfrac{\alpha}{2}}_{q_w},\;
+\underbrace{n_x \sin\tfrac{\alpha}{2}}_{q_x},\;
+\underbrace{n_y \sin\tfrac{\alpha}{2}}_{q_y},\;
+\underbrace{n_z \sin\tfrac{\alpha}{2}}_{q_z}\Bigr),
+\qquad q_w^2 + q_x^2 + q_y^2 + q_z^2 = 1
 $$
 
+- 굵은 $\mathbf{q}$ 는 쿼터니언, 1-4 의 6자유도 표에 나오는 가는 $q$ 는 피치 각속도임. 서로 다른 양
+- 성분 $q_x, q_y, q_z, q_w$ 가 ROS 메시지의 `orientation.x`, `.y`, `.z`, `.w` 에 그대로 대응함
 - 각을 **반으로** 나누어 넣는 것이 특징임. 회전을 두 번 겹쳐 적용하는 대수 구조에서 나옴
 - 크기가 항상 1 임. 수치 오차로 1 에서 벗어나면 **정규화**함
-- $q$ 와 $-q$ 는 **같은 자세**임. 부호가 뒤집혀 있어도 틀린 것이 아님
+- $\mathbf{q}$ 와 $-\mathbf{q}$ 는 **같은 자세**임. 부호가 뒤집혀 있어도 틀린 것이 아님
 
 간단한 예 — 요만 $\psi$ 만큼 돌린 경우 (수상선이 거의 이 경우임)
 
 $$
 \mathbf{n} = (0,\,0,\,1) \quad\Longrightarrow\quad
-q = \bigl(\cos\tfrac{\psi}{2},\; 0,\; 0,\; \sin\tfrac{\psi}{2}\bigr)
+\mathbf{q} = \bigl(\cos\tfrac{\psi}{2},\; 0,\; 0,\; \sin\tfrac{\psi}{2}\bigr)
 $$
 
 **쿼터니언 → 오일러각**
 
 $$
 \begin{aligned}
-\phi   &= \operatorname{atan2}\bigl(2(wx + yz),\; 1 - 2(x^2 + y^2)\bigr) \\
-\theta &= \arcsin\bigl(2(wy - zx)\bigr)
+\phi   &= \operatorname{atan2}\bigl(2(q_w q_x + q_y q_z),\; 1 - 2(q_x^2 + q_y^2)\bigr) \\
+\theta &= \arcsin\bigl(2(q_w q_y - q_z q_x)\bigr)
           &&\leftarrow \text{이 값이 } \pm 1 \text{ 에 가까우면 짐벌락} \\
-\psi   &= \operatorname{atan2}\bigl(2(wz + xy),\; 1 - 2(y^2 + z^2)\bigr)
+\psi   &= \operatorname{atan2}\bigl(2(q_w q_z + q_x q_y),\; 1 - 2(q_y^2 + q_z^2)\bigr)
 \end{aligned}
 $$
 
@@ -559,10 +562,10 @@ $$
 
 $$
 \begin{aligned}
-w &= c_\phi c_\theta c_\psi + s_\phi s_\theta s_\psi, &\qquad
-x &= s_\phi c_\theta c_\psi - c_\phi s_\theta s_\psi \\
-y &= c_\phi s_\theta c_\psi + s_\phi c_\theta s_\psi, &\qquad
-z &= c_\phi c_\theta s_\psi - s_\phi s_\theta c_\psi
+q_w &= c_\phi c_\theta c_\psi + s_\phi s_\theta s_\psi, &\qquad
+q_x &= s_\phi c_\theta c_\psi - c_\phi s_\theta s_\psi \\
+q_y &= c_\phi s_\theta c_\psi + s_\phi c_\theta s_\psi, &\qquad
+q_z &= c_\phi c_\theta s_\psi - s_\phi s_\theta c_\psi
 \end{aligned}
 $$
 
@@ -581,7 +584,7 @@ $$
 > 대신 **요만 뽑는 한 줄**을 씀. 3주차 Simulink 모델과 6주차 `Quat2Yaw` 가 이것임
 >
 > $$
-> \psi_{\text{ENU}} = \operatorname{atan2}\bigl(2(wz + xy),\; 1 - 2(y^2 + z^2)\bigr)
+> \psi_{\text{ENU}} = \operatorname{atan2}\bigl(2(q_w q_z + q_x q_y),\; 1 - 2(q_y^2 + q_z^2)\bigr)
 > $$
 
 ### ③ 회전행렬 (DCM)
@@ -605,8 +608,8 @@ $$
 - 첫 두 줄을 풀어 쓰면 1-5 에서 본 그 식임
 
 $$
-\dot{x} = V_N = u\cos\psi - v\sin\psi, \qquad
-\dot{y} = V_E = u\sin\psi + v\cos\psi
+\dot{x} = u\cos\psi - v\sin\psi, \qquad
+\dot{y} = u\sin\psi + v\cos\psi
 $$
 
 - $\mathbf{J}$ 는 **직교행렬**이라 역변환이 전치임 — $\mathbf{J}^{-1} = \mathbf{J}^{\mathsf T}$.
@@ -787,6 +790,8 @@ $$
 \boldsymbol{\tau} = \begin{bmatrix} X \\ 0 \\ N \end{bmatrix}
 $$
 
+- 굵은 $\mathbf{M}$ 은 질량 행렬임. 1-4 표의 피치 모멘트 $M$ (가는 글자) 과 다름
+
 - 풀어 쓰면 세 줄 — 코드의 `du`, `dv`, `dr` 과 같음
 
 $$
@@ -797,11 +802,11 @@ $$
 \end{aligned}
 $$
 
-- 위치는 선체 속도를 NED 로 돌려서 적분함 — 1-5 절의 회전과 같은 식
+- 위치는 선체 속도를 NED 로 돌려서 적분함 — 1-5 절의 회전과 같은 식이고, 행렬은 1-6 ③ 의 $\mathbf{J}(\psi)$ 그대로임
 
 $$
-\dot{\boldsymbol{\eta}} = \mathbf{R}(\psi)\,\boldsymbol{\nu}, \qquad
-\mathbf{R}(\psi) = \begin{bmatrix} \cos\psi & -\sin\psi & 0 \\ \sin\psi & \cos\psi & 0 \\ 0 & 0 & 1 \end{bmatrix}
+\dot{\boldsymbol{\eta}} = \mathbf{J}(\psi)\,\boldsymbol{\nu}, \qquad
+\mathbf{J}(\psi) = \begin{bmatrix} \cos\psi & -\sin\psi & 0 \\ \sin\psi & \cos\psi & 0 \\ 0 & 0 & 1 \end{bmatrix}
 \quad\Rightarrow\quad
 \begin{aligned}
 \dot{x} &= u\cos\psi - v\sin\psi \\
@@ -850,7 +855,7 @@ xdot = [du; dv; dr;
 | `X = FL + FR;` `N = (FL - FR)*b_half;` | $X = F_L + F_R$, $N = b(F_L - F_R)$ | 선체 축과 추진기 위치 |
 | `Dx`, `Dy`, `Dn` | $\mathbf{D}(\boldsymbol{\nu})\boldsymbol{\nu}$ 의 세 성분 | 항력 |
 | `du`, `dv`, `dr` | $\dot{\boldsymbol{\nu}} = \mathbf{M}^{-1}(\boldsymbol{\tau} - \mathbf{C}\boldsymbol{\nu} - \mathbf{D}\boldsymbol{\nu})$ | 운동방정식 |
-| `xdot` 의 4\~6행 | $\dot{\boldsymbol{\eta}} = \mathbf{R}(\psi)\boldsymbol{\nu}$ | 운동방정식 (위치) |
+| `xdot` 의 4\~6행 | $\dot{\boldsymbol{\eta}} = \mathbf{J}(\psi)\boldsymbol{\nu}$ | 운동방정식 (위치) |
 | `p` | $m = 211$, $I_z = 653$, 항력 여섯 개, $b = 1.027135$ | `W03_setup` 6번 칸 |
 
 - `EOM` 은 **미분** $\dot{\mathbf{s}}$ 만 계산함. 적분은 옆의 `Integrator` (1/s) 블록이 하고, 그 출력이 다시 `EOM` 의 `s` 로 들어감 — 1-1 절의 "매 스텝 반복" 이 이 고리임
@@ -867,9 +872,11 @@ xdot = [du; dv; dr;
 - 반응 시간은 정상상태 부근에서 선형화한 시상수로 가늠함
 
 $$
-\tau_u \approx \frac{m}{X_u + 2X_{uu}\,u_0} = \frac{211}{100 + 2 \times 150 \times 1.333} = 0.42\ \text{s}, \qquad
-\tau_r \approx \frac{I_z}{N_r + 2N_{rr}\,\lvert r_0\rvert} = \frac{653}{800 + 2 \times 800 \times 0.374} = 0.47\ \text{s}
+T_u \approx \frac{m}{X_u + 2X_{uu}\,u_0} = \frac{211}{100 + 2 \times 150 \times 1.333} = 0.42\ \text{s}, \qquad
+T_r \approx \frac{I_z}{N_r + 2N_{rr}\,\lvert r_0\rvert} = \frac{653}{800 + 2 \times 800 \times 0.374} = 0.47\ \text{s}
 $$
+
+- 시상수는 $T_u$, $T_r$ 로 적음. 굵은 $\boldsymbol{\tau}$ (일반화 힘) 와 구분하려는 것이고, 6주차 Nomoto 모델의 시상수 $T$ 와 같은 계열의 기호임
 
 - 출발 직후에는 속도가 작아 항력도 작으므로 실제로는 이보다 조금 느림
   - 3부 `W03_offline_run` 실측: $u$ 가 63 % 에 닿는 데 **0.60 s**, $r$ 은 **0.55 s** (VRX 0.65 s)
@@ -1917,7 +1924,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 | 직진 — 선수각 변화 | 0.00° | +1.14° | 운동모델에는 좌우 비대칭이 없음 |
 | 좌선회 — 선수각 변화 | −631.3° | −628.2° | 0.5 % |
 | 좌선회 — 마지막 5 초 평균 $r$ | −21.42 °/s | −21.60 °/s | 0.8 % |
-| 좌선회 — $r$ 이 정상값의 63 % 에 닿는 시각 | 0.55 s | 0.65 s | 1-8 절 $\tau_r \approx 0.47$ s |
+| 좌선회 — $r$ 이 정상값의 63 % 에 닿는 시각 | 0.55 s | 0.65 s | 1-8 절 $T_r \approx 0.47$ s |
 | 좌선회 — GPS 로 잰 이동 거리 | 0.00 m | **7.85 m** | 아래 설명 |
 
 - 마지막 5 초 평균 $r$ 은 `rad2deg(mean(S.out.log_r.Data(S.out.log_r.Time > 25)))` 로 꺼냄

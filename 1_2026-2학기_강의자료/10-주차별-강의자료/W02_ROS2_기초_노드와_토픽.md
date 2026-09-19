@@ -3088,7 +3088,7 @@ average rate: 62.504
 - 목표 방향과 선수각 오차
 
 $$
-\psi_{\text{ref}} = \operatorname{atan2}(y_g - y,\ x_g - x), \qquad e = \operatorname{ssa}(\psi_{\text{ref}} - \theta)
+\psi_{\text{ref}} = \operatorname{atan2}(y_{\text{goal}} - y,\ x_{\text{goal}} - x), \qquad e = \operatorname{ssa}(\psi_{\text{ref}} - \theta)
 $$
 
 - 제어 법칙 — 선수각은 P 제어, 속도는 거리에 비례
@@ -3100,7 +3100,7 @@ $$
 
 | 기호 | 뜻 | 값 (`W02_setup.m`) |
 |---|---|---|
-| $(x_g, y_g, \theta_g)$ | 목표 자세 | `(9.0, 2.0, 90°)` |
+| $(x_{\text{goal}}, y_{\text{goal}}, \theta_{\text{goal}})$ | 목표 자세. 3주차 무게중심 $x_g$ 와 구분하려고 `goal` 을 붙임 | `(9.0, 2.0, 90°)` |
 | $d$ | 목표점까지 거리 | 계산값 |
 | $\operatorname{ssa}$ | 가장 짧은 쪽 각도 차이. $-\pi \sim \pi$ 로 접음 | — |
 | $K_\psi$ | 선수각 게인 | `Kpsi = 4.0` |
@@ -3117,7 +3117,7 @@ $$
 >
 > | | 2주차 turtlesim | 3주차 이후 NED |
 > |---|---|---|
-> | 목표 방향 | $\operatorname{atan2}(y_g - y,\ x_g - x)$ | $\operatorname{atan2}(y_g - y,\ x_g - x)$ ($x$ 북, $y$ 동) |
+> | 목표 방향 | $\operatorname{atan2}(y_{\text{goal}} - y,\ x_{\text{goal}} - x)$ | $\operatorname{atan2}(y_{\text{goal}} - y,\ x_{\text{goal}} - x)$ ($x$ 북, $y$ 동) |
 > | 각의 기준 · 방향 | $x$ 축(오른쪽)에서 반시계 | 북(위쪽)에서 시계 |
 > | $v$ | 거북이의 **전진** 속도 | 배의 **좌우**(sway) 속도 |
 > | 회전 속도 | $\omega$ | $r$ (요각속도) |

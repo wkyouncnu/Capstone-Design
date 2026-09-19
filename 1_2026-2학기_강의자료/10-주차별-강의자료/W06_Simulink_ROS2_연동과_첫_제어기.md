@@ -436,7 +436,7 @@ $$
 | $K$ | 모멘트 1 N·m 당 정상 요각속도 | $1.25 \times 10^{-3}$ rad/(s·N·m) |
 
 > [!note] 방향타가 있는 배라면
-> 조종 문헌의 Nomoto 모델은 입력이 모멘트가 아니라 **방향타 각** $\delta$ ($T\dot r + r = K\delta$)
+> 조종 문헌의 Nomoto 모델은 입력이 모멘트가 아니라 **방향타 각** $\delta_R$ ($T\dot r + r = K\delta_R$, R = rudder)
 > WAM-V 에는 방향타가 없고 좌·우 추력 차이가 곧 모멘트이므로 $N$ 이 그 자리에 들어감. 모양은 같음
 
 ### 제어기를 붙이면 2차 시스템이 된다
@@ -1433,8 +1433,9 @@ $$
 
 > [!note] MSS 툴박스도 같은 구조
 > Fossen 의 `demoOtterUSVHeadingControl` 을 열어 보면 `Heading autopilot` 이
-> $\psi$ 와 **$r$ 을 따로 입력으로 받음**. D 항은 $K_p T_d\,(r_d - r)$ 이고,
-> 목표 각속도 $r_d = 0$ 이면 $-K_p T_d\,r$ 임
+> $\psi$ 와 **$r$ 을 따로 입력으로 받음**. D 항은 $K_p T_d\,(r_{\text{ref}} - r)$ 이고,
+> 목표 각속도 $r_{\text{ref}} = 0$ 이면 $-K_p T_d\,r$ 임
+> (MSS 원문은 $r_d$ 로 적음. 8주차 로이터 반경 $r_d$ 와 겹쳐 여기서는 $r_{\text{ref}}$ 로 씀)
 > 7주차 이후의 `InnerLoop` 도 이 식을 그대로 씀
 
 ### 실행 ① — 오프라인 쌍둥이로 먼저 (VRX 불필요)
