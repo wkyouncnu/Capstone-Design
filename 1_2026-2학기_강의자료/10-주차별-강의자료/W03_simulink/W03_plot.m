@@ -6,7 +6,7 @@ function S = W03_plot(out, ttl)
 %   >> S = W03_plot(out, '직진 200/200 N')
 %
 %   왼쪽 그림 읽는 법
-%     가로축 East · 세로축 North — 해도와 같다. 위쪽이 북쪽
+%     가로축 y (동쪽) · 세로축 x (북쪽) — 해도와 같다. 위쪽이 북쪽
 %     회색 선체 = 출발 자세, 주황 윤곽 = 중간 자세, 초록 선체 = 마지막 자세
 %     선체의 뾰족한 쪽이 선수
 %
@@ -19,9 +19,9 @@ function S = W03_plot(out, ttl)
 
 if nargin < 2, ttl = ''; end
 
-t   = out.log_N.Time;
-N   = squeeze(out.log_N.Data);
-E   = squeeze(out.log_E.Data);
+t   = out.log_x_n.Time;
+X   = squeeze(out.log_x_n.Data);
+Y   = squeeze(out.log_y_n.Data);
 psi = squeeze(out.log_psi.Data);
 r   = squeeze(out.log_r.Data);
 vld = squeeze(out.log_valid.Data);
@@ -30,9 +30,9 @@ k0 = find(vld > 0.5, 1);
 if isempty(k0), error('유효한 센서 샘플이 없다. VRX 와 Domain ID 를 확인할 것.'); end
 idx = k0:numel(t);
 
-dN = diff(N(idx));  dE = diff(E(idx));  dt = diff(t(idx));
+dX = diff(X(idx));  dY = diff(Y(idx));  dt = diff(t(idx));
 S.t_valid  = t(k0);
-S.dist     = sum(hypot(dN, dE));
+S.dist     = sum(hypot(dX, dY));
 S.speed    = S.dist / (t(idx(end)) - t(k0));
 psiu       = unwrap(psi(idx));                 % ±180도 경계에서 튀는 것을 푼다
 S.dpsi_deg = rad2deg(psiu(end) - psiu(1));
@@ -43,40 +43,40 @@ figure('Name',['W03 결과 ' ttl], 'NumberTitle','off', 'Color','w', ...
 
 %% ---- 왼쪽 : NED 항적 ----------------------------------------------------
 ax = subplot(3,2,[1 3 5]); hold(ax,'on'); grid(ax,'on');
-xlabel(ax,'East [m]'); ylabel(ax,'North [m]');
+xlabel(ax,'y (동쪽) [m]'); ylabel(ax,'x (북쪽) [m]');
 
 C_TRAIL = [0.00 0.45 0.74];
 C_MID   = [0.85 0.47 0.02];
 C_END   = [0.13 0.55 0.13];
 
-hTrail = plot(ax, E(idx), N(idx), '-', 'Color',C_TRAIL, 'LineWidth',1.6);
+hTrail = plot(ax, Y(idx), X(idx), '-', 'Color',C_TRAIL, 'LineWidth',1.6);
 plot(ax, 0, 0, '+', 'Color',[0.80 0.15 0.15], 'MarkerSize',12, 'LineWidth',1.8);
 
 % 중간 자세 — 이동 8 m 또는 회전 30도 마다 한 척
 kLast = idx(1);  hMid = gobjects(0);
 for k = idx(2:end-1)
-    moved  = hypot(N(k)-N(kLast), E(k)-E(kLast));
+    moved  = hypot(X(k)-X(kLast), Y(k)-Y(kLast));
     turned = abs(mod(psi(k)-psi(kLast)+pi, 2*pi) - pi);
     if moved >= 8 || turned >= deg2rad(30)
-        [hX, hY] = W03_hull(E(k), N(k), pi/2 - psi(k));
+        [hX, hY] = W03_hull(Y(k), X(k), pi/2 - psi(k));
         hMid = patch(ax, hX, hY, 'w', 'EdgeColor',C_MID, 'LineWidth',1.2);
         if moved >= 8
-            text(ax, E(k)+1.5, N(k)+1.5, sprintf('%.0fs', t(k)), ...
+            text(ax, Y(k)+1.5, X(k)+1.5, sprintf('%.0fs', t(k)), ...
                  'Color',C_MID, 'FontSize',9);
         end
         kLast = k;
     end
 end
 
-[sX, sY, shx, shy] = W03_hull(E(k0), N(k0), pi/2 - psi(k0));
+[sX, sY, shx, shy] = W03_hull(Y(k0), X(k0), pi/2 - psi(k0));
 hStart = patch(ax, sX, sY, [0.75 0.75 0.75], 'EdgeColor',[0.3 0.3 0.3], 'LineWidth',1.3);
 plot(ax, shx, shy, '-', 'Color',[0.3 0.3 0.3], 'LineWidth',1.3);
 
-[eX, eY, ehx, ehy] = W03_hull(E(end), N(end), pi/2 - psi(end));
+[eX, eY, ehx, ehy] = W03_hull(Y(end), X(end), pi/2 - psi(end));
 hEnd = patch(ax, eX, eY, C_END, 'FaceAlpha',0.85, 'EdgeColor',[0.05 0.3 0.05], 'LineWidth',1.4);
 plot(ax, ehx, ehy, '-', 'Color',[0.05 0.3 0.05], 'LineWidth',2);
-text(ax, E(end)+2, N(end)-2, sprintf('끝 (N %.1f, E %.1f)\n\\psi = %.1f°', ...
-     N(end), E(end), rad2deg(psi(end))), 'FontSize',10, 'Color',[0.05 0.3 0.05]);
+text(ax, Y(end)+2, X(end)-2, sprintf('끝 (x %.1f, y %.1f)\n\\psi = %.1f°', ...
+     X(end), Y(end), rad2deg(psi(end))), 'FontSize',10, 'Color',[0.05 0.3 0.05]);
 
 axis(ax,'equal');
 legH = [hTrail hStart hEnd];  legS = {'항적','출발 자세','마지막 자세'};
@@ -87,8 +87,8 @@ title(ax, {sprintf('%s — NED 항적 (위쪽이 북쪽)', ttl), ...
                    S.dist, S.speed, S.dpsi_deg)}, 'FontWeight','normal');
 
 %% ---- 오른쪽 : 시간 응답 --------------------------------------------------
-subplot(3,2,2); plot(t(idx), N(idx), t(idx), E(idx), 'LineWidth',1.4); grid on;
-ylabel('[m]'); legend({'N','E'}, 'Location','best'); title('북쪽 · 동쪽 위치');
+subplot(3,2,2); plot(t(idx), X(idx), t(idx), Y(idx), 'LineWidth',1.4); grid on;
+ylabel('[m]'); legend({'x (북)','y (동)'}, 'Location','best'); title('북쪽 · 동쪽 위치');
 
 subplot(3,2,4);
 plot(t(idx), rad2deg(unwrap(psi(idx))), 'LineWidth',1.4); grid on;

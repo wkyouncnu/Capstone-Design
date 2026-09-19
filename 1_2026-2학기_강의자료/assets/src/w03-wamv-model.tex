@@ -4,7 +4,7 @@
 %
 % 요점
 %   1) 선체 축은 x 선수 · y 우현 · z 아래 (FRD). 위에서 보면 z 는 종이 속으로 들어간다 (⊗)
-%   2) 추진기 두 대는 x = -2.374 m, y = -+1.027 m. 좌현이 y 음수다
+%   2) 추진기 두 대는 x_b = -2.374 m, y_b = -+1.027 m. 좌현이 y_b 음수다
 %   3) X = F_L + F_R,  N = b (F_L - F_R). 좌 추력이 크면 N > 0 → 우선회 (시계방향)
 %   4) 좌표값은 VRX 파일에서 읽은 값이다 (wamv_aft_thrusters.xacro, wamv_base.urdf.xacro)
 %
@@ -68,7 +68,7 @@
 \draw[soft, densely dotted, line width=0.4pt] (-\T*\S-13, 0) -- (0,0);
 \draw[soft, line width=0.4pt, {Stealth[length=3pt]}-{Stealth[length=3pt]}]
      (-\T*\S, -\B*\S-8) -- (0, -\B*\S-8);
-\node[note, soft, anchor=north] at (-\T*\S/2, -\B*\S-8.5) {추진기 $x = -2.374$ m};
+\node[note, soft, anchor=north] at (-\T*\S/2, -\B*\S-8.5) {추진기 $x_b = -2.374$ m};
 \draw[soft, densely dotted, line width=0.4pt] (0,-2) -- (0,-\B*\S-9);
 
 % ---- 식 ---------------------------------------------------------------

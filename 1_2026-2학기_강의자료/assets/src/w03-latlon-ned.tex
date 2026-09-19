@@ -126,21 +126,21 @@
   % NED 축
   \draw[errc, line width=1.0pt, -{Stealth[length=4.5pt,width=3.5pt]}]
        (0,0) -- ({\Rr*\NX}, {\Rr*\NY});
-  \node[font=\small, errc] at ({(\Rr+5)*\NX}, {(\Rr+5)*\NY}) {$N$};
+  \node[font=\small, errc] at ({(\Rr+5)*\NX}, {(\Rr+5)*\NY}) {$x$ (북)};
   \draw[errc, line width=1.0pt, -{Stealth[length=4.5pt,width=3.5pt]}]
        (0,0) -- ({\Rr*\EX}, {\Rr*\EY});
-  \node[font=\small, errc] at ({(\Rr+5)*\EX}, {(\Rr+5)*\EY}) {$E$};
+  \node[font=\small, errc] at ({(\Rr+5)*\EX}, {(\Rr+5)*\EY}) {$y$ (동)};
   \draw[errc, line width=1.0pt, -{Stealth[length=4.5pt,width=3.5pt]}]
        (0,0) -- ({0.8*\Rr*\DX}, {0.8*\Rr*\DY});
-  \node[font=\small, errc] at ({(0.8*\Rr+5)*\DX}, {(0.8*\Rr+5)*\DY}) {$D$};
+  \node[font=\small, errc] at ({(0.8*\Rr+5)*\DX}, {(0.8*\Rr+5)*\DY}) {$z$ (아래)};
 
   \fill[ink] (0,0) circle (1.1);
   \node[font=\small, ink, anchor=south east] at (-1.2,1.0) {$P$};
 
   \node[font=\small\bfseries, anchor=west] at (-32,\R+12) {그 자리에 세우는 NED};
   \node[note, anchor=west, text width=62mm] at (-32,\R+6)
-       {$N$ 은 자오선을 따라 북쪽, $E$ 는 위도선을 따라 동쪽,
-        $D$ 는 \textbf{지구 중심}을 향한다};
+       {$x$ 는 자오선을 따라 북쪽, $y$ 는 위도선을 따라 동쪽,
+        $z$ 는 \textbf{지구 중심}을 향한다};
 
   \node[note, anchor=west, text width=64mm] at (-32,-\R-4)
        {배가 수 km 안에서만 움직이면 이 평면을 평평하다고 보아도 된다.
@@ -150,9 +150,9 @@
 % =========================== 변환식 ========================================
 \node[font=\small, anchor=west] at (-28,-\R-22)
      {$\begin{aligned}
-        \Delta N &= (\varphi - \varphi_0)\,R_M, \qquad
-        \Delta E  = (\lambda - \lambda_0)\,R_N\cos\varphi_0, \qquad
-        \Delta D  = -(h - h_0)
+        \Delta x &= (\varphi - \varphi_0)\,R_M, \qquad
+        \Delta y  = (\lambda - \lambda_0)\,R_N\cos\varphi_0, \qquad
+        \Delta z  = -(h - h_0)
        \end{aligned}$};
 
 \node[note, anchor=west, text width=150mm] at (-28,-\R-32)

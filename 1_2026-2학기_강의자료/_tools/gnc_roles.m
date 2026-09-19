@@ -51,6 +51,9 @@ case {'W03_0_offline','W03_4_teleop'}
     role = [GNC; {'TeleopPad','guidance'; 'OdomNav','ros'}];
 
 % ---- 4주차 · 토픽 조사 -------------------------------------------------
+case 'W04_0_offline'
+    %   SensorModel 은 1단계 SensorSubscriber 자리를 대신한다 — 같은 연보라
+    role = [GNC; {'Command','guidance'; 'SensorModel','ros'; 'RateMeter','ros'}];
 case 'W04_1_sensor_rates'
     role = [GNC; {'SensorSubscriber','ros'; 'RateMeter','ros'}];
 case 'W04_2_qos_test'
@@ -60,7 +63,7 @@ case 'W04_2_qos_test'
 case {'W06_1_straight','W06_2_turn'}
     role = [GNC; {'PubL','ros'; 'PubR','ros'; 'BlankL','ros'; 'BlankR','ros'; ...
                   'AsgL','ros'; 'AsgR','ros'; 'Scenario','guidance'}];
-case {'W06_3_heading','W06_4_inner_loop'}
+case {'W06_3_heading','W06_4_inner_loop','W06_3_heading_offline','W06_4_inner_loop_offline'}
     role = [GNC; {'PubL','ros'; 'PubR','ros'; 'BlankL','ros'; 'BlankR','ros'; ...
                   'AsgL','ros'; 'AsgR','ros'; 'OdomSub','ros'; ...
                   'Quat2Yaw','ros'; 'Sel','ros'; ...

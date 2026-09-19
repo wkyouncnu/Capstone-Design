@@ -9,7 +9,7 @@
 % 좌표는 계산한 값이다 (N 위, E 오른쪽, 원점 = 축 교점 (4,4)).
 %   pi_p = 50 deg,  t = (sin50, cos50) = (0.76604, 0.64279),  n = (0.64279, -0.76604)
 %   p_k   = (18.00, 18.00)
-%   p_k+1 = p_k + 70 t = (71.62, 63.00)      -> E_k+1 - E_k = 53.62, N_k+1 - N_k = 45.00
+%   p_k+1 = p_k + 70 t = (71.62, 63.00)      -> y_k+1 - y_k = 53.62, x_k+1 - x_k = 45.00
 %   F     = p_k + 42 t = (50.17, 45.00)      수선의 발
 %   배    = F + 15 n   = (59.81, 33.51)
 %   atan2(53.62, 45.00) = 50.0 deg  (pi_p 확인)
@@ -32,30 +32,30 @@
 % ---- N · E 축 --------------------------------------------------------------
 \draw[axis, -{Stealth[length=4pt,width=3pt]}] (o) -- (4,76);
 \draw[axis, -{Stealth[length=4pt,width=3pt]}] (o) -- (84,4);
-\node[font=\small, anchor=south] at (4,76.5) {$N$};
-\node[font=\small, anchor=west]  at (84.5,4) {$E$};
+\node[font=\small, anchor=south] at (4,76.5) {$x$ (북)};
+\node[font=\small, anchor=west]  at (84.5,4) {$y$ (동)};
 
 % ---- 두 웨이포인트를 축에 내린다 -------------------------------------------
 \draw[pathc, densely dotted, line width=0.4pt] (pk)  -- (18,4);
 \draw[pathc, densely dotted, line width=0.4pt] (pk)  -- (4,18);
 \draw[pathc, densely dotted, line width=0.4pt] (pk1) -- (71.62,4);
 \draw[pathc, densely dotted, line width=0.4pt] (pk1) -- (4,63);
-\node[font=\scriptsize, pathc, anchor=north] at (18,3.2)    {$E_k$};
-\node[font=\scriptsize, pathc, anchor=north] at (71.62,3.2) {$E_{k+1}$};
-\node[font=\scriptsize, pathc, anchor=east]  at (3.2,18)    {$N_k$};
-\node[font=\scriptsize, pathc, anchor=east]  at (3.2,63)    {$N_{k+1}$};
+\node[font=\scriptsize, pathc, anchor=north] at (18,3.2)    {$y_k$};
+\node[font=\scriptsize, pathc, anchor=north] at (71.62,3.2) {$y_{k+1}$};
+\node[font=\scriptsize, pathc, anchor=east]  at (3.2,18)    {$x_k$};
+\node[font=\scriptsize, pathc, anchor=east]  at (3.2,63)    {$x_{k+1}$};
 
-% 배의 좌표도 흐리게 — x_e, y_e 식의 (N - N_k), (E - E_k) 가 여기서 나온다
+% 배의 좌표도 흐리게 — x_e, y_e 식의 (x - x_k), (y - y_k) 가 여기서 나온다
 \draw[soft, densely dotted, line width=0.3pt] (sh) -- (59.81,4);
 \draw[soft, densely dotted, line width=0.3pt] (sh) -- (4,33.51);
-\node[font=\scriptsize, soft, anchor=north] at (59.81,3.2) {$E$};
-\node[font=\scriptsize, soft, anchor=east]  at (3.2,33.51) {$N$};
+\node[font=\scriptsize, soft, anchor=north] at (59.81,3.2) {$y$};
+\node[font=\scriptsize, soft, anchor=east]  at (3.2,33.51) {$x$};
 
 % ---- 경로 방위각을 정하는 삼각형 -------------------------------------------
 \draw[thr, line width=0.6pt] (pk) -- (71.62,18) -- (pk1);
 \draw[thr, line width=0.4pt] (69.02,18) -- (69.02,20.6) -- (71.62,20.6);
-\node[font=\scriptsize, thr, anchor=north] at (44.8,17.4) {$E_{k+1} - E_k$};
-\node[font=\scriptsize, thr, anchor=west]  at (72.4,40.5) {$N_{k+1} - N_k$};
+\node[font=\scriptsize, thr, anchor=north] at (44.8,17.4) {$y_{k+1} - y_k$};
+\node[font=\scriptsize, thr, anchor=west]  at (72.4,40.5) {$x_{k+1} - x_k$};
 
 % ---- 경로 -----------------------------------------------------------------
 \draw[pathc, line width=0.8pt] (pk) -- (pk1);
@@ -92,12 +92,12 @@
 \begin{scope}[shift={(59.81,33.51)}, rotate=-30]
   \fill[ink] (-1.7,-2.4) -- (-1.7,1.4) -- (0,3.4) -- (1.7,1.4) -- (1.7,-2.4) -- cycle;
 \end{scope}
-\node[note, anchor=west] at (61.8,31.5) {배 $(N,\ E)$};
+\node[note, anchor=west] at (61.8,31.5) {배 $(x,\ y)$};
 
 % ---- 읽는 법 ---------------------------------------------------------------
 \node[note, anchor=west, text width=58mm] at (92,64) {주황 삼각형 — 두 웨이포인트의 좌표 차이가 경로 방위각을 정한다};
-\node[font=\scriptsize, anchor=west] at (92,56) {$\pi_p = \operatorname{atan2}(E_{k+1}-E_k,\ N_{k+1}-N_k)$};
-\node[note, anchor=west, text width=64mm] at (92,46) {회색 화살표 = 배의 위치 $-$ 웨이포인트 $k$, 즉 $(N-N_k,\ E-E_k)$};
+\node[font=\scriptsize, anchor=west] at (92,56) {$\pi_p = \operatorname{atan2}(y_{k+1}-y_k,\ x_{k+1}-x_k)$};
+\node[note, anchor=west, text width=64mm] at (92,46) {회색 화살표 = 배의 위치 $-$ 웨이포인트 $k$, 즉 $(x-x_k,\ y-y_k)$};
 \node[note, pathc, anchor=west, text width=58mm] at (92,37) {$\hat{t}$ 는 경로 방향, $\hat{n}$ 은 경로의 오른쪽(우현)};
 \node[note, errc, anchor=west, text width=58mm] at (92,27) {회색 화살표를 $\hat{t}$ 성분과 $\hat{n}$ 성분으로 나눈 것이 $x_e$ 와 $y_e$ 다 — 식의 $\sin\cdot\cos$ 이 이 회전이다};
 

@@ -38,11 +38,11 @@ res = struct([]);
 for i = 1:numel(CUR)
     current_speed = CUR(i);                    %#ok<NASGU>
     out = sim('W07_0_offline');
-    t   = out.log_pn.Time;
+    t   = out.log_x_n.Time;
     psi = rad2deg(out.log_psi.Data);  chi = rad2deg(out.log_chi.Data);
     bet = rad2deg(out.log_beta.Data); ye  = out.log_y_e.Data;
     xe  = out.log_x_e.Data;
-    pn  = out.log_pn.Data;            pe  = out.log_pe.Data;
+    x_n  = out.log_x_n.Data;            y_n  = out.log_y_n.Data;
 
     sw = find(diff(xe) < -5) + 1;              % 구간이 바뀌는 순간들
     a = sw(1);  b = sw(2) - 1;                 % 두 번째 구간
@@ -51,7 +51,7 @@ for i = 1:numel(CUR)
     res(i).cur = CUR(i);
     res(i).t = t(a:b);  res(i).psi = psi(a:b);  res(i).chi = chi(a:b);
     res(i).bet = bet(a:b);  res(i).ye = ye(a:b);
-    res(i).pn = pn(a:b);  res(i).pe = pe(a:b);
+    res(i).x_n = x_n(a:b);  res(i).y_n = y_n(a:b);
     res(i).psi_ss = mean(psi(w));  res(i).chi_ss = mean(chi(w));
     res(i).bet_ss = mean(bet(w));  res(i).ye_ss  = mean(ye(w));
     res(i).ye_th  = Delta * tand(res(i).bet_ss);
@@ -76,12 +76,12 @@ subplot(2,2,[1 3]); hold on; grid on; box on;
 plot([wp_east(2) wp_east(3)], [wp_north(2) wp_north(3)], 'k--', 'LineWidth', 1.2, ...
      'DisplayName', '계획 경로 (2구간)');
 for i = 1:numel(res)
-    plot(res(i).pe, res(i).pn, 'LineWidth', 1.8, 'Color', C(i,:), ...
+    plot(res(i).y_n, res(i).x_n, 'LineWidth', 1.8, 'Color', C(i,:), ...
          'DisplayName', sprintf('조류 %.1f m/s', res(i).cur));
 end
 quiver(45, 53, 0, 4, 0, 'Color',[0 0.45 0.74], 'LineWidth',1.5, 'MaxHeadSize',2, ...
        'DisplayName','조류 방향 (북)');
-xlabel('East [m]'); ylabel('North [m]'); ylim([52 66]);
+xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]'); ylim([52 66]);
 title('두 번째 구간 — 조류가 있으면 경로 옆에 붙어 간다');
 legend('Location','southeast');
 

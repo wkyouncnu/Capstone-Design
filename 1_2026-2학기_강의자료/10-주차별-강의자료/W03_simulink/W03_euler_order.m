@@ -24,7 +24,7 @@ R_xyz = Rx(ph)*Ry(th)*Rz(psi);                    % 순서만 바꾼 것
 
 %% 1. 같은 세 숫자, 다른 자세 -------------------------------------------
 fprintf('\n세 각  psi = %g deg,  theta = %g deg,  phi = %g deg\n', psi_d, theta_d, phi_d);
-fprintf('\n선수(x_b)가 가리키는 방향 [N  E  D]\n');
+fprintf('\n선수(x_b)가 가리키는 방향 [x  y  z] (NED: 북 동 아래)\n');
 fprintf('  z-y-x (선박 규약) : [%7.3f %7.3f %7.3f]\n', R_zyx(:,1));
 fprintf('  x-y-z (순서 바꿈) : [%7.3f %7.3f %7.3f]\n', R_xyz(:,1));
 fprintf('  두 선수 방향 사이의 각 : %.1f deg\n', ...
@@ -59,9 +59,9 @@ for k = 1:2
     subplot(1,2,k); hold on; axis equal; axis off;
     R = cases{k,1};
     % NED 기준축
-    quiver3(0,0,0, 2.6,0,0, 0, 'k', 'LineWidth',0.8); text(2.8,0,0,'N','FontSize',11);
-    quiver3(0,0,0, 0,2.6,0, 0, 'k', 'LineWidth',0.8); text(0,2.8,0,'E','FontSize',11);
-    quiver3(0,0,0, 0,0,2.0, 0, 'k', 'LineWidth',0.8); text(0,0,2.2,'D','FontSize',11);
+    quiver3(0,0,0, 2.6,0,0, 0, 'k', 'LineWidth',0.8); text(2.8,0,0,'x (북)','FontSize',11);
+    quiver3(0,0,0, 0,2.6,0, 0, 'k', 'LineWidth',0.8); text(0,2.8,0,'y (동)','FontSize',11);
+    quiver3(0,0,0, 0,0,2.0, 0, 'k', 'LineWidth',0.8); text(0,0,2.2,'z (아래)','FontSize',11);
     % 돌리기 전의 선체 (회색)
     fill3(hull(1,:), hull(2,:), hull(3,:), [0.85 0.85 0.85], 'FaceAlpha',0.4, 'EdgeColor',[0.6 0.6 0.6]);
     % 돌린 선체

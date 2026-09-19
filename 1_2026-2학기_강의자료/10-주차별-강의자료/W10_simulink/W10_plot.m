@@ -68,7 +68,7 @@ subplot(2,3,1);
 plot(etd(:,2), etd(:,1), 'k--', 'LineWidth',1.2); hold on;
 plot(eta(:,2), eta(:,1), 'b-',  'LineWidth',1.5);
 plot(eta(1,2), eta(1,1), 'ko','MarkerFaceColor','g','MarkerSize',8);
-axis equal; grid on; xlabel('East [m]'); ylabel('North [m]');
+axis equal; grid on; xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
 legend({'목표','실제','출발'},'Location','best');
 title('평면 궤적');
 

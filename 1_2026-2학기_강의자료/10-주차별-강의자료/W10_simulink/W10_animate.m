@@ -19,7 +19,7 @@ if isempty(hFig) || ~isvalid(hFig) || t < tPrev
     hFig = figure('Name','W10 DP 실시간','Color','w','Position',[80 80 720 640]);
     hAx  = axes('Parent',hFig); hold(hAx,'on'); grid(hAx,'on');
     axis(hAx,'equal');
-    xlabel(hAx,'East [m]'); ylabel(hAx,'North [m]');
+    xlabel(hAx,'y (동쪽) [m]'); ylabel(hAx,'x (북쪽) [m]');
     hTgt   = plot(hAx, nan, nan, 'k+', 'MarkerSize',14,'LineWidth',1.4);
     hTrail = plot(hAx, nan, nan, 'Color',[0.4 0.6 0.9], 'LineWidth',1.0);
     hHull  = patch('Parent',hAx,'XData',nan,'YData',nan, ...

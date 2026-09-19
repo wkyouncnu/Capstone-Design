@@ -20,8 +20,8 @@ ce = evalin('base','center_east');
 rd = evalin('base','r_d');
 req = evalin('base','required_turns');
 
-t     = out.log_pn.Time;
-pn    = out.log_pn.Data;      pe   = out.log_pe.Data;
+t     = out.log_x_n.Time;
+x_n    = out.log_x_n.Data;      y_n   = out.log_y_n.Data;
 psi   = out.log_psi.Data;     pref = out.log_psi_ref.Data;
 rdist = out.log_r_dist.Data;  turns= out.log_turns.Data;
 gate  = out.log_gate.Data;    u    = out.log_u.Data;
@@ -58,10 +58,10 @@ plot(ce + rd*cos(th), cn + rd*sin(th), '--', 'Color',[0.75 0.1 0.1], 'LineWidth'
 hold on; grid on; axis equal;
 plot(ce, cn, 'p', 'MarkerEdgeColor',[0.75 0.1 0.1], ...
      'MarkerFaceColor',[1 0.85 0.2], 'MarkerSize',16);
-plot(pe(1:k_end), pn(1:k_end), '-', 'Color',[0 0.45 0.74], 'LineWidth',1.5);
-plot(pe(1), pn(1), 'go', 'MarkerFaceColor','g', 'MarkerSize',9);
-plot(pe(k_end), pn(k_end), 'ro', 'MarkerFaceColor','r', 'MarkerSize',9);
-xlabel('East [m]'); ylabel('North [m]');
+plot(y_n(1:k_end), x_n(1:k_end), '-', 'Color',[0 0.45 0.74], 'LineWidth',1.5);
+plot(y_n(1), x_n(1), 'go', 'MarkerFaceColor','g', 'MarkerSize',9);
+plot(y_n(k_end), x_n(k_end), 'ro', 'MarkerFaceColor','r', 'MarkerSize',9);
+xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
 title(sprintf('궤적   (평균 반경오차 %.2f m)', S.mean_re));
 legend({'목표 원','중심','항적','출발','종료'}, 'Location','best','FontSize',8);
 

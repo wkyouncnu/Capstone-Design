@@ -33,8 +33,8 @@ for i = 1:numel(DELTAS)
     Delta = DELTAS(i);                 %#ok<NASGU>
     out = sim('W07_0_offline');
 
-    t  = out.log_pn.Time;
-    pn = out.log_pn.Data;   pe = out.log_pe.Data;
+    t  = out.log_x_n.Time;
+    x_n = out.log_x_n.Data;   y_n = out.log_y_n.Data;
     ye = out.log_y_e.Data;  xe = out.log_x_e.Data;
 
     %  첫 구간이 끝나는 순간 — 구간이 바뀌면 x_e 가 새 원점에서 다시 시작한다
@@ -43,7 +43,7 @@ for i = 1:numel(DELTAS)
 
     res(i).D  = DELTAS(i);
     res(i).t  = t(1:k);
-    res(i).pn = pn(1:k);   res(i).pe = pe(1:k);
+    res(i).x_n = x_n(1:k);   res(i).y_n = y_n(1:k);
     res(i).ye = ye(1:k);
 
     %  성능 — 첫 구간에서만 잰다
@@ -66,11 +66,11 @@ h = figure('Name','W07  lookahead distance 비교', ...
 subplot(1,2,1); hold on; grid on; box on;
 plot([wp_east(1) wp_east(2)], [wp_north(1) wp_north(2)], 'k--', 'LineWidth', 1.2);
 for i = 1:numel(DELTAS)
-    plot(res(i).pe, res(i).pn, 'LineWidth', 1.6, 'Color', COL(i,:));
+    plot(res(i).y_n, res(i).x_n, 'LineWidth', 1.6, 'Color', COL(i,:));
 end
 plot(0, 0, 'ko', 'MarkerFaceColor','w', 'MarkerSize', 7);
 text(1.5, -1.5, '출발 (경로에서 20 m)', 'FontSize', 9);
-axis equal; ylim([-6 60]); xlabel('East [m]'); ylabel('North [m]');
+axis equal; ylim([-6 60]); xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
 title('첫 구간 궤적 — \Delta 만 다르다');
 legend([{'계획 경로'}, arrayfun(@(d) sprintf('\\Delta = %g m', d), DELTAS, ...
         'UniformOutput', false)], 'Location','southeast');

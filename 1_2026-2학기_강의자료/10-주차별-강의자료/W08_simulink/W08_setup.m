@@ -20,8 +20,8 @@ clear; clc;
 %   대략 N in [-28, 60],  E in [-18, 100] 이다.
 %   아래 설정이면 원이 N in [-5, 45], E in [15, 65] 를 차지한다.
 % =====================================================================
-center_north = 20;      % 로이터 중심 North [m]
-center_east  = 40;      % 로이터 중심 East  [m]
+center_north = 20;      % 로이터 중심 x (북쪽) [m]
+center_east  = 40;      % 로이터 중심 y (동쪽) [m]
 r_d          = 25;      % 목표 반경 [m]
 
 %% ====================================================================
@@ -123,7 +123,7 @@ x0 = [0.1; 0; 0; 0; 0; psi_init];     % [u v r N E psi]'
 if p_c > 0, dir_name = '시계방향'; else, dir_name = '반시계방향'; end
 
 fprintf('W08 설정 완료\n');
-fprintf('  로이터 중심 (N,E) = (%g, %g),  반경 %g m\n', center_north, center_east, r_d);
+fprintf('  로이터 중심 (x,y) = (%g, %g),  반경 %g m\n', center_north, center_east, r_d);
 fprintf('  p_c = %+.3f  ->  %s,  목표 속도 %g m/s\n', p_c, dir_name, u_ref);
 % 시나리오의 마지막 단계는 450 s 에 시작한다. 2 바퀴에서 멈추면 둘째 단계도 못 본다
 %   -> 시나리오를 켜면 정지 조건을 끄고 600 s 돈다

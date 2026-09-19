@@ -19,8 +19,8 @@ function S = W06_offline_plot(out, V)
 if nargin < 1, out = evalin('base','out'); end
 if nargin < 2, V = []; end
 
-t   = out.log_pn.Time;
-pn  = out.log_pn.Data;   pe  = out.log_pe.Data;
+t   = out.log_x_n.Time;
+x_n  = out.log_x_n.Data;   y_n  = out.log_y_n.Data;
 psi = out.log_psi.Data;  u   = out.log_u.Data;   r = out.log_r.Data;
 
 % 각 구간의 마지막 5초를 정상상태로 본다
@@ -38,14 +38,14 @@ figure('Name','W06 오프라인 WAM-V','Color','w','Position',[80 60 1080 720]);
 hasV = ~isempty(V);
 
 subplot(2,2,1);
-plot(pe, pn, 'b-', 'LineWidth',1.6); hold on; grid on; axis equal;
-if hasV, plot(V.pe, V.pn, 'r-', 'LineWidth',1.4); end
-plot(pe(1), pn(1), 'ko','MarkerFaceColor','g','MarkerSize',8);
+plot(y_n, x_n, 'b-', 'LineWidth',1.6); hold on; grid on; axis equal;
+if hasV, plot(V.y_n, V.x_n, 'r-', 'LineWidth',1.4); end
+plot(y_n(1), x_n(1), 'ko','MarkerFaceColor','g','MarkerSize',8);
 i20 = find(t>=20,1); i40 = find(t>=40,1); i60 = find(t>=60,1);
-plot(pe(i20), pn(i20), 'k^','MarkerFaceColor','w','MarkerSize',7);
-plot(pe(i40), pn(i40), 'ks','MarkerFaceColor','w','MarkerSize',7);
-plot(pe(i60), pn(i60), 'kd','MarkerFaceColor','w','MarkerSize',7);
-xlabel('East [m]'); ylabel('North [m]');
+plot(y_n(i20), x_n(i20), 'k^','MarkerFaceColor','w','MarkerSize',7);
+plot(y_n(i40), x_n(i40), 'ks','MarkerFaceColor','w','MarkerSize',7);
+plot(y_n(i60), x_n(i60), 'kd','MarkerFaceColor','w','MarkerSize',7);
+xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
 if hasV
     legend({'오프라인','VRX','출발','20 s','40 s','60 s'}, 'Location','best');
 else

@@ -12,7 +12,7 @@ clear; close all; clc;
 
 %% 격자 (NED) --------------------------------------------------------
 lim = 60;  step = 6;
-[E, N] = meshgrid(-lim:step:lim, -lim:step:lim);
+[Y, X] = meshgrid(-lim:step:lim, -lim:step:lim);
 
 %% 비교할 네 조건  [r_d, p_c, 제목] ------------------------------------
 vd = 1.5;                       % WAM-V 속도 [m/s]
@@ -28,9 +28,9 @@ figure('Name','W08 로이터 벡터필드','Color','w','Position',[80 60 980 900
 for i = 1:4
     rd = CASES{i,1};  pc = CASES{i,2};
 
-    r     = sqrt(N.^2 + E.^2);
+    r     = sqrt(X.^2 + Y.^2);
     r(r == 0) = 1e-3;                       % 중심은 특이점
-    theta = atan2(E, N);                    % NED: atan2(East, North)
+    theta = atan2(Y, X);                    % NED: atan2(동 y, 북 x)
 
     % --- 식 (9) : 극좌표 벡터필드 ---
     D       = sqrt((r - rd).^2 + (pc*r).^2);
@@ -38,8 +38,8 @@ for i = 1:4
     rth_dot =  vd * pc * r   ./ D;          % 접선 방향 — 도는 성분
 
     % --- 식 (13) : 극좌표 -> NED ---
-    vN = r_dot.*cos(theta) - rth_dot.*sin(theta);
-    vE = r_dot.*sin(theta) + rth_dot.*cos(theta);
+    vx = r_dot.*cos(theta) - rth_dot.*sin(theta);
+    vy = r_dot.*sin(theta) + rth_dot.*cos(theta);
 
     subplot(2,2,i); hold on; grid on; axis equal;
     axis([-lim-5 lim+5 -lim-5 lim+5]);
@@ -49,9 +49,9 @@ for i = 1:4
     plot(0, 0, 'p', 'MarkerEdgeColor',[0.75 0.1 0.1], ...
          'MarkerFaceColor',[1 0.85 0.2], 'MarkerSize',14);
 
-    quiver(E, N, vE, vN, 1.1, 'Color',[0 0.45 0.74]);
+    quiver(Y, X, vy, vx, 1.1, 'Color',[0 0.45 0.74]);
 
-    xlabel('East [m]'); ylabel('North [m]');
+    xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
     title(CASES{i,3}, 'FontSize',10);
 end
 

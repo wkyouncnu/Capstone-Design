@@ -68,7 +68,7 @@ mT.data = posL; send(pPL, mT);
 mT.data = posR; send(pPR, mT);
 pause(1.0);                              % 방위각이 자리를 잡을 시간
 m0 = receive(sub, 20);                   % 추력을 켜는 순간을 출발점으로
-[E0, N0, psi0] = unpackENU(m0);
+[y0_n, x0_n, psi0] = unpackENU(m0);
 t0 = stampSec(m0);
 w = tic;
 while true
@@ -84,13 +84,13 @@ end
 mT.data = 0; send(pTL, mT); send(pTR, mT); send(pPL, mT); send(pPR, mT);
 
 m1 = receive(sub, 20);
-[E1, N1, psi1] = unpackENU(m1);
+[y1_n, x1_n, psi1] = unpackENU(m1);
 t1 = stampSec(m1);
 
 % --- 선체 기준 변위 --------------------------------------------------
-dE = E1 - E0;  dN = N1 - N0;
-fwd = dE*cos(psi0) + dN*sin(psi0);       % 전후 (+ 선수 방향)
-stb = dE*sin(psi0) - dN*cos(psi0);       % 좌우 (+ 우현)
+dY = y1_n - y0_n;  dX = x1_n - x0_n;
+fwd = dY*cos(psi0) + dX*sin(psi0);       % 전후 (+ 선수 방향)
+stb = dY*sin(psi0) - dX*cos(psi0);       % 좌우 (+ 우현)
 
 fprintf('\n===== 개루프 횡이동 (%.1f s, 시뮬레이션 시각 기준) =====\n', t1 - t0);
 fprintf('  선체 기준 우현 이동      %+7.2f m\n', stb);

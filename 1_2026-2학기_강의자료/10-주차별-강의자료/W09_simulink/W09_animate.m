@@ -1,4 +1,4 @@
-function W09_animate(pn, pe, psi, mode, turns, t)
+function W09_animate(x_n, y_n, psi, mode, turns, t)
 % W09_ANIMATE  웨이포인트 항주와 로이터링을 실시간으로 그린다.
 %
 %   미션 상태에 따라 배 색이 바뀐다.
@@ -8,16 +8,16 @@ function W09_animate(pn, pe, psi, mode, turns, t)
 %
 %   선체 모양은 7·8주차와 같다 — 선수는 세모, 선미는 네모.
 
-persistent fig ax hTrail hHull hHead hInfo trailN trailE tLast tPrev
+persistent fig ax hTrail hHull hHead hInfo trailX trailY tLast tPrev
 
 newRun = isempty(tLast) || isempty(fig) || ~isvalid(fig) || t < tPrev;
 
 if newRun
-    wpn = evalin('base','wp_north');
-    wpe = evalin('base','wp_east');
+    wpx = evalin('base','wp_north');
+    wpy = evalin('base','wp_east');
     R   = evalin('base','R_LOS');
-    lcn = evalin('base','loiter_cn');
-    lce = evalin('base','loiter_ce');
+    lxc = evalin('base','loiter_xc');
+    lyc = evalin('base','loiter_yc');
     lrd = evalin('base','loiter_radius');
 
     if ~isempty(fig) && isvalid(fig), close(fig); end
@@ -26,26 +26,26 @@ if newRun
     ax  = axes(fig); hold(ax,'on'); grid(ax,'on'); axis(ax,'equal');
 
     % 계획 경로
-    plot(ax, wpe, wpn, '--', 'Color',[0.35 0.35 0.35], 'LineWidth',1.3);
+    plot(ax, wpy, wpx, '--', 'Color',[0.35 0.35 0.35], 'LineWidth',1.3);
     th = linspace(0, 2*pi, 72);
-    for i = 1:numel(wpn)
-        plot(ax, wpe(i)+R*cos(th), wpn(i)+R*sin(th), ':', 'Color',[0.6 0.6 0.6]);
+    for i = 1:numel(wpx)
+        plot(ax, wpy(i)+R*cos(th), wpx(i)+R*sin(th), ':', 'Color',[0.6 0.6 0.6]);
     end
 
     % 로이터 원
-    plot(ax, lce + lrd*cos(th), lcn + lrd*sin(th), '--', ...
+    plot(ax, lyc + lrd*cos(th), lxc + lrd*sin(th), '--', ...
          'Color',[0.85 0.33 0.10], 'LineWidth',1.6);
-    plot(ax, lce, lcn, 'p', 'MarkerEdgeColor',[0.85 0.33 0.10], ...
+    plot(ax, lyc, lxc, 'p', 'MarkerEdgeColor',[0.85 0.33 0.10], ...
          'MarkerFaceColor',[1 0.85 0.2], 'MarkerSize',15);
 
-    trailN = []; trailE = [];
+    trailX = []; trailY = [];
     hTrail = plot(ax, nan, nan, '-', 'Color',[0 0.45 0.74], 'LineWidth',1.4);
 
     % 웨이포인트는 항적 위에
-    for i = 1:numel(wpn)
-        plot(ax, wpe(i), wpn(i), 's', 'MarkerEdgeColor',[0.75 0.10 0.10], ...
+    for i = 1:numel(wpx)
+        plot(ax, wpy(i), wpx(i), 's', 'MarkerEdgeColor',[0.75 0.10 0.10], ...
              'MarkerFaceColor','w', 'MarkerSize',11, 'LineWidth',1.8);
-        text(ax, wpe(i)+4, wpn(i)+5, sprintf('%d', i), ...
+        text(ax, wpy(i)+4, wpx(i)+5, sprintf('%d', i), ...
              'FontSize',12, 'Color',[0.75 0.10 0.10], 'FontWeight','bold');
     end
 
@@ -54,11 +54,11 @@ if newRun
                   'EdgeColor',[0.1 0.1 0.1], 'LineWidth',1.2);
     hHead = plot(ax, nan, nan, '-', 'Color',[0.1 0.1 0.1], 'LineWidth',1.6);
 
-    mE = [min([wpe lce-lrd]) max([wpe lce+lrd])];
-    mN = [min([wpn lcn-lrd]) max([wpn lcn+lrd])];
-    pad = 0.2*max([diff(mE) diff(mN) 20]);
-    axis(ax, [mE(1)-pad mE(2)+pad mN(1)-pad mN(2)+pad]);
-    xlabel(ax,'East [m]'); ylabel(ax,'North [m]');
+    mY = [min([wpy lyc-lrd]) max([wpy lyc+lrd])];
+    mX = [min([wpx lxc-lrd]) max([wpx lxc+lrd])];
+    pad = 0.2*max([diff(mY) diff(mX) 20]);
+    axis(ax, [mY(1)-pad mY(2)+pad mX(1)-pad mX(2)+pad]);
+    xlabel(ax,'y (동쪽) [m]'); ylabel(ax,'x (북쪽) [m]');
     hInfo = title(ax, '', 'FontSize',11, 'FontWeight','normal', 'Interpreter','none');
     tLast = -inf;
 end
@@ -72,9 +72,9 @@ end
 if t - tLast < every, return; end
 tLast = t;
 
-trailN(end+1) = pn;  %#ok<AGROW>
-trailE(end+1) = pe;  %#ok<AGROW>
-set(hTrail, 'XData', trailE, 'YData', trailN);
+trailX(end+1) = x_n;  %#ok<AGROW>
+trailY(end+1) = y_n;  %#ok<AGROW>
+set(hTrail, 'XData', trailY, 'YData', trailX);
 
 try
     sc = evalin('base','boat_scale');
@@ -84,10 +84,10 @@ end
 L = 2.45*sc;  B = 1.03*sc;
 bx = L * [ -1   -1    0.5   1     0.5 ];
 by = B * [  1   -1   -1     0     1   ];
-set(hHull, 'XData', pe + bx*sin(psi) + by*cos(psi), ...
-           'YData', pn + bx*cos(psi) - by*sin(psi));
+set(hHull, 'XData', y_n + bx*sin(psi) + by*cos(psi), ...
+           'YData', x_n + bx*cos(psi) - by*sin(psi));
 hd = 2.2*L;
-set(hHead, 'XData', [pe, pe + hd*sin(psi)], 'YData', [pn, pn + hd*cos(psi)]);
+set(hHead, 'XData', [y_n, y_n + hd*sin(psi)], 'YData', [x_n, x_n + hd*cos(psi)]);
 
 % 미션 상태에 따라 색을 바꾼다
 if mode > 2.5

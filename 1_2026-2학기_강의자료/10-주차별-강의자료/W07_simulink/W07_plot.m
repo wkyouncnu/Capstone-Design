@@ -16,14 +16,14 @@ function S = W07_plot(out, ttl)
 
 if nargin < 2, ttl = ''; end
 
-wpn = evalin('base','wp_north');
-wpe = evalin('base','wp_east');
+wpx = evalin('base','wp_north');
+wpy = evalin('base','wp_east');
 R   = evalin('base','R_LOS');
 ur  = evalin('base','u_ref');
 Ts  = evalin('base','Ts_ctrl');
 
-t    = out.log_pn.Time;
-pn   = out.log_pn.Data;     pe  = out.log_pe.Data;
+t    = out.log_x_n.Time;
+x_n   = out.log_x_n.Data;     y_n  = out.log_y_n.Data;
 ye   = out.log_y_e.Data;    gate= out.log_gate.Data;
 psi  = out.log_psi.Data;    pref= out.log_psi_ref.Data;
 chi  = out.log_chi.Data;    beta= out.log_beta.Data;
@@ -48,18 +48,18 @@ S.fig = figure('Name',['W07  ' ttl], 'Position', [80 60 1200 780], 'Color','w');
 
 % ---- 1. 궤적 --------------------------------------------------------
 subplot(2,3,[1 4]);
-plot(wpe, wpn, 'k--', 'LineWidth', 1.2); hold on;
-plot(wpe, wpn, 'ks', 'MarkerFaceColor','w', 'MarkerSize', 8);
+plot(wpy, wpx, 'k--', 'LineWidth', 1.2); hold on;
+plot(wpy, wpx, 'ks', 'MarkerFaceColor','w', 'MarkerSize', 8);
 th = linspace(0, 2*pi, 60);
-for i = 1:numel(wpn)
-    plot(wpe(i)+R*cos(th), wpn(i)+R*sin(th), ':', 'Color',[.6 .6 .6]);
-    text(wpe(i)+4, wpn(i)+4, sprintf('%d', i), 'FontSize', 9);
+for i = 1:numel(wpx)
+    plot(wpy(i)+R*cos(th), wpx(i)+R*sin(th), ':', 'Color',[.6 .6 .6]);
+    text(wpy(i)+4, wpx(i)+4, sprintf('%d', i), 'FontSize', 9);
 end
-plot(pe(1:k), pn(1:k), 'b-', 'LineWidth', 1.6);
-plot(pe(1), pn(1), 'go', 'MarkerFaceColor','g', 'MarkerSize', 8);
-plot(pe(k), pn(k), 'ro', 'MarkerFaceColor','r', 'MarkerSize', 8);
+plot(y_n(1:k), x_n(1:k), 'b-', 'LineWidth', 1.6);
+plot(y_n(1), x_n(1), 'go', 'MarkerFaceColor','g', 'MarkerSize', 8);
+plot(y_n(k), x_n(k), 'ro', 'MarkerFaceColor','r', 'MarkerSize', 8);
 axis equal; grid on;
-xlabel('East [m]'); ylabel('North [m]');
+xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
 title(sprintf('궤적   (mean|y_e| = %.2f m)', S.mean_ye_ss));
 legend({'계획 경로','웨이포인트','수락반경','실제 항적','출발','도착'}, ...
        'Location','best', 'FontSize', 8);

@@ -410,7 +410,7 @@ code --install-extension anthropic.claude-code
 ```
 
 ```
-Extension 'anthropic.claude-code' v2.1.272 was successfully installed.
+Extension 'anthropic.claude-code' v2.1.266 was successfully installed.
 ```
 
 > [!caution] Claude Code **CLI** 는 Windows 쪽 PowerShell 에 설치하지 않음
@@ -423,10 +423,10 @@ Extension 'anthropic.claude-code' v2.1.272 was successfully installed.
 claude --version
 ```
 
-- 정상 출력 (기준 환경 실측. 버전 숫자는 갱신되므로 `2.1.x` 면 정상)
+- 정상 출력 (2026-09-19 기준 환경 실측. 버전 숫자는 갱신되므로 `2.1.x` 면 정상)
 
 ```
-2.1.272 (Claude Code)
+2.1.237 (Claude Code)
 ```
 
 ```bash
@@ -513,9 +513,27 @@ claude
 
 ```bash
 cd ~/capstone_ws/src
-ros2 pkg create team_usv --build-type ament_python --dependencies rclpy sensor_msgs std_msgs
+ros2 pkg create team_usv --build-type ament_python --license Apache-2.0 --dependencies rclpy sensor_msgs std_msgs
 cd team_usv && git init
 ```
+
+- 정상 출력 (2026-09-19 기준 환경 실측, 앞부분)
+
+```
+going to create a new package
+package name: team_usv
+destination directory: /home/<사용자명>/capstone_ws/src
+package format: 3
+version: 0.0.0
+description: TODO: Package description
+maintainer: ['<사용자명> <<사용자명>@todo.todo>']
+licenses: ['Apache-2.0']
+build type: ament_python
+dependencies: ['rclpy', 'sensor_msgs', 'std_msgs']
+creating folder ./team_usv
+```
+
+- `--license` 를 빼면 끝에 `[WARNING]: Unknown license 'TODO: License declaration'` 경고와 라이선스 목록이 붙음. 2주차 `usv_basics` 와 같게 `Apache-2.0` 을 줌
 
 | 생기는 것 | 역할 |
 |---|---|
@@ -663,7 +681,7 @@ ROS 2 Humble 용 파이썬 노드를 만들어줘.
 | 단위 | 도/라디안이 섞이지 않았는가? |
 | 배분 부호 | $N>0$ 일 때 $F_L > F_R$ 인가? (우선회) |
 
-### E-4. 빌드하고 돌려 본다
+### E-4. 빌드하고 돌려 본다 — 오프라인 시뮬레이터 먼저, VRX 는 그다음
 
 ```bash
 cd ~/capstone_ws
@@ -671,11 +689,85 @@ colcon build --symlink-install --packages-select team_usv
 source install/setup.bash
 ```
 
-- VRX 를 켜 둔 채로
+- 정상 출력 (2026-09-19 기준 환경 실측)
+
+```
+Starting >>> team_usv
+Finished <<< team_usv [0.54s]
+
+Summary: 1 package finished [0.67s]
+```
+
+> [!important] 순서 — VRX 를 띄우기 전에 운동모델로 먼저 돌린다
+> 3주차 `W03_0_offline` → `W03_4_teleop`, 7주차 `W07_0_offline` → `W07_1_vrx` 와 같은 순서임
+> - 1단계: **`wamv_sim.py`** (VRX 와 같은 토픽을 내는 파이썬 운동모델)에 물려 봄. 수 초 안에 뜨고 GPU 가 필요 없음
+> - 2단계: 같은 노드를 **한 글자도 바꾸지 않고** VRX 에 물림
+> - 1단계에서 이미 틀리면 VRX 에서도 틀림. VRX 를 30초씩 다시 띄울 필요가 없음
+
+**1단계 — `wamv_sim.py` 에 물려 본다 (VRX 불필요)**
+
+- 배포 폴더 `10-주차별-강의자료/W05_python/wamv_sim.py` — 한 파일짜리 ROS 2 노드
+
+| 안에 든 것 | 출처 | Simulink 에서 같은 것 |
+|---|---|---|
+| 운동방정식 (`eom`) · RK4 적분 100 Hz | 3주차 1-8 절 — 계수 · 식이 같음 | `W03_0_offline` 의 `MotionModel` |
+| GPS 20 Hz, 안테나 $x_b = -0.85$ m | 4주차 1-5 절 | `W04_0_offline` 의 `SensorModel` |
+| IMU 100 Hz, 자이로 잡음 0.009 rad/s | 4주차 1-5 절 | 같음 |
+
+| 토픽 | 방향 | 형식 |
+|---|---|---|
+| `/wamv/thrusters/left/thrust`, `/wamv/thrusters/right/thrust` | 구독 | `std_msgs/Float64` [N] — VRX 와 같음 |
+| `/wamv/sensors/gps/gps/fix` | 발행 | `sensor_msgs/NavSatFix` — VRX 와 같음 |
+| `/wamv/sensors/imu/imu/data` | 발행 | `sensor_msgs/Imu` (ENU 쿼터니언) — VRX 와 같음 |
+| `/wamv_sim/truth` | 발행 | `geometry_msgs/Pose2D` — NED 참값 $x$ (북), $y$ (동), `theta` $= \psi$. VRX 에는 없음 |
+
+```bash
+# 터미널 1 — VRX 대신
+python3 <배포 폴더>/W05_python/wamv_sim.py
+```
+
+- 정상 출력 (2026-09-19 기준 환경 실측)
+
+```
+[INFO] [...] [wamv_sim]: wamv_sim 시작 — 운동모델 100 Hz, GPS 20 Hz, IMU 100 Hz, 초기 선수각 0.0 deg, 자이로 잡음 켬
+```
+
+```bash
+# 터미널 2 — 학생 노드 그대로
+ros2 run team_usv waypoint_pid
+```
+
+- 확인 명령 (터미널 3)
+
+```bash
+ros2 node list
+ros2 topic hz /wamv/sensors/gps/gps/fix
+ros2 topic hz /wamv/thrusters/left/thrust
+```
+
+| 확인 | 정상 (2026-09-19 기준 환경 실측) | 다르면 |
+|---|---|---|
+| `ros2 node list` | `/waypoint_pid` 와 `/wamv_sim` | 노드가 죽음 — 터미널 2 의 오류 메시지 |
+| GPS 주기 | `average rate: 20.000` | 시뮬레이터가 안 뜸 |
+| 추력 주기 | `average rate: 9.98` 부근 (10 Hz 타이머) | 노드가 발행하지 않음 — `create_timer` · 토픽 이름 확인 |
+| 배의 움직임 | `ros2 topic echo /wamv_sim/truth` 의 `x`, `y` 가 웨이포인트 쪽으로 변함 | 부호 · 좌표 변환 — E-3 표 |
+
+- 초기 선수각을 바꿔 보려면 `python3 wamv_sim.py --ros-args -p psi0_deg:=90.0`
+- 시뮬레이터 검산: 좌 · 우 200 N 을 30 초 주면 $u = 1.3333$ m/s, 이동 39.28 m. 3주차 `W03_offline_run` 과 같은 값 (같은 식이므로)
+
+> [!warning] 시뮬레이터와 VRX 를 동시에 띄우지 말 것
+> 같은 토픽을 **발행자 두 개**가 내보내 GPS · IMU 가 섞임. 오류 메시지는 나지 않음 (E-5 rosbag 경고와 같은 문제)
+> `ros2 topic info /wamv/sensors/gps/gps/fix` 의 `Publisher count` 가 1 인지 확인
+
+**2단계 — VRX 에 물린다**
+
+- `wamv_sim.py` 를 `Ctrl+C` 로 끄고 VRX 를 띄운 뒤 같은 명령
 
 ```bash
 ros2 run team_usv waypoint_pid
 ```
+
+- 1단계와 VRX 의 움직임이 크게 다르면, 차이는 모델 밖에 있음 — 3주차 1-8 절 "이 모델에 없는 것" 표와 3주차 3-4 대조표를 먼저 봄
 
 ### E-5. 세 겹 검증
 
@@ -867,8 +959,22 @@ setupAgenticToolkit("configure", Scope="global", Agents="claude-code", Prompt=fa
 > | ROS 코드 (§D · §E) | WSL 의 `claude` — Ubuntu 터미널 또는 WSL 에 연결된 VS Code 창 |
 > | MATLAB · Simulink (§F) | **Windows 에서 연 VS Code 창**의 Claude Code 확장 (C-1 에서 Windows 쪽에 설치한 것) |
 
-- 확인 — Windows 쪽 VS Code 창의 Claude Code 패널에서 `/mcp` 입력
-  - 연결된 MCP 서버 목록에 **`matlab`** 항목이 보이면 정상
+- 확인 — Windows PowerShell 에서 아래 한 줄 (Windows 쪽 Claude 가 읽는 설정을 그대로 보여 줌)
+
+```powershell
+claude mcp list
+```
+
+- 정상 출력 (2026-09-19 기준 환경 실측. 경로의 사용자 이름은 PC 마다 다름)
+
+```
+Checking MCP server health…
+
+matlab: C:/Users/<사용자>/.matlab/agentic-toolkits/bin/matlab-mcp-server.exe --matlab-session-mode=existing --extension-file=C:/Users/<사용자>/.matlab/agentic-toolkits/simulink/tools/tools.json - ✔ Connected
+```
+
+  - `matlab` 줄 끝이 **`✔ Connected`** 면 정상. MATLAB 이 꺼져 있으면 연결 실패로 나옴
+  - Windows 쪽 VS Code 창의 Claude Code 패널에서 `/mcp` 를 입력해도 같은 목록이 보임
   - 목록이 비어 있으면 WSL 쪽 Claude 를 열었거나, 설정 뒤 Claude Code 를 다시 시작하지 않은 것
 
 > [!note] 스킬 그룹을 고르지 않으면 전부 켜짐
@@ -1229,7 +1335,7 @@ claude --version && which claude
 | 3 | Claude Code 설치 | `claude --version` |
 | 4 | 로그인 | 브라우저 승인 후 대화 성공 |
 | 5 | 팀 레포 + `CLAUDE.md` | 규약을 에이전트가 요약함 |
-| 6 | 에이전트로 PID 노드 생성 | `ros2 run team_usv waypoint_pid` |
+| 6 | 에이전트로 PID 노드 생성 | `ros2 run team_usv waypoint_pid` — **`wamv_sim.py` 에 먼저**, 그다음 VRX |
 | 7 | 세 겹 검증 | 테스트 통과 · bag 재생 · 경계조건 |
 | 8 | MATLAB MCP 연동 | 버전·툴박스 조회 + Simulink 모델 읽기 성공 |
 
@@ -1262,6 +1368,7 @@ claude --version && which claude
 - [ ] 팀 레포 생성 및 `CLAUDE.md` 작성
 - [ ] 에이전트가 `CLAUDE.md` 규약을 요약해 줌
 - [ ] 에이전트로 `waypoint_pid.py` 생성
+- [ ] `wamv_sim.py` 에 노드를 물려 `/wamv_sim/truth` 의 `x`, `y` 가 웨이포인트 쪽으로 가는 것을 보았음 (VRX 전에)
 - [ ] **코드를 읽고 체크리스트 8항목을 확인** (E-3)
 - [ ] 빌드 및 VRX에서 실행 성공
 - [ ] 단위 테스트 작성·통과

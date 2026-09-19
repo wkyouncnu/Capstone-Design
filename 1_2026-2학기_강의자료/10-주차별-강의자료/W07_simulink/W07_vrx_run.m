@@ -51,13 +51,13 @@ fprintf('   OK — 토픽 %d개\n', numel(tl));
 
 %% 2. RTF 측정 --------------------------------------------------------
 fprintf('2) RTF 측정 (20초)\n');
-[RTF, N0, E0] = measureRTF(TOP, 20);
+[RTF, x0_n, y0_n] = measureRTF(TOP, 20);
 % 스폰 위치를 직접 읽어 원점으로 쓴다. launch.py 의 스폰 좌표가 설치마다 다르다
 % (같은 2.4.0-2 인데 한 컴퓨터는 ENU y = 162, 다른 컴퓨터는 200 — 2026-09-18).
 % 고정값을 쓰면 그 차이만큼 경로가 통째로 밀려 안전 수역을 벗어난다.
-assignin('base', 'origin_north', N0);
-assignin('base', 'origin_east',  E0);
-fprintf('   스폰 위치 (N, E) = (%.1f, %.1f) m — 이 점을 원점으로 쓴다\n', N0, E0);
+assignin('base', 'origin_north', x0_n);
+assignin('base', 'origin_east',  y0_n);
+fprintf('   스폰 위치 (x, y) = (%.1f, %.1f) m — 이 점을 원점으로 쓴다\n', x0_n, y0_n);
 fprintf('   RTF = %.3f  ->  페이싱 비율을 이 값으로 둔다\n', RTF);
 
 %% 3. 실행 ------------------------------------------------------------
@@ -77,8 +77,11 @@ saveFig(S.fig, 'W07_1_vrx_result.png');    % gcf 는 추진기 창이다 — 궤
 if ~do_compare, return; end
 fprintf('5) 같은 초기 선수각으로 오프라인 모델 실행\n');
 
-pn = out.log_pn.Data;  pe = out.log_pe.Data;  t = out.log_pn.Time;
-k0 = find(out.log_psi.Time >= 0.5, 1);   % 첫 샘플은 odom 이 아직 안 와서 못 쓴다
+x_n = out.log_x_n.Data;  y_n = out.log_y_n.Data;  t = out.log_x_n.Time;
+% odom 이 오기 전의 샘플은 0 이다. 도착 시각은 실행마다 다르므로 (0.5 s 를 넘길 때도 있다)
+% 시각으로 자르지 않고 처음으로 0 이 아닌 선수각을 쓴다
+k0 = find(abs(out.log_psi.Data(:)) > 1e-9, 1);
+if isempty(k0), k0 = 1; end
 psi0 = out.log_psi.Data(k0);
 fprintf('   VRX 초기 선수각 %.2f deg\n', rad2deg(psi0));
 
@@ -91,21 +94,21 @@ assignin('base','x0', x0old);   % 되돌린다 — 이 뒤에 오프라인을 �
 So = W07_plot(o2, '오프라인 대조 (VRX 초기 선수각)');   % 오프라인 지표를 같은 형식으로 찍는다
 S.offline = rmfield(So, intersect(fieldnames(So), {'fig'}));
 
-qn = o2.log_pn.Data;  qe = o2.log_pe.Data;  t2 = o2.log_pn.Time;
+qn = o2.log_x_n.Data;  qe = o2.log_y_n.Data;  t2 = o2.log_x_n.Time;
 
 % 같은 시각으로 맞춰 이격거리를 잰다.
 % 두 시계가 겹치는 구간만 본다 — 밖으로 나가면 외삽이 폭주한다.
 tm   = t(t <= t2(end));   nm = numel(tm);
 qn_i = interp1(t2, qn, tm, 'linear');
 qe_i = interp1(t2, qe, tm, 'linear');
-sep  = hypot(pn(1:nm) - qn_i, pe(1:nm) - qe_i);
+sep  = hypot(x_n(1:nm) - qn_i, y_n(1:nm) - qe_i);
 
 S.sep_mean = mean(sep);
 S.sep_max  = max(sep);
-S.dist_vrx = sum(hypot(diff(pn), diff(pe)));
+S.dist_vrx = sum(hypot(diff(x_n), diff(y_n)));
 S.dist_off = sum(hypot(diff(qn), diff(qe)));
 
-drawOverlay(pe, pn, qe, qn, tm, sep, S, T_end);
+drawOverlay(y_n, x_n, qe, qn, tm, sep, S, T_end);
 saveFig(gcf, 'W07_vrx_vs_offline.png');
 
 fprintf('\n  === 오프라인 ↔ VRX 대조 (%d초) ===\n', T_end);
@@ -114,13 +117,13 @@ fprintf('  궤적 평균 이격 %6.2f m,  최대 %6.2f m\n', S.sep_mean, S.sep_m
 end
 
 % =====================================================================
-function [RTF, N0, E0] = measureRTF(topic, sec)
+function [RTF, x0_n, y0_n] = measureRTF(topic, sec)
 n = ros2node(sprintf('/rtf_probe_%d', randi(9999)));
 c = onCleanup(@() clear('n'));
 s = ros2subscriber(n, topic, 'nav_msgs/Odometry');
 m0 = receive(s, 15);  w = tic;
 t0 = double(m0.header.stamp.sec) + double(m0.header.stamp.nanosec)*1e-9;
-E0 = m0.pose.pose.position.x;   N0 = m0.pose.pose.position.y;   % ENU -> NED
+y0_n = m0.pose.pose.position.x;   x0_n = m0.pose.pose.position.y;   % ENU -> NED
 pause(sec);
 m1 = receive(s, 15);  dw = toc(w);
 t1 = double(m1.header.stamp.sec) + double(m1.header.stamp.nanosec)*1e-9;
@@ -131,17 +134,17 @@ function s = modeName()
 if evalin('base','guidance_mode') == 1, s = 'atan2'; else, s = 'LOS'; end
 end
 
-function drawOverlay(pe, pn, qe, qn, t, sep, S, T_end)
-wpn = evalin('base','wp_north');   wpe = evalin('base','wp_east');
+function drawOverlay(y_n, x_n, qe, qn, t, sep, S, T_end)
+wpx = evalin('base','wp_north');   wpy = evalin('base','wp_east');
 figure('Name','오프라인 vs VRX','Color','w','Position',[80 80 1000 440]);
 
 subplot(1,2,1);
-plot(wpe, wpn, 'ks--', 'MarkerFaceColor','w', 'LineWidth',1.0); hold on;
+plot(wpy, wpx, 'ks--', 'MarkerFaceColor','w', 'LineWidth',1.0); hold on;
 plot(qe, qn, 'b-', 'LineWidth',1.6);
-plot(pe, pn, 'r-', 'LineWidth',1.6);
-plot(pe(1), pn(1), 'ko', 'MarkerFaceColor','g', 'MarkerSize',8);
+plot(y_n, x_n, 'r-', 'LineWidth',1.6);
+plot(y_n(1), x_n(1), 'ko', 'MarkerFaceColor','g', 'MarkerSize',8);
 axis equal; grid on;
-xlabel('East [m]'); ylabel('North [m]');
+xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
 legend({'웨이포인트','오프라인 운동모델','VRX (Gazebo)','출발'}, 'Location','best');
 title(sprintf('궤적 — %d초, 평균 이격 %.2f m', T_end, S.sep_mean));
 

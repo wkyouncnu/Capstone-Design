@@ -91,8 +91,8 @@ end
 
 % 로이터 중심은 지정한 웨이포인트에 고정한다.
 % 이렇게 두면 웨이포인트 인덱스가 지나가도 중심이 흔들리지 않는다.
-loiter_cn = wp_north(loiter_wp);
-loiter_ce = wp_east(loiter_wp);
+loiter_xc = wp_north(loiter_wp);
+loiter_yc = wp_east(loiter_wp);
 
 psi_init = atan2(wp_east(1) - 0, wp_north(1) - 0);
 x0 = [0.1; 0; 0; 0; 0; psi_init];
@@ -103,7 +103,7 @@ fprintf('W09 설정 완료\n');
 fprintf('  웨이포인트 %d개\n', n_wp);
 fprintf('  WP%d 도착 시 로이터링 — 반경 %g m, %g 바퀴, %s\n', ...
         loiter_wp, loiter_radius, loiter_turns, dir_name);
-fprintf('  로이터 중심 (N,E) = (%g, %g)\n', loiter_cn, loiter_ce);
+fprintf('  로이터 중심 (x,y) = (%g, %g)\n', loiter_xc, loiter_yc);
 fprintf('  목표 속도 %g m/s, 크랩 보상 %d\n', u_ref, crab_comp);
 
 %% ====================================================================

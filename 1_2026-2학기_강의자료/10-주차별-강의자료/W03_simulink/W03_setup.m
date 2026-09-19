@@ -89,7 +89,7 @@ Yv = 100;  Yvv = 100;     % 좌우 항력  (yV, yVV)
 Nr = 800;  Nrr = 800;     % 요   항력  (nR, nRR)
 half_beam = 1.027135;     % 추진기 좌우 반폭 [m] (wamv_aft_thrusters.xacro)
 
-x0_w03 = zeros(6,1);      % 초기 상태 [u v r N E psi] — 원점에서 북쪽을 보고 정지
+x0_w03 = zeros(6,1);      % 초기 상태 [u v r x_n y_n psi] — 원점에서 북쪽을 보고 정지
 
 fprintf(['W03_setup 완료 — 기준점 (%.6f, %.6f), 시나리오 %d ' ...
          '(좌 %+.0f N / 우 %+.0f N), ROS_DOMAIN_ID=%s\n'], ...

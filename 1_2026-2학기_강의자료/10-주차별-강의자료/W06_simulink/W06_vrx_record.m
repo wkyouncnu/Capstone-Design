@@ -53,7 +53,7 @@ m0 = receive(s, 20);
 t0 = stamp(m0);
 [psi0, x0, y0] = pose(m0);
 
-V.t = []; V.pn = []; V.pe = []; V.psi = []; V.u = []; V.r = [];
+V.t = []; V.x_n = []; V.y_n = []; V.psi = []; V.u = []; V.r = [];
 fprintf('VRX 기록 시작 (%d 초)\n', T_end);
 while true
     m  = receive(s, 10);
@@ -65,13 +65,13 @@ while true
     send(pL, mL);  send(pR, mR);
 
     [ps, x, y] = pose(m);
-    d  = [y - y0; x - x0];                       % [dN; dE]  (ENU -> NED)
+    d  = [y - y0; x - x0];                       % [dX; dY]  (ENU -> NED)
     Rr = [cos(psi0) sin(psi0); -sin(psi0) cos(psi0)];
     b  = Rr*d;                                   % 출발점 기준 선체 정렬 좌표
 
     V.t(end+1,1)   = ts;
-    V.pn(end+1,1)  = b(1);
-    V.pe(end+1,1)  = b(2);
+    V.x_n(end+1,1)  = b(1);
+    V.y_n(end+1,1)  = b(2);
     V.psi(end+1,1) = rad2deg(atan2(sin(ps-psi0), cos(ps-psi0)));
     V.u(end+1,1)   = m.twist.twist.linear.x;
     V.r(end+1,1)   = -rad2deg(m.twist.twist.angular.z);   % ENU -> NED

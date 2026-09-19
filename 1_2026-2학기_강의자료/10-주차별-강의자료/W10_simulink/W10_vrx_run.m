@@ -43,13 +43,13 @@ end
 fprintf('   OK — 토픽 %d개\n', numel(tl));
 
 fprintf('2) RTF 측정 (20초)\n');
-[RTF, N0, E0] = measureRTF(TOP, 20);
+[RTF, x0_n, y0_n] = measureRTF(TOP, 20);
 % 스폰 위치를 직접 읽어 원점으로 쓴다. launch.py 의 스폰 좌표가 설치마다 다르다
 % (같은 2.4.0-2 인데 한 컴퓨터는 ENU y = 162, 다른 컴퓨터는 200 — 2026-09-18).
 % 고정값을 쓰면 그 차이만큼 경로가 통째로 밀려 안전 수역을 벗어난다.
-assignin('base', 'origin_north', N0);
-assignin('base', 'origin_east',  E0);
-fprintf('   스폰 위치 (N, E) = (%.1f, %.1f) m — 이 점을 원점으로 쓴다\n', N0, E0);
+assignin('base', 'origin_north', x0_n);
+assignin('base', 'origin_east',  y0_n);
+fprintf('   스폰 위치 (x, y) = (%.1f, %.1f) m — 이 점을 원점으로 쓴다\n', x0_n, y0_n);
 fprintf('   RTF = %.3f\n', RTF);
 
 fprintf('3) %s 실행 (%d초)\n', m, T_end);
@@ -68,7 +68,9 @@ fprintf('5) 같은 초기 선수각으로 오프라인 모델 실행\n');
 
 t   = out.log_eta.Time;
 eta = squeeze(out.log_eta.Data)';
-k0   = find(t >= 0.5, 1);        % 첫 샘플은 odom 이 아직 안 와서 못 쓴다
+% odom 이 오기 전의 샘플은 0 이다. 도착 시각은 실행마다 다르므로 처음으로 0 이 아닌 선수각을 쓴다
+k0   = find(abs(eta(:,3)) > 1e-9, 1);
+if isempty(k0), k0 = 1; end
 psi0 = eta(k0,3);
 fprintf('   VRX 초기 선수각 %.2f deg\n', rad2deg(psi0));
 
@@ -106,13 +108,13 @@ fprintf('  궤적 평균 이격 %6.2f m,  최대 %6.2f m\n', S.sep_mean, S.sep_m
 end
 
 % =====================================================================
-function [RTF, N0, E0] = measureRTF(topic, sec)
+function [RTF, x0_n, y0_n] = measureRTF(topic, sec)
 n = ros2node(sprintf('/rtf_probe_%d', randi(9999)));
 c = onCleanup(@() clear('n'));
 s = ros2subscriber(n, topic, 'nav_msgs/Odometry');
 m0 = receive(s, 15);  w = tic;
 t0 = double(m0.header.stamp.sec) + double(m0.header.stamp.nanosec)*1e-9;
-E0 = m0.pose.pose.position.x;   N0 = m0.pose.pose.position.y;   % ENU -> NED
+y0_n = m0.pose.pose.position.x;   x0_n = m0.pose.pose.position.y;   % ENU -> NED
 pause(sec);
 m1 = receive(s, 15);  dw = toc(w);
 t1 = double(m1.header.stamp.sec) + double(m1.header.stamp.nanosec)*1e-9;
@@ -127,15 +129,15 @@ exportgraphics(h, fullfile(d, name), 'Resolution', 130);
 fprintf('   그림 저장: img/%s\n', name);
 end
 
-function drawOverlay(pe, pn, qe, qn, t, sep, S, T_end, etd)
+function drawOverlay(y_n, x_n, qe, qn, t, sep, S, T_end, etd)
 figure('Name','오프라인 vs VRX','Color','w','Position',[80 80 1000 440]);
 
 subplot(1,2,1);
 plot(etd(:,2), etd(:,1), 'k--', 'LineWidth',1.1); hold on;
 plot(qe, qn, 'b-', 'LineWidth',1.4);
-plot(pe, pn, 'r-', 'LineWidth',1.4);
-plot(pe(1), pn(1), 'ko','MarkerFaceColor','g','MarkerSize',8);
-axis equal; grid on; xlabel('East [m]'); ylabel('North [m]');
+plot(y_n, x_n, 'r-', 'LineWidth',1.4);
+plot(y_n(1), x_n(1), 'ko','MarkerFaceColor','g','MarkerSize',8);
+axis equal; grid on; xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
 legend({'DP 목표','오프라인','VRX','출발'}, 'Location','best');
 title(sprintf('DP 궤적 — %d초, 평균 이격 %.2f m', T_end, S.sep_mean));
 

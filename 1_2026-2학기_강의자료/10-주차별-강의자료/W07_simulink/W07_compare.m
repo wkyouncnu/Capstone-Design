@@ -44,7 +44,7 @@ for i = 1:nC
     res(i).t_finish   = tf;
     res(i).mean_beta  = mean(abs(b(s:k)))*180/pi;
     res(i).mean_u     = mean(u(s:k));
-    traj{i} = [o.log_pe.Data(1:k), o.log_pn.Data(1:k)];
+    traj{i} = [o.log_y_n.Data(1:k), o.log_x_n.Data(1:k)];
 end
 
 %% 표 ------------------------------------------------------------------
@@ -75,7 +75,7 @@ for p = 1:2
     for i = idx
         plot(traj{i}(:,1), traj{i}(:,2), sty{i}, 'Color', col{i}, 'LineWidth',1.6);
     end
-    xlabel('East [m]'); ylabel('North [m]');
+    xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
     if p == 1, title('조류 없음'); else, title('조류 0.5 m/s @ 90\circ'); end
     legend([{'계획 경로','웨이포인트'}, res(idx).name], 'Location','best','FontSize',8);
 end

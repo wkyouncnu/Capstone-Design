@@ -3,6 +3,7 @@
 %   모델을 열기 전에 반드시 이 스크립트를 먼저 실행한다.
 %
 %   >> W04_setup
+%   >> S = W04_offline_run                 % 0단계 — 운동모델 + 센서 모델로 같은 것을 먼저 (VRX 불필요)
 %   >> open_system('W04_1_sensor_rates')   % 1단계 — 센서 수신 주기를 Simulink 로 잰다 (VRX 필요)
 %   >> open_system('W04_2_qos_test')       % 2단계 — QoS 를 어긋나게 해 본다 (VRX 불필요)
 %
@@ -45,6 +46,28 @@ T_end = 20;        % [s]  측정 시간. 짧으면 주기가 흔들린다
 %       ros2 run usv_basics qos_test_pub
 % =====================================================================
 topic_qos = '/qos_topic';
+
+%% ====================================================================
+%  5. 0단계(센서 모델) 설정 — VRX 없이 GPS · IMU 를 흉내 낸다 (4주차 1-5 절)
+%     운동방정식 계수는 3주차 1-8 절과 같다 (6~10주차 오프라인 모델도 같은 값)
+% =====================================================================
+m_usv = 211;   Izz = 653;
+Xu = 100;  Xuu = 150;   Yv = 100;  Yvv = 100;   Nr = 800;  Nrr = 800;
+half_beam = 1.027135;
+x0_w04 = zeros(6,1);                 % [u v r N E psi] — 원점에서 북쪽을 보고 정지
+
+thrust_left  = -200;                 % 제자리 좌선회 (3주차 3-4 의 scenario 2 와 같음)
+thrust_right =  200;
+
+%  GPS — wamv_gazebo.urdf.xacro 가 부르는 위치와 wamv_gps.xacro 의 update_rate
+gps_x = -0.85;   gps_y = 0.0;        % 안테나 위치 [m] (선체 축 FRD, 4주차 1-3 표)
+lat0  = -33.72276870341191;          % 기준점 — 3주차 W03_setup 과 같음
+lon0  = 150.67399057896623;
+
+%  IMU — wamv_imu.xacro 의 angular_velocity 잡음 (z 축)
+imu_gyro_std  = 0.009;               % 백색잡음 표준편차 [rad/s]
+imu_gyro_bias = 0.00075;             % 바이어스 평균 [rad/s]
+imu_seed      = 1;                   % 잡음 난수 씨앗 — 같은 값이면 같은 결과
 
 fprintf(['W04_setup 완료 — Ts = %.3f s (%.0f Hz), 측정 %g초, ' ...
          'ROS_DOMAIN_ID=%s\n'], Ts, 1/Ts, T_end, ros_domain_id);

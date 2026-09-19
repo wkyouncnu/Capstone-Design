@@ -11,14 +11,14 @@ function S = W09_plot(out, ttl)
 
 if nargin < 2, ttl = ''; end
 
-wpn = evalin('base','wp_north');
-wpe = evalin('base','wp_east');
-lcn = evalin('base','loiter_cn');
-lce = evalin('base','loiter_ce');
+wpx = evalin('base','wp_north');
+wpy = evalin('base','wp_east');
+lxc = evalin('base','loiter_xc');
+lyc = evalin('base','loiter_yc');
 lrd = evalin('base','loiter_radius');
 
-t    = out.log_pn.Time;
-pn   = out.log_pn.Data;    pe   = out.log_pe.Data;
+t    = out.log_x_n.Time;
+x_n   = out.log_x_n.Data;    y_n   = out.log_y_n.Data;
 psi  = out.log_psi.Data;   pref = out.log_psi_ref.Data;
 ye   = out.log_y_e.Data;   idx  = out.log_idx.Data;
 mode = out.log_mode.Data;  turns= out.log_turns.Data;
@@ -47,21 +47,21 @@ S.fig = figure('Name',['W09  ' ttl], 'Position',[60 40 1240 820], 'Color','w');
 
 % ---- 1. 궤적 (모드별 색) ----------------------------------------------
 subplot(2,3,[1 4]); hold on; grid on; axis equal;
-plot(wpe, wpn, '--', 'Color',[0.4 0.4 0.4], 'LineWidth',1.2);
+plot(wpy, wpx, '--', 'Color',[0.4 0.4 0.4], 'LineWidth',1.2);
 th = linspace(0,2*pi,200);
-plot(lce + lrd*cos(th), lcn + lrd*sin(th), '--', 'Color',[0.85 0.33 0.10], 'LineWidth',1.5);
-plot(lce, lcn, 'p', 'MarkerEdgeColor',[0.85 0.33 0.10], ...
+plot(lyc + lrd*cos(th), lxc + lrd*sin(th), '--', 'Color',[0.85 0.33 0.10], 'LineWidth',1.5);
+plot(lyc, lxc, 'p', 'MarkerEdgeColor',[0.85 0.33 0.10], ...
      'MarkerFaceColor',[1 0.85 0.2], 'MarkerSize',14);
 k1 = i_wp(i_wp <= k_end);
-plot(pe(k1), pn(k1), '.', 'Color',[0 0.45 0.74], 'MarkerSize',4);
-if ~isempty(i_lo), plot(pe(i_lo), pn(i_lo), '.', 'Color',[0.95 0.45 0.20], 'MarkerSize',4); end
-plot(wpe, wpn, 's', 'MarkerEdgeColor',[0.75 0.1 0.1], ...
+plot(y_n(k1), x_n(k1), '.', 'Color',[0 0.45 0.74], 'MarkerSize',4);
+if ~isempty(i_lo), plot(y_n(i_lo), x_n(i_lo), '.', 'Color',[0.95 0.45 0.20], 'MarkerSize',4); end
+plot(wpy, wpx, 's', 'MarkerEdgeColor',[0.75 0.1 0.1], ...
      'MarkerFaceColor','w', 'MarkerSize',10, 'LineWidth',1.6);
-for i = 1:numel(wpn), text(wpe(i)+4, wpn(i)+5, sprintf('%d',i), ...
+for i = 1:numel(wpx), text(wpy(i)+4, wpx(i)+5, sprintf('%d',i), ...
     'Color',[0.75 0.1 0.1], 'FontWeight','bold'); end
-plot(pe(1), pn(1), 'go', 'MarkerFaceColor','g', 'MarkerSize',9);
-plot(pe(k_end), pn(k_end), 'ko', 'MarkerFaceColor','k', 'MarkerSize',9);
-xlabel('East [m]'); ylabel('North [m]');
+plot(y_n(1), x_n(1), 'go', 'MarkerFaceColor','g', 'MarkerSize',9);
+plot(y_n(k_end), x_n(k_end), 'ko', 'MarkerFaceColor','k', 'MarkerSize',9);
+xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
 title('궤적  (파랑 = 웨이포인트, 주황 = 로이터)');
 
 % ---- 2. 미션 상태 -----------------------------------------------------

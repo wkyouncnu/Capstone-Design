@@ -63,7 +63,7 @@ summary: PID 를 직접 조립해 보고 그 PID 로 WAM-V 를 직진·선회·�
 |---|---|
 | 환경 | 1\~5주차 WSL2 + ROS 2 + VRX |
 | MATLAB | R2024b + Simulink + **ROS Toolbox** |
-| 배포 파일 | `W06_simulink/` 폴더 (모델 8개 + 생성 스크립트 2개) |
+| 배포 파일 | `W06_simulink/` 폴더 (모델 10개 + 생성 스크립트 2개) |
 
 ---
 
@@ -656,7 +656,7 @@ ros2 topic echo /wamv/sensors/position/ground_truth_odometry --once
 | `child_frame_id` | `wamv/base_link` | 선체 |
 | 발행 주기 | **9.07 Hz** | 설계 10 Hz. RTF 만큼 느려짐 |
 | QoS | `RELIABLE`, 발행자 1 | |
-| 스폰 위치 | `x = -532.0`, `y = 162.0` (이 표를 잰 노트북) | **ENU**. 즉 NED 로 (N, E) = (162, −532). 다른 설치에서는 `y = 200.0` |
+| 스폰 위치 | `pose.position.x = -532.0`, `pose.position.y = 162.0` (이 표를 잰 노트북) | **ENU** 성분. 즉 NED 로 (x, y) = (162, −532) — 북쪽 $x$ 가 ENU 의 `y`. 다른 설치에서는 `pose.position.y = 200.0` |
 
 > [!caution] 스폰 좌표는 설치마다 다름
 > - 기준은 `vrx_gz/launch/competition.launch.py` 의 `Model('wamv','wam-v',[-532, y, 0, 0, 0, 1])`
@@ -1049,7 +1049,7 @@ W06_pid_compare('hand')
 | pseudo-derivative | 전달함수 $\dfrac{N_f\, s}{s + N_f}$, $N_f$ = `Nf2` = 20 | **1.73** |
 | 순수 미분 | `Derivative` 블록 | **109.91** |
 
-> [!warning] $N_f$ 는 요 모멘트 $N$ · 북쪽 위치 $N$ 과 다른 기호
+> [!warning] $N_f$ 는 요 모멘트 $N$ 과 다른 기호
 > 미분 필터 계수는 코드에서 `Nf`, `Nf2` 이므로 수식에서도 $N_f$ 로 씀
 > Simulink PID 블록 대화상자의 **Filter coefficient (N)** 가 이것
 
@@ -1435,15 +1435,69 @@ $$
 > 목표 각속도 $r_d = 0$ 이면 $-K_p T_d\,r$ 임
 > 7주차 이후의 `InnerLoop` 도 이 식을 그대로 씀
 
-### 실행
+### 실행 ① — 오프라인 쌍둥이로 먼저 (VRX 불필요)
+
+![3단계 오프라인 쌍둥이](W06_simulink/img/W06_3_heading_offline.png)
+
+- `W06_3_heading_offline` 은 이 절의 모델과 **`HeadingCtrl` · `Alloc` 이 같은 함수로 만들어진** 쌍둥이임
+
+| 모델 | 배의 상태를 어디서 받는가 | 추력을 어디로 보내는가 |
+|---|---|---|
+| `W06_3_heading` | `OdomSub` → `Sel` → `Quat2Yaw` (Gazebo) | Blank → Bus Assignment → Publish (Gazebo) |
+| `W06_3_heading_offline` | **`MotionModel`** — 3주차 1-8 절 운동방정식, 초기 선수각 32.7° | 같은 `MotionModel` |
+
+```matlab
+cd('<배포 폴더>/W06_simulink')
+R = W06_step_compare(3);
+```
+
+- VRX 가 꺼져 있으면 오프라인만 돌고 끝남 (1 초 안쪽). 정상 출력의 첫 두 줄
+
+```
+1) 오프라인 쌍둥이 W06_3_heading_offline (40 초)
+   [오프라인] 초기 32.7 deg -> 45 deg (계단 12.3 deg), 오버슈트 0.6 %, 2% 정착 4.0 s, 마지막 5 s 평균 45.00 deg
+```
+
+- 이것이 VRX 에서 **나올 것으로 예측하는 값**임. 먼저 적어 둠
+
+### 실행 ② — 같은 제어기를 VRX 로
+
+1. VRX 를 **새로** 띄움 (스폰 자세에서 시작해야 같은 계단이 됨)
+2. 같은 명령을 다시 실행 — VRX 토픽이 보이면 `W06_3_heading` 을 실측 RTF 로 페이싱해 40 초 돌리고, 끝나면 추력 0 을 보냄
+
+```matlab
+R = W06_step_compare(3);
+```
+
+- 정상 출력 (2026-09-19 기준 환경 실측, VRX 부분)
+
+```
+2) VRX W06_3_heading — RTF 측정 (10초)
+   RTF = 0.662  ->  페이싱 비율
+   [VRX] 초기 32.7 deg -> 45 deg (계단 12.3 deg), 오버슈트 2.9 %, 2% 정착 6.2 s, 마지막 5 s 평균 45.03 deg
+   그림 저장: img/W06_3_offline_vs_vrx.png
+```
+
+![3단계 오프라인 vs VRX](W06_simulink/img/W06_3_offline_vs_vrx.png)
+
+| 항목 | 오프라인 쌍둥이 | VRX | 읽는 법 |
+|---|---|---|---|
+| 계단 | 32.7° → 45° (12.3°) | 32.7° → 45° (12.3°) | 스폰 선수각이 같게 맞춰짐 |
+| 오버슈트 | 0.6 % | 2.9 % | VRX 가 조금 더 넘음. 요 방향에 모델에 없는 것이 있음 (J-4 선회율 7 % 차이와 같은 방향) |
+| 2 % 정착 | 4.0 s | 6.2 s | 넘친 만큼 되돌아오는 시간 |
+| 마지막 5 초 평균 | 45.00° | 45.03° | 정상상태는 같음 |
+
+- 스폰 직후 $\psi \approx 32.7^\circ$ (3주차 3-1절 좌표 검산 — 스폰 yaw 1 rad = 57.3°, $90^\circ - 57.3^\circ$)
+  - 따라서 `psi_ref_deg = 45` 는 0 → 45° 가 아니라 **12.3° 계단**
+
+### 실행 ③ — 모델 창에서 직접 (선택)
 
 1. 페이싱 켜기
 2. `psi_ref_deg` 를 `45` 로 두고 Run
-   - 스폰 직후 $\psi \approx 32.7^\circ$ (3주차 3-1절 좌표 검산 — 스폰 yaw 1 rad = 57.3°, $90^\circ - 57.3^\circ$)
-   - 따라서 `psi_ref_deg = 45` 는 0 → 45° 가 아니라 **12.3° 계단**
 3. `Scope_psi` 를 열면 **실제 헤딩과 목표 헤딩**이 함께 그려짐
    - 단위는 **rad** (45° = 0.785 rad, 32.7° = 0.571 rad)
 4. 정지 시간이 `inf` 이므로 30 s 쯤 지나면 **정지** 버튼으로 멈춤
+5. 오프라인 쌍둥이도 같은 방법으로 열어 Run — 정지 시간 40 s, 페이싱 없음
 
 ### 해 볼 것
 
@@ -1483,12 +1537,37 @@ u_ref(1.5) − u  →  PI_u  →  X
 - 나중에 그 쌓인 값이 터져 나와 **크게 오버슈트**함
 - 이를 막는 것이 안티와인드업
 
-### 실행
+### 실행 — 오프라인 쌍둥이 먼저, 그다음 VRX
 
-1. 페이싱 켜기
-2. `u_ref` = `1.5`, `psi_ref_deg` = `45` 로 Run
-3. `Scope_u` 와 `Scope_psi` 를 함께 열어 둘 것 (`Scope_psi` 는 rad)
-4. 정지 시간이 `inf` 이므로 30 s 쯤 지나면 **정지** 버튼으로 멈춤
+- H 절과 같은 순서. 쌍둥이는 `W06_4_inner_loop_offline` (`HeadingCtrl` · `PI_u` · `Alloc` 이 같은 함수)
+
+```matlab
+R = W06_step_compare(4);     % VRX 가 꺼져 있으면 오프라인만, 켜져 있으면 둘 다
+```
+
+- 정상 출력 (2026-09-19 기준 환경 실측, VRX 는 새로 띄운 뒤)
+
+```
+1) 오프라인 쌍둥이 W06_4_inner_loop_offline (40 초)
+   [오프라인] 초기 32.7 deg -> 45 deg (계단 12.3 deg), 오버슈트 0.6 %, 2% 정착 4.0 s, 마지막 5 s 평균 45.00 deg
+   [오프라인] u 63 % 도달 2.5 s, 마지막 5 s 평균 u 1.413 m/s
+
+2) VRX W06_4_inner_loop — RTF 측정 (10초)
+   RTF = 0.672  ->  페이싱 비율
+   [VRX] 초기 32.7 deg -> 45 deg (계단 12.3 deg), 오버슈트 2.6 %, 2% 정착 6.3 s, 마지막 5 s 평균 45.04 deg
+   [VRX] u 63 % 도달 2.5 s, 마지막 5 s 평균 u 1.414 m/s
+   그림 저장: img/W06_4_offline_vs_vrx.png
+```
+
+![4단계 오프라인 vs VRX](W06_simulink/img/W06_4_offline_vs_vrx.png)
+
+| 항목 | 오프라인 쌍둥이 | VRX | 읽는 법 |
+|---|---|---|---|
+| 헤딩 오버슈트 · 정착 | 0.6 % · 4.0 s | 2.6 % · 6.3 s | H 절과 같음 — 속도 루프가 헤딩에 영향을 주지 않음 |
+| $u$ 가 1.5 의 63 % 에 닿는 시각 | 2.5 s | 2.5 s | 전진 방향은 항력 계수가 같아 딱 맞음 |
+| 40 초 뒤 $u$ | 1.413 m/s | 1.414 m/s | 아직 1.5 에 못 닿음 — I 이득 40 이 작아 느림 (아래 해 볼 것) |
+
+- 모델 창에서 직접 돌릴 때: 페이싱 켜기 → `u_ref` = `1.5`, `psi_ref_deg` = `45` 로 Run → `Scope_u` · `Scope_psi` (rad) → 30 s 쯤 뒤 **정지**
 
 > [!warning] `u_ref = 1.5` 에서는 선회 여유가 거의 없음 — 추력 포화
 > - 1.5 m/s 유지에 필요한 전진력: $X = (100 + 150 \times 1.5) \times 1.5 = 488$ N, 편당 244 N
@@ -1531,6 +1610,8 @@ u_ref(1.5) − u  →  PI_u  →  X
 - Gazebo 없이 **MATLAB 하나로** 돌릴 수 있음 — 집에서, 수업 전에, 노트북이 약해도
 - 실시간 페이싱이 필요 없어 80초 시나리오가 **1초 안에** 끝남
 - 게인을 바꿔 가며 열 번 돌려 보고, 마음에 드는 값만 VRX 로 가져가면 됨
+- 이 절의 `W06_5_offline` 은 2단계(개루프 시나리오)의 쌍둥이임. 3 · 4단계의 쌍둥이(`W06_3_heading_offline`, `W06_4_inner_loop_offline`)는 H · I 절에서 먼저 돌렸음
+- 운동방정식의 유도와 계수의 출처는 **3주차 1-8 절**에 있음. 이 절은 요약만 둠
 - 7주차부터는 이 방식이 **기본**이 됨
 
 ### J-2. 운동방정식
@@ -1547,8 +1628,8 @@ I_z\,\dot{r} &= N - (N_r + N_{rr}|r|)\,r
 $$
 
 $$
-\dot{N} = u\cos\psi - v\sin\psi, \qquad
-\dot{E} = u\sin\psi + v\cos\psi, \qquad
+\dot{x} = u\cos\psi - v\sin\psi, \qquad
+\dot{y} = u\sin\psi + v\cos\psi, \qquad
 \dot{\psi} = r
 $$
 
@@ -1710,9 +1791,9 @@ build_w06_pid_models
 - [ ] `Dcompare` 에서 순수 미분이 참값의 몇 배까지 튀는지 확인
 - [ ] `W06_pid_compare('AW')` 실행 → Kb 0 과 2 의 오버슈트 비교
 - [ ] `W06_pid_compare('boat')` 실행 → 되감기 없이는 목표가 내려가도 못 따라오는 것 확인
-- [ ] 3단계 실행 → 목표 선수각 45도 유지 (스폰 32.7° 에서 12.3° 계단)
+- [ ] 3단계 **오프라인 쌍둥이 먼저** (`W06_step_compare(3)`, 오버슈트 0.6 %), 그다음 VRX → 목표 선수각 45도 유지 (스폰 32.7° 에서 12.3° 계단)
 - [ ] `Scope_psi` 에서 목표와 실제를 함께 확인
-- [ ] 4단계 실행 → 속도와 헤딩 동시 제어
+- [ ] 4단계 **오프라인 쌍둥이 먼저** (`W06_step_compare(4)`), 그다음 VRX → 속도와 헤딩 동시 제어. 40 초 뒤 $u$ 가 두 모델 모두 1.41 m/s 인지 확인
 - [ ] `Scope_u` 에서 목표 속도 도달 확인
 - [ ] **5단계 오프라인 모델**을 Gazebo 없이 실행 (`W06_offline_plot`)
 - [ ] `W06_vrx_record` 로 VRX 를 기록해 **두 결과를 겹쳐** 봄
@@ -1872,6 +1953,9 @@ build_w06_pid_models
 | `W06_simulink/W06_3_heading.slx` | 헤딩 제어 |
 | `W06_simulink/W06_4_inner_loop.slx` | 속도 + 헤딩 |
 | `W06_simulink/W06_5_offline.slx` | **오프라인 WAM-V** — Gazebo 없이 직진·우선회·좌선회 |
+| `W06_simulink/W06_3_heading_offline.slx` | 3단계의 **오프라인 쌍둥이** — 같은 제어기, Gazebo 대신 운동방정식 |
+| `W06_simulink/W06_4_inner_loop_offline.slx` | 4단계의 **오프라인 쌍둥이** |
+| `W06_simulink/W06_step_compare.m` | 3·4단계 쌍둥이를 먼저 돌리고, VRX 가 떠 있으면 같은 제어기를 VRX 로 돌려 지표 · 그림을 나란히 |
 | `W06_simulink/W06_offline_plot.m` | 오프라인 결과 그림 + VRX 대조 |
 | `W06_simulink/W06_vrx_record.m` | VRX 에서 같은 시나리오를 기록 |
 | `W06_simulink/W06_P1_pid_step.slx` | **PID 입문 ①** — 전달함수 + 라이브러리 PID 블록 |
@@ -1881,7 +1965,7 @@ build_w06_pid_models
 | `W06_simulink/W06_pid_compare.m` | 게인·옵션을 바꿔 가며 겹쳐 그리는 비교 스크립트 |
 | `W06_simulink/W06_pole_place.m` | 1-7절 극배치 — 게인 세 세트의 극과 계단응답 |
 | `W06_simulink/W06_heading_sign.m` | H절 헤딩 D 항 세 가지 비교 |
-| `W06_simulink/build_w06_models.m` | VRX 연동 모델 다섯 개를 다시 만드는 스크립트 |
+| `W06_simulink/build_w06_models.m` | VRX 연동 모델 네 개와 오프라인 모델 세 개를 다시 만드는 스크립트 |
 | `W06_simulink/build_w06_pid_models.m` | PID 입문 모델 세 개를 다시 만드는 스크립트 |
 | `W06_simulink/tidy_layout.m` | 배치·색 복구 |
 

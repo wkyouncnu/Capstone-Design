@@ -3,7 +3,7 @@
 %   bash _tools/tikz2svg.sh assets/src/w07-los-geometry.tex assets/w07-los-geometry.svg
 %
 % 요점: 배는 "가장 가까운 점"이 아니라 그보다 Delta 앞의 조준점을 겨냥한다.
-% 화면 규약: N(북) 위, E(동) 오른쪽.
+% 화면 규약: x(북) 위, y(동) 오른쪽.
 %
 % 좌표는 손으로 찍지 않는다. pi_p = 50 deg, x_e = 45, y_e = 18, Delta = 30 (mm)
 % 에서 계산한 값이다. 그래서 수선의 발은 정말 경로 위에 있고, y_e 는 정말
@@ -31,8 +31,8 @@
 % ---- 좌표축 ---------------------------------------------------------------
 \draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,60) -- (2,76);
 \draw[axis, -{Stealth[length=4pt,width=3pt]}] (2,60) -- (18,60);
-\node[font=\small, anchor=east]  at (1,75) {$N$};
-\node[font=\small, anchor=north] at (17,59) {$E$};
+\node[font=\small, anchor=east]  at (1,75) {$x$ (북)};
+\node[font=\small, anchor=north] at (17,59) {$y$ (동)};
 
 % ---- 좌표 -----------------------------------------------------------------
 \coordinate (wk)  at (14,14);

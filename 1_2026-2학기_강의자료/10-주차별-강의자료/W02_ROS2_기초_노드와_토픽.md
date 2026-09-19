@@ -3069,7 +3069,7 @@ $$
 >
 > | | 2주차 turtlesim | 3주차 이후 NED |
 > |---|---|---|
-> | 목표 방향 | $\operatorname{atan2}(y_g - y,\ x_g - x)$ | $\operatorname{atan2}(E_g - E,\ N_g - N)$ |
+> | 목표 방향 | $\operatorname{atan2}(y_g - y,\ x_g - x)$ | $\operatorname{atan2}(y_g - y,\ x_g - x)$ ($x$ 북, $y$ 동) |
 > | 각의 기준 · 방향 | $x$ 축(오른쪽)에서 반시계 | 북(위쪽)에서 시계 |
 > | $v$ | 거북이의 **전진** 속도 | 배의 **좌우**(sway) 속도 |
 > | 회전 속도 | $\omega$ | $r$ (요각속도) |

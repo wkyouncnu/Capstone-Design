@@ -1,11 +1,19 @@
 function build_w06_models()
-% BUILD_W06_MODELS  6주차 Simulink 예제 모델 5개(W06_1~W06_5)를 생성한다.
+% BUILD_W06_MODELS  6주차 Simulink 예제 모델 7개를 생성한다.
 %
 %   이 스크립트를 실행하면 아래 모델이 이 폴더에 만들어진다.
-%     W06_1_straight.slx     직진
-%     W06_2_turn.slx         시간에 따라 직진 -> 우선회 -> 좌선회
-%     W06_3_heading.slx      헤딩 제어 (outer)
-%     W06_4_inner_loop.slx   속도 + 헤딩 제어 (inner loop 완성)
+%     W06_1_straight.slx          직진
+%     W06_2_turn.slx              시간에 따라 직진 -> 우선회 -> 좌선회
+%     W06_3_heading.slx           헤딩 제어 (outer)
+%     W06_4_inner_loop.slx        속도 + 헤딩 제어 (inner loop 완성)
+%     W06_5_offline.slx           2단계 시나리오를 운동방정식으로
+%     W06_3_heading_offline.slx   3단계와 같은 제어기, Gazebo 대신 운동방정식
+%     W06_4_inner_loop_offline.slx 4단계와 같은 제어기, Gazebo 대신 운동방정식
+%
+%   3·4단계는 오프라인 쌍둥이가 있다. 제어기 · 배분기 블록은 같은 함수로 만든다.
+%   바뀌는 것은 두 자리뿐이다.
+%     VRX      : OdomSub -> Sel -> Quat2Yaw  ...  Alloc -> Blank/Asg/Pub (x2)
+%     오프라인 : MotionModel (psi, r, u)     ...  Alloc -> MotionModel
 %
 %   모델이 깨졌을 때 이 스크립트를 다시 돌리면 원래대로 복구된다.
 %
@@ -21,15 +29,17 @@ function build_w06_models()
 
     build_straight();
     build_turn();
-    build_heading();
-    build_inner_loop();
+    build_heading(false);
+    build_inner_loop(false);
     build_offline();
+    build_heading(true);
+    build_inner_loop(true);
 
 
     % 배치와 색을 정리한다. 선은 직선 또는 직각으로만 다시 그린다.
     % dir 의 문자 클래스는 Windows 에서 먹지 않는다. 목록을 받아 이름으로 거른다
     slxList = dir('W06_*.slx');
-    slxList = slxList(~cellfun(@isempty, regexp({slxList.name}, '^W06_[1-5]_', 'once')));
+    slxList = slxList(~cellfun(@isempty, regexp({slxList.name}, '^W06_[1-5]_', 'once')));   % 오프라인 쌍둥이 포함
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);
         try
@@ -295,11 +305,81 @@ function addAllocator(m, x, y)
 end
 
 % =====================================================================
-% 3단계 — 헤딩 제어
+% 오프라인 운동모델 (3·4단계 쌍둥이 공통) — Gazebo 자리를 대신한다
+%   입력 FL, FR [N]   출력 psi [rad], r [rad/s], u [m/s]
+%   식과 계수는 3주차 1-8 절 · W03_0_offline 과 같다.
+%   초기 선수각은 VRX 스폰과 같게 32.7 deg (3주차 3-1 좌표 검산)
 % =====================================================================
-function build_heading()
-    m = 'W06_3_heading'; fresh(m);
-    addOdomReader(m, false);
+function addMotionModel(m, x, y)
+    s = add_subsys(m, 'MotionModel', [x y x+150 y+110], ...
+                   {'FL','FR'}, {'psi','r','u'}, gnc_colour('plant'));
+    add_block('simulink/User-Defined Functions/MATLAB Function', [s '/EOM'], ...
+              'Position',[200 40 340 160]);
+    setFcn(s, 'EOM', [ ...
+'function xdot = EOM(s, FL, FR)'                                        newline ...
+'%#codegen'                                                             newline ...
+'% 3-DOF WAM-V equations of motion, NED (3주차 1-8 절).'                  newline ...
+'%   s = [u v r x_n y_n psi]'''                                          newline ...
+'m = 211;  Izz = 653;  Xu = 100;  Xuu = 150;  Yv = 100;  Yvv = 100;'    newline ...
+'Nr = 800;  Nrr = 800;  b_half = 1.027135;'                             newline ...
+'u = s(1); v = s(2); r = s(3); psi = s(6);'                             newline ...
+'X = FL + FR;'                                                          newline ...
+'N = (FL - FR)*b_half;'                                                 newline ...
+'du = (X - (Xu + Xuu*abs(u))*u)/m + v*r;'                               newline ...
+'dv = (  - (Yv + Yvv*abs(v))*v)/m - u*r;'                               newline ...
+'dr = (N - (Nr + Nrr*abs(r))*r)/Izz;'                                   newline ...
+'xdot = [du; dv; dr;'                                                   newline ...
+'        u*cos(psi) - v*sin(psi);'                                      newline ...
+'        u*sin(psi) + v*cos(psi);'                                      newline ...
+'        r];']);
+    add_block('simulink/Continuous/Integrator', [s '/Integ'], ...
+              'Position',[400 80 440 120], 'InitialCondition','[0;0;0;0;0;32.7*pi/180]');
+    add_block('simulink/User-Defined Functions/MATLAB Function', [s '/States'], ...
+              'Position',[500 40 620 160]);
+    setFcn(s, 'States', [ ...
+'function [psi, r, u] = States(s)'                                      newline ...
+'%#codegen'                                                             newline ...
+'% Quat2Yaw 와 같은 출력 — 선수각은 [-pi, pi] 로 접는다'                   newline ...
+'psi = atan2(sin(s(6)), cos(s(6)));'                                    newline ...
+'r = s(3);'                                                             newline ...
+'u = s(1);']);
+    add_line(s,'FL/1','EOM/2','autorouting','on');
+    add_line(s,'FR/1','EOM/3','autorouting','on');
+    add_line(s,'EOM/1','Integ/1','autorouting','on');
+    add_line(s,'Integ/1','EOM/1','autorouting','on');
+    add_line(s,'Integ/1','States/1','autorouting','on');
+    add_line(s,'States/1','psi/1','autorouting','on');
+    add_line(s,'States/2','r/1','autorouting','on');
+    add_line(s,'States/3','u/1','autorouting','on');
+end
+
+function setSolverOffline(m)
+    % 연속 적분기가 있으므로 ode4. 스텝은 VRX 모델과 같은 0.05 s
+    set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
+                 'FixedStep','0.05', 'StopTime','40', 'SimulationMode','normal');
+end
+
+function addLog(m, src, name, x, y)
+    % To Workspace — W06_step_compare 가 VRX 와 오프라인을 같은 이름으로 꺼낸다
+    b = [m '/log_' name];
+    add_block('simulink/Sinks/To Workspace', b, 'Position',[x y x+90 y+26]);
+    set_param(b, 'VariableName',['log_' name], 'SaveFormat','Timeseries', 'SampleTime','0.05');
+    add_line(m, src, ['log_' name '/1'], 'autorouting','on');
+end
+
+% =====================================================================
+% 3단계 — 헤딩 제어  (offline = true 이면 오프라인 쌍둥이)
+% =====================================================================
+function build_heading(offline)
+    if offline
+        m = 'W06_3_heading_offline'; fresh(m);
+        addMotionModel(m, 780, 200);
+        sPsi = 'MotionModel/1';  sR = 'MotionModel/2';
+    else
+        m = 'W06_3_heading'; fresh(m);
+        addOdomReader(m, false);
+        sPsi = 'Quat2Yaw/1';  sR = 'Quat2Yaw/2';
+    end
 
     add_block('simulink/Sources/Constant', [m '/psi_ref_deg'], ...
               'Value','45', 'Position',[40 200 130 230]);
@@ -315,20 +395,39 @@ function build_heading()
     add_line(m,'HeadingCtrl/1','Alloc/2','autorouting','on');
     add_line(m,'psi_ref_deg/1','deg2rad/1','autorouting','on');
     add_line(m,'deg2rad/1', 'HeadingCtrl/1','autorouting','on');
-    add_line(m,'Quat2Yaw/1','HeadingCtrl/2','autorouting','on');
-    add_line(m,'Quat2Yaw/2','HeadingCtrl/3','autorouting','on');
+    add_line(m,sPsi,'HeadingCtrl/2','autorouting','on');
+    add_line(m,sR,  'HeadingCtrl/3','autorouting','on');
 
-    addThrusterPublisher(m, 'left',  'L', 780, 150);
-    addThrusterPublisher(m, 'right', 'R', 780, 320);
-    add_line(m,'Alloc/1','AsgL/2','autorouting','on');
-    add_line(m,'Alloc/2','AsgR/2','autorouting','on');
+    if offline
+        add_line(m,'Alloc/1','MotionModel/1','autorouting','on');
+        add_line(m,'Alloc/2','MotionModel/2','autorouting','on');
+    else
+        addThrusterPublisher(m, 'left',  'L', 780, 150);
+        addThrusterPublisher(m, 'right', 'R', 780, 320);
+        add_line(m,'Alloc/1','AsgL/2','autorouting','on');
+        add_line(m,'Alloc/2','AsgR/2','autorouting','on');
+    end
 
     % 관찰용
     add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[430 60 480 110]);
     set_param([m '/Scope_psi'],'NumInputPorts','2');
-    add_line(m,'Quat2Yaw/1','Scope_psi/1','autorouting','on');
+    add_line(m,sPsi,'Scope_psi/1','autorouting','on');
     add_line(m,'deg2rad/1','Scope_psi/2','autorouting','on');
+    addLog(m, sPsi, 'psi', 1000, 60);
+    addLog(m, 'Alloc/1', 'FL', 1000, 110);
+    addLog(m, 'Alloc/2', 'FR', 1000, 160);
 
+    if offline
+        setSolverOffline(m);
+        note(m, sprintf(['[3단계 오프라인] 헤딩 제어 — Gazebo 대신 운동방정식\n' ...
+            'W06_3_heading 과 HeadingCtrl · Alloc 이 같은 함수로 만들어졌다.\n' ...
+            'OdomSub/Quat2Yaw 와 Publish 자리에 MotionModel 하나가 있다.\n' ...
+            '초기 선수각 32.7 deg 는 VRX 스폰과 같다. 40 초가 1 초 안쪽에 끝난다.\n' ...
+            '비교: >> W06_step_compare(3)']), 40, 470);
+        save_system(m); close_system(m,0);
+        fprintf('  [OK] %s\n', m);
+        return
+    end
     setSolver(m);
     note(m, sprintf(['[3단계] 헤딩 제어\n' ...
         '목표 선수각(psi_ref_deg)을 바꿔 가며 스텝응답을 본다.\n' ...
@@ -344,9 +443,16 @@ end
 % =====================================================================
 % 4단계 — 속도 + 헤딩 (inner loop)
 % =====================================================================
-function build_inner_loop()
-    m = 'W06_4_inner_loop'; fresh(m);
-    addOdomReader(m, true);          % twist.twist.linear.x 까지 뽑음
+function build_inner_loop(offline)
+    if offline
+        m = 'W06_4_inner_loop_offline'; fresh(m);
+        addMotionModel(m, 780, 230);
+        sPsi = 'MotionModel/1';  sR = 'MotionModel/2';  sU = 'MotionModel/3';
+    else
+        m = 'W06_4_inner_loop'; fresh(m);
+        addOdomReader(m, true);          % twist.twist.linear.x 까지 뽑음
+        sPsi = 'Quat2Yaw/1';  sR = 'Quat2Yaw/2';  sU = 'Sel/5';
+    end
 
     % --- 헤딩 루프 ---
     add_block('simulink/Sources/Constant', [m '/psi_ref_deg'], ...
@@ -370,30 +476,50 @@ function build_inner_loop()
     addAllocator(m, 570, 240);
     add_line(m,'psi_ref_deg/1','deg2rad/1','autorouting','on');
     add_line(m,'deg2rad/1', 'HeadingCtrl/1','autorouting','on');
-    add_line(m,'Quat2Yaw/1','HeadingCtrl/2','autorouting','on');
-    add_line(m,'Quat2Yaw/2','HeadingCtrl/3','autorouting','on');
+    add_line(m,sPsi,'HeadingCtrl/2','autorouting','on');
+    add_line(m,sR,  'HeadingCtrl/3','autorouting','on');
     add_line(m,'u_ref/1','SumU/1','autorouting','on');
-    add_line(m,'Sel/5','SumU/2','autorouting','on');
+    add_line(m,sU,'SumU/2','autorouting','on');
     add_line(m,'SumU/1','PI_u/1','autorouting','on');
     add_line(m,'PI_u/1','Alloc/1','autorouting','on');
     add_line(m,'HeadingCtrl/1','Alloc/2','autorouting','on');
 
-    addThrusterPublisher(m, 'left',  'L', 780, 180);
-    addThrusterPublisher(m, 'right', 'R', 780, 350);
-    add_line(m,'Alloc/1','AsgL/2','autorouting','on');
-    add_line(m,'Alloc/2','AsgR/2','autorouting','on');
+    if offline
+        add_line(m,'Alloc/1','MotionModel/1','autorouting','on');
+        add_line(m,'Alloc/2','MotionModel/2','autorouting','on');
+    else
+        addThrusterPublisher(m, 'left',  'L', 780, 180);
+        addThrusterPublisher(m, 'right', 'R', 780, 350);
+        add_line(m,'Alloc/1','AsgL/2','autorouting','on');
+        add_line(m,'Alloc/2','AsgR/2','autorouting','on');
+    end
 
     % 관찰용
     add_block('simulink/Sinks/Scope', [m '/Scope_u'], 'Position',[430 60 480 110]);
     set_param([m '/Scope_u'],'NumInputPorts','2');
-    add_line(m,'Sel/5','Scope_u/1','autorouting','on');
+    add_line(m,sU,'Scope_u/1','autorouting','on');
     add_line(m,'u_ref/1','Scope_u/2','autorouting','on');
 
     add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[430 120 480 170]);
     set_param([m '/Scope_psi'],'NumInputPorts','2');
-    add_line(m,'Quat2Yaw/1','Scope_psi/1','autorouting','on');
+    add_line(m,sPsi,'Scope_psi/1','autorouting','on');
     add_line(m,'deg2rad/1','Scope_psi/2','autorouting','on');
+    addLog(m, sPsi, 'psi', 1000, 60);
+    addLog(m, sU,   'u',   1000, 110);
+    addLog(m, 'Alloc/1', 'FL', 1000, 160);
+    addLog(m, 'Alloc/2', 'FR', 1000, 210);
 
+    if offline
+        setSolverOffline(m);
+        note(m, sprintf(['[4단계 오프라인] 속도 + 헤딩 — Gazebo 대신 운동방정식\n' ...
+            'W06_4_inner_loop 과 HeadingCtrl · PI_u · Alloc 이 같은 함수로 만들어졌다.\n' ...
+            'OdomSub/Sel/Quat2Yaw 와 Publish 자리에 MotionModel 하나가 있다.\n' ...
+            '초기 선수각 32.7 deg (VRX 스폰), 초기 속도 0.\n' ...
+            '비교: >> W06_step_compare(4)']), 40, 500);
+        save_system(m); close_system(m,0);
+        fprintf('  [OK] %s\n', m);
+        return
+    end
     setSolver(m);
     note(m, sprintf(['[4단계] 속도 + 헤딩 (inner loop)\n' ...
         'u_ref [m/s] 와 psi_ref_deg [deg] 를 각각 바꿔 가며 응답을 본다.\n' ...
@@ -492,11 +618,11 @@ function build_offline()
     add_block('simulink/User-Defined Functions/MATLAB Function', [m '/States'], ...
               'Position',[930 130 1080 270]);
     setFcn(m, 'States', [ ...
-'function [pn, pe, psi_deg, u, r_deg] = States(s)'          newline ...
+'function [x_n, y_n, psi_deg, u, r_deg] = States(s)'          newline ...
 '%#codegen'                                                 newline ...
 '% Pull the numbers we want to look at out of the state.'   newline ...
-'pn = s(4);'                                                newline ...
-'pe = s(5);'                                                newline ...
+'x_n = s(4);'                                                newline ...
+'y_n = s(5);'                                                newline ...
 'psi_deg = s(6)*180/pi;'                                    newline ...
 'u  = s(1);'                                                newline ...
 'r_deg = s(3)*180/pi;']);
@@ -507,7 +633,7 @@ function build_offline()
     add_block('simulink/Sinks/XY Graph', [m '/Track'],  'Position',[1160 270 1220 330]);
     set_param([m '/Track'],'xmin','-20','xmax','120','ymin','-40','ymax','60');
 
-    nm = {'pn','pe','psi','u','r'};
+    nm = {'x_n','y_n','psi','u','r'};
     for k = 1:numel(nm)
         b = [m '/log_' nm{k}];
         add_block('simulink/Sinks/To Workspace', b, ...
@@ -527,8 +653,8 @@ function build_offline()
     add_line(m, 'Integ/1', 'States/1', 'autorouting','on');
     add_line(m, 'States/4', 'Scope_u/1', 'autorouting','on');
     add_line(m, 'States/3', 'Scope_psi/1', 'autorouting','on');
-    add_line(m, 'States/2', 'Track/1', 'autorouting','on');     % East 를 가로축으로
-    add_line(m, 'States/1', 'Track/2', 'autorouting','on');     % North 를 세로축으로
+    add_line(m, 'States/2', 'Track/1', 'autorouting','on');     % y (동쪽) 를 가로축으로
+    add_line(m, 'States/1', 'Track/2', 'autorouting','on');     % x (북쪽) 를 세로축으로
     for k = 1:numel(nm)
         add_line(m, sprintf('States/%d',k), ['log_' nm{k} '/1'], 'autorouting','on');
     end
