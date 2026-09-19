@@ -57,6 +57,8 @@ function n = one_round(m)
 %  없다 (2026-09-17 SB11 에서 0 -> 1 로 뒷걸음질).
 load_system(m);
 mfile = get_param(m, 'FileName');
+%  주석은 선과 무관하다. 먼저 비켜 두어야 성적표가 배치만 견준다
+if lay_notes(m) > 0, save_system(m); end
 [~, n0] = evalc('check_lines(m, false)');
 ok0 = compiles(m);
 close_system(m, 0);
