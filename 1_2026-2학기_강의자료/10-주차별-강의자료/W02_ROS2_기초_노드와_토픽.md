@@ -47,8 +47,8 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 5. **Windows 탐색기로 WSL 폴더**를 열고 파일을 주고받기
 6. **turtlesim** 으로 네 가지 통신을 직접 조작
 7. `ros2` 명령어로 실행 중인 노드와 토픽을 조사
-8. **rqt_graph · Topic Monitor · rqt_console · RViz2** 를 띄워 상태를 눈으로 확인
-9. **노드를 직접 작성**해서 데이터를 주고받기
+8. **노드를 직접 작성**해서 데이터를 주고받기
+9. **rqt_graph · Topic Monitor · rqt_console · RViz2** 를 띄워 상태를 눈으로 확인
 10. **QoS 불일치**를 재현하고 원인을 진단
 11. **표본화 주기**가 왜 중요한지 설명
 12. MATLAB 에 없는 메시지를 **중계 노드**로 표준 형식에 옮겨 발행
@@ -3430,9 +3430,9 @@ theta_goal = deg2rad(180);   % 화면 왼쪽
 | 4 | talker / listener 통신 | `I heard: [Hello World: N]` |
 | 5 | **turtlesim — 토픽·서비스·액션·파라미터** | 거북이 2마리 · 초록 배경 · `SUCCEEDED` |
 | 6 | 조사 명령어 사용 | `ros2 topic list` / `hz` / `info --verbose` |
-| 7 | **rqt_graph · Topic Monitor · rqt_console · RViz2** | 창 4개가 뜸 |
-| 8 | 워크스페이스와 패키지 생성 | `colcon build` → `1 package finished` |
-| 9 | 노드 직접 작성 및 통신 | `received: USV alive: 0` |
+| 7 | 워크스페이스와 패키지 생성 | `colcon build` → `1 package finished` |
+| 8 | 노드 직접 작성 및 통신 | `received: USV alive: 0` |
+| 9 | **rqt_graph · Topic Monitor · rqt_console · RViz2** | 창 4개가 뜸 |
 | 10 | QoS 불일치 재현 · 진단 · 해결 | 수신 0건 → 16건 (8 s) |
 | 11 | **중계 노드** `turtle_pose_relay` | `/turtle1/pose2d [geometry_msgs/msg/Pose2D]` · 62.5 Hz |
 | 12 | **Simulink 로 turtlesim 목표 자세 제어** | 오프라인 위치오차 0.048 · turtlesim 0.048 |
@@ -3480,12 +3480,12 @@ theta_goal = deg2rad(180);   % 화면 왼쪽
 - [ ] **파라미터**로 배경색을 바꾸고 `/clear` 로 반영시켰음
 - [ ] **액션** `rotate_absolute` 를 보내 `SUCCEEDED` 를 확인했음
 - [ ] `ros2 topic list` / `echo` / `hz` / `info --verbose` 를 모두 써 봤음
+- [ ] `~/capstone_ws` 워크스페이스 생성 및 빌드 성공
+- [ ] 직접 만든 `simple_talker` ↔ `simple_listener` 통신 성공
 - [ ] `rqt_graph` 로 노드 그래프를 확인했음
 - [ ] `rqt_topic` 에서 `/usv_chatter` 의 `Hz` 가 **2.00** 인 것을 확인했음
 - [ ] `rqt_console` 에서 로그를 확인했음
 - [ ] `rviz2` 를 띄워 `RViz is ready.` 를 확인했음
-- [ ] `~/capstone_ws` 워크스페이스 생성 및 빌드 성공
-- [ ] 직접 만든 `simple_talker` ↔ `simple_listener` 통신 성공
 - [ ] **QoS 불일치를 재현하고 진단한 뒤 해결했음** (수신 0건 → 정상 수신)
 - [ ] `~/.bashrc` 에 `ROS_DOMAIN_ID` 를 팀 번호로 설정했음
 - [ ] `ros2 run usv_basics turtle_pose_relay` 실행 후 `ros2 topic hz /turtle1/pose2d` 가 약 62 Hz 를 출력했음

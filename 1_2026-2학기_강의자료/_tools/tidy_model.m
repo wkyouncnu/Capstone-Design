@@ -42,6 +42,7 @@ end
 load_system(m);
 keep_signals(m, sig);
 square_lines(m);        % 크기를 바꾼 블록 옆에 남은 사선 토막을 직각으로 (꺾임 수 그대로)
+lay_notes(m);           % arrangeSystem 은 주석을 옮기지 않는다 — 블록에 앉은 주석을 아래로
 save_system(m);
 close_system(m, 0);
 
@@ -156,4 +157,5 @@ for s = 1:numel(sys)
     try, lay_links(sys{s});                 catch, end
     try, lay_links(sys{s});                 catch, end
 end
+try, lay_notes(m); catch, end     % 주석도 옮긴 뒤에 견준다 (arrangeSystem 은 주석을 두고 간다)
 end
