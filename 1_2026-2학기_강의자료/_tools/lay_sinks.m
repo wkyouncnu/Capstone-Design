@@ -161,17 +161,19 @@ end
 % --- 6) 종착 블록을 통로 오른쪽 한 열에 쌓는다 ---------------------------
 %  한 줄에 하나씩만 둔다. 그래야 통로에서 블록으로 들어가는 마지막 가로 토막이
 %  제 블록 말고는 아무것도 만나지 않는다.
+%  줄 간격은 **블록 키 + 이름표** 이상이어야 한다. 고정 간격(Row)만 쓰면 키 큰
+%  Scope(60 px) 밑으로 다음 블록이 파고들어 사각형과 이름표가 포개진다
+%  (2026-09-19 SB13 의 Scope 와 log_mode — check_lines 의 (6) 블록겹침).
 x0   = max(lane(mv)) + o.Out;
-row  = 0;
+y    = yBand;
 done = containers.Map('KeyType','char','ValueType','logical');
 for i = mv
     if isKey(done, conn(i).dst), continue, end     % 입력이 여럿인 블록 — 이미 놓았다
     done(conn(i).dst) = true;
     b = get_param([sys '/' conn(i).dst], 'Position');
     w = b(3)-b(1);  h = b(4)-b(2);
-    y = yBand + o.Row*row;
     set_param([sys '/' conn(i).dst], 'Position', round([x0 y x0+w y+h]));
-    row   = row + 1;
+    y     = y + max(o.Row, h + 18);                % 이름표 14 px + 여백 4 px
     moved = moved + 1;
 end
 

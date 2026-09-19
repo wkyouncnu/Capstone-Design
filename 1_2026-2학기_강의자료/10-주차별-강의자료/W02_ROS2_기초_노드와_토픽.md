@@ -87,10 +87,10 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 |---|---|---|
 | **수업 전** — 설치 | 2-1 ROS 2 설치 · 2-2 VS Code | 수업 시간에 설치로 막히지 않음 |
 | **수업 중** — 개념 | 1-1 \~ 1-2 · 1-4 \~ 1-6 | 노드 · 토픽 · 메시지 · Domain ID · QoS 가 무엇인가 |
-| **수업 중** — 손으로 | 2-3 첫 통신 → 2-4 turtlesim → 2-7 패키지 → 2-8 첫 노드 → 2-9 QoS 실험 | 이 주차의 뼈대. 순서대로 함 |
+| **수업 중** — 손으로 | 2-3 첫 통신 → 2-4 turtlesim → 2-6 패키지 → 2-7 첫 노드 → 2-9 QoS 실험 | 이 주차의 뼈대. 순서대로 함 |
 | **수업 중** — Simulink | 2-10 중계 노드 → 2-11 목표 자세 제어 | 6주차 Simulink 연동의 예고편. 2-10 을 먼저 해야 2-11 이 돎 |
 | **과제** | 1-7 표본화 | 과제 2(가상 IMU 표본화) 가 이 절에서 나옴 |
-| **필요할 때** — 참고 | 1-3 워크스페이스 · 2-5 조사 명령어 · 2-6 rqt · RViz2 | 명령어가 기억나지 않을 때 돌아와 찾음 |
+| **필요할 때** — 참고 | 1-3 워크스페이스 · 2-5 조사 명령어 · 2-8 rqt · RViz2 | 명령어가 기억나지 않을 때 돌아와 찾음 |
 
 # 1부 · 이론
 
@@ -187,8 +187,8 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 
 | 층 | 무엇인가 | 이번 주차에서 |
 |---|---|---|
-| **노드** | 실행되는 프로그램 하나 | §2-8 에서 직접 만듦 |
-| **토픽** | 계속 흐르는 데이터 | §2-3 · §2-4 · §2-8 |
+| **노드** | 실행되는 프로그램 하나 | §2-7 에서 직접 만듦 |
+| **토픽** | 계속 흐르는 데이터 | §2-3 · §2-4 · §2-7 |
 | **서비스** | 한 번 요청하고 한 번 응답 | §2-4 turtlesim |
 | **액션** | 오래 걸리는 일 + 중간 보고 | §2-4 turtlesim |
 | **파라미터** | 노드의 설정값 | §2-4 turtlesim |
@@ -754,7 +754,7 @@ humble
 > grep -c "ROS_DOMAIN_ID" ~/.bashrc
 > ```
 
-- 워크스페이스 줄(`source ~/capstone_ws/install/setup.bash`)은 **첫 빌드 뒤** §2-7 에서 넣음
+- 워크스페이스 줄(`source ~/capstone_ws/install/setup.bash`)은 **첫 빌드 뒤** §2-6 에서 넣음
   - 빌드 전에 넣으면 새 터미널마다 `No such file or directory` 가 찍힘
 
 ### 5단계 — rosdep 초기화
@@ -862,7 +862,7 @@ cd ~/capstone_ws
 code .
 ```
 
-- 빈 폴더(`src` 하나)가 열리는 것이 정상. `build` `install` `log` 는 §2-7 빌드 뒤에 생김
+- 빈 폴더(`src` 하나)가 열리는 것이 정상. `build` `install` `log` 는 §2-6 빌드 뒤에 생김
 - 처음 실행하면 VS Code 서버가 WSL 안에 자동 설치됨 (1\~2분)
 
 - **방법 2 — VS Code 안에서**
@@ -891,7 +891,7 @@ WSL: Ubuntu-22.04
 |---|---|---|
 | 1 | **왼쪽 아래 파란 칸** `WSL: Ubuntu-22.04` | **가장 중요.** 우분투 안을 편집 중이라는 표시 |
 | 2 | 왼쪽 세로 막대 | 활동 표시줄 — 탐색기 · 검색 · 소스 제어 · 실행 · 확장 |
-| 3 | 왼쪽 넓은 칸 | **탐색기.** 그림은 §2-7 빌드 뒤 화면이라 `build` `install` `log` `src` 가 보임 |
+| 3 | 왼쪽 넓은 칸 | **탐색기.** 그림은 §2-6 빌드 뒤 화면이라 `build` `install` `log` `src` 가 보임 |
 | 4 | 가운데 | **편집기.** 파이썬 문법이 색으로 구분됨 |
 | 5 | 맨 아래 오른쪽 | 줄·열 번호, 인코딩(`UTF-8`), 줄바꿈(`LF`), 언어(`Python`) |
 
@@ -949,7 +949,7 @@ cnu@DESKTOP-XXXXXX:~/capstone_ws$
 
 ![VS Code 통합 터미널 — 왼쪽 발행자 · 오른쪽 구독자](../assets/w02-vscode-terminal.png)
 
-- 위 화면은 §2-8 을 끝낸 뒤의 실제 모습. 이번 주차 실습의 **목표 화면**
+- 위 화면은 §2-7 을 끝낸 뒤의 실제 모습. 이번 주차 실습의 **목표 화면**
 
 | 화면에서 보이는 것 | 뜻 |
 |---|---|
@@ -983,7 +983,7 @@ cnu@DESKTOP-XXXXXX:~/capstone_ws$
 | 확인 항목 | 화면에서 |
 |---|---|
 | 주소창이 `\\wsl.localhost\Ubuntu-22.04\home\cnu\capstone_ws` | WSL 안을 보고 있음 |
-| `build` `install` `log` | §2-7 의 `colcon build` 가 만든 폴더 (`src` 는 직접 만든 것) |
+| `build` `install` `log` | §2-6 의 `colcon build` 가 만든 폴더 (`src` 는 직접 만든 것) |
 | 파일을 **끌어다 놓기**로 복사 가능 | 바탕화면 ↔ WSL 양방향 |
 
 - 우분투 터미널에서 **탐색기를 바로 여는 명령**도 있음
@@ -2579,7 +2579,7 @@ ros2 run usv_basics qos_test_sub
 | **경고 한 줄이 끼어 있음** | 이것을 못 보고 지나가는 것이 문제 |
 
 > [!tip] 경고를 놓쳤다면 `rqt_console` 로 봄
-> §2-6 의 `rqt_console` 에서 **Exclude Messages → `Info` 를 끄면** 경고만 남음
+> §2-8 의 `rqt_console` 에서 **Exclude Messages → `Info` 를 끄면** 경고만 남음
 
 **2. 진단**
 
@@ -2775,13 +2775,13 @@ float64 theta
 ### 1단계 — 파일을 만든다
 
 - 위치: `~/capstone_ws/src/usv_basics/usv_basics/turtle_pose_relay.py`
-- §2-8 과 같은 방법으로 VS Code 탐색기에서 새 파일을 만듦
+- §2-7 과 같은 방법으로 VS Code 탐색기에서 새 파일을 만듦
 
 ![탐색기에서 turtle_pose_relay.py 위치](../assets/w02-relay-code-tree.png)
 
 | 화면에서 확인할 것 | 무엇 |
 |---|---|
-| 탐색기 `src / usv_basics` → `usv_basics` 아래 `turtle_pose_relay.py` | **안쪽** 모듈 폴더에 있어야 함 (§2-8 경고와 같다) |
+| 탐색기 `src / usv_basics` → `usv_basics` 아래 `turtle_pose_relay.py` | **안쪽** 모듈 폴더에 있어야 함 (§2-7 경고와 같다) |
 | 탭 제목 `turtle_pose_relay.py` · 위쪽 경로 `src > usv_basics > usv_basics` | 올바른 위치 |
 | 왼쪽 아래 `WSL: Ubuntu-22.04` · `✕ 0 ⚠ 0` | 우분투 안의 파일이고 오류가 없음 |
 
@@ -2886,7 +2886,7 @@ if __name__ == '__main__':
 | 33 | `create_publisher(Twist, f'/{turtle}/vel', 10)` | 발행자 ② — 속도 |
 | 34\~35 | `create_subscription(Pose, f'/{turtle}/pose', self.on_pose, 10)` | 구독자 — 메시지가 오면 `on_pose` 를 부름 |
 
-- §2-8 의 `simple_talker`(발행자 1개)와 `simple_listener`(구독자 1개)를 **한 노드에 합친 모양**
+- §2-7 의 `simple_talker`(발행자 1개)와 `simple_listener`(구독자 1개)를 **한 노드에 합친 모양**
 - 차이는 **타이머가 없다**는 것 하나 — 발행은 시계가 아니라 **메시지 도착**이 일으킴
 
 ### 코드 읽기 ② — 받자마자 옮겨 담아 보낸다
@@ -2901,7 +2901,7 @@ if __name__ == '__main__':
 | 46 | `self.pub_pose.publish(p)` | `/turtle1/pose2d` 로 내보냄 |
 | 48\~51 | `v = Twist()` … `publish(v)` | 속도도 같은 방식으로 `/turtle1/vel` 에 |
 | 53\~56 | `if self.count == 1:` | **첫 메시지 한 번만** 로그를 찍음. 매번 찍으면 초당 62줄이 쏟아짐 |
-| 59\~69 | `def main()` | §2-8 의 `main()` 과 같은 뼈대 |
+| 59\~69 | `def main()` | §2-7 의 `main()` 과 같은 뼈대 |
 
 > [!important] 중계 노드는 값을 바꾸지 않음
 > 들어온 `x, y, theta` 와 나간 `x, y, theta` 는 같은 숫자. **형식(양식)만 바뀜**
@@ -2919,7 +2919,7 @@ if __name__ == '__main__':
 
 | 화면에서 확인할 것 | 무엇 |
 |---|---|
-| 27\~31행 | 저장소 기준 기존 실행파일 5개 — §2-8 · §2-9 의 4개 + 3주차 `wamv_teleop_key`. 직접 만든 경우는 4개 |
+| 27\~31행 | 저장소 기준 기존 실행파일 5개 — §2-7 · §2-9 의 4개 + 3주차 `wamv_teleop_key`. 직접 만든 경우는 4개 |
 | **32행** `'turtle_pose_relay = usv_basics.turtle_pose_relay:main',` | 이번에 추가한 줄. **끝의 쉼표** 확인 |
 
 - `package.xml` 의 `<depend>` 에 두 줄 추가 — 이 노드가 쓰는 메시지 패키지
@@ -3696,7 +3696,7 @@ which code
 
 - **`usv_basics` 패키지** — <https://github.com/wkyouncnu/usv_basics>
   - 이번 주차에 만드는 노드 4개와 중계 노드 `turtle_pose_relay` 가 그대로 들어 있음
-  - 받는 법은 §2-7 "저장소에서 받기"
+  - 받는 법은 §2-6 "저장소에서 받기"
   - 라이선스 Apache-2.0. 자유롭게 고쳐 써도 됨
 - **Simulink 모델** — 강의자료 `10-주차별-강의자료/W02_simulink/` (§2-11)
   - MATLAB ROS 2 사용자 메시지 — https://www.mathworks.com/help/ros/ref/ros2genmsg.html

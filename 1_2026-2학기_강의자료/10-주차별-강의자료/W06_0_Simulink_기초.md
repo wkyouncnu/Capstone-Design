@@ -65,8 +65,8 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 3. **MATLAB Function 블록**에 코드를 써서 원하는 계산 넣기
 4. 여러 블록을 **Subsystem 한 칸**으로 묶고, **Goto/From** 으로 선 없이 잇기
 5. **버스**를 만들고, 원소를 꺼내고, 한 칸만 바꿔치기
-6. **PID 블록**을 놓고 포화·안티와인드업 켜기
-7. 블록 값에 **변수 이름**을 쓰고, 신호를 **로깅**해서 MATLAB 으로 꺼내기
+6. 블록 값에 **변수 이름**을 쓰고, 신호를 **로깅**해서 MATLAB 으로 꺼내기
+7. **PID 블록**을 놓고 포화·안티와인드업 켜기
 8. **Mux·Demux·Selector** 로 신호를 묶고 풀기
 9. **Unit Delay** 로 누적기를 만들고, **대수 루프를 끊는 법** 설명하기
 10. **Integrator·Transfer Fcn** 으로 미분방정식과 1차 지연 만들기
@@ -1371,8 +1371,8 @@ fprintf('%.17g\n', d(abs(t - 23) < 1e-9))     % 29.999999999999805
 | 4 | Subsystem 으로 묶기 | `Calc` 포트가 `a`,`b`,`y` |
 | 5 | Goto/From 으로 선 없이 잇기 | `Display` 에 `12` |
 | 6 | 버스 만들고 꺼내고 바꾸기 | `Inner.y`=2, `Inner.z`=99 |
-| 7 | PID · 포화 · 안티와인드업 | 지연이 19.8초 → 2.6초 |
-| 8 | 변수 · 로깅 · Data Inspector | `out.logsout` 표본 201개 |
+| 7 | 변수 · 로깅 · Data Inspector | `out.logsout` 표본 201개 |
+| 8 | PID · 포화 · 안티와인드업 | 지연이 19.8초 → 2.6초 |
 | 9 | Mux·Demux·Selector 로 묶고 풀기 | Selector 가 `2` 출력 |
 | 10 | Unit Delay 누적기 | 10초 뒤 `10.05` |
 | 11 | Integrator·Transfer Fcn | 63 % 도달이 `0.300 s` |
@@ -1405,8 +1405,8 @@ fprintf('%.17g\n', d(abs(t - 23) < 1e-9))     % 29.999999999999805
 - [ ] `SB3` — Goto/From 으로 이어 `12` 출력
 - [ ] `SB4_bus_todo` — `Inner.y` 뽑아 `2` 출력
 - [ ] `SB4` — Bus Assignment 로 `Inner.z` 를 `99` 로
-- [ ] `SB5_pid_todo` — P → PI → 포화 → 안티와인드업 순서로 4번 실행
 - [ ] `SB6_param_todo` — 변수화, 로깅, Data Inspector 겹쳐 보기
+- [ ] `SB5_pid_todo` — P → PI → 포화 → 안티와인드업 순서로 4번 실행
 
 ### 2일차 이론 이해 (G\~M)
 
@@ -1432,9 +1432,9 @@ fprintf('%.17g\n', d(abs(t - 23) < 1e-9))     % 29.999999999999805
 
 ### 관찰 기록
 
+- [ ] 변수가 없을 때 나는 오류 메시지를 적어 두었음
 - [ ] P 제어만일 때 정상상태 오차가 얼마였는지 적어 두었음
 - [ ] 안티와인드업 on/off 의 차이를 초 단위로 적어 두었음
-- [ ] 변수가 없을 때 나는 오류 메시지를 적어 두었음
 
 ---
 
@@ -1667,10 +1667,10 @@ tidy_layout('SB9_continuous_done')
 | `W06_0_simulink/SB2_mfcn_todo.slx` · `_done.slx` | B. MATLAB Function |
 | `W06_0_simulink/SB3_subsys_todo.slx` · `_done.slx` | C. Subsystem · Goto/From |
 | `W06_0_simulink/SB4_bus_todo.slx` · `_done.slx` | D. 버스 |
-| `W06_0_simulink/SB5_pid_todo.slx` · `_done.slx` | E. PID · 포화 · 안티와인드업 |
-| `W06_0_simulink/SB6_param_todo.slx` · `_done.slx` | F. 파라미터 · 로깅 |
-| `W06_0_simulink/SB_setup.m` | 실습 F 파라미터 |
-| `W06_0_simulink/SB_plot.m` | 실습 F 결과 그래프 |
+| `W06_0_simulink/SB5_pid_todo.slx` · `_done.slx` | F. PID · 포화 · 안티와인드업 |
+| `W06_0_simulink/SB6_param_todo.slx` · `_done.slx` | E. 파라미터 · 로깅 |
+| `W06_0_simulink/SB_setup.m` | 실습 E 파라미터 |
+| `W06_0_simulink/SB_plot.m` | 실습 E 결과 그래프 |
 | `W06_0_simulink/SB7_signal_todo.slx` · `_done.slx` | G. Mux · Demux · Selector |
 | `W06_0_simulink/SB8_discrete_todo.slx` · `_done.slx` | H. 샘플타임 · Unit Delay · Rate Transition |
 | `W06_0_simulink/SB9_continuous_todo.slx` · `_done.slx` | I. Integrator · Transfer Fcn · 솔버 |
