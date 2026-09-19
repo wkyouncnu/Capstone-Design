@@ -110,6 +110,10 @@ for i = 1:numel(sums)
     end
 end
 
+%  크기를 바꾸면 Simulink 는 선의 끝점만 새 포트로 당기고 이웃 점은 두어 끝 토막이
+%  2~7 px 기운 사선이 된다 (2026-09-19). 이웃 점을 따라 옮겨 직각으로 되돌린다.
+square_lines(mdl);
+
 if verbose, fprintf('    %d blocks restyled in %s\n', n, mdl); end
 end
 

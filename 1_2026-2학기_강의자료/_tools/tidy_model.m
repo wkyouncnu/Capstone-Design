@@ -41,6 +41,7 @@ end
 
 load_system(m);
 keep_signals(m, sig);
+square_lines(m);        % 크기를 바꾼 블록 옆에 남은 사선 토막을 직각으로 (꺾임 수 그대로)
 save_system(m);
 close_system(m, 0);
 

@@ -30,6 +30,6 @@ for it = 1:tries
     n = check_lines(mdl, false);
 end
 keep_signals(mdl, s);
-load_system(mdl); save_system(mdl); close_system(mdl, 0);
+load_system(mdl); square_lines(mdl); save_system(mdl); close_system(mdl, 0);
 n = check_lines(mdl, false);
 end
