@@ -32,7 +32,7 @@ summary: PID 를 직접 조립해 보고 그 PID 로 WAM-V 를 직진·선회·�
 - **이번 주차 학습 내용**: **PID 제어기를 직접 만들어 본 뒤**, 그 제어기로 Gazebo 의 WAM-V 를 **직진 → 선회 → 헤딩 제어 → 속도 제어** 순으로 움직임
 
 > [!important] 시작 전 확인
-> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-7)
+> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-6)
 > - MATLAB **R2024b + Simulink + ROS Toolbox** 설치 확인
 > - VRX 가 실행되는 상태여야 함
 > - 4주차에 배운 **urdf 복사 후 `urdf:=` 로 실행**을 이번 주차 다시 씀

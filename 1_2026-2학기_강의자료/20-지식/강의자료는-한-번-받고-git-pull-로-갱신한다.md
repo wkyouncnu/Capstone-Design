@@ -15,8 +15,8 @@ summary: 강의자료 저장소를 WSL 에 한 번만 clone 하고, 매주 VS Co
 
 | 저장소 | 주소 | 들어 있는 것 | 받는 주차 |
 |---|---|---|---|
-| **강의자료** | <https://github.com/wkyouncnu/Capstone-Design> | 주차 문서(MD · PDF), Simulink 모델, MATLAB 스크립트, 그림 | 2주차 2-7 |
-| ROS 2 예제 패키지 | <https://github.com/wkyouncnu/usv_basics> | `usv_basics` (노드 코드) | 2주차 2-7, 3주차 2-6 |
+| **강의자료** | <https://github.com/wkyouncnu/Capstone-Design> | 주차 문서(MD · PDF), Simulink 모델, MATLAB 스크립트, 그림 | 2주차 2-6 |
+| ROS 2 예제 패키지 | <https://github.com/wkyouncnu/usv_basics> | `usv_basics` (노드 코드) | 2주차 2-6, 3주차 2-6 |
 
 - 두 저장소 모두 **공개** — 로그인 · 비밀번호 없이 받아짐
 - 강의자료는 수업 중에도 계속 고쳐짐 (코드 · 모델 · 측정값). 매 주차 시작 전에 받아야 문서와 코드가 맞음

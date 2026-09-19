@@ -33,7 +33,7 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 - **구성**: 1일차 A\~F (문법, 절 합계 160분) · 2일차 G\~M (7\~9주차에서 쓰는 블록, 절 합계 195분)
 
 > [!important] 시작 전 확인
-> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-7)
+> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-6)
 > - MATLAB **R2024b + Simulink + Stateflow** 가 설치되어 있을 것 (Stateflow 는 M절에서 사용. 별도 라이선스)
 > - **MATLAB 은 어느 정도 안다고 전제함** — 변수, `for`, `if`, 함수 정의
 > - **Simulink 는 전혀 몰라도 됨.** 처음 접한다고 가정하고 쓴 문서

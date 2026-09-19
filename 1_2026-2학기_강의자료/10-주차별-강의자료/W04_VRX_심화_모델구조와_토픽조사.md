@@ -32,7 +32,7 @@ summary: WAM-V URDF·Xacro 구조, 센서 배치 수정, Mapviz 위성지도, �
 - **이번 주차 학습 내용**: ① WAM-V 내부를 뜯어보고 **센서를 직접 옮겨 보기** ② **토픽 전수조사표** 작성 ③ 위성지도에 항적 그리기
 
 > [!important] 시작 전 확인
-> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-7)
+> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-6)
 > - 3주차 VRX 설치가 끝나 있어야 함
 > - `ros2 launch vrx_gz competition.launch.py world:=sydney_regatta` 로 배가 떠야 함
 > - 안 되는 학생은 **수업 시작 전 조교에게 알릴 것.** 이번 주차 실습은 전부 VRX가 돌아가는 것을 전제로 함

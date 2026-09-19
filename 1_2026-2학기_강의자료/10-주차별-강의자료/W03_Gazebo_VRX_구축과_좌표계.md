@@ -32,7 +32,7 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 - **이번 주차 학습 내용**: ① 시뮬레이터 설치 ② **배를 물에 띄우고 직접 조종** ③ 좌표계 정리
 
 > [!important] 시작 전 확인
-> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-7)
+> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-6)
 > - 2주차 ROS 2 설치가 끝나 있어야 함
 > - `ros2 run demo_nodes_cpp talker` 가 되는지 먼저 확인할 것
 > - 저장공간 여유 20 GB 이상 (이번 주차 설치분 기준. 학기 전체 권장 여유는 강의계획서 기준 40 GB): `df -h` 로 확인
@@ -1773,7 +1773,7 @@ rviz2
 
 > [!note] 솔버가 다른 모델과 다르다
 > 다른 3주차 모델은 이산 블록만 있어 `FixedStepDiscrete` 를 씀
-> `W03_0_offline` 은 연속 적분기(`Integ`)가 있으므로 **`ode4`, 고정 스텝 `Ts` = 0.05 s** 로 둠 (6주차 기초 1-4)
+> `W03_0_offline` 은 연속 적분기(`Integ`)가 있으므로 **`ode4`, 고정 스텝 `Ts` = 0.05 s** 로 둠 (6주차 기초 1-3)
 
 ### 버튼 — 신호가 아니라 파라미터를 누른다
 
@@ -1935,7 +1935,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 - 배가 가만히 있으면 `x_n`, `y_n` 이 거의 변하지 않음. 실행 중 2-6 절 키보드 노드로 밀어 봄
 
 > [!note] 모델 창에서 Run 으로 돌려도 되나, 페이싱 비율이 `1` 로 고정되어 있음
-> Gazebo RTF 가 1 보다 낮으면 모델이 시뮬레이터보다 앞서 감 (6주차 1-4)
+> Gazebo RTF 가 1 보다 낮으면 모델이 시뮬레이터보다 앞서 감 (6주차 1-3)
 > `W03_vrx_run` 은 이 값을 측정 RTF 로 바꿔 실행함
 
 ---

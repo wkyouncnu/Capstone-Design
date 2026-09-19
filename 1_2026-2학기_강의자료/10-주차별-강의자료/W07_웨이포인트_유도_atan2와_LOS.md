@@ -32,7 +32,7 @@ summary: 배를 경로 위로 올려놓는 법 — 두 유도법칙을 오프라
 - **이번 주차 학습 내용**: 웨이포인트를 주고 배가 **경로를 따라가게** 만듦. 유도법칙 두 가지를 비교함
 
 > [!important] 시작 전 확인
-> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-7)
+> - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-6)
 > - 6주차 모델(`W06_4_inner_loop.slx`)이 동작했어야 함
 > - MATLAB **R2024b + Simulink + ROS Toolbox**
 > - 배포 폴더 `W07_simulink/` 와 `W07_matlab/`
