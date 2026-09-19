@@ -1,9 +1,15 @@
 function build_w03_models()
-% BUILD_W03_MODELS  3주차 좌표계 Simulink 모델 3개를 생성한다.
+% BUILD_W03_MODELS  3주차 좌표계 Simulink 모델 5개를 생성한다.
 %
+%     W03_0_offline.slx       0단계 — 버튼 조종을 운동방정식으로 먼저. VRX 필요 없다
 %     W03_1_frame_check.slx   1단계 — 변환식만 확인. VRX 도 ROS 도 필요 없다
 %     W03_2_vrx_nav.slx       2단계 — VRX 의 GPS·IMU 를 받아 NED 로 바꿔 본다
 %     W03_3_vrx_drive.slx     3단계 — 추력을 주고 위치·선수각 부호를 확인한다
+%     W03_4_teleop.slx        4단계 — 0단계와 같은 버튼으로 VRX 의 배를 몬다
+%
+%   0단계와 4단계는 최상위가 한 상자만 다르다
+%     W03_0_offline : TeleopPad -> MotionModel (운동방정식)        -> Animate · Logging
+%     W03_4_teleop  : TeleopPad -> Thrusters -> Gazebo -> OdomNav -> Animate · Logging
 %
 %   무엇을 확인하는 모델인가
 %     ROS·Gazebo 는 ENU 로 준다. 본 과목 제어는 NED 로 쓴다.
@@ -28,6 +34,7 @@ function build_w03_models()
         error('먼저 W03_setup 을 실행하십시오.');
     end
 
+    build_offline();
     build_frame_check();
     build_vrx_nav();
     build_vrx_drive();
@@ -39,6 +46,7 @@ function build_w03_models()
         try
 
             tidy_model(mName);
+            if strcmp(mName, 'W03_0_offline'), fixOfflineLayout(mName); end
 
             paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
 
@@ -460,6 +468,183 @@ function build_teleop()
 
     save_system(m); close_system(m);
     fprintf('  %s 생성\n', m);
+end
+
+% =====================================================================
+% 0단계 — 같은 버튼, Gazebo 대신 운동방정식 (VRX 불필요)
+%   W03_4_teleop 에서 Thrusters·OdomNav 두 상자를 MotionModel 하나로 바꾼 것.
+%   TeleopPad · Animate · Logging 은 4단계와 같은 함수로 만든다.
+%   그래서 같은 버튼을 누르면 같은 창에 같은 이름의 로그가 남는다.
+% =====================================================================
+function build_offline()
+    m = 'W03_0_offline'; fresh(m);
+    % 연속 적분기가 있으므로 이산 전용 솔버 대신 ode4 (고정 스텝 Ts)
+    set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
+                 'FixedStep','Ts', 'StopTime','T_end_teleop', 'SimulationMode','normal');
+    % 버튼을 사람이 누를 수 있는 속도로 돌린다. 스크립트 실행은 W03_offline_run 이 끈다
+    set_param(m, 'EnablePacing','on', 'PacingRate','1');
+
+    addTeleopPad(m, [250 100 420 200]);
+    addMotionModel(m, [650 100 820 280]);
+    addTeleopAnimate(m, [650 380 820 470]);
+    addLogging(m, [1000 380 1170 470], {'N','E','psi','u','v','r','FL','FR','valid'});
+
+    L(m,'TeleopPad/1','MotionModel/1');
+    L(m,'TeleopPad/2','MotionModel/2');
+
+    note(m,'n1', ['W03 0단계  —  버튼으로 배를 몬다 (VRX 불필요)' newline ...
+        newline ...
+        'TeleopPad 는 4단계(W03_4_teleop)와 같은 블록이다.' newline ...
+        '4단계의 Thrusters · OdomNav 자리에 MotionModel 하나가 들어 있다.' newline ...
+        'MotionModel = 3주차 1-8 절의 운동방정식 + 적분기.' newline ...
+        '계수는 전부 VRX 플러그인 파일에서 가져온 값이다.' newline ...
+        newline ...
+        '실행 전: W03_setup   (VRX 는 띄우지 않는다)'], 250, -60);
+
+    save_system(m); close_system(m);
+    fprintf('  %s 생성\n', m);
+end
+
+% ---- 0단계 배치 — tidy_model 뒤에 손으로 맞춘다 ------------------------
+%   tidy_model 은 적분 되먹임(Integ -> EOM)을 Goto/From 쌍으로 끊는다.
+%   운동모델은 "미분 -> 적분 -> 다시 미분" 고리가 눈에 보여야 하므로 선으로 되돌린다.
+%   최상위는 4단계(W03_4_teleop)와 같은 자리에 둔다 — 두 그림을 나란히 비교하게.
+function fixOfflineLayout(m)
+    load_system(m);
+    set_param([m '/TeleopPad'],   'Position', [  0 330  355 540]);
+    set_param([m '/MotionModel'], 'Position', [835 330 1190 540]);
+    set_param([m '/Animate'],     'Position', [835 700 1190 890]);
+    set_param([m '/Logging'],     'Position', [1360 700 1715 890]);
+    for k = 1:2, reline(m, 'TeleopPad', k, 'MotionModel', k); end
+
+    ss = [m '/MotionModel'];
+    % tidy 가 만든 되먹임 태그 쌍을 지우고 선으로 잇는다
+    tags = [find_system(ss,'SearchDepth',1,'BlockType','Goto','GotoTag','EOM_1'); ...
+            find_system(ss,'SearchDepth',1,'BlockType','From','GotoTag','EOM_1')];
+    for k = 1:numel(tags)
+        ph = get_param(tags{k}, 'LineHandles');
+        delete_line([ph.Inport(:); ph.Outport(:)]');
+        delete_block(tags{k});
+    end
+    set_param([ss '/FL'],     'Position', [ 40 150  70 164]);
+    set_param([ss '/FR'],     'Position', [ 40 210  70 224]);
+    set_param([ss '/p'],      'Position', [ 20 260 110 290]);
+    set_param([ss '/EOM'],    'Position', [200  60 360 310]);
+    set_param([ss '/Integ'],  'Position', [430 160 480 210]);
+    set_param([ss '/States'], 'Position', [560  60 680 310]);
+    set_param([ss '/One'],    'Position', [560 380 610 410]);
+    set_param([ss '/Go_valid'],'Position',[680 382 760 408]);
+    outs = {'N','E','psi','u','v','r'};
+    pc = get_param([ss '/States'], 'PortConnectivity');
+    for k = 1:6
+        yy = pc(1 + k).Position(2);
+        set_param([ss '/Go_' outs{k}], 'Position', [760 yy-12 840 yy+12]);
+    end
+    reline(ss, 'EOM', 1, 'Integ', 1);
+    reline(ss, 'Integ', 1, 'States', 1);
+    for k = 1:6, reline(ss, 'States', k, ['Go_' outs{k}], 1); end
+    reline(ss, 'FL', 1, 'EOM', 2);
+    reline(ss, 'FR', 1, 'EOM', 3);
+    reline(ss, 'p',  1, 'EOM', 4);
+    reline(ss, 'One', 1, 'Go_valid', 1);
+    % 되먹임 — 적분기 출력을 위로 돌려 EOM 의 첫 입력(s)으로
+    try, delete_line(ss, 'Integ/1', 'EOM/1'); catch, end
+    pI = get_param([ss '/Integ'], 'PortConnectivity');
+    pE = get_param([ss '/EOM'],   'PortConnectivity');
+    a = pI(end).Position;  b = pE(1).Position;
+    add_line(ss, [a; a(1)+30 a(2); a(1)+30 25; b(1)-40 25; b(1)-40 b(2); b]);
+    % 태그를 지우며 남은 끊긴 선 조각을 치운다
+    ln = find_system(ss, 'SearchDepth',1, 'FindAll','on', 'Type','line');
+    for k = 1:numel(ln)
+        if ishandle(ln(k)) && (get_param(ln(k),'SrcBlockHandle') < 0 || ...
+                               any(get_param(ln(k),'DstBlockHandle') < 0))
+            delete_line(ln(k));
+        end
+    end
+
+    % 설명 메모를 도면 바로 위로
+    nt = find_system(m, 'SearchDepth',1, 'FindAll','on', 'Type','annotation');
+    for k = 1:numel(nt)
+        p = get_param(nt(k), 'Position');
+        set_param(nt(k), 'Position', [0 60 p(3)-p(1) 60+p(4)-p(2)]);
+    end
+    save_system(m);
+end
+
+function reline(sys, src, sp, dst, dp)
+    % 기존 선을 지우고 곧은 선으로 다시 긋는다
+    try, delete_line(sys, sprintf('%s/%d',src,sp), sprintf('%s/%d',dst,dp)); catch, end
+    add_line(sys, sprintf('%s/%d',src,sp), sprintf('%s/%d',dst,dp), 'autorouting','smart');
+end
+
+% ---- 운동방정식 + 적분기 + 상태 꺼내기 -------------------------------
+%   입력 FL, FR [N]   출력 태그 [N] [E] [psi] [u] [v] [r]   (NED, 선체축)
+function addMotionModel(m, pos)
+    ss = newSub(m, 'MotionModel', pos);
+    inP(ss, 'FL', 1);
+    inP(ss, 'FR', 2);
+    outs = {'N','E','psi','u','v','r'};
+
+    % 선체 계수는 신호가 아니라 설정이다. 상자 안에 둔다
+    add_block('simulink/Sources/Constant', [ss '/p'], 'Position', [60 200 200 230], ...
+              'Value', '[m_usv; Izz; Xu; Xuu; Yv; Yvv; Nr; Nrr; half_beam]');
+
+    addFcn(ss, 'EOM', [300 30 480 250], [ ...
+'function xdot = EOM(s, FL, FR, p)'                                      newline ...
+'%#codegen'                                                              newline ...
+'% 3-DOF WAM-V equations of motion, NED.'                                newline ...
+'% Coefficients come straight from the Gazebo VRX plugins.'              newline ...
+'%   s = [u v r N E psi]'''                                              newline ...
+'%   p = [m Izz Xu Xuu Yv Yvv Nr Nrr half_beam]'''                       newline ...
+'u = s(1); v = s(2); r = s(3); psi = s(6);'                              newline ...
+'m=p(1); Izz=p(2); Xu=p(3); Xuu=p(4); Yv=p(5); Yvv=p(6);'                newline ...
+'Nr=p(7); Nrr=p(8); b_half=p(9);'                                        newline ...
+''                                                                       newline ...
+'X = FL + FR;'                                                           newline ...
+'N = (FL - FR)*b_half;'                                                  newline ...
+''                                                                       newline ...
+'Dx = (Xu + Xuu*abs(u))*u;'                                              newline ...
+'Dy = (Yv + Yvv*abs(v))*v;'                                              newline ...
+'Dn = (Nr + Nrr*abs(r))*r;'                                              newline ...
+''                                                                       newline ...
+'du = (X - Dx)/m + v*r;'                                                 newline ...
+'dv = (  - Dy)/m - u*r;'                                                 newline ...
+'dr = (N - Dn)/Izz;'                                                     newline ...
+''                                                                       newline ...
+'xdot = [du; dv; dr;'                                                    newline ...
+'        u*cos(psi) - v*sin(psi);'                                       newline ...
+'        u*sin(psi) + v*cos(psi);'                                       newline ...
+'        r];']);
+
+    add_block('simulink/Continuous/Integrator', [ss '/Integ'], ...
+              'Position', [560 115 610 165], 'InitialCondition', 'x0_w03');
+
+    addFcn(ss, 'States', [700 30 820 330], [ ...
+'function [N, E, psi, u, v, r] = States(s)'                              newline ...
+'%#codegen'                                                              newline ...
+'% 상태 벡터 s = [u v r N E psi] 에서 이름 있는 신호로 꺼낸다.'            newline ...
+'% psi 는 적분값이라 한 바퀴 돌면 2*pi 를 넘는다. OdomNav 와 같게 접는다.' newline ...
+'u = s(1);  v = s(2);  r = s(3);'                                        newline ...
+'N = s(4);  E = s(5);'                                                   newline ...
+'psi = atan2(sin(s(6)), cos(s(6)));']);
+
+    L(ss, 'EOM/1',  'Integ/1');
+    L(ss, 'Integ/1','EOM/1');
+    L(ss, 'FL/1',   'EOM/2');
+    L(ss, 'FR/1',   'EOM/3');
+    L(ss, 'p/1',    'EOM/4');
+    L(ss, 'Integ/1','States/1');
+    % 출력은 포트가 아니라 태그로 내보낸다. Animate · Logging 이 From 으로 받는다
+    for k = 1:numel(outs)
+        G(ss, outs{k}, 900, 40 + (k-1)*55);
+        L(ss, sprintf('States/%d',k), ['Go_' outs{k} '/1']);
+    end
+
+    % W03_plot 은 VRX 결과의 valid 로 첫 유효 샘플을 찾는다.
+    % 운동방정식은 첫 스텝부터 값이 있으므로 1 로 고정한다
+    C(ss, 'One', '1', 560, 400);
+    G(ss, 'valid', 700, 400);
+    L(ss, 'One/1', 'Go_valid/1');
 end
 
 % ---- 버튼 네 개와 차동 배분 ----------------------------------------

@@ -1,0 +1,80 @@
+% assets/w03-wamv-model.svg — 3자유도 운동모델이 보는 WAM-V (위에서 본 모습, 선체 고정 NED 축)
+%
+%   bash _tools/tikz2svg.sh assets/src/w03-wamv-model.tex assets/w03-wamv-model.svg
+%
+% 요점
+%   1) 선체 축은 x 선수 · y 우현 · z 아래 (FRD). 위에서 보면 z 는 종이 속으로 들어간다 (⊗)
+%   2) 추진기 두 대는 x = -2.374 m, y = -+1.027 m. 좌현이 y 음수다
+%   3) X = F_L + F_R,  N = b (F_L - F_R). 좌 추력이 크면 N > 0 → 우선회 (시계방향)
+%   4) 좌표값은 VRX 파일에서 읽은 값이다 (wamv_aft_thrusters.xacro, wamv_base.urdf.xacro)
+%
+% 화면 : 선체 x 는 오른쪽, 선체 y(우현)는 아래쪽.  1 m = 15 mm
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\S{15}     % 1 m
+\def\B{1.027135}
+\def\T{2.373776}
+
+% ---- 선체 두 개 (좌현 y=-b 는 위, 우현 y=+b 는 아래) ----------------------
+\draw[soft, line width=0.7pt, rounded corners=2mm]
+     (-\T*\S-8,  \B*\S-3) rectangle (1.4*\S,  \B*\S+3);
+\draw[soft, line width=0.7pt, rounded corners=2mm]
+     (-\T*\S-8, -\B*\S-3) rectangle (1.4*\S, -\B*\S+3);
+\node[note, soft, anchor=west] at (1.4*\S+2,  \B*\S) {좌현 선체};
+\node[note, soft, anchor=west] at (1.4*\S+2, -\B*\S) {우현 선체};
+
+% ---- 선체 축 : x 선수(오른쪽), y 우현(아래) ------------------------------
+\fill[ink] (0,0) circle (1.1);
+\node[note, anchor=north west] at (0.8,-0.8) {원점 \texttt{base\_link}};
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (26,0);
+\node[note, anchor=west] at (26.5,0) {$x_b$ 선수};
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,-9.5);
+\node[note, anchor=west] at (0.8,-9) {$y_b$ 우현};
+\draw[ink, line width=0.5pt] (34,-8) circle (1.8);
+\draw[ink, line width=0.5pt] (32.73,-9.27) -- (35.27,-6.73) (32.73,-6.73) -- (35.27,-9.27);
+\node[note, anchor=west] at (36.2,-8) {$z_b$ 아래 (종이 속으로)};
+
+% ---- 속도 u, v 와 요각속도 r (시계방향 +) --------------------------------
+\draw[sig, plant, line width=0.9pt] (4,4) -- ++(11,0);
+\node[note, plant, anchor=west] at (15.5,4) {$u$};
+\draw[sig, plant, line width=0.9pt] (26,-2.5) -- ++(0,-7);
+\node[note, plant, anchor=west] at (26.5,-7) {$v$};
+\draw[sig, warn, line width=0.9pt] (20,11) arc (60:-10:6);
+\node[note, warn, anchor=west] at (25,10) {$r,\ N$ \ (시계방향 $+$)};
+
+% ---- 무게중심 · GPS 안테나 -----------------------------------------------
+\fill[plant] (-0.350*\S,0) circle (1.2);
+\node[note, plant, anchor=south] at (-0.350*\S,1.4) {G};
+\fill[nav] (-0.850*\S,0) circle (1.2);
+\node[note, nav, anchor=south] at (-0.850*\S,1.4) {GPS};
+
+% ---- 추진기와 추력 ------------------------------------------------------
+\draw[thr, line width=0.7pt, fill=white] (-\T*\S-4,  \B*\S-2.5) rectangle (-\T*\S+4,  \B*\S+2.5);
+\draw[thr, line width=0.7pt, fill=white] (-\T*\S-4, -\B*\S-2.5) rectangle (-\T*\S+4, -\B*\S+2.5);
+\draw[sig, thr, line width=1.1pt] (-\T*\S+4,  \B*\S) -- (-\T*\S+17,  \B*\S);
+\draw[sig, thr, line width=1.1pt] (-\T*\S+4, -\B*\S) -- (-\T*\S+17, -\B*\S);
+\node[note, thr, anchor=west] at (-\T*\S+17.5,  \B*\S) {$F_L$};
+\node[note, thr, anchor=west] at (-\T*\S+17.5, -\B*\S) {$F_R$};
+
+% ---- 치수 --------------------------------------------------------------
+\draw[soft, line width=0.4pt, {Stealth[length=3pt]}-{Stealth[length=3pt]}]
+     (-\T*\S-11, 0) -- (-\T*\S-11, \B*\S);
+\node[note, soft, anchor=east] at (-\T*\S-12, \B*\S/2) {$b = 1.027$ m};
+\draw[soft, densely dotted, line width=0.4pt] (-\T*\S-13, 0) -- (0,0);
+\draw[soft, line width=0.4pt, {Stealth[length=3pt]}-{Stealth[length=3pt]}]
+     (-\T*\S, -\B*\S-8) -- (0, -\B*\S-8);
+\node[note, soft, anchor=north] at (-\T*\S/2, -\B*\S-8.5) {추진기 $x = -2.374$ m};
+\draw[soft, densely dotted, line width=0.4pt] (0,-2) -- (0,-\B*\S-9);
+
+% ---- 식 ---------------------------------------------------------------
+\node[anote, anchor=west, text width=62mm, align=left] at (-\T*\S-14, -\B*\S-18)
+     {$X = F_L + F_R$ \qquad $Y = 0$ \qquad $N = b\,(F_L - F_R)$\\[2pt]
+      좌 추력이 크면 $N > 0$ → 선수가 우현으로 돎 (우선회)};
+
+\end{tikzpicture}
+\end{document}

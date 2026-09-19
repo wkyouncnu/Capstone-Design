@@ -11,7 +11,7 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 # 5주차 · VSCode와 Claude 에이전트, 첫 ROS 2 제어 노드
 
 > [!important] 참조 강의 — 본 과목이 전제하는 배경
-> <span style="font-size:0.88em">아래 다섯 과목은 **본 과목 담당 교수가 직접 강의한 것**이며, 본 과목이 전제하는 배경 지식에 해당한다. 학부 기초에서 대학원 과정까지 이어지므로 부족한 지점부터 시작하면 된다. 본 문서에서 쓰는 좌표계·기호·유도 과정은 아래 강의에서 상세히 다루므로, 선수 지식이 부족한 경우 먼저 보고 돌아올 것.</span>
+> <span style="font-size:0.88em">아래 다섯 과목은 **본 과목 담당 교수가 직접 강의한 것**이며, 본 과목이 전제하는 배경 지식에 해당함. 학부 기초에서 대학원 과정까지 이어지므로 부족한 지점부터 시작하면 됨. 본 문서에서 쓰는 좌표계·기호·유도 과정은 아래 강의에서 상세히 다루므로, 선수 지식이 부족한 경우 먼저 보고 돌아올 것.</span>
 >
 > | # | 과목 | 수준 | 언어 | 영상 | 자료·코드 |
 > |---|---|---|---|---|---|
@@ -21,7 +21,7 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 > | 4 | **제어공학특론** — 좌표계, 6자유도 운동방정식, 회전행렬과 오일러각, 선형화와 트림 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvJmvF2ljx4KM5dj1P5jEcw0) | [드라이브](https://drive.google.com/drive/folders/1GUxbbONl916lNd0ggnFnXrNwNkd13-2-) |
 > | 5 | **센서신호처리 및 융합** — 센서 모델, 잡음, 추정, 다중센서 융합 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvK-aP2Gdoyp5-AWvMn7Fo8E) | [드라이브](https://drive.google.com/drive/folders/1MEVJP7TzMcm8w6TZwUjhWJtL34WeNY3u) |
 >
-> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 6주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행한다. Onramp 는 무료이며 각각 몇 시간이면 끝난다.</span>
+> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 6주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
 >
 > | 도구 | 시작 지점 |
 > |---|---|
@@ -32,7 +32,7 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 - **이번 주차 학습 내용**: ① VS Code + Claude Code 환경 구축 ② 에이전트로 **첫 제어 노드** 만들기 ③ **직접 검증해서 고치기** ④ **MATLAB MCP** 로 Simulink 조작
 
 > [!important] 시작 전 확인
-> - 4주차 **토픽 전수조사표**를 가져올 것. 이번 주차 에이전트에게 줄 자료다
+> - 4주차 **토픽 전수조사표**를 가져올 것. 이번 주차 에이전트에게 줄 자료임
 > - VRX가 실행되는 상태여야 함
 > - **Claude 계정이 필요함** — 아래 준비물 표를 반드시 먼저 볼 것
 
@@ -56,7 +56,7 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 | 계정 | **Claude 유료 플랜 계정** (아래 경고 참조) |
 | 인터넷 | 설치 · 로그인 · 에이전트 사용 모두 필요 |
 
-> [!caution] Claude Code 는 무료 플랜에서 동작하지 않는다
+> [!caution] Claude Code 는 무료 플랜에서 동작하지 않음
 > - 공식 요구사항: **Pro · Max · Team · Enterprise 또는 Console(API) 계정**
 > - **무료 claude.ai 플랜에는 Claude Code 이용권이 포함되지 않음**
 > - 계정 문제가 있는 학생은 **수업 전에 조교에게 알릴 것**
@@ -87,12 +87,12 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 | 2. 계획한다 | 무엇을 어디에 고칠지 결정 |
 | 3. 쓴다 | 파일 생성 · 수정 |
 | 4. 실행한다 | 빌드 · 테스트 · 명령 실행 |
-| **5. 검증한다** | **사람이 한다** |
+| **5. 검증한다** | **사람이 함** |
 
-> [!important] 4번까지가 에이전트의 일이다
+> [!important] 4번까지가 에이전트의 일
 > - 에이전트는 **그럴듯하게 틀린 코드도 똑같이 자신 있게** 내놓음
 > - 맞는지 판단하는 것은 사람의 몫
-> - **본 과목에서 채점하는 것은 4번이 아니라 5번이다**
+> - **본 과목에서 채점하는 것은 4번이 아니라 5번임**
 
 ---
 
@@ -108,7 +108,7 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 | **ROS 버전** | Humble 에 없는 최신 API 를 자신 있게 씀 | 2주차 |
 | **없는 경로** | 존재하지 않는 패키지 경로를 그럴듯하게 만들어냄 | 4주차 |
 
-> [!warning] 다섯 경우 모두 오류 메시지가 발생하지 않는다
+> [!warning] 다섯 경우 모두 오류 메시지가 발생하지 않음
 > - 문법 오류는 에이전트가 스스로 고침
 > - **의미가 틀린 것**은 못 고침. 실행은 되고 배만 이상하게 감
 > - 그래서 검증이 필요함
@@ -171,10 +171,10 @@ ros2 bag play run1
 | 적을 것 | 예 |
 |---|---|
 | 버전 | ROS 2 Humble, Gazebo Garden, Python 3.10 |
-| 좌표계 규약 | 내부 계산은 NED. 변수명에 `_ned` / `_enu` 를 붙인다 |
+| 좌표계 규약 | 내부 계산은 NED. 변수명에 `_ned` / `_enu` 를 붙임 |
 | 토픽 규약 | 4주차 전수조사표의 정확한 이름 |
-| 코딩 규칙 | 단위를 변수명에 붙인다 (`psi_ned_rad`) |
-| 하지 말 것 | upstream `vrx` 폴더를 직접 수정하지 않는다 |
+| 코딩 규칙 | 단위를 변수명에 붙임 (`psi_ned_rad`) |
+| 하지 말 것 | upstream `vrx` 폴더를 직접 수정하지 않음 |
 
 ### 좋은 `CLAUDE.md` 와 나쁜 것
 
@@ -184,7 +184,7 @@ ros2 bag play run1
 | "좌표계 조심" | "센서는 ENU. 제어기는 NED. **변환 함수는 `frames.py` 한 곳에만** 둔다" |
 | "토픽 이름 확인" | "추력: `/wamv/thrusters/left/thrust` (`std_msgs/Float64`)" |
 
-> [!tip] 규칙은 구체적일수록 지켜진다
+> [!tip] 규칙은 구체적일수록 지켜짐
 > "조심해라"는 지켜지지 않음. **금지 문장과 정확한 이름**을 적을 것.
 
 ---
@@ -192,7 +192,7 @@ ros2 bag play run1
 ## 1-5. 학술적 정직성 정책
 
 > [!important] 본 과목의 원칙
-> 평가하는 것은 **"AI를 썼는가"가 아니라 "AI 출력을 검증했는가"** 다.
+> 평가하는 것은 **"AI를 썼는가"가 아니라 "AI 출력을 검증했는가"** 임
 
 | 요구 | 내용 |
 |---|---|
@@ -226,12 +226,12 @@ ros2 bag play run1
 
 ![VS Code 다운로드 페이지](../assets/w05-download-vscode.png)
 
-2. **Windows** 칸의 파란 버튼을 누른다. 화면이 현재 OS 를 알아서 골라 준다
+2. **Windows** 칸의 파란 버튼 클릭. 화면이 현재 OS 를 알아서 골라 줌
 3. 받아진 `VSCodeUserSetup-x64-*.exe` 실행
 
-> [!tip] `Other downloads` 에서 User / System Installer 를 고를 수 있다
-> **User Installer** 를 쓴다 — 관리자 권한이 필요 없어 실습실 PC 에서도 통과한다.
-> System Installer 는 관리자 권한을 요구해 막히는 경우가 있다.
+> [!tip] `Other downloads` 에서 User / System Installer 를 고를 수 있음
+> **User Installer** 를 씀 — 관리자 권한이 필요 없어 실습실 PC 에서도 통과함
+> System Installer 는 관리자 권한을 요구해 막히는 경우가 있음
 
 ### A-2. 설치 옵션
 
@@ -245,35 +245,35 @@ ros2 bag play run1
 
 ### A-3. 첫 실행 확인
 
-> [!important] 설치가 끝나면 이런 화면이 나온다
+> [!important] 설치가 끝나면 이런 화면이 나옴
 
 ![VS Code 로 강의자료 폴더를 연 화면](../assets/w05-vscode-vault.png)
 
-- 기준 환경에서 배포 폴더를 **Windows 창**으로 열어 캡처한 것이다
-  - WSL 접속 전 화면이며, 위쪽에 Restricted Mode 띠가 켜진 상태다 (아래 경고 참조)
+- 기준 환경에서 배포 폴더를 **Windows 창**으로 열어 캡처한 것
+  - WSL 접속 전 화면이며, 위쪽에 Restricted Mode 띠가 켜진 상태 (아래 경고 참조)
 
 | # | 화면의 위치 | 무엇인가 |
 |---|---|---|
 | 1 | 왼쪽 세로 막대 | **활동 표시줄** — 위에서부터 탐색기 · 검색 · 소스 제어 · 실행 · 확장 (WSL 확장 설치 후 원격 탐색기가 더해짐) |
-| 2 | 왼쪽 넓은 칸 | **탐색기.** 폴더 안의 파일이 트리로 보인다 |
-| 3 | 가운데 | **편집기.** 파일을 열면 여기에 뜬다. 위쪽 탭으로 여러 개를 오간다 |
-| 4 | 오른쪽 | **채팅 패널.** 캡처의 "Chat — Build with Agent" 는 VS Code 기본 채팅이며, Claude Code 패널은 C-1 에서 확장을 설치한 뒤 생긴다 |
+| 2 | 왼쪽 넓은 칸 | **탐색기.** 폴더 안의 파일이 트리로 보임 |
+| 3 | 가운데 | **편집기.** 파일을 열면 여기에 뜸. 위쪽 탭으로 여러 개를 오감 |
+| 4 | 오른쪽 | **채팅 패널.** 캡처의 "Chat — Build with Agent" 는 VS Code 기본 채팅이며, Claude Code 패널은 C-1 에서 확장을 설치한 뒤 생김 |
 | 5 | 맨 아래 줄 | **상태 표시줄** — 줄·열 번호, 인코딩, 줄바꿈(LF/CRLF), 언어 |
 
 > [!warning] 위쪽에 노란 띠로 "Restricted Mode" 가 뜨면
-> VS Code 가 **처음 여는 폴더를 신뢰하지 않는 상태**다. 이 상태에서는 확장과 작업 실행이 막힌다.
-> 띠에 있는 **Manage** 를 눌러 신뢰하도록 바꾼다.
-> 남의 코드를 열 때는 오히려 이 모드가 안전하므로, **직접 만든 폴더일 때만** 푼다.
+> VS Code 가 **처음 여는 폴더를 신뢰하지 않는 상태**임. 이 상태에서는 확장과 작업 실행이 막힘
+> 띠에 있는 **Manage** 를 눌러 신뢰하도록 바꿈
+> 남의 코드를 열 때는 오히려 이 모드가 안전하므로, **직접 만든 폴더일 때만** 풂
 
 > [!note] 상태 표시줄의 `LF` / `CRLF` 를 봐 둘 것
-> 리눅스 스크립트를 Windows 에서 편집하면 `CRLF` 로 바뀌어 WSL 에서 실행되지 않는다.
-> 증상은 `bad interpreter: /bin/bash^M`. 상태 표시줄에서 `LF` 로 바꾸면 해결된다.
+> 리눅스 스크립트를 Windows 에서 편집하면 `CRLF` 로 바뀌어 WSL 에서 실행되지 않음
+> 증상은 `bad interpreter: /bin/bash^M`. 상태 표시줄에서 `LF` 로 바꾸면 해결됨
 
 #### 확인 항목
 
 - 설치 후 VS Code 실행
 - 좌측 세로 막대(활동 표시줄)에 아이콘이 기본 5개 보이면 정상
-  - WSL 확장(B-1)을 설치한 뒤에는 원격 탐색기가 더해져 6개가 된다 (위 캡처가 6개인 이유)
+  - WSL 확장(B-1)을 설치한 뒤에는 원격 탐색기가 더해져 6개가 됨 (위 캡처가 6개인 이유)
 
 | 아이콘 | 이름 | 하는 일 |
 |---|---|---|
@@ -323,13 +323,13 @@ code .
 - VS Code 왼쪽 아래 초록/파랑 표시가 **`WSL: Ubuntu-22.04`** 인지 확인
 - 상단 메뉴 **터미널 → 새 터미널** → 프롬프트가 `사용자명@컴퓨터:~$` 형태면 정상
 
-- 확장이 제대로 깔렸는지는 명령으로도 확인한다
+- 확장이 제대로 깔렸는지는 명령으로도 확인함
 
 ```powershell
 code --list-extensions
 ```
 
-- 아래 항목이 목록에 있어야 한다
+- 아래 항목이 목록에 있어야 함
 
 ```
 ms-vscode-remote.remote-wsl
@@ -337,17 +337,17 @@ ms-vscode-remote.remote-wsl
 
 | 확장 | 역할 |
 |---|---|
-| `ms-vscode-remote.remote-wsl` | VS Code 를 WSL 안으로 접속시킨다. **이것이 먼저다** |
-| `anthropic.claude-code` | 편집기 안에서 에이전트를 부른다. **C-1 에서 설치**하므로 이 시점에는 목록에 없어도 정상 |
+| `ms-vscode-remote.remote-wsl` | VS Code 를 WSL 안으로 접속시킴. **이것이 먼저** |
+| `anthropic.claude-code` | 편집기 안에서 에이전트를 부름. **C-1 에서 설치**하므로 이 시점에는 목록에 없어도 정상 |
 
-- 정상적으로 연결된 창은 A-3 캡처(Windows 창)와 아래 두 곳이 다르다
+- 정상적으로 연결된 창은 A-3 캡처(Windows 창)와 아래 두 곳이 다름
 
 | 위치 | WSL 에 연결된 창 |
 |---|---|
 | 왼쪽 아래 모서리 | **`WSL: Ubuntu-22.04`** 표시 |
 | 탐색기 | `~/capstone_ws` 같은 **리눅스 경로**의 폴더 |
 
-> [!caution] 좌측 하단 표시를 항상 확인한다
+> [!caution] 좌측 하단 표시를 항상 확인
 > - 표시가 없으면 **Windows 쪽 파일**을 편집하고 있는 것
 > - 그 상태로 ROS 코드를 고치면 **아무 반영도 안 됨**
 > - 매 학기 가장 많이 헤매는 지점
@@ -369,9 +369,9 @@ ms-vscode-remote.remote-wsl
 
 ## C. Claude Code 설치와 로그인
 
-> [!caution] ROS 코드용 Claude Code 는 **Ubuntu 터미널**에서 WSL 안에 설치한다
-> PowerShell 에 설치하면 WSL 안의 ROS 코드를 다루지 못한다.
-> MATLAB·Simulink 용은 Windows 쪽 VS Code 확장을 쓴다 (§F-3).
+> [!caution] ROS 코드용 Claude Code 는 **Ubuntu 터미널**에서 WSL 안에 설치
+> PowerShell 에 설치하면 WSL 안의 ROS 코드를 다루지 못함
+> MATLAB·Simulink 용은 Windows 쪽 VS Code 확장을 씀 (§F-3)
 
 ### C-1. 설치
 
@@ -379,10 +379,10 @@ ms-vscode-remote.remote-wsl
 
 ![Claude Code 공식 문서](../assets/w05-claudecode-docs.png)
 
-- 설치 방법이 **Terminal · VS Code · Desktop app · Web · JetBrains** 탭으로 나뉜다.
-  본 과목은 **Terminal**(WSL) 과 **VS Code** 두 가지를 쓴다
+- 설치 방법이 **Terminal · VS Code · Desktop app · Web · JetBrains** 탭으로 나뉨
+  본 과목은 **Terminal**(WSL) 과 **VS Code** 두 가지를 씀
 
-- **Ubuntu 터미널**에서 아래 한 줄로 설치한다
+- **Ubuntu 터미널**에서 아래 한 줄로 설치
 
 ```bash
 curl -fsSL https://claude.ai/install.sh | bash
@@ -398,7 +398,7 @@ curl -fsSL https://claude.ai/install.sh | bash
 ✅ Installation complete!
 ```
 
-- VS Code 확장은 **두 곳**에 설치한다
+- VS Code 확장은 **두 곳**에 설치
 
 | 설치 위치 | 방법 | 쓰는 곳 |
 |---|---|---|
@@ -413,9 +413,9 @@ code --install-extension anthropic.claude-code
 Extension 'anthropic.claude-code' v2.1.272 was successfully installed.
 ```
 
-> [!caution] Claude Code **CLI** 는 Windows 쪽 PowerShell 에 설치하지 않는다
-> 위 `curl` 설치는 **WSL 안**에서 해야 한다. Windows 쪽에 설치하면 WSL 안의 ROS 2 코드와 빌드 결과를 보지 못한다.
-> 설치 전에 프롬프트가 `사용자명@컴퓨터:~$` 형태인지 확인한다.
+> [!caution] Claude Code **CLI** 는 Windows 쪽 PowerShell 에 설치하지 않음
+> 위 `curl` 설치는 **WSL 안**에서 해야 함. Windows 쪽에 설치하면 WSL 안의 ROS 2 코드와 빌드 결과를 보지 못함
+> 설치 전에 프롬프트가 `사용자명@컴퓨터:~$` 형태인지 확인
 
 ### C-2. 설치 확인
 
@@ -439,8 +439,8 @@ which claude
 /home/<사용자명>/.local/bin/claude
 ```
 
-> [!important] 경로가 `/home/...` 로 시작해야 한다
-> `/mnt/c/...` 로 나오면 **Windows 쪽 설치본**을 보고 있는 것이다. WSL 안에 다시 설치한다.
+> [!important] 경로가 `/home/...` 로 시작해야 함
+> `/mnt/c/...` 로 나오면 **Windows 쪽 설치본**을 보고 있는 것임. WSL 안에 다시 설치
 
 - `command not found` 가 나오면
 
@@ -485,8 +485,8 @@ claude
 
 #### 승인 요청 — 무엇이라고 답하는가
 
-- Claude Code 는 폴더를 읽기 시작하기 전, 파일을 고치기 전, 명령을 실행하기 전에 **허락을 묻는다**
-- 선택지는 번호로 뜨며, 방향키와 `Enter` 로 고른다
+- Claude Code 는 폴더를 읽기 시작하기 전, 파일을 고치기 전, 명령을 실행하기 전에 **허락을 물음**
+- 선택지는 번호로 뜨며, 방향키와 `Enter` 로 고름
 
 | 묻는 것 | 언제 | 답 |
 |---|---|---|
@@ -494,8 +494,8 @@ claude
 | 파일 수정을 허락하는가 | 파일을 만들거나 고치기 직전 | `team_usv` 안의 파일이면 **Yes**. 그 밖의 경로(`~/vrx_ws/src/vrx` 등)면 **No** |
 | 명령 실행을 허락하는가 | Bash 명령을 실행하기 직전 | 화면에 뜬 **명령을 한 줄씩 읽고** 이해한 경우에만 Yes. `sudo` · `rm -rf` · `pip install` 이 섞여 있으면 No |
 
-> [!warning] "다시 묻지 않기" 선택지는 쓰지 않는다
-> 한 번 허용하면 같은 종류의 작업을 다시 묻지 않는다. 첫 학기에는 **매번 확인**하는 편이 검증 연습이 된다.
+> [!warning] "다시 묻지 않기" 선택지는 쓰지 않음
+> 한 번 허용하면 같은 종류의 작업을 다시 묻지 않음. 첫 학기에는 **매번 확인**하는 편이 검증 연습이 됨
 
 ### C-6. VS Code 안에서 쓰기
 
@@ -509,7 +509,7 @@ claude
 
 ### D-1. 팀 레포 만들기
 
-- 빈 폴더가 아니라 **ROS 2 패키지**로 만든다. 그래야 `colcon build` 가 찾고 `ros2 run` 이 실행한다
+- 빈 폴더가 아니라 **ROS 2 패키지**로 만듦. 그래야 `colcon build` 가 찾고 `ros2 run` 이 실행함
 
 ```bash
 cd ~/capstone_ws/src
@@ -597,7 +597,7 @@ CLAUDE.md 를 읽고, 본 프로젝트의 좌표계 규약을 한 문장으로 �
 ### E-1. 요구사항을 먼저 종이에 적는다
 
 > [!important] 프롬프트를 치기 전에 할 일
-> 무엇을 만들지 **학습자가 먼저 정해야** 에이전트가 만든 것을 검증할 수 있다.
+> 무엇을 만들지 **학습자가 먼저 정해야** 에이전트가 만든 것을 검증할 수 있음
 
 | 항목 | 정할 것 |
 |---|---|
@@ -645,12 +645,12 @@ ROS 2 Humble 용 파이썬 노드를 만들어줘.
 - setup.py 의 entry_points 에 'waypoint_pid = team_usv.waypoint_pid:main' 추가
 ```
 
-- 마지막 줄의 `entry_points` 등록이 빠지면 빌드는 되어도 `ros2 run` 이 `No executable found` 로 실패한다 (§G-5)
+- 마지막 줄의 `entry_points` 등록이 빠지면 빌드는 되어도 `ros2 run` 이 `No executable found` 로 실패함 (§G-5)
 
 ### E-3. 나온 코드를 **읽는다**
 
-> [!caution] 즉시 실행하지 않는다
-> 먼저 읽고, 아래 체크리스트로 훑는다.
+> [!caution] 즉시 실행하지 않음
+> 먼저 읽고, 아래 체크리스트로 훑음
 
 | 확인 | 자주 틀리는 부분 |
 |---|---|
@@ -681,7 +681,7 @@ ros2 run team_usv waypoint_pid
 
 **1겹 — 단위 테스트**
 
-- 에이전트에게 테스트를 만들게 하되, **기대값은 학습자가 정한다**
+- 에이전트에게 테스트를 만들게 하되, **기대값은 학습자가 정함**
 
 ```
 방금 만든 노드의 좌표 변환 함수와 각도 wrap 함수에 대해
@@ -705,9 +705,9 @@ ros2 bag record -o wp_run /wamv/sensors/gps/gps/fix /wamv/sensors/imu/imu/data
 
 - 배를 조금 움직인 뒤 `Ctrl+C`
 
-> [!warning] 재생 전에 VRX 를 끈다
-> VRX 와 bag 재생이 함께 돌면 GPS·IMU 토픽을 **발행자 두 개**가 내보내 데이터가 섞인다.
-> 오류 메시지는 나지 않는다.
+> [!warning] 재생 전에 VRX 를 끔
+> VRX 와 bag 재생이 함께 돌면 GPS·IMU 토픽을 **발행자 두 개**가 내보내 데이터가 섞임
+> 오류 메시지는 나지 않음
 
 - 재생과 비교 절차
 
@@ -739,9 +739,9 @@ ros2 bag play wp_run
 
 ### E-6. 정답지와 비교
 
-- 정답지는 배포 폴더 안에 있다
+- 정답지는 배포 폴더 안에 있음
   - `[2025] ROS2_VRX_Gazebo_Simulink/src/vrx_control/vrx_control/wamv_pid_control_v2.py`
-- 연구실이 실제로 KABOAT 에서 쓴 코드다
+- 연구실이 실제로 KABOAT 에서 쓴 코드
 
 | 항목 | 정답지의 값 |
 |---|---|
@@ -752,7 +752,7 @@ ros2 bag play wp_run
 | 좌표 | **UTM** 변환 사용 (`utm` 패키지) |
 | 추진기 | 좌 · 우 · 중앙(bow) 3개 |
 
-> [!note] 정답지가 유일한 정답은 아니다
+> [!note] 정답지가 유일한 정답은 아님
 > - 정답지는 **UTM**, 본 과목 실습은 **flat-earth NED** — 접근이 다름
 > - 헤딩 게인이 300 인 것은 추력 단위(N)에 직접 곱하기 때문
 > - **왜 그런 값인지 설명할 수 있으면** 다른 값이어도 됨
@@ -761,8 +761,8 @@ ros2 bag play wp_run
 
 ## F. MATLAB · Simulink 를 Claude 로 조작하기
 
-> [!note] 이 절은 6주차 Simulink 연동의 준비 단계다
-> 이번 주차에는 **연결만** 하고, 실제 제어기 설계는 6\~8주차에 한다.
+> [!note] 이 절은 6주차 Simulink 연동의 준비 단계
+> 이번 주차에는 **연결만** 하고, 실제 제어기 설계는 6\~8주차에 함
 
 ### F-1. MCP 란 무엇인가
 
@@ -783,7 +783,7 @@ Claude Code  ──MCP──►  MATLAB MCP 서버  ──►  실행 중인 MAT
 > [!note] 2주차의 ROS 2 토픽과 같은 발상
 > - ROS 2 는 **노드끼리** 대화하는 규약
 > - MCP 는 **에이전트와 프로그램이** 대화하는 규약
-> - 둘 다 "서로 모르는 것들을 표준 형식으로 잇는다"는 점이 같다
+> - 둘 다 "서로 모르는 것들을 표준 형식으로 잇는다"는 점이 같음
 
 ### F-2. 무엇이 가능해지는가
 
@@ -821,7 +821,7 @@ https://github.com/matlab/simulink-agentic-toolkit/releases/latest/download/agen
 setupAgenticToolkit("install")
 ```
 
-- 이 한 줄이 세 가지를 한다 (2026-09-15 실측 출력)
+- 이 한 줄이 세 가지를 함 (2026-09-15 실측 출력)
 
 ```
   Downloading MATLAB MCP Server v0.13.0 for Windows x86_64...
@@ -833,7 +833,7 @@ setupAgenticToolkit("install")
 | 설치되는 것 | 역할 |
 |---|---|
 | **MATLAB MCP Server** (`.exe`) | Claude 와 MATLAB 사이의 중계기 |
-| **MATLAB MCP Server Toolbox** (애드온) | **`shareMATLABSession` 함수가 여기 들어 있다** |
+| **MATLAB MCP Server Toolbox** (애드온) | **`shareMATLABSession` 함수가 여기 들어 있음** |
 | MATLAB · Simulink Agentic Toolkit | `model_*` 도구와 작업 절차(스킬) |
 
 **4단계 — 에이전트에 연결**
@@ -843,7 +843,7 @@ setupAgenticToolkit("configure")
 ```
 
 - 어떤 에이전트에 연결할지, 어떤 스킬 그룹을 켤지 물어봄
-- 본 과목은 **Claude Code** 를 고른다
+- 본 과목은 **Claude Code** 를 고름
 - 대화 없이 지정하려면
 
 ```matlab
@@ -858,9 +858,9 @@ setupAgenticToolkit("configure", Scope="global", Agents="claude-code", Prompt=fa
   Configure complete!
 ```
 
-> [!important] MATLAB 작업은 **Windows 쪽** Claude 로 한다
-> - 위 설정은 **Windows** 파일 `C:\Users\<사용자>\.claude.json` 에 들어가고, MCP 서버도 Windows 실행 파일(`.exe`)이다
-> - WSL 안의 `claude` 는 리눅스 쪽 `~/.claude.json` 을 읽으므로 **MATLAB 도구가 보이지 않는다**
+> [!important] MATLAB 작업은 **Windows 쪽** Claude 로 함
+> - 위 설정은 **Windows** 파일 `C:\Users\<사용자>\.claude.json` 에 들어가고, MCP 서버도 Windows 실행 파일(`.exe`)임
+> - WSL 안의 `claude` 는 리눅스 쪽 `~/.claude.json` 을 읽으므로 **MATLAB 도구가 보이지 않음**
 >
 > | 작업 | 쓰는 Claude |
 > |---|---|
@@ -871,13 +871,13 @@ setupAgenticToolkit("configure", Scope="global", Agents="claude-code", Prompt=fa
   - 연결된 MCP 서버 목록에 **`matlab`** 항목이 보이면 정상
   - 목록이 비어 있으면 WSL 쪽 Claude 를 열었거나, 설정 뒤 Claude Code 를 다시 시작하지 않은 것
 
-> [!note] 스킬 그룹을 고르지 않으면 전부 켜진다
-> 비대화식으로 돌리면 스킬 183개가 등록된다. 본 과목에 필요한 것만 켜려면
-> `SkillGroups=["matlab-core","control-systems","model-based-design-core","simulink-simulation"]` 처럼 지정한다.
+> [!note] 스킬 그룹을 고르지 않으면 전부 켜짐
+> 비대화식으로 돌리면 스킬 183개가 등록됨. 본 과목에 필요한 것만 켜려면
+> `SkillGroups=["matlab-core","control-systems","model-based-design-core","simulink-simulation"]` 처럼 지정
 
 **5단계 — MATLAB 세션 공유**
 
-- MATLAB 을 켤 때마다 아래 세 줄을 실행한다
+- MATLAB 을 켤 때마다 아래 세 줄을 실행
 
 ```matlab
 addpath("C:\Users\<사용자>\.matlab\agentic-toolkits\simulink")
@@ -887,30 +887,30 @@ shareMATLABSession()
 
 | 줄 | 하는 일 |
 |---|---|
-| `addpath` + `satk_initialize` | **Simulink 도구(`model_*`)를 켠다.** 빠뜨리면 MATLAB 명령 실행만 되고 모델을 못 읽음 |
-| `shareMATLABSession()` | 지금 이 MATLAB 세션을 에이전트에게 연다 |
+| `addpath` + `satk_initialize` | **Simulink 도구(`model_*`)를 켬.** 빠뜨리면 MATLAB 명령 실행만 되고 모델을 못 읽음 |
+| `shareMATLABSession()` | 지금 이 MATLAB 세션을 에이전트에게 엶 |
 
-> [!caution] `shareMATLABSession` 을 **찾을 수 없다**고 나오면 3단계를 안 한 것이다
-> - 이 함수는 MCP 서버 실행 파일이 아니라 **MATLAB MCP Server Toolbox 애드온**에 들어 있다
-> - 서버만 내려받아 등록한 경우 이 애드온이 없으므로 아래 오류가 난다
+> [!caution] `shareMATLABSession` 을 **찾을 수 없다**고 나오면 3단계를 안 한 것
+> - 이 함수는 MCP 서버 실행 파일이 아니라 **MATLAB MCP Server Toolbox 애드온**에 들어 있음
+> - 서버만 내려받아 등록한 경우 이 애드온이 없으므로 아래 오류가 남
 >
 > ```
 > 함수 또는 변수 'shareMATLABSession'을(를) 인식할 수 없습니다.
 > ```
 >
-> - 조치 — 3단계를 실행하거나, 서버 실행 파일로 애드온만 따로 설치한다
+> - 조치 — 3단계를 실행하거나, 서버 실행 파일로 애드온만 따로 설치
 >
 > ```powershell
 > matlab-mcp-server-windows-x64.exe --setup-matlab --matlab-root="C:\Program Files\MATLAB\R2024b"
 > ```
 >
-> - 성공하면 `Successfully setup MATLAB.` 한 줄이 나온다. **그 뒤 MATLAB 을 껐다 켜야** 함수가 잡힌다
+> - 성공하면 `Successfully setup MATLAB.` 한 줄이 나옴. **그 뒤 MATLAB 을 껐다 켜야** 함수가 잡힘
 > - 확인: `which shareMATLABSession` 이 애드온 폴더 경로를 출력하면 정상
 
-> [!important] 본 과목 설정은 **실행 중인 MATLAB 에 붙는 방식**이다
-> `configure` 가 써 넣는 설정은 `--matlab-session-mode=existing` 이다.
-> 즉 **MATLAB 을 먼저 켜고 `shareMATLABSession()` 을 실행해 두어야** 에이전트가 연결된다.
-> 매번 치기 번거로우면 `edit(fullfile(userpath,'startup.m'))` 으로 startup.m 에 위 세 줄을 넣는다.
+> [!important] 본 과목 설정은 **실행 중인 MATLAB 에 붙는 방식**임
+> `configure` 가 써 넣는 설정은 `--matlab-session-mode=existing` 임
+> 즉 **MATLAB 을 먼저 켜고 `shareMATLABSession()` 을 실행해 두어야** 에이전트가 연결됨
+> 매번 치기 번거로우면 `edit(fullfile(userpath,'startup.m'))` 으로 startup.m 에 위 세 줄을 넣음
 
 ### F-4. 연결 확인
 
@@ -933,35 +933,35 @@ T = 0.816 s, K = 1.25e-3 rad/(s·N·m) 이고, 선수각은 r 의 적분이다.
 스텝응답을 그리고 상승시간과 정정시간을 알려줘.
 ```
 
-- 수치는 6주차 1-7 의 WAM-V 값이다 — $T\dot r + r = KN$, $T = 0.816$ s, $K = 1.25\times10^{-3}$ rad/(s·N·m)
-  - WAM-V 에는 방향타가 없으므로 입력이 방향타 각이 아니라 **요 모멘트** $N$ 이다
+- 수치는 6주차 1-7 의 WAM-V 값 — $T\dot r + r = KN$, $T = 0.816$ s, $K = 1.25\times10^{-3}$ rad/(s·N·m)
+  - WAM-V 에는 방향타가 없으므로 입력이 방향타 각이 아니라 **요 모멘트** $N$ 임
 
 - Claude 가 MATLAB 에서 실행하고 그림을 띄움
 - **MATLAB 창에 그래프가 실제로 뜨는지 확인할 것**
 
 ### F-6. Simulink 모델을 Claude 로 읽기 (중요)
 
-> [!important] 이것이 6주차 실습의 예고편이다
-> 7\~8주차에 참고할 `VRX_tilt4_controller_unberthing.slx` 는 블록이 수백 개다.
-> (4추진기용 연구실 모델이며, 본 과목에서는 **참고만** 한다)
-> 눈으로 다 따라가기 어렵다. **에이전트에게 읽혀서 구조를 파악**하는 것이 훨씬 빠르다.
+> [!important] 이것이 6주차 실습의 예고편
+> 7\~8주차에 참고할 `VRX_tilt4_controller_unberthing.slx` 는 블록이 수백 개임
+> (4추진기용 연구실 모델이며, 본 과목에서는 **참고만** 함)
+> 눈으로 다 따라가기 어려움. **에이전트에게 읽혀서 구조를 파악**하는 것이 훨씬 빠름
 
 **1단계 — MATLAB 에서 모델 열기**
 
-- `<배포 폴더>` 는 강의자료를 받아 둔 폴더로 바꿔 쓴다
+- `<배포 폴더>` 는 강의자료를 받아 둔 폴더로 바꿔 씀
 
 ```matlab
 cd('<배포 폴더>\[2025] ROS2_VRX_Gazebo_Simulink')
 open_system('VRX_tilt4_controller_unberthing')
 ```
 
-- 게인 변수(`Kp_psi` 등)는 모델이 아니라 **`VRX_SHIFT_MINI_Unberthing.m`** 에 정의되어 있다. 3단계 전에 워크스페이스에 올린다
-  1. `edit VRX_SHIFT_MINI_Unberthing` 으로 스크립트를 연다
+- 게인 변수(`Kp_psi` 등)는 모델이 아니라 **`VRX_SHIFT_MINI_Unberthing.m`** 에 정의되어 있음. 3단계 전에 워크스페이스에 올림
+  1. `edit VRX_SHIFT_MINI_Unberthing` 으로 스크립트 열기
   2. 마지막 줄 `simOut = sim(sim_model);` **을 제외하고** 나머지를 드래그로 선택
   3. `F9` (선택 영역 실행)
 
-> [!warning] 스크립트 전체를 실행하지 않는다
-> 마지막 줄이 `sim` 으로 시뮬레이션을 시작한다. VRX 연결 없이 돌리면 멈추거나 오류가 난다.
+> [!warning] 스크립트 전체를 실행하지 않음
+> 마지막 줄이 `sim` 으로 시뮬레이션을 시작함. VRX 연결 없이 돌리면 멈추거나 오류가 남
 > 첫 줄의 `clear all` 이 워크스페이스를 비운다는 점도 기억할 것.
 
 **2단계 — Claude 에게 구조를 물어보기**
@@ -995,14 +995,14 @@ open_system('VRX_tilt4_controller_unberthing')
 ```
 
 - `model_resolve_params` 로 워크스페이스 변수를 실제 값으로 풀어 줌
-  - 1단계의 스크립트 선택 실행을 빠뜨리면 변수를 찾지 못한다
+  - 1단계의 스크립트 선택 실행을 빠뜨리면 변수를 찾지 못함
 - 6주차에 게인을 튜닝할 때 계속 쓰게 됨
 
 ### F-7. Claude 가 MATLAB 에서 쓸 수 있는 도구
 
 - MCP 서버가 열어 주는 도구 목록. **외우지 말고, 이런 게 있다는 것만 알 것**
 
-- 2026-09-15 실측으로 **도구 14개**가 열린다
+- 2026-09-15 실측으로 **도구 14개**가 열림
 
 | 도구 | 하는 일 |
 |---|---|
@@ -1021,22 +1021,22 @@ open_system('VRX_tilt4_controller_unberthing')
 | `model_read_diagnostics` | 컴파일·시뮬레이션 오류 메시지 읽기 |
 | `model_test` | 모델 테스트 실행 (Simulink Test 필요) |
 
-- `model_` 로 시작하는 도구는 **`satk_initialize` 를 실행한 세션**에서만 동작한다
+- `model_` 로 시작하는 도구는 **`satk_initialize` 를 실행한 세션**에서만 동작함
 
-> [!note] 스킬(skill)도 함께 설치된다
+> [!note] 스킬(skill)도 함께 설치됨
 > `setupAgenticToolkit` 에서 고른 스킬 그룹에 따라
 > "Simulink 모델 만들기", "모델 선형화", "모델 테스트" 같은
-> **MathWorks 가 정리한 작업 절차**를 에이전트가 따라간다.
+> **MathWorks 가 정리한 작업 절차**를 에이전트가 따라감
 
 ### F-8. MATLAB 연동에서 주의할 것
 
-> [!caution] 세션이 끊기면 이후 명령이 모두 실패한다
+> [!caution] 세션이 끊기면 이후 명령이 모두 실패함
 > - MATLAB 을 **껐다 켜면** 연결이 끊김 → `shareMATLABSession()` 다시 실행
 > - MATLAB 이 **계산 중이면** 응답하지 않음 → 끝날 때까지 대기
 > - 여러 MATLAB 을 띄우면 **마지막에 공유한 세션** 하나만 연결됨
 
 > [!caution] 모델을 고치기 전에 반드시 백업
-> - `model_edit` 는 **열려 있는 모델을 실제로 바꾼다**
+> - `model_edit` 는 **열려 있는 모델을 실제로 바꿈**
 > - 되돌리기가 어려울 수 있음
 > - 연구실 원본(`VRX_tilt4_controller_unberthing.slx` · `VRX_tilt4_controller_full.slx`)을 직접 고치지 말 것
 > - **복사본을 만들어 그 위에서 실험**할 것
@@ -1046,7 +1046,7 @@ copyfile('VRX_tilt4_controller_unberthing.slx', 'my_unberthing_test.slx')
 open_system('my_unberthing_test')
 ```
 
-> [!important] 검증 원칙은 MATLAB 에서도 같다
+> [!important] 검증 원칙은 MATLAB 에서도 같음
 > - 에이전트가 블록을 연결했다고 **맞게 연결한 것은 아님**
 > - 시뮬레이션을 돌려 **결과 그래프를 눈으로 확인**할 것
 > - 게인 값은 `model_resolve_params` 로 **실제 숫자를 확인**할 것
@@ -1055,8 +1055,8 @@ open_system('my_unberthing_test')
 
 ## G. 설치가 안 될 때 — 실제 오류 메시지
 
-> [!important] 아래는 전부 기준 환경에서 **직접 재현해 받은** 메시지다
-> 오류는 대부분 이 일곱 가지 중 하나다. 검색하기 전에 이 표에서 먼저 찾는다.
+> [!important] 아래는 전부 기준 환경에서 **직접 재현해 받은** 메시지
+> 오류는 대부분 이 일곱 가지 중 하나임. 검색하기 전에 이 표에서 먼저 찾음
 
 ### G-1. `ros2: command not found`
 
@@ -1064,7 +1064,7 @@ open_system('my_unberthing_test')
 bash: line 1: ros2: command not found
 ```
 
-- 원인 — 환경 설정 파일을 읽지 않았다. **터미널을 새로 열 때마다** 필요하다
+- 원인 — 환경 설정 파일을 읽지 않았음. **터미널을 새로 열 때마다** 필요함
 - 조치
 
 ```bash
@@ -1072,7 +1072,7 @@ source /opt/ros/humble/setup.bash
 source ~/vrx_ws/install/setup.bash
 ```
 
-- 매번 치기 싫으면 `~/.bashrc` 끝에 두 줄을 넣는다
+- 매번 치기 싫으면 `~/.bashrc` 끝에 두 줄을 넣음
 
 ### G-2. `bad interpreter: /bin/bash^M`
 
@@ -1080,14 +1080,14 @@ source ~/vrx_ws/install/setup.bash
 /tmp/crlf_demo.sh: /bin/bash^M: bad interpreter: No such file or directory
 ```
 
-- 원인 — Windows 에서 편집해 줄바꿈이 **CRLF** 가 되었다. `^M` 이 그 흔적이다
+- 원인 — Windows 에서 편집해 줄바꿈이 **CRLF** 가 되었음. `^M` 이 그 흔적임
 - 조치
 
 ```bash
 sed -i 's/\r$//' 파일이름.sh
 ```
 
-- 예방 — VS Code 오른쪽 아래 상태 표시줄의 `CRLF` 를 눌러 **`LF`** 로 바꾼다
+- 예방 — VS Code 오른쪽 아래 상태 표시줄의 `CRLF` 를 눌러 **`LF`** 로 바꿈
 
 ### G-3. `Permission denied` — apt
 
@@ -1096,9 +1096,9 @@ E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission d
 E: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), are you root?
 ```
 
-- 원인 — `sudo` 를 빼먹었다
-- 조치 — 명령 앞에 `sudo` 를 붙인다.
-  비밀번호를 입력해도 **화면에 아무것도 안 보이는 것이 정상**이다
+- 원인 — `sudo` 를 빼먹었음
+- 조치 — 명령 앞에 `sudo` 를 붙임
+  비밀번호를 입력해도 **화면에 아무것도 안 보이는 것이 정상**임
 
 ### G-4. `WSL_E_DISTRO_NOT_FOUND`
 
@@ -1106,8 +1106,8 @@ E: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), are y
 Wsl/Service/WSL_E_DISTRO_NOT_FOUND
 ```
 
-- 원인 — 배포판 이름이 틀렸다. 본 과목은 **`Ubuntu-22.04`** 를 쓴다
-- 조치 — 설치된 이름을 먼저 확인한다
+- 원인 — 배포판 이름이 틀렸음. 본 과목은 **`Ubuntu-22.04`** 를 씀
+- 조치 — 설치된 이름을 먼저 확인
 
 ```powershell
 wsl --list --verbose
@@ -1119,8 +1119,8 @@ wsl --list --verbose
 No executable found
 ```
 
-- 원인 — 패키지는 있는데 그 안에 그 이름의 실행 파일이 없다. 대개 오타다
-- 조치 — 패키지 안의 실행 파일 목록을 본다
+- 원인 — 패키지는 있는데 그 안에 그 이름의 실행 파일이 없음. 대개 오타임
+- 조치 — 패키지 안의 실행 파일 목록 확인
 
 ```bash
 ros2 pkg executables vrx_gz
@@ -1133,27 +1133,27 @@ ros2 pkg executables vrx_gz
 /rosout
 ```
 
-- ROS 는 살아 있는데 **시뮬레이터가 안 보이는 것**이다. 둘은 항상 있는 기본 토픽이다
+- ROS 는 살아 있는데 **시뮬레이터가 안 보이는 것**임. 둘은 항상 있는 기본 토픽임
 - 원인 두 가지
 
 | 원인 | 확인 |
 |---|---|
-| `ROS_DOMAIN_ID` 가 다르다 | 두 터미널에서 `echo $ROS_DOMAIN_ID` 비교 |
-| 시뮬레이터가 안 떠 있다 | 시뮬레이터 터미널의 오류 메시지 확인 |
+| `ROS_DOMAIN_ID` 가 다름 | 두 터미널에서 `echo $ROS_DOMAIN_ID` 비교 |
+| 시뮬레이터가 안 떠 있음 | 시뮬레이터 터미널의 오류 메시지 확인 |
 
 ### G-7. VS Code 에서 Claude 명령이 안 보인다
 
-![Restricted Mode — 확장이 동작하지 않는다](../assets/w05-restricted-mode.png)
+![Restricted Mode — 확장이 동작하지 않음](../assets/w05-restricted-mode.png)
 
 - 증상 — 명령 팔레트(`Ctrl` + `Shift` + `P`)에서 `Claude` 를 쳐도 **`No matching commands`**
-- 원인 — 위쪽 노란 띠의 **Restricted Mode**. 신뢰하지 않은 폴더에서는 확장이 전부 꺼진다
-- 조치 — 띠의 **Manage** → **Trust** 를 누른다. **직접 만든 폴더일 때만** 푼다
+- 원인 — 위쪽 노란 띠의 **Restricted Mode**. 신뢰하지 않은 폴더에서는 확장이 전부 꺼짐
+- 조치 — 띠의 **Manage** → **Trust** 클릭. **직접 만든 폴더일 때만** 풂
 
 ---
 
 ## H. 설치가 끝났는지 한 번에 확인하기
 
-아래를 순서대로 실행한다. 하나라도 다르면 그 줄에서 멈추고 §G 를 본다.
+아래를 순서대로 실행함. 하나라도 다르면 그 줄에서 멈추고 §G 를 봄
 
 ```bash
 lsb_release -a
@@ -1193,8 +1193,8 @@ vrx_gz
 vrx_ros
 ```
 
-- 3주차 절차대로 설치했으면 **이 세 개**다 (`wamv_description` · `wamv_gazebo` 를 합쳐 빌드 패키지는 5개)
-- 연구실 워크스페이스에는 `vrx_control` · `vrx_eval` 등이 더 있으나 본 과목 설치본에는 없다
+- 3주차 절차대로 설치했으면 **이 세 개**임 (`wamv_description` · `wamv_gazebo` 를 합쳐 빌드 패키지는 5개)
+- 연구실 워크스페이스에는 `vrx_control` · `vrx_eval` 등이 더 있으나 본 과목 설치본에는 없음
 
 ```bash
 claude --version && which claude
@@ -1210,11 +1210,11 @@ claude --version && which claude
 | 우분투 | `22.04.5 LTS jammy` | 배포판을 잘못 설치. 1주차 §2-2 |
 | `ROS_DISTRO` | `humble` | `source` 안 함 → §G-1 |
 | 패키지 수 | 307 | 크게 적으면 설치 미완 |
-| Gazebo | `7.9.0` (Garden) | 버전이 섞였을 수 있다 |
+| Gazebo | `7.9.0` (Garden) | 버전이 섞였을 수 있음 |
 | VRX 패키지 | 3개 (`vrx_gazebo` · `vrx_gz` · `vrx_ros`) | 빌드 실패 → 3주차 §2-2 |
 | Claude Code | `2.1.x` · `/home/...` | `/mnt/c/...` 면 Windows 설치본 |
 
-- 패키지 수와 버전은 설치 시점에 따라 조금 다를 수 있다. **자릿수가 맞으면 정상**이다
+- 패키지 수와 버전은 설치 시점에 따라 조금 다를 수 있음. **자릿수가 맞으면 정상**
 
 ---
 
@@ -1241,12 +1241,12 @@ claude --version && which claude
 
 ### 이론 이해
 
-- [ ] 챗봇과 코딩 에이전트의 차이를 설명할 수 있다
-- [ ] 에이전트 루프 5단계 중 **사람이 하는 것이 무엇인지** 안다
-- [ ] 에이전트가 자주 틀리는 다섯 곳을 말할 수 있다
-- [ ] 검증 세 겹(단위테스트 · rosbag · 경계조건)을 설명할 수 있다
-- [ ] `CLAUDE.md` 가 왜 필요한지 안다
-- [ ] 제출물이 코드가 아니라 **diff + 수정 사유**라는 것을 안다
+- [ ] 챗봇과 코딩 에이전트의 차이를 설명할 수 있음
+- [ ] 에이전트 루프 5단계 중 **사람이 하는 것이 무엇인지** 앎
+- [ ] 에이전트가 자주 틀리는 다섯 곳을 말할 수 있음
+- [ ] 검증 세 겹(단위테스트 · rosbag · 경계조건)을 설명할 수 있음
+- [ ] `CLAUDE.md` 가 왜 필요한지 앎
+- [ ] 제출물이 코드가 아니라 **diff + 수정 사유**라는 것을 앎
 
 ### 환경 구축
 
@@ -1271,7 +1271,7 @@ claude --version && which claude
 
 ### MATLAB MCP 연동
 
-- [ ] **MCP 가 무엇인지** 한 문장으로 설명할 수 있다
+- [ ] **MCP 가 무엇인지** 한 문장으로 설명할 수 있음
 - [ ] Agentic Toolkit 설치
 - [ ] `shareMATLABSession()` 실행
 - [ ] Claude 가 MATLAB 버전·툴박스를 조회함
@@ -1279,8 +1279,8 @@ claude --version && which claude
 - [ ] **Simulink 모델을 Claude 로 읽어 구조를 요약받음**
 - [ ] `model_check` 로 미연결 포트 검사
 - [ ] 게인 변수의 **실제 숫자 값**을 확인 (`model_resolve_params`)
-- [ ] MATLAB 을 껐다 켜면 `shareMATLABSession()` 을 다시 해야 한다는 것을 안다
-- [ ] 원본 모델을 직접 고치지 않고 **복사본**에서 실험했다
+- [ ] MATLAB 을 껐다 켜면 `shareMATLABSession()` 을 다시 해야 한다는 것을 앎
+- [ ] 원본 모델을 직접 고치지 않고 **복사본**에서 실험했음
 
 ---
 
@@ -1364,7 +1364,7 @@ diff -u waypoint_pid_draft.py waypoint_pid.py > agent_diff.txt
 | MATLAB 을 껐다 켠 뒤 안 됨 | 세션이 끊김 | `shareMATLABSession()` 다시 실행 |
 | `shareMATLABSession` 을 **인식할 수 없음** | MCP Server **Toolbox 애드온** 미설치 | `setupAgenticToolkit("install")` 또는 `--setup-matlab` (§F-3 5단계) 후 MATLAB 재시작 |
 | MATLAB 명령은 되는데 **모델을 못 읽음** | `satk_initialize` 미실행 | `addpath(...\agentic-toolkits\simulink)` 후 `satk_initialize` |
-| 에이전트에 MATLAB 도구가 안 보임 | 설정 후 세션을 다시 시작하지 않음 | Claude Code 를 **새로 시작**한다 (MCP 는 시작 시 연결됨) |
+| 에이전트에 MATLAB 도구가 안 보임 | 설정 후 세션을 다시 시작하지 않음 | Claude Code 를 **새로 시작** (MCP 는 시작 시 연결됨) |
 | WSL 의 `claude` 에서 MATLAB 도구가 안 보임 | MCP 설정이 **Windows** 쪽 `.claude.json` 에 들어감 | Windows 에서 연 VS Code 창의 Claude Code 확장으로 작업 (§F-3) |
 
 ---

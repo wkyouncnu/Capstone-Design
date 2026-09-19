@@ -4,6 +4,8 @@
 %   Simulink 의 Constant 블록들이 여기서 만든 변수 이름을 그대로 참조한다.
 %
 %   >> W03_setup
+%   >> open_system('W03_0_offline')       % 0단계 — 버튼 조종을 운동방정식으로 (VRX 불필요)
+%   >> W03_offline_run                    %         3단계와 같은 시나리오를 스크립트로 (VRX 불필요)
 %   >> open_system('W03_1_frame_check')   % 1단계 — 변환식 확인 (VRX 불필요)
 %   >> open_system('W03_2_vrx_nav')       % 2단계 — GPS·IMU 를 NED 로 (VRX 필요)
 %   >> open_system('W03_3_vrx_drive')     % 3단계 — 추력을 주고 부호를 확인 (VRX 필요)
@@ -75,6 +77,19 @@ teleop_thrust = 200;
 
 %  버튼으로 몰아 보려면 30 초는 짧다. 4단계를 돌릴 때만 길게 잡는다.
 T_end_teleop = 300;   % [s]
+
+%% ====================================================================
+%  6. 0단계 운동방정식 계수 — 전부 VRX 플러그인 파일의 값 (3주차 1-8 절)
+%     6~10주차 오프라인 모델도 같은 이름·같은 값을 쓴다
+% =====================================================================
+m_usv = 211;     % 총 질량 [kg]     = base_link 180 + 엔진 2x15 + 프로펠러 2x0.5
+Izz   = 653;     % 요 관성 [kg m^2] = base_link 446 + 엔진·프로펠러 평행축 항
+Xu = 100;  Xuu = 150;     % 전후 항력  (SimpleHydrodynamics  xU, xUU)
+Yv = 100;  Yvv = 100;     % 좌우 항력  (yV, yVV)
+Nr = 800;  Nrr = 800;     % 요   항력  (nR, nRR)
+half_beam = 1.027135;     % 추진기 좌우 반폭 [m] (wamv_aft_thrusters.xacro)
+
+x0_w03 = zeros(6,1);      % 초기 상태 [u v r N E psi] — 원점에서 북쪽을 보고 정지
 
 fprintf(['W03_setup 완료 — 기준점 (%.6f, %.6f), 시나리오 %d ' ...
          '(좌 %+.0f N / 우 %+.0f N), ROS_DOMAIN_ID=%s\n'], ...

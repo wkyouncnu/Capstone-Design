@@ -45,7 +45,7 @@ case 'W03_1_frame_check'
     role = [GNC; {'FrameConv','ros'; 'Rad2DegPsi','ros'; 'Rad2DegYaw','ros'}];
 case {'W03_2_vrx_nav','W03_3_vrx_drive'}
     role = [GNC; {'SensorSubscriber','ros'; 'Nav','ros'}];
-case 'W03_4_teleop'
+case {'W03_0_offline','W03_4_teleop'}
     %   TeleopPad 가 파랑인 이유 — 유도 자리에 사람이 들어간다. 7주차에서
     %   LOS 가 대신하게 될 그 자리다
     role = [GNC; {'TeleopPad','guidance'; 'OdomNav','ros'}];
