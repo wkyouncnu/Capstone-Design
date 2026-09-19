@@ -549,12 +549,23 @@ function fixOfflineLayout(m)
     reline(ss, 'FR', 1, 'EOM', 3);
     reline(ss, 'p',  1, 'EOM', 4);
     reline(ss, 'One', 1, 'Go_valid', 1);
-    % 되먹임 — 적분기 출력을 위로 돌려 EOM 의 첫 입력(s)으로
+    % 되먹임 — 적분기 출력 s 를 태그 [s] 로 EOM 의 첫 입력(s)에 돌려준다.
+    %   선으로 돌리면 오른쪽 출력에서 왼쪽 입력으로 가야 해서 블록 위로 넘어가며
+    %   최소 세 번 꺾인다 (Simulink 가 옆면 포트에 가로 토막을 붙인다). line-routing.md 8.2
     try, delete_line(ss, 'Integ/1', 'EOM/1'); catch, end
-    pI = get_param([ss '/Integ'], 'PortConnectivity');
-    pE = get_param([ss '/EOM'],   'PortConnectivity');
-    a = pI(end).Position;  b = pE(1).Position;
-    add_line(ss, [a; a(1)+30 a(2); a(1)+30 25; b(1)-40 25; b(1)-40 b(2); b]);
+    a = port_xy(ss, 'Integ', 'Outport', 1);
+    b = port_xy(ss, 'EOM',   'Inport',  1);
+    yg = a(2) + 70;
+    add_block('simulink/Signal Routing/Goto', [ss '/Go_s'], ...
+              'Position', [a(1)+20 yg-11 a(1)+65 yg+11], 'GotoTag','s', 'TagVisibility','local');
+    add_block('simulink/Signal Routing/From', [ss '/Fr_s'], ...
+              'Position', [b(1)-75 b(2)-11 b(1)-30 b(2)+11], 'GotoTag','s');
+    align_to(ss, 'Fr_s', 'Outport', b);
+    pI = get_param([ss '/Integ'], 'PortHandles');  pG = get_param([ss '/Go_s'], 'PortHandles');
+    pF = get_param([ss '/Fr_s'],  'PortHandles');  pE = get_param([ss '/EOM'],  'PortHandles');
+    g  = port_xy(ss, 'Go_s', 'Inport', 1);
+    draw_line(ss, pI.Outport(1), pG.Inport(1), [a; a(1) g(2); g]);   % 꺾임 1회
+    draw_line(ss, pF.Outport(1), pE.Inport(1));                      % 직선
     % 태그를 지우며 남은 끊긴 선 조각을 치운다
     ln = find_system(ss, 'SearchDepth',1, 'FindAll','on', 'Type','line');
     for k = 1:numel(ln)
