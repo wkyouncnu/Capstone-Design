@@ -59,7 +59,9 @@ end
 function setFcn(sys, path, code)
     add_block('simulink/User-Defined Functions/MATLAB Function', [sys '/' path]);
     S = sfroot; B = S.find('Path', [sys '/' path], '-isa','Stateflow.EMChart');
+    fpos = get_param([sys '/' path], 'Position');
     B.Script = code;
+    set_param([sys '/' path], 'Position', fpos);    % 포트 위치를 저장 뒤와 같게 (사선 방지)
 end
 
 function C(m, name, value, x, y)

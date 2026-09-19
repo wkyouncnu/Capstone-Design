@@ -56,7 +56,11 @@ n = sfroot().find('-isa','Stateflow.EMChart','-and','Path',blk);
 if isempty(n)
     error('set_mlfcn:notFound','No MATLAB Function block at %s', blk);
 end
+fpos = get_param(blk, 'Position');
 n.Script = strjoin(lines, newline);
+%  포트가 생기며 블록이 멋대로 자라고, 그 포트 위치는 저장했다 다시 열면 달라진다.
+%  다시 놓아 두면 지금 읽는 포트 위치가 저장 뒤와 같다 (2026-09-19 사선 검사).
+set_param(blk, 'Position', fpos);
 
 if nargin >= 4 && ~isempty(outName)
     d = n.find('-isa','Stateflow.Data','-and','Name',outName);

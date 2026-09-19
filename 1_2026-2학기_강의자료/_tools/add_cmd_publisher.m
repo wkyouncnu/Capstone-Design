@@ -24,18 +24,23 @@ for k = 1:2
     y = 120 + (k-1)*180;
     t = side{k};
 
-    bb = [s '/Blank' t];
-    add_block('ros2lib/Blank Message', bb, 'Position', [160 y-20 260 y+20]);
-    set_param(bb, 'entityType','std_msgs/Float64', ...
-                  'messageType','std_msgs/Float64', 'SampleTime', ts);
-
     ab = [s '/Asg' t];
     add_block('simulink/Signal Routing/Bus Assignment', ab, ...
               'Position', [360 y-40 440 y+40]);
     set_param(ab, 'AssignedSignals','data');
 
+    %  Blank 는 Asg 의 **1번 포트 높이**에, Publish 는 Asg 의 출력 높이에 놓는다.
+    %  Asg 가운데에 맞추면 1번 포트가 가운데보다 위에 있어 20 px 기운 사선이 된다
+    %  (2026-09-19 W07~W09 CmdPublisher). 포트 높이는 계산하지 않고 읽는다.
+    bb = [s '/Blank' t];
+    add_block('ros2lib/Blank Message', bb, 'Position', [160 y-20 260 y+20]);
+    set_param(bb, 'entityType','std_msgs/Float64', ...
+                  'messageType','std_msgs/Float64', 'SampleTime', ts);
+    align_to(s, ['Blank' t], 'Outport', port_xy(s, ['Asg' t], 'Inport', 1));
+
     pb = [s '/Pub' t];
     add_block('ros2lib/Publish', pb, 'Position', [540 y-20 660 y+20]);
+    align_to(s, ['Pub' t], 'Inport', port_xy(s, ['Asg' t], 'Outport', 1));
     set_param(pb, 'topicSource','Specify your own', ...
                   'topic', topics{k}, 'messageType','std_msgs/Float64');
 

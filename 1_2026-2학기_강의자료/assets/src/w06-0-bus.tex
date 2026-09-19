@@ -20,9 +20,10 @@
 \node[blk, minimum width=13mm, minimum height=7mm] (s1) at (0,20)  {1};
 \node[blk, minimum width=13mm, minimum height=7mm] (s2) at (0,11)  {2};
 \node[blk, minimum width=13mm, minimum height=7mm] (s3) at (0,2)   {3};
-\node[note, left=1mm of s1] {$x$};
-\node[note, left=1mm of s2] {$y$};
-\node[note, left=1mm of s3] {$z$};
+% 선 이름 x, y, z 는 모델 SB4 의 신호 이름 그대로 (코드체) — 북·동 위치 x, y 와 구분
+\node[note, left=1mm of s1] {\texttt{x}};
+\node[note, left=1mm of s2] {\texttt{y}};
+\node[note, left=1mm of s3] {\texttt{z}};
 
 \node[draw=ink, fill=ink, minimum width=2.2mm, minimum height=26mm, inner sep=0pt] (bc) at (26,11) {};
 \node[note, anchor=north, align=center] at (26,-2.8) {\texttt{Inner}\\(Bus Creator)};

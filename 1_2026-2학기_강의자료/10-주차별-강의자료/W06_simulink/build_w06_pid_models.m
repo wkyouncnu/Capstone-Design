@@ -445,8 +445,10 @@ end
 
 function fcn(sys, name, cx, cy, w, h, code)
     blk(sys, 'simulink/User-Defined Functions/MATLAB Function', name, cx, cy, w, h, {});
+    fpos = get_param([sys '/' name], 'Position');   % 포트가 생기며 블록이 멋대로 자란다
     ch = sfroot().find('-isa','Stateflow.EMChart','Path',[sys '/' name]);
     ch.Script = code;
+    set_param([sys '/' name], 'Position', fpos);    % 다시 놓아야 포트 위치가 저장 뒤와 같아진다 (사선 방지)
 end
 
 function goto(sys, tag, cx, cy)

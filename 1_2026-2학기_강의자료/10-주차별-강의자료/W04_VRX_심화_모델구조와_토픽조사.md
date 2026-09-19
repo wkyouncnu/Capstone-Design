@@ -203,9 +203,9 @@ $$
 >
 > | 축 | ROS `base_link` (FLU) | 제어식 몸체축 (FRD) | 바꾸는 법 |
 > |---|---|---|---|
-> | $x$ | 선수 | 선수 | 그대로 |
-> | $y$ | 좌현 $+$ | 우현 $+$ | $y_{\text{FRD}} = -\,y_{\text{FLU}}$ |
-> | $z$ | 위 $+$ | 아래 $+$ | $z_{\text{FRD}} = -\,z_{\text{FLU}}$ |
+> | $x_b$ | 선수 | 선수 | 그대로 |
+> | $y_b$ | 좌현 $+$ | 우현 $+$ | $y_{\text{FRD}} = -\,y_{\text{FLU}}$ |
+> | $z_b$ | 위 $+$ | 아래 $+$ | $z_{\text{FRD}} = -\,z_{\text{FLU}}$ |
 >
 > 그래서 1-2절 Xacro 의 좌현 추진기 $y_{\text{FLU}} = +1.027$ 은 10주차 배분 행렬에서 $y_{b,L} = -1.027$ (FRD) 이 됨
 > 3주차의 ENU → NED 변환(북·동을 바꾸고 아래를 뒤집는다)과 **같은 이유의 다른 판**임 —
@@ -359,14 +359,14 @@ $$
 
 ### IMU — 자세와 각속도
 
-- 수평면만 보면 쿼터니언은 $z$ 성분 하나로 줄어듦. ROS 는 ENU 이므로 NED 선수각을 먼저 바꿈 (3주차 1-5, 1-6)
+- 수평면만 보면 쿼터니언은 $q_z$ 성분 하나로 줄어듦. ROS 는 ENU 이므로 NED 선수각을 먼저 바꿈 (3주차 1-5, 1-6)
 
 $$
 \psi_{\text{ENU}} = \frac{\pi}{2} - \psi, \qquad
 \mathbf{q} = (q_x,\ q_y,\ q_z,\ q_w) = \Bigl(0,\ 0,\ \sin\frac{\psi_{\text{ENU}}}{2},\ \cos\frac{\psi_{\text{ENU}}}{2}\Bigr)
 $$
 
-- 성분 순서는 ROS 메시지 순서 $x,\ y,\ z,\ w$ (`orientation.x` \~ `.w`) 임. $q_w$ 가 마지막 — 3주차 1-6 ② 의 caution
+- 성분 순서는 ROS 메시지 순서 `x, y, z, w` (`orientation.x` \~ `.w`) 임. $q_w$ 가 마지막 — 3주차 1-6 ② 의 caution
 - 굵은 $\mathbf{q}$ 는 쿼터니언이며 피치 각속도 $q$ 와 다름
 
 - 자이로 $z$ 는 ENU 축이라 부호가 반대이고, 잡음과 바이어스가 더해짐
@@ -1049,7 +1049,7 @@ curl -s -o /tmp/tile.png -w "%{http_code}\n" "http://localhost:8080/wmts/gm_laye
 - 정상 출력: `200`
 - 이 타일(`17/120000/77000`)은 시드니 레가타가 아니라 호주 내륙(남위 30°, 동경 149.6° 부근)임. **서버가 응답하는지**만 확인하는 용도
   - 시드니 레가타 원점(`sydney_regatta.sdf` 의 `-33.724223, 150.679736`)이 들어 있는 줌 17 타일은 `17/120396/78591` 임
-    - 계산: $x = \lfloor (\lambda + 180)/360 \times 2^{17} \rfloor$, $y = \lfloor (1 - \operatorname{asinh}(\tan\varphi)/\pi)/2 \times 2^{17} \rfloor$ (웹 메르카토르 타일 번호)
+    - 계산: $t_x = \lfloor (\lambda + 180)/360 \times 2^{17} \rfloor$, $t_y = \lfloor (1 - \operatorname{asinh}(\tan\varphi)/\pi)/2 \times 2^{17} \rfloor$ (웹 메르카토르 타일 번호 $t_x$, $t_y$ — 북·동 위치 $x$, $y$ 아님)
     - 위 명령의 끝을 이 번호로 바꾸면 실제 경기장 사진이 받아짐. 응답 코드는 같게 `200` 이어야 함
 
 ### 5단계 — 원점을 시드니로 둔 런치 파일 만들기

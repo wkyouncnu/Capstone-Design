@@ -55,10 +55,10 @@
 \draw[sig]  (nav) -- node[sname, below] {$\boldsymbol{\eta},\ \boldsymbol{\nu}$} (filt);
 
 % 위치 eta -> 합산점
-\draw[sig]  (filt.west) -| node[sname, pos=0.25, below] {$\boldsymbol{\eta}$} (s1.south);
+\draw[sig]  (filt.west) -| node[sname, pos=0.25, below] {$\boldsymbol{\eta}_f$} (s1.south);
 
-% 속도 nu 와 선수각 psi -> 제어기 (감쇠항 -Kd nu, 회전 J^T(psi))
-\draw[sig]  (filt.north) -- node[sname, right] {$\boldsymbol{\nu},\ \psi$} (filt.north |- dp.south);
+% 속도 nu 와 선수각 psi -> 제어기 (감쇠항 -Kd nu, 회전 J^T(psi)) — 필터 출력이므로 첨자 f
+\draw[sig]  (filt.north) -- node[sname, right] {$\boldsymbol{\nu}_f,\ \psi_f$} (filt.north |- dp.south);
 
 % ---- 설명 -----------------------------------------------------------------
 \node[note, below=1.5mm of rm.south, text width=26mm, align=center]

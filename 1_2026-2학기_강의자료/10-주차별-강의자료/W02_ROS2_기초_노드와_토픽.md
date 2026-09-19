@@ -3080,7 +3080,7 @@ average rate: 62.504
 | 그림의 위치 | 무엇인가 |
 |---|---|
 | (a) 초록 선체 · 초록 화살표 | 현재 위치와 선수 방향 $\theta$. **뾰족한 쪽이 선수** |
-| (a) 파란 화살표 | 목표점까지의 거리 $d$ 와 방향 $\psi_{\text{ref}}$ |
+| (a) 파란 화살표 | 목표점까지의 거리 $d$ 와 방향 $\theta_{\text{ref}}$ (모델의 태그 이름은 `psi_ref`) |
 | (a) 청록 호 $e$ | 선수가 목표 방향에서 벗어난 각도 — 이것을 0 으로 만듦 |
 | (b) 모드 1 → 2 → 3 | 먼저 **위치**, 다음에 **선수각**, 끝나면 정지 |
 | (b) 빨간 점선 | 목표를 바꾸면 처음(모드 1)부터 다시 |
@@ -3088,13 +3088,13 @@ average rate: 62.504
 - 목표 방향과 선수각 오차
 
 $$
-\psi_{\text{ref}} = \operatorname{atan2}(y_{\text{goal}} - y,\ x_{\text{goal}} - x), \qquad e = \operatorname{ssa}(\psi_{\text{ref}} - \theta)
+\theta_{\text{ref}} = \operatorname{atan2}(y_{\text{goal}} - y,\ x_{\text{goal}} - x), \qquad e = \operatorname{ssa}(\theta_{\text{ref}} - \theta)
 $$
 
 - 제어 법칙 — 선수각은 P 제어, 속도는 거리에 비례
 
 $$
-\omega = \operatorname{sat}_{\omega_{\max}}\!\left(K_\psi\, e\right), \qquad
+\omega = \operatorname{sat}_{\omega_{\max}}\!\left(K_\theta\, e\right), \qquad
 v = \min\!\left(K_v\, d,\ v_{\max}\right)\cdot \max(\cos e,\ 0)
 $$
 
@@ -3103,7 +3103,7 @@ $$
 | $(x_{\text{goal}}, y_{\text{goal}}, \theta_{\text{goal}})$ | 목표 자세. 3주차 무게중심 $x_g$ 와 구분하려고 `goal` 을 붙임 | `(9.0, 2.0, 90°)` |
 | $d$ | 목표점까지 거리 | 계산값 |
 | $\operatorname{ssa}$ | 가장 짧은 쪽 각도 차이. $-\pi \sim \pi$ 로 접음 | — |
-| $K_\psi$ | 선수각 게인 | `Kpsi = 4.0` |
+| $K_\theta$ | 선수각 게인 | `Kpsi = 4.0` |
 | $K_v$ | 속도 게인 | `Kv = 1.0` |
 | $v_{\max}$, $\omega_{\max}$ | 속도 · 회전 한계 | `2.0`, `2.0 rad/s` |
 | `tol_d`, `tol_th` | 도착 판정 | `0.05`, `1°` |
@@ -3114,6 +3114,7 @@ $$
 > [!warning] 이 식은 turtlesim 좌표계의 식임 — 3주차부터는 규약이 바뀜
 > turtlesim 은 수학 교과서와 같은 평면을 씀. $x$ 오른쪽, $y$ 위쪽, 각 $\theta$ 는 $x$ 축에서 **반시계**가 $+$
 > 3주차부터 쓰는 NED 는 $x$ 가 **북**(위쪽), $y$ 가 **동**(오른쪽), 각 $\psi$ 는 북에서 **시계**가 $+$
+> 3주차부터 $\theta$ 는 **피치각**이고 선수각은 $\psi$ 임
 >
 > | | 2주차 turtlesim | 3주차 이후 NED |
 > |---|---|---|

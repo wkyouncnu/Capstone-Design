@@ -77,8 +77,10 @@ end
 
 function setFcn(sys, path, code)
     S  = sfroot;
+    fpos = get_param([sys '/' path], 'Position');   % 포트가 생기며 블록이 멋대로 자란다
     ch = S.find('-isa','Stateflow.EMChart','Path',[sys '/' path]);
     ch.Script = code;
+    set_param([sys '/' path], 'Position', fpos);    % 다시 놓아야 포트 위치가 저장 뒤와 같아진다 (사선 방지)
 end
 
 function C(m, name, value, x, y)

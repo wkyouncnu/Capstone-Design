@@ -27,10 +27,10 @@
   \pgfmathsetmacro{\SC}{17}                        % 1 m/s = 17 mm
   \pgfmathsetmacro{\rot}{90-\psiD}                 % 화면 각도 = 90 - psi
   %  반올림해 둔다. cos(90) 이 6e-17 로 나오면 \ifdim 이 읽지 못한다
-  \pgfmathsetmacro{\VN}{round((\uu*cos(\psiD) - \vv*sin(\psiD))*1000)/1000}
-  \pgfmathsetmacro{\VE}{round((\uu*sin(\psiD) + \vv*cos(\psiD))*1000)/1000}
-  \pgfmathsetmacro{\xE}{\VE*\SC}
-  \pgfmathsetmacro{\yN}{\VN*\SC}
+  \pgfmathsetmacro{\XD}{round((\uu*cos(\psiD) - \vv*sin(\psiD))*1000)/1000}
+  \pgfmathsetmacro{\YD}{round((\uu*sin(\psiD) + \vv*cos(\psiD))*1000)/1000}
+  \pgfmathsetmacro{\xE}{\YD*\SC}
+  \pgfmathsetmacro{\yN}{\XD*\SC}
 
   % ---- NED 축 — 얇은 회색. 주인공이 아니다 ----
   \draw[soft, line width=0.35pt, -{Stealth[length=3pt,width=2pt]}] (-4,0) -- (30,0);
@@ -41,11 +41,11 @@
   % ---- xdot, ydot (북 · 동 속도) — 축 위에 얹는다 ----
   \draw[soft, line width=0.35pt, densely dashed] (\xE,\yN) -- (\xE,0);
   \draw[soft, line width=0.35pt, densely dashed] (\xE,\yN) -- (0,\yN);
-  \ifdim \VE pt > 0.01pt
+  \ifdim \YD pt > 0.01pt
     \draw[nav, line width=1.1pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (\xE,0);
     \node[font=\scriptsize, nav, anchor=north] at (\xE*0.55,-1.0) {$\dot{y}$};
   \fi
-  \ifdim \VN pt > 0.01pt
+  \ifdim \XD pt > 0.01pt
     \draw[nav, line width=1.1pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,\yN);
     \node[font=\scriptsize, nav, anchor=east] at (-1.0,\yN*0.55) {$\dot{x}$};
   \fi
@@ -93,8 +93,8 @@
        {$u=\pgfmathprintnumber[fixed,precision=2]{\uu}$\;\,
         \textcolor{plant}{$v=\pgfmathprintnumber[fixed,precision=2]{\vv}$}};
   \node[font=\scriptsize, nav, anchor=west] at (-8,-20)
-       {$\dot{x}=\pgfmathprintnumber[fixed,precision=2]{\VN}$\;\,
-        $\dot{y}=\pgfmathprintnumber[fixed,precision=2]{\VE}$};
+       {$\dot{x}=\pgfmathprintnumber[fixed,precision=2]{\XD}$\;\,
+        $\dot{y}=\pgfmathprintnumber[fixed,precision=2]{\YD}$};
 \end{scope}}
 
 \begin{document}

@@ -26,7 +26,7 @@
 \node[blk]                          (pref) at (0,-14) {목표 선수각};
 \node[sum,  right=8mm of pref]      (sp)              {};
 \node[cblk, right=8mm of sp]        (pd)              {P + 감쇠};
-\node[note, above=0.8mm of pd]                        {헤딩 제어기 \ $K_p e - K_d\, r$};
+\node[note, above=0.8mm of pd]                        {헤딩 제어기 \ $K_{p,\psi} e - K_{d,\psi}\, r$};
 
 \draw[sig] (pref) -- node[sname, above] {$\psi_{\mathrm{ref}}$} (sp);
 \draw[sig] (sp)   -- (pd);
