@@ -1770,6 +1770,97 @@ ros2 bag play rosbag2_2026_09_10-14_30_00
 >
 > ②는 아래 "저장소에서 받기" 를 보면 됨. **①을 건너뛰지 말 것**
 
+### 워크스페이스 생성
+
+```bash
+mkdir -p ~/capstone_ws/src
+cd ~/capstone_ws/src
+```
+
+### 패키지 생성
+
+```bash
+ros2 pkg create --build-type ament_python --license Apache-2.0 usv_basics
+```
+
+- 정상 출력 (기준 환경 실측)
+
+```
+going to create a new package
+package name: usv_basics
+destination directory: /home/cnu/capstone_ws/src
+package format: 3
+version: 0.0.0
+description: TODO: Package description
+maintainer: ['cnu <cnu@todo.todo>']
+licenses: ['Apache-2.0']
+build type: ament_python
+dependencies: []
+creating folder ./usv_basics
+creating ./usv_basics/package.xml
+creating source folder
+creating folder ./usv_basics/usv_basics
+creating ./usv_basics/setup.py
+creating ./usv_basics/setup.cfg
+creating folder ./usv_basics/resource
+creating ./usv_basics/resource/usv_basics
+creating ./usv_basics/usv_basics/__init__.py
+creating folder ./usv_basics/test
+creating ./usv_basics/test/test_copyright.py
+creating ./usv_basics/test/test_flake8.py
+creating ./usv_basics/test/test_pep257.py
+```
+
+- 실제로 만들어진 구조 — `find` 로 확인한 결과
+
+```
+usv_basics/
+├── LICENSE                  Apache-2.0 전문
+├── package.xml              패키지 정보, 의존성
+├── setup.py                 빌드 설정, 실행파일 등록
+├── setup.cfg                실행파일이 깔릴 경로
+├── resource/usv_basics      ROS 2 가 패키지를 찾는 표식 파일 (비어 있음)
+├── test/                    자동 생성된 검사 3종
+│   ├── test_copyright.py
+│   ├── test_flake8.py
+│   └── test_pep257.py
+└── usv_basics/              <- 여기에 .py 파일을 넣는다
+    └── __init__.py
+```
+
+> [!note] `--license` 를 빼면 경고가 남
+> 라이선스가 없으면 `colcon build` 가 경고를 냄. 팀 저장소에 올릴 것이므로 붙여 둠
+
+- VS Code 탐색기에서도 같은 구조가 보임 (§2-2 의 화면)
+
+### 빌드
+
+```bash
+cd ~/capstone_ws
+colcon build --symlink-install
+source install/setup.bash
+```
+
+- 정상 출력 (2026-09-19 기준 환경 실측, 패키지가 비어 있을 때). 시간은 PC 마다 다르며 1 초 안팎이면 정상
+
+```
+Starting >>> usv_basics
+Finished <<< usv_basics [0.60s]
+
+Summary: 1 package finished [0.90s]
+```
+
+- 빌드 후 `~/capstone_ws` 에 **`build/` · `install/` · `log/`** 세 폴더가 새로 생김
+
+> [!tip] `--symlink-install` 사용을 권장함
+> Python 파일이 링크로 연결되어 **코드를 고칠 때마다 다시 빌드할 필요가 없음**.
+
+- 자동 적용 등록 — **한 번만** 실행함 (`grep -c capstone_ws ~/.bashrc` 가 1)
+
+```bash
+echo "source ~/capstone_ws/install/setup.bash" >> ~/.bashrc
+```
+
 ### 저장소에서 받기 (복습·복구용)
 
 - 강의에서 만드는 패키지와 **똑같은 것**을 아래 저장소에 올려 두었음
@@ -1889,97 +1980,6 @@ git pull
 
 > [!tip] `usv_basics` 도 같은 방법으로 갱신함
 > `cd ~/capstone_ws/src/usv_basics && git pull` 뒤 `cd ~/capstone_ws && colcon build --symlink-install` (3주차 2-6)
-
-### 워크스페이스 생성
-
-```bash
-mkdir -p ~/capstone_ws/src
-cd ~/capstone_ws/src
-```
-
-### 패키지 생성
-
-```bash
-ros2 pkg create --build-type ament_python --license Apache-2.0 usv_basics
-```
-
-- 정상 출력 (기준 환경 실측)
-
-```
-going to create a new package
-package name: usv_basics
-destination directory: /home/cnu/capstone_ws/src
-package format: 3
-version: 0.0.0
-description: TODO: Package description
-maintainer: ['cnu <cnu@todo.todo>']
-licenses: ['Apache-2.0']
-build type: ament_python
-dependencies: []
-creating folder ./usv_basics
-creating ./usv_basics/package.xml
-creating source folder
-creating folder ./usv_basics/usv_basics
-creating ./usv_basics/setup.py
-creating ./usv_basics/setup.cfg
-creating folder ./usv_basics/resource
-creating ./usv_basics/resource/usv_basics
-creating ./usv_basics/usv_basics/__init__.py
-creating folder ./usv_basics/test
-creating ./usv_basics/test/test_copyright.py
-creating ./usv_basics/test/test_flake8.py
-creating ./usv_basics/test/test_pep257.py
-```
-
-- 실제로 만들어진 구조 — `find` 로 확인한 결과
-
-```
-usv_basics/
-├── LICENSE                  Apache-2.0 전문
-├── package.xml              패키지 정보, 의존성
-├── setup.py                 빌드 설정, 실행파일 등록
-├── setup.cfg                실행파일이 깔릴 경로
-├── resource/usv_basics      ROS 2 가 패키지를 찾는 표식 파일 (비어 있음)
-├── test/                    자동 생성된 검사 3종
-│   ├── test_copyright.py
-│   ├── test_flake8.py
-│   └── test_pep257.py
-└── usv_basics/              <- 여기에 .py 파일을 넣는다
-    └── __init__.py
-```
-
-> [!note] `--license` 를 빼면 경고가 남
-> 라이선스가 없으면 `colcon build` 가 경고를 냄. 팀 저장소에 올릴 것이므로 붙여 둠
-
-- VS Code 탐색기에서도 같은 구조가 보임 (§2-2 의 화면)
-
-### 빌드
-
-```bash
-cd ~/capstone_ws
-colcon build --symlink-install
-source install/setup.bash
-```
-
-- 정상 출력 (2026-09-19 기준 환경 실측, 패키지가 비어 있을 때). 시간은 PC 마다 다르며 1 초 안팎이면 정상
-
-```
-Starting >>> usv_basics
-Finished <<< usv_basics [0.60s]
-
-Summary: 1 package finished [0.90s]
-```
-
-- 빌드 후 `~/capstone_ws` 에 **`build/` · `install/` · `log/`** 세 폴더가 새로 생김
-
-> [!tip] `--symlink-install` 사용을 권장함
-> Python 파일이 링크로 연결되어 **코드를 고칠 때마다 다시 빌드할 필요가 없음**.
-
-- 자동 적용 등록 — **한 번만** 실행함 (`grep -c capstone_ws ~/.bashrc` 가 1)
-
-```bash
-echo "source ~/capstone_ws/install/setup.bash" >> ~/.bashrc
-```
 
 ---
 
