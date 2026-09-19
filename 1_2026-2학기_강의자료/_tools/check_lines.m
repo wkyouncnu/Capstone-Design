@@ -20,7 +20,9 @@ function n = check_lines(mdl, verbose)
 %       that turns twice is indistinguishable from its neighbours. All three
 %       make the diagram claim a connection that does not exist.
 %
-%   합격선은 겹침 0 · 블록관통 0 · 꺾임3회+ 0 · 매달림 0 이다. 꺾임 2회는 최소로 줄인다.
+%     5) 사선         — 가로도 세로도 아닌 구간. 포트 높이가 몇 px 어긋난 흔적이다
+%
+%   합격선은 겹침 0 · 블록관통 0 · 꺾임3회+ 0 · 매달림 0 · 사선 0 이다. 꺾임 2회는 최소로 줄인다.
 %
 %   매달린 선을 왜 세는가 / why dangling lines are counted
 %       `add_line` 에 점만 주면 Simulink 가 끝점의 좌표로 포트를 찾는데, 몇 픽셀만
@@ -43,24 +45,24 @@ opened = false;
 if ~bdIsLoaded(mdl), load_system(mdl); opened = true; end
 
 sys = [{mdl}; find_system(mdl, 'LookUnderMasks','all', 'BlockType','SubSystem')];
-n   = 0;  nc = 0;  nb = 0;  nk = 0;  n2 = 0;  nd = 0;
+n   = 0;  nc = 0;  nb = 0;  nk = 0;  n2 = 0;  nd = 0;  ns = 0;
 
 for s = 1:numel(sys)
-    [a, b, c, d, e] = check_one(sys{s}, verbose);
-    nc = nc + a;  nb = nb + b;  nk = nk + c;  n2 = n2 + d;  nd = nd + e;
+    [a, b, c, d, e, f] = check_one(sys{s}, verbose);
+    nc = nc + a;  nb = nb + b;  nk = nk + c;  n2 = n2 + d;  nd = nd + e;  ns = ns + f;
 end
-n = nc + nb + nk + nd;
+n = nc + nb + nk + nd + ns;
 
 if opened, close_system(mdl, 0); end
 
 if verbose || n > 0
-    fprintf('  %-26s 겹침 %d · 블록관통 %d · 꺾임3회+ %d · 매달림 %d   (꺾임2회 %d)\n', ...
-            mdl, nc, nb, nk, nd, n2);
+    fprintf('  %-26s 겹침 %d · 블록관통 %d · 꺾임3회+ %d · 매달림 %d · 사선 %d   (꺾임2회 %d)\n', ...
+            mdl, nc, nb, nk, nd, ns, n2);
 end
 end
 
 % -------------------------------------------------------------------------
-function [nc, nb, nk, n2, nd] = check_one(sys, verbose)
+function [nc, nb, nk, n2, nd, ns] = check_one(sys, verbose)
 lines = find_system(sys, 'FindAll','on', 'SearchDepth',1, 'Type','line');
 blks  = find_system(sys, 'SearchDepth',1, 'Type','Block');
 
@@ -73,10 +75,25 @@ for i = 1:numel(blks), box(i,:) = get_param(blks{i}, 'Position'); end
 hnd = cellfun(@(b) get_param(b,'Handle'), blks);
 
 seg = [];                       % [horizontal? coord lo hi srcPort lineHandle]
-nb  = 0;  nk = 0;  n2 = 0;  nd = 0;
+nb  = 0;  nk = 0;  n2 = 0;  nd = 0;  ns = 0;
 
 for i = 1:numel(lines)
     p  = get_param(lines(i), 'Points');
+
+    % --- (5) 사선 ----------------------------------------------------
+    %  가로도 세로도 아닌 구간. 포트 높이가 몇 px 어긋나면 생긴다
+    %  (2026-09-19 W06_P2 Dcompare — Scope 포트 간격을 계산으로 맞춰 세 선이 전부 사선)
+    for k = 1:size(p,1)-1
+        dd = abs(p(k+1,:) - p(k,:));
+        if dd(1) > 0.5 && dd(2) > 0.5
+            ns = ns + 1;
+            if verbose
+                fprintf('    [사선] %-38s %s  (%g, %g px)\n', ...
+                        strrep(sys,newline,' '), line_name(lines(i)), dd(1), dd(2));
+            end
+            break
+        end
+    end
 
     % --- (4) 매달린 선 ------------------------------------------------
     %  가지가 달린 부모 선은 도착 포트가 없는 것이 정상이다. 가지가 없는데도

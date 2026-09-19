@@ -26,6 +26,34 @@ catch
     h = add_line(sys, sp, dp);
 end
 if nargin > 3 && ~isempty(pts)
+    pts = snap_ends(pts, sp, dp);
     try, set_param(h, 'Points', pts); catch, end
+end
+end
+
+% -------------------------------------------------------------------------
+function p = snap_ends(p, sp, dp)
+%SNAP_ENDS  양 끝점을 **실제 포트 위치**로 바꾸고, 이웃 점을 같이 옮겨 직각을 지킨다.
+%
+%   포트는 블록 테두리에서 몇 px 바깥에 있다. 테두리 좌표로 계산한 끝점을 주면
+%   Simulink 가 끝점만 포트로 당기고 이웃 점은 그대로 두어, 첫 토막이 3~7 px
+%   기운 사선이 된다 (2026-09-19 전 모델 검사에서 feed_from 계열 다수).
+q = p;
+try, s = get_param(sp, 'Position'); catch, s = []; end
+try, d = get_param(dp(1), 'Position'); catch, d = []; end
+n = size(p,1);
+if ~isempty(s)
+    p(1,:) = s;
+    if n > 2
+        if abs(q(1,1)-q(2,1)) < 1e-6, p(2,1) = s(1); end   % 세로 토막 -> x 를 따라감
+        if abs(q(1,2)-q(2,2)) < 1e-6, p(2,2) = s(2); end   % 가로 토막 -> y 를 따라감
+    end
+end
+if ~isempty(d)
+    p(n,:) = d;
+    if n > 2
+        if abs(q(n,1)-q(n-1,1)) < 1e-6, p(n-1,1) = d(1); end
+        if abs(q(n,2)-q(n-1,2)) < 1e-6, p(n-1,2) = d(2); end
+    end
 end
 end

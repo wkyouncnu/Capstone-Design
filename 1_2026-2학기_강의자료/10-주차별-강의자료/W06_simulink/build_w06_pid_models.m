@@ -41,6 +41,9 @@ function build_w06_pid_models()
         check_colour(names{k});
         export_diagram(names{k});
     end
+    %  F-3 절이 싣는 Dcompare 안쪽 도면. 강의노트는 W06_Dcompare.png 이름을 쓴다
+    f = export_diagram('W06_P2_pid_byhand', '', 'Dcompare');
+    movefile(f, fullfile(here, 'img', 'W06_Dcompare.png'), 'f');
 end
 
 % =====================================================================
@@ -346,7 +349,16 @@ function addDcompare(mdl, xy)
     s = add_subsys(mdl, 'Dcompare', [xy(1) xy(2) xy(1)+150 xy(2)+60], {}, {}, ...
                    gnc_colour('measurement'));
 
-    R1 = 100; R2 = 220; R3 = 340;
+    %  Scope 를 먼저 놓고 세 입력 포트의 높이를 **읽어서** 줄 높이로 쓴다.
+    %  포트 간격을 계산으로 맞추면 몇 px 어긋나 세 선이 전부 사선이 된다.
+    blk(s, 'simulink/Sinks/Scope', 'Scope_D', 760, 220, 30, 280, ...
+        {'NumInputPorts','3'});
+    R = zeros(1,3);
+    for k = 1:3
+        q = port_xy(s, 'Scope_D', 'Inport', k);  R(k) = q(2);
+    end
+    R1 = R(1); R2 = R(2); R3 = R(3);
+
     blk(s, 'simulink/Sources/Sine Wave',    'SineTrue', 80,  R1, 50, 50, ...
         {'Amplitude','1','Frequency','0.5'});
     blk(s, 'simulink/Sources/Random Number','NoiseD',   80,  R2, 50, 50, ...
@@ -359,11 +371,6 @@ function addDcompare(mdl, xy)
     blk(s, 'simulink/Sources/Sine Wave',     'Dtrue',   380, R3, 50, 50, ...
         {'Amplitude','0.5','Frequency','0.5','Phase','pi/2'});
 
-    %  Scope 의 세 포트가 정확히 R1 · R2 · R3 에 오도록 높이를 잡는다.
-    %  그러면 세 갈래가 전부 직선으로 들어간다 (포트 간격 = (H-40)/(n-1)).
-    blk(s, 'simulink/Sinks/Scope', 'Scope_D', 760, R2, 30, 2*(R2-R1)+40, ...
-        {'NumInputPorts','3'});
-
     add_line(s, 'SineTrue/1', 'SumS/1');
     lane_line(s, 'NoiseD', 1, 'SumS', 2, []);
     sxy = port_xy(s, 'SumS', 'Outport', 1);
@@ -373,12 +380,13 @@ function addDcompare(mdl, xy)
     logs = {'dpure','Dpure'; 'dpseudo','Dpseudo'; 'dtrue','Dtrue'};
     for k = 1:3
         add_line(s, [logs{k,2} '/1'], sprintf('Scope_D/%d', k));   % 직선
-        %  로깅 블록의 왼쪽 테두리를 출발 포트 x 에 맞춘다 -> 분기선이 수직 한 토막
+        %  분기선은 출발 포트에서 수직으로 내려가 로깅 블록 입력으로 수평 진입 — 꺾임 1회.
+        %  로깅 블록은 출발 포트보다 오른쪽에 둔다 (왼쪽 테두리 = a(1)+20)
         a = port_xy(s, logs{k,2}, 'Outport', 1);
-        blk(s, 'simulink/Sinks/To Workspace', ['log_' logs{k,1}], a(1)+30, a(2)+45, ...
+        blk(s, 'simulink/Sinks/To Workspace', ['log_' logs{k,1}], a(1)+50, a(2)+45, ...
             60, 30, {'VariableName',['log_' logs{k,1}], 'SaveFormat','Timeseries'});
         b = port_xy(s, ['log_' logs{k,1}], 'Inport', 1);
-        add_line(s, [a; b]);
+        add_line(s, [a(1)+10 a(2); a(1)+10 b(2); b]);   % 본선 위 한 점에서 갈라짐
     end
 
     note(s, [ ...
@@ -408,13 +416,13 @@ function addLogging(mdl, tags, xy)
             {'GotoTag', tags{k}});
         add_line(s, ['Fr_' tags{k} '/1'], sprintf('Scope_all/%d', k));   % 직선
 
-        %  To Workspace 의 **왼쪽 테두리(입력 포트)** 를 From 의 출력 포트 x 에 맞춘다.
-        %  그러면 분기선이 수직 한 토막이 되어 꺾임이 0 회다.
+        %  본선 위 한 점(a(1)+10)에서 수직으로 내려가 To Workspace 입력으로 수평 진입.
+        %  꺾임 1회. 포트는 테두리 밖에 있어 x 를 맞추려 들면 몇 px 사선이 된다
         a = port_xy(s, ['Fr_' tags{k}], 'Outport', 1);
-        blk(s, 'simulink/Sinks/To Workspace', ['log_' tags{k}], a(1)+30, q(2)+34, ...
+        blk(s, 'simulink/Sinks/To Workspace', ['log_' tags{k}], a(1)+50, q(2)+34, ...
             60, 30, {'VariableName', ['log_' tags{k}], 'SaveFormat','Timeseries'});
         b = port_xy(s, ['log_' tags{k}], 'Inport', 1);
-        add_line(s, [a; b]);
+        add_line(s, [a(1)+10 a(2); a(1)+10 b(2); b]);
     end
 end
 
