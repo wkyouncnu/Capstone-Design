@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "10-주차별-강의자료/W03_Gazebo_VRX_구축과_좌표계.md",
+                "file": "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "W03_Gazebo_VRX_구축과_좌표계"
+              "title": "W02_ROS2_기초_노드와_토픽"
             }
           }
         ]
@@ -190,6 +190,9 @@
   },
   "active": "ccf5da29ee1ae7a9",
   "lastOpenFiles": [
+    "10-주차별-강의자료/W01_개발환경_구축과_USV_자율운항_개관.md",
+    "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.pdf",
+    "10-주차별-강의자료/W03_Gazebo_VRX_구축과_좌표계.md",
     "10-주차별-강의자료/W04_simulink/W04_rates_run.m",
     "assets/w04-simulink-qos.png",
     "assets/w03-simulink-frame-check.png",
@@ -203,15 +206,12 @@
     "10-주차별-강의자료/W04_simulink/img/W04_2_qos_test__RxCount.png",
     "10-주차별-강의자료/W04_simulink/img/W04_1_sensor_rates.png",
     "10-주차별-강의자료/W04_simulink/W04_2_qos_test.slx",
-    "10-주차별-강의자료/W04_simulink/W04_1_sensor_rates.slx",
-    "10-주차별-강의자료/W03_simulink/W03_3_vrx_drive.slx",
     "10-주차별-강의자료/W04_simulink/img/W04_2_qos_test__QosSubscribers.png",
     "10-주차별-강의자료/W04_simulink/img/W04_1_sensor_rates__RateMeter.png",
     "10-주차별-강의자료/W04_simulink/img/W04_1_sensor_rates__SensorSubscriber.png",
     "10-주차별-강의자료/W04_simulink/img/W04_2_qos_test.png",
     "10-주차별-강의자료/W03_simulink/img/W03_3_vrx_drive__Thrusters.png",
     "10-주차별-강의자료/W03_simulink/img/W03_2_vrx_nav__Nav.png",
-    "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.md",
-    "10-주차별-강의자료/W01_개발환경_구축과_USV_자율운항_개관.md"
+    "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.md"
   ]
 }
