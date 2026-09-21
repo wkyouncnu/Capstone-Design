@@ -410,8 +410,10 @@ curl -fsSL https://claude.ai/install.sh | bash
 code --install-extension anthropic.claude-code
 ```
 
+- 정상 출력 (버전 숫자는 설치 시점마다 다름 — `v2.1.x` 자리)
+
 ```
-Extension 'anthropic.claude-code' v2.1.266 was successfully installed.
+Extension 'anthropic.claude-code' v2.1.x was successfully installed.
 ```
 
 > [!caution] Claude Code **CLI** 는 Windows 쪽 PowerShell 에 설치하지 않음
@@ -424,10 +426,10 @@ Extension 'anthropic.claude-code' v2.1.266 was successfully installed.
 claude --version
 ```
 
-- 정상 출력 (2026-09-19 기준 환경 실측. 버전 숫자는 갱신되므로 `2.1.x` 면 정상)
+- 정상 출력 (버전 숫자는 설치 시점마다 다름 — `2.1.x` 면 정상)
 
 ```
-2.1.237 (Claude Code)
+2.1.x (Claude Code)
 ```
 
 ```bash
@@ -1309,7 +1311,7 @@ claude --version && which claude
 ```
 
 ```
-2.1.237 (Claude Code)
+2.1.x (Claude Code)
 /home/<사용자명>/.local/bin/claude
 ```
 
