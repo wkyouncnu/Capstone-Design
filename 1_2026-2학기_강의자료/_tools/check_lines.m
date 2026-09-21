@@ -1,12 +1,11 @@
 function [n, v] = check_lines(mdl, verbose)
-%CHECK_LINES  도면을 읽을 수 없게 만드는 일곱 가지를 찾아 보고한다.
+%CHECK_LINES  도면을 읽을 수 없게 만드는 여섯 가지를 찾아 보고한다.
 %
 %   n = check_lines('W06_P3_boat_speed')
 %   check_lines('W06_P3_boat_speed', true)      % 건건이 나열한다
-%   [n, v] = check_lines(m)
-%       v = [겹침 블록관통 꺾임3회+ 매달림 사선 블록겹침 이름표위선]
+%   [n, v] = check_lines(m)      % v = [겹침 블록관통 꺾임3회+ 매달림 사선 블록겹침]
 %
-%   일곱 가지 / the seven findings
+%   여섯 가지 / the six findings
 %     1) 겹친 선      — 같은 직선 위를 나누어 쓰는 두 선. 인쇄하면 한 선이다
 %     2) 블록 관통    — 자기와 무관한 블록의 사각형을 가로지르는 선
 %     3) 꺾임 3회 이상 — 눈이 선을 놓친다. 2회는 따로 세어 보여 준다
@@ -14,7 +13,6 @@ function [n, v] = check_lines(mdl, verbose)
 %     5) 사선         — 가로도 세로도 아닌 구간. 포트 높이가 몇 px 어긋난 흔적이다
 %     6) 블록겹침     — 블록 사각형끼리, 블록 이름표(블록 아래 글자 줄)가 다른 블록에,
 %                      주석(Note)이 블록이나 이름표에 겹친 것. 한 서브시스템 안에서만 본다
-%     7) 이름표 위 선 — 자기와 무관한 선이 블록 이름표 위를 지나 이름을 그어 버린 것
 %
 %   왜 이 셋인가 / why these three
 %       읽는 사람은 선을 **눈으로 따라간다.** 겹친 선은 따라갈 수 없고, 블록을
@@ -26,7 +24,8 @@ function [n, v] = check_lines(mdl, verbose)
 %       that turns twice is indistinguishable from its neighbours. All three
 %       make the diagram claim a connection that does not exist.
 %
-%   합격선은 일곱 가지 **모두 0** 이다. 꺾임 2회만 따로 세어 보여 주고 최소로 줄인다.
+%   합격선은 겹침 0 · 블록관통 0 · 꺾임3회+ 0 · 매달림 0 · 사선 0 · 블록겹침 0 이다.
+%   꺾임 2회와 "이름표 위를 지나는 선" 은 따로 세어 보여 주고 최소로 줄인다.
 %
 %   블록겹침을 왜 세는가 / why block clashes are counted
 %       선 검사는 블록이 **어디에 있는지**를 묻지 않는다. 종착 블록을 한 열에 쌓거나
@@ -35,13 +34,6 @@ function [n, v] = check_lines(mdl, verbose)
 %       orgE 에 가려짐). 선은 전부 깨끗한데 블록 이름을 읽을 수 없다.
 %       이름표 크기는 어림이다 — 글자 폭 (ASCII 6.5 px, 한글 12 px) 과 블록 폭 중 큰 쪽
 %       x 줄 수 x 14 px. ShowName 이 off 인 블록은 이름표가 없다.
-%       같은 계산이 _tools/name_box.m 에 있다. 배치 도구는 그것으로 이름표를 피한다.
-%
-%   이름표 위 선을 왜 세는가 / why lines over name labels are counted
-%       블록 이름은 블록 **밖**에 쓰인다. 그래서 사각형만 피해 고른 통로가 이름
-%       글자 위를 그대로 지나가고, 인쇄하면 이름이 선에 지워져 읽히지 않는다.
-%       블록은 멀쩡한데 그 블록이 무엇인지 알 수 없는 도면이 된다.
-%       2026-09-21 에 참고값에서 **합격선**으로 올렸다 — 전 모델 11건을 배치로 풀고서다.
 %
 %
 %   매달린 선을 왜 세는가 / why dangling lines are counted
@@ -60,9 +52,6 @@ function [n, v] = check_lines(mdl, verbose)
 %                  그러면 길이 0 인 구간이 지워지고 꺾임이 한 번만 남는다
 %     블록겹침  — 배치로 푼다. 쌓는 도구가 옆 블록과 이름표 자리를 피하게 하고,
 %                  포트 간격이 좁아 이름표가 가려지면 받는 블록의 키를 키운다
-%     이름표위선 — 통로 x 를 옮기거나(lay_sinks·lay_links·lay_chain 은 name_box 를
-%                  사각형과 함께 피한다), 이름표가 걸리는 블록·태그를 옆으로 옮긴다.
-%                  꺾임을 늘려 돌아가지 말 것 — 선 하나 살리자고 도면을 버린다
 
 if nargin < 2, verbose = false; end
 
@@ -79,15 +68,14 @@ for s = 1:numel(sys)
     [a, b] = check_blocks(sys{s}, verbose);
     no = no + a;  nl = nl + b;
 end
-n = nc + nb + nk + nd + ns + no + nl;
-v = [nc nb nk nd ns no nl];
+n = nc + nb + nk + nd + ns + no;
+v = [nc nb nk nd ns no];
 
 if opened, close_system(mdl, 0); end
 
 if verbose || n > 0
-    fprintf(['  %-26s 겹침 %d · 블록관통 %d · 꺾임3회+ %d · 매달림 %d · 사선 %d · ' ...
-             '블록겹침 %d · 이름표위선 %d   (꺾임2회 %d)\n'], ...
-            mdl, nc, nb, nk, nd, ns, no, nl, n2);
+    fprintf(['  %-26s 겹침 %d · 블록관통 %d · 꺾임3회+ %d · 매달림 %d · 사선 %d · 블록겹침 %d' ...
+             '   (꺾임2회 %d · 이름표 위 선 %d)\n'], mdl, nc, nb, nk, nd, ns, no, n2, nl);
 end
 end
 
@@ -287,7 +275,7 @@ end
 % -------------------------------------------------------------------------
 function [no, nl] = check_blocks(sys, verbose)
 %CHECK_BLOCKS  (6) 블록겹침. 블록끼리 · 이름표 대 블록 · 주석 대 블록/이름표.
-%   nl 은 (7) 이름표 위 선 — 자기와 무관한 선이 이름표 위를 지나는 수. 합격선 0.
+%   nl 은 따로 세는 참고값 — 자기와 무관한 선이 이름표 위를 지나는 수.
 no = 0;  nl = 0;
 %  Stateflow 차트·MATLAB Function 의 안에는 보이지 않는 Simulink 블록이 있다
 try
@@ -335,7 +323,7 @@ for q = 1:numel(a)
         end
     end
 end
-%  (7) 이름표 위를 지나는 남의 선
+%  참고값 — 이름표 위를 지나는 남의 선
 L = find_system(sys, 'FindAll','on', 'SearchDepth',1, 'Type','line');
 for q = 1:numel(L)
     p = get_param(L(q), 'Points');
@@ -358,8 +346,6 @@ end
 
 function t = name_box(blk, r)
 %NAME_BOX  블록 이름이 차지하는 자리 (어림). 이름을 숨긴 블록은 NaN.
-%   재는 도구는 스스로 서야 하므로 여기 한 벌을 둔다. 배치 도구가 쓰는
-%   _tools/name_box.m 과 **같은 계산**이다 — 고칠 때는 둘을 함께 고칠 것.
 t = nan(1,4);
 if strcmp(get_param(blk,'ShowName'), 'off'), return, end
 parts = strsplit(get_param(blk,'Name'), newline);

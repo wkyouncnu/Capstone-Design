@@ -36,11 +36,7 @@ blks = find_system(sys, 'SearchDepth',1, 'Type','Block');
 blks = blks(~strcmp(blks, sys));
 if isempty(blks), return, end
 box = zeros(numel(blks),4);
-nbx = nan(numel(blks),4);          % 이름표. 블록 밖에 쓰이므로 따로 피해야 한다
-for i = 1:numel(blks)
-    box(i,:) = get_param(blks{i}, 'Position');
-    nbx(i,:) = name_box(blks{i});
-end
+for i = 1:numel(blks), box(i,:) = get_param(blks{i}, 'Position'); end
 
 L = find_system(sys, 'FindAll','on', 'SearchDepth',1, 'Type','line');
 if isempty(L), return, end
@@ -108,9 +104,8 @@ for rh = unique(root)'
                 if dd > 0, own(end+1) = get_param(get_param(dd,'Parent'),'Handle'); end %#ok<AGROW>
             end
             kp = ~ismember(hnd, own);
-            ob = obstacles(box, nbx, kp);
             for k = 1:size(q,1)-1
-                if hits_any(ob, q(k,:), q(k+1,:)), bad = true; break, end
+                if hits_any(box(kp,:), q(k,:), q(k+1,:)), bad = true; break, end
                 %  남의 세로 토막과 x 를 나눠 쓰면 인쇄물에서 한 선으로 보인다
                 if abs(q(k,1)-q(k+1,1)) < 1e-6 && ...
                    clash(other, q(k,1), q(k,2), q(k+1,2)), bad = true; break
@@ -124,7 +119,7 @@ for rh = unique(root)'
     %  가지마다 깨끗한 경로를 미리 찾아 둔다. 하나라도 못 찾으면 손대지 않는다.
     %  어설프게 옮겨 나머지 가지를 망치는 것보다 그대로 두는 편이 낫다.
     keep = struct('hnd', hnd, 'src', sb0);
-    [pts, ok] = routes(box, nbx, keep, seg, rh, a, dst, o.Step);
+    [pts, ok] = routes(box, keep, seg, rh, a, dst, o.Step);
 
     %  제어 포트(enable·trigger)는 블록의 **위**에 있다. 먹이는 블록이 아래에
     %  있으면 선은 블록들을 돌아 올라가느라 네 번 꺾인다. 입력이 없는 순수한
@@ -145,19 +140,15 @@ for rh = unique(root)'
                     set_param(sb, 'Position', ...
                               round([b(1)-gap-w, y-h/2, b(1)-gap, y+h/2]));
                     a = get_param(s, 'Position');
-                    ib = strcmp(blks, getfullname(sb));
-                    box(ib,:) = get_param(sb, 'Position');
-                    nbx(ib,:) = name_box(sb);
-                    [pts, ok] = routes(box, nbx, keep, seg, rh, a, dst, o.Step);
+                    box(strcmp(blks, getfullname(sb)), :) = get_param(sb, 'Position');
+                    [pts, ok] = routes(box, keep, seg, rh, a, dst, o.Step);
                     if ok, break, end
                 end
                 if ok, break, end
             end
             if ~ok
                 set_param(sb, 'Position', was);
-                ib = strcmp(blks, getfullname(sb));
-                box(ib,:) = was;
-                nbx(ib,:) = name_box(sb);
+                box(strcmp(blks, getfullname(sb)), :) = was;
                 a = get_param(s, 'Position');
             end
         end
@@ -177,10 +168,8 @@ for rh = unique(root)'
             h = was(4) - was(2);
             set_param(sb, 'Position', [was(1), yt-140-h, was(3), yt-140]);
             a = get_param(s, 'Position');
-            ib = strcmp(blks, getfullname(sb));
-            box(ib,:) = get_param(sb, 'Position');
-            nbx(ib,:) = name_box(sb);
-            [pts, ok] = routes(box, nbx, keep, seg, rh, a, dst, o.Step);
+            box(strcmp(blks, getfullname(sb)), :) = get_param(sb, 'Position');
+            [pts, ok] = routes(box, keep, seg, rh, a, dst, o.Step);
 
             %  제어 포트로 내려가는 세로 토막은 포트의 x 에 묶여 있다. 받는 블록들이
             %  세로로 포개져 있으면 아래 블록으로 가는 토막이 위 블록을 뚫는데,
@@ -198,24 +187,18 @@ for rh = unique(root)'
                     for j = 2:numel(cb)
                         q = old{j};  dx = (j-1)*step;
                         set_param(cb(j), 'Position', q + [dx 0 dx 0]);
-                        ic = strcmp(blks, getfullname(cb(j)));
-                        box(ic,:) = get_param(cb(j),'Position');
-                        nbx(ic,:) = name_box(cb(j));
+                        box(strcmp(blks, getfullname(cb(j))), :) = get_param(cb(j),'Position');
                     end
-                    [pts, ok] = routes(box, nbx, keep, seg, rh, a, dst, o.Step);
+                    [pts, ok] = routes(box, keep, seg, rh, a, dst, o.Step);
                     if ok, break, end
                 end
             end
             if ~ok
                 set_param(sb, 'Position', was);
-                ib = strcmp(blks, getfullname(sb));
-                box(ib,:) = was;
-                nbx(ib,:) = name_box(sb);
+                box(strcmp(blks, getfullname(sb)), :) = was;
                 for j = 1:numel(cb)
                     set_param(cb(j), 'Position', old{j});
-                    ic = strcmp(blks, getfullname(cb(j)));
-                    box(ic,:) = old{j};
-                    nbx(ic,:) = name_box(cb(j));
+                    box(strcmp(blks, getfullname(cb(j))), :) = old{j};
                 end
             end
         end
@@ -245,7 +228,7 @@ end
 end
 
 % -------------------------------------------------------------------------
-function [pts, ok] = routes(box, nbx, keep, seg, rh, a, dst, step)
+function [pts, ok] = routes(box, keep, seg, rh, a, dst, step)
 %ROUTES  가지 전부의 경로를 찾는다. 하나라도 못 찾으면 ok 가 거짓이다.
 %   어설프게 한 가지만 옮기면 나머지 가지가 옛 경로를 붙들어, 같은 신호가 두 길로
 %   가는 그림이 된다. 그래서 전부 아니면 전부 두기다.
@@ -259,18 +242,9 @@ for k = 1:numel(dst)
     side   = b(1) <= r(1) || b(1) >= r(3);
     %  이 가지의 장애물 — 내는 블록과 **이 가지가 가는** 블록만 뺀다
     kp     = ~ismember(keep.hnd, [keep.src; db]);
-    pts{k} = pick(obstacles(box, nbx, kp), seg, rh, a, b, side, step);
+    pts{k} = pick(box(kp,:), seg, rh, a, b, side, step);
     if isempty(pts{k}), ok = false; return, end
 end
-end
-
-% -------------------------------------------------------------------------
-function ob = obstacles(box, nbx, kp)
-%OBSTACLES  사각형과 **이름표**를 함께 돌려준다.
-%   이름은 블록 밖에 쓰인다. 사각형만 피해 고른 통로는 이름 글자 위를 지나가고,
-%   도면에서는 이름을 읽을 수 없다 — check_lines 의 (7) 이름표 위 선.
-nb = nbx(kp,:);
-ob = [box(kp,:); nb(~any(isnan(nb),2), :)];
 end
 
 % -------------------------------------------------------------------------

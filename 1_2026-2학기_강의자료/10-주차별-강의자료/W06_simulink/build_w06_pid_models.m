@@ -403,19 +403,12 @@ function addLogging(mdl, tags, xy)
 %  Scope 의 입력 포트 높이를 **읽어서** 그 높이에 From 을 놓는다.
 %  그러면 From -> Scope 가 전부 직선이 되고, To Workspace 는 그 선에서
 %  한 번만 꺾어 내려 받는다. 통로를 지어내면 반드시 겹치거나 두 번 꺾인다.
-%
-%  줄 간격은 **80 px**. Scope 의 입력 포트는 위아래 28 px 을 비우고 고르게
-%  놓이므로 키를 56 + 80*(n-1) 로 주면 간격이 정확히 80 이 된다. 예전처럼
-%  55 px 로 좁히면 To Workspace 의 이름표(블록 아래 14 px)가 다음 줄의
-%  From -> Scope 직선에 걸려 이름 위로 선이 지나간다 (2026-09-21 W06_P2·P3 —
-%  check_lines 의 (7) 이름표 위 선). 한 줄이 쓰는 자리는
-%  블록 30 + 이름표 14 + 여백 = 약 65 px 이다.
     n = numel(tags);
     s = add_subsys(mdl, 'Logging', [xy(1) xy(2) xy(1)+130 xy(2)+60], {}, {}, ...
                    gnc_colour('measurement'));
 
-    blk(s, 'simulink/Sinks/Scope', 'Scope_all', 460, 88 + 40*(n-1), ...
-        30, 56 + 80*(n-1), {'NumInputPorts', num2str(n)});
+    blk(s, 'simulink/Sinks/Scope', 'Scope_all', 460, 80 + (n-1)*30, ...
+        30, 40 + 60*(n-1), {'NumInputPorts', num2str(n)});
 
     for k = 1:n
         q = port_xy(s, 'Scope_all', 'Inport', k);

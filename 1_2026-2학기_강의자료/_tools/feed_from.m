@@ -28,26 +28,15 @@ x2 = round(b(1) - GAP);              % From 의 오른쪽 테두리(출력 포�
 r  = get_param([sys '/' dst], 'Position');
 sidePort = b(1) <= r(1) || b(1) >= r(3);
 
-%  그 자리에 이미 다른 블록·선이 있으면 같은 방향으로 10 px 씩 더 민다 (drop_tag 와 같다).
-%  아래위로만 훑으면 풀리지 않는 것이 있다 — 세로 통로의 x 는 From 의 **오른쪽
-%  테두리**에 묶여 있어서, 그 x 위에 남의 이름표가 걸려 있으면 아무리 내려도 그대로
-%  가로지른다 (2026-09-21 W06_3 의 Fr_Alloc_1_1 이 psi_ref_deg 의 이름을 그었다).
-%  그래서 포트에서 얼마나 떨어질지(GAP)도 함께 훑어 통로를 옆으로 옮긴다.
+%  그 자리에 이미 다른 블록·선이 있으면 같은 방향으로 10 px 씩 더 민다 (drop_tag 와 같다)
 sg = sign(dy);  ok = false;
-for g = GAP + [0 50 100 160 220 290]
-    x2 = round(b(1) - g);
-    for t = 0:40
-        y = round(b(2) + dy + sg*10*t);
-        if sidePort, pts = [x2 y; x2 b(2); b]; else, pts = [x2 y; b(1) y; b]; end
-        if sg == 0 || spot_free(sys, [x2-W, y-H/2, x2, y+H/2], ['Fr_' name '_' sfx], ...
-                                pts, {dst}), ok = true; break, end
-    end
-    if ok, break, end
+for t = 0:40
+    y = round(b(2) + dy + sg*10*t);
+    if sidePort, pts = [x2 y; x2 b(2); b]; else, pts = [x2 y; b(1) y; b]; end
+    if sg == 0 || spot_free(sys, [x2-W, y-H/2, x2, y+H/2], ['Fr_' name '_' sfx], ...
+                            pts, {dst}), ok = true; break, end
 end
-if ~ok                                         % 빈자리가 없으면 원래 자리 (검사가 보고한다)
-    x2 = round(b(1) - GAP);
-    y  = round(b(2) + dy);
-end
+if ~ok, y = round(b(2) + dy); end              % 빈자리가 없으면 원래 자리 (검사가 보고한다)
 
 blk = [sys '/Fr_' name '_' sfx];
 add_block('simulink/Signal Routing/From', blk, ...
