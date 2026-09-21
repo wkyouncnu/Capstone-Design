@@ -222,6 +222,7 @@ nTag  = containers.Map('KeyType','char','ValueType','double');
 lane  = containers.Map('KeyType','char','ValueType','double');
 tagY  = containers.Map('KeyType','char','ValueType','double');
 colOf = containers.Map('KeyType','char','ValueType','double');
+edgeL = containers.Map('KeyType','char','ValueType','double');
 
 for i = 1:numel(conn)
     c = conn(i);
@@ -248,6 +249,15 @@ for i = 1:numel(conn)
         [x, y] = free_slot(used, q(1)-o.Gap, q(2));
         used(end+1,:) = [x y]; %#ok<AGROW>
         move_to(m, c.src, x, y, 'right');                 % 출력이 오른쪽 테두리
+        %  이 태그 열의 **이름표까지**가 사슬 통로의 오른쪽 한계다. 통로를 그
+        %  안쪽에 두면 세로 토막이 태그 이름 위를 지나 이름을 읽을 수 없게 된다
+        %  (2026-09-21 W08_0·W08_1 의 Fr_psi_b — check_lines 의 (7) 이름표 위 선).
+        rr = get_param([m '/' c.src], 'Position');
+        tt = name_box([m '/' c.src]);
+        xl = rr(1);
+        if ~any(isnan(tt)), xl = min(xl, tt(1)); end
+        if ~isKey(edgeL, c.dst), edgeL(c.dst) = inf; end
+        edgeL(c.dst) = min(edgeL(c.dst), xl);
     end
 end
 
@@ -280,6 +290,13 @@ for i = 1:numel(conn)
         lo = a(1) + 150;
         if isKey(cnt, c.src), lo = max(lo, a(1) + 24 + 26*cnt(c.src)); end
         if xm < lo, xm = lo; end
+        %  받는 포트 왼쪽에 From 태그·상수 열이 서 있으면 그 이름표 앞에서 멈춘다.
+        %  포트 번호 순서는 지켜 준다 — 통로끼리 x 를 나눠 쓰면 한 선으로 보인다
+        if isKey(edgeL, c.dst)
+            nOut = numel(get_param([m '/' c.src], 'PortHandles').Outport);
+            xr   = edgeL(c.dst) - 10 - 26*(nOut - c.sp);
+            if xm > xr, xm = max(lo, xr); end
+        end
         if xm > b(1)-15, xm = max(a(1)+15, b(1)-15); end
         add_line(m, [a; xm a(2); xm b(2); b]);
     end

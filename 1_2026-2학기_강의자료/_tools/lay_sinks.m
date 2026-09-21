@@ -109,6 +109,14 @@ end
 % --- 4) 남는 블록들 아래에 종착 구역을 연다 ------------------------------
 stay  = ~ismember(name, down);
 occ   = box(stay,:);
+%  통로는 사각형뿐 아니라 **이름표**도 피해야 한다. 이름은 블록 밖에 쓰이므로,
+%  사각형만 보고 고른 통로가 이름 글자 위를 지나 이름을 읽을 수 없게 만든다
+%  (2026-09-21 W02_1 의 SelVel · W06_4 의 psi_ref_deg · W06_3 의 log_FL).
+nbx  = nan(numel(blks), 4);
+nbNm = name;
+for q = find(stay)'
+    nbx(q,:) = name_box(blks{q});
+end
 %  남은 선들보다도 아래여야 한다. lay_feedback 이 되먹임을 블록 아래 통로로
 %  돌려 놓았다면, 종착 구역이 그 통로 위에 앉아 선을 관통한다.
 yLine = -inf;
@@ -128,20 +136,25 @@ for i = mv
     a = port_xy(sys, conn(i).src, 'Outport', conn(i).sp);
     r = get_param([sys '/' conn(i).src], 'Position');
 
+    %  자기 이름표는 뺀다. 제 블록의 이름 위를 지나는 것은 지적이 아니다
+    mine = strcmp(nbNm, conn(i).src);
+    nb   = nbx(stay & ~mine, :);
+    occN = [occ; nb(~any(isnan(nb),2), :)];
+
     %  가로로 달릴 수 있는 한계 — 이 포트 높이에서 처음 만나는 블록 앞까지.
     %  그 너머로는 아무리 밀어도 가로 토막이 그 블록을 뚫는다. 한계를 모르고
     %  계속 밀면 통로가 도면 밖까지 나가 그림이 두세 배로 넓어진다
     %  (2026-09-17 W03_1 이 2823 px -> 5890 px 로 벌어졌다).
     xmax = inf;
-    for q = 1:size(occ,1)
-        if occ(q,2)+2 < a(2) && a(2) < occ(q,4)-2 && occ(q,1) > a(1)
-            xmax = min(xmax, occ(q,1) - 4);
+    for q = 1:size(occN,1)
+        if occN(q,2)+2 < a(2) && a(2) < occN(q,4)-2 && occN(q,1) > a(1)
+            xmax = min(xmax, occN(q,1) - 4);
         end
     end
 
     x = r(3);  got = [];
     while x <= xmax
-        if ~any(taken == x) && ~hits_any(occ, [x a(2)], [x yBand])
+        if ~any(taken == x) && ~hits_any(occN, [x a(2)], [x yBand])
             got = x; break
         end
         x = x + o.Lane;
