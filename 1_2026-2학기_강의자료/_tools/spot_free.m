@@ -3,11 +3,13 @@ function tf = spot_free(sys, rect, name, pts, skip)
 %
 %   tf = spot_free(s, [x1 y1 x2 y2], 'Go_X', [a; a(1) y; x1 y], {'MotorLag'})
 %
-%   drop_tag · feed_from 이 태그 자리를 고를 때 쓴다. 넷을 본다.
+%   drop_tag · feed_from 이 태그 자리를 고를 때 쓴다. 다섯을 본다.
 %     - 새 블록 사각형과 그 이름표(아래 14 px)가 다른 블록·이름표와 겹치는가
 %     - 새 선 PTS 가 다른 블록을 지나는가 (SKIP 에 적은 블록은 뺀다)
+%     - 새 선 PTS 가 다른 블록의 **이름표** 위를 지나는가
 %     - 이미 있는 선이 새 블록을 지나는가
-%   check_lines 의 (2) 블록관통 · (6) 블록겹침 과 같은 판정이다.
+%     - 이미 있는 선이 새 블록의 **이름표** 위를 지나는가
+%   check_lines 의 (2) 블록관통 · (6) 블록겹침 · (7) 이름표 위 선과 같은 판정이다.
 %
 %   왜 필요한가 / why this exists
 %       tag_feedback 은 태그를 포트에서 정해진 거리(90 px) 아래에 매단다. 그 자리에
@@ -21,16 +23,16 @@ nb = name_box(name, rect);
 b = find_system(sys, 'SearchDepth',1, 'Type','Block');
 b = b(~strcmp(b, sys));
 for i = 1:numel(b)
-    r = get_param(b{i}, 'Position');
+    r  = get_param(b{i}, 'Position');
     nm = get_param(b{i}, 'Name');
+    t  = name_box(b{i});
     if ov(rect, r) || ov(nb, r), return, end
-    if ~strcmp(get_param(b{i},'ShowName'),'off') && ...
-       any(strcmp(get_param(b{i},'Orientation'), {'right','left'}))
-        if ov(rect, name_box(nm, r)), return, end
-    end
+    if ~any(isnan(t)) && ov(rect, t), return, end
     if any(strcmp(nm, skip)), continue, end
     for k = 1:size(pts,1)-1
         if seg_hits(pts(k,:), pts(k+1,:), r), return, end
+        %  남의 이름표 위를 지나는 선은 그 이름을 지워 버린다
+        if ~any(isnan(t)) && seg_hits(pts(k,:), pts(k+1,:), t), return, end
     end
 end
 L = find_system(sys, 'FindAll','on', 'SearchDepth',1, 'Type','line');
@@ -38,18 +40,12 @@ for i = 1:numel(L)
     q = get_param(L(i), 'Points');
     for k = 1:size(q,1)-1
         if seg_hits(q(k,:), q(k+1,:), rect), return, end
+        %  이미 있는 선이 **새 태그의 이름표** 위를 지나면 태그 이름을 읽을 수 없다
+        %  (2026-09-21 W08_0·W08_1 의 Fr_psi_b)
+        if seg_hits(q(k,:), q(k+1,:), nb), return, end
     end
 end
 tf = true;
-end
-
-function t = name_box(nm, r)
-parts = strsplit(nm, newline);  w = 0;
-for k = 1:numel(parts)
-    c = double(parts{k});  w = max(w, sum(c < 128)*6.5 + sum(c >= 128)*12);
-end
-w  = max(w, r(3)-r(1));  cx = (r(1)+r(3))/2;
-t  = [cx-w/2, r(4)+2, cx+w/2, r(4)+2+14*numel(parts)];
 end
 
 function tf = ov(p, q)
