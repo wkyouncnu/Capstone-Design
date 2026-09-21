@@ -29,16 +29,22 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 > | Simulink | [Simulink Onramp](https://matlabacademy.mathworks.com/kr/details/simulink-onramp/simulink) · 담당 교수 Simulink 강의 [1부](https://youtu.be/a-afHg_fSaU) · [2부](https://youtu.be/070Yn0Hw5a0) |
 
 > [!important] 강의자료 저장소 — 처음 한 번만 `git clone`, 그 뒤로는 `git pull`
-> **<https://github.com/wkyouncnu/Capstone-Design>** · 공개 저장소이므로 로그인 없이 받아짐
+>
+> | 저장소 | 주소 | 받는 자리 (WSL) |
+> |---|---|---|
+> | 강의자료 — 주차 문서 · Simulink 모델 · MATLAB 스크립트 | **<https://github.com/wkyouncnu/Capstone-Design>** | `~/Capstone-Design` |
+> | ROS 2 예제 패키지 `usv_basics` — 2주차부터 쓰는 노드 코드 | **<https://github.com/wkyouncnu/usv_basics>** | `~/capstone_ws/src/usv_basics` |
 >
 > | 언제 | 명령 (VS Code 의 WSL 창 터미널) | 하는 일 |
 > |---|---|---|
-> | 처음 한 번 | `cd ~ && git clone https://github.com/wkyouncnu/Capstone-Design.git` | 전체를 받음 (약 320 MB) |
-> | 매주 수업 전 | `cd ~/Capstone-Design && git pull` | **바뀐 파일만** 받음. 다시 clone 하지 않음 |
+> | 처음 한 번 | `cd ~ && git clone https://github.com/wkyouncnu/Capstone-Design.git` | 강의자료 전체를 받음 (약 400 MB) |
+> | 처음 한 번 | `mkdir -p ~/capstone_ws/src && cd ~/capstone_ws/src && git clone https://github.com/wkyouncnu/usv_basics.git` | 예제 패키지를 받음. 이어서 `cd ~/capstone_ws && colcon build --symlink-install` |
+> | 매주 수업 전 | `cd ~/Capstone-Design && git pull` · `cd ~/capstone_ws/src/usv_basics && git pull` | **바뀐 파일만** 받음. 다시 clone 하지 않음 |
 > | 무엇이 바뀌었는지 | `git log --oneline -10` · `git show --stat HEAD` | 교수가 갱신한 내역을 확인 |
 >
-> - 주차 문서는 `~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/` 에 있음
-> - MATLAB 은 같은 폴더를 `\\wsl.localhost\Ubuntu-22.04\home\<사용자명>\Capstone-Design\...` 경로로 엶
+> - 두 저장소 모두 공개 — 로그인 없이 받아짐
+> - 주차 문서는 `~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/` 에 있음. MATLAB 은 같은 폴더를 `\\wsl.localhost\Ubuntu-22.04\home\<사용자명>\Capstone-Design\...` 로 엶
+> - `usv_basics` 를 받은 뒤 새 노드가 생겼으면 `colcon build --symlink-install` 을 한 번 더 돌림
 > - 본인이 고친 파일 때문에 `git pull` 이 멈추면 `git stash` 로 치워 두고 다시 받음 → [[강의자료는-한-번-받고-git-pull-로-갱신한다]]
 
 - **과목**: 캡스톤디자인 (2026-2) · 충남대학교 자율운항시스템공학과
@@ -1205,7 +1211,7 @@ real_time_factor: 0.98737029965454381
 
 | RTF | 조치 |
 |---|---|
-| **10 % 이상** | 기본 명령 그대로 사용 |
+| **10 % 이상** | 기본 명령 그대로 사용. 1 보다 한참 낮아 반응이 굼뜨면 바로 아래 "쓰지 않는 센서를 끄고 띄운다" |
 | **1\~10 %** | 브라우저 · 화면 녹화 등 다른 프로그램을 끄고 다시 확인. 그래도 낮으면 워크스테이션 사용 |
 | **1 % 미만** | 이후 모든 주차에서 위 `ogre` 옵션을 붙여 실행 |
 
@@ -1215,6 +1221,61 @@ real_time_factor: 0.98737029965454381
 > - GUI 없이(`headless:=True`) 실행해도 0.26 % → GUI 문제가 아님
 > - 소프트웨어 렌더링(`LIBGL_ALWAYS_SOFTWARE=1`)이 오히려 3배 빠름(0.85 %) → GPU 경유 렌더링 병목
 > - 센서를 하나씩 켜 보니 **카메라를 켜는 순간** 떨어짐 → 표의 결과
+
+### RTF 가 1 보다 한참 낮고 흔들리면 — 쓰지 않는 센서를 끄고 띄운다
+
+- 1 % 미만은 아니지만 **30\~60 % 에 머물고 값이 계속 흔들리는** 환경이 많음. 배가 명령에 굼뜨게 반응하고 창을 돌려도 끊김
+- 원인은 위와 같음 — **센서 렌더링**. 기본 런치는 WAM-V 에 카메라 3대와 3D LiDAR 를 달아 띄움
+- Gazebo 의 물리 계산은 **한 스레드**에서 돎. 센서 렌더링이 같은 스레드를 잡아먹으면 그 스레드가 100 % 에 붙고 RTF 가 흔들림 → 코어가 많아도 소용없음
+- 6\~10주차 제어 실습에 필요한 것은 **GPS · IMU · 참값 오도메트리**뿐. 카메라·LiDAR 는 2-4 절 토픽 탐색, 4주차 토픽 전수조사·센서 배치 실습에서만 씀 — 그때는 기본 명령으로 띄움
+
+| 조건 (Ryzen 7 9700X · RTX 4070 SUPER · WSL2, 2026-09-21 실측, 40 초 · 1 초 구간 평균) | RTF 평균 | 표준편차 | 물리 스레드 CPU |
+|---|---|---|---|
+| 기본 명령 (카메라 3대 + LiDAR) + GUI | **0.385** | 0.069 | 103 % |
+| 기본 명령, GUI 없이 (`headless:=true`) | 0.431 | 0.076 | 103 % |
+| 기본 명령 + `--render-engine-server ogre` + GUI | 0.601 | 0.105 | 78 % |
+| **센서 최소 (GPS · IMU · 참값 오도메트리) + GUI** | **0.987** | 0.018 | 50 % |
+| 센서 최소, GUI 없이 | 0.990 | 0.003 | 48 % |
+
+- 센서를 끄면 RTF 가 **0.39 → 0.99** 로 오르고, 흔들림(표준편차)도 거의 사라짐
+- **GUI 는 거의 공짜임.** 센서를 끈 뒤에는 창을 띄워도, 확대·회전해도 RTF 가 같음 (GPU 가 그림을 맡음)
+- `ogre` 옵션은 이 환경에서도 도움이 되지만(0.39 → 0.60) 센서를 끄는 것만 못함
+
+1. 쓰지 않는 센서를 끈 WAM-V 를 만듦 — VRX 원본 파일을 **고치지 않고** 인자만 줌
+
+```bash
+xacro $(ros2 pkg prefix wamv_gazebo)/share/wamv_gazebo/urdf/wamv_gazebo.urdf.xacro gps_enabled:=true imu_enabled:=true ground_truth_enabled:=true camera_enabled:=false lidar_enabled:=false > ~/capstone_ws/wamv/wamv_lite.urdf
+```
+
+> [!warning] 위 명령은 **한 줄**이다. `~/capstone_ws/wamv` 폴더가 없으면 먼저 `mkdir -p ~/capstone_ws/wamv`
+
+2. 그 파일로 VRX 를 띄움
+
+```bash
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/wamv_lite.urdf
+```
+
+3. 수업 모델이 쓰는 토픽이 그대로 나오는지 확인 (새 터미널)
+
+```bash
+ros2 topic hz /wamv/sensors/imu/imu/data
+```
+
+- 정상 출력 — 같은 환경, 센서 최소 구성 실측
+
+| 토픽 | 주기 | 쓰는 곳 |
+|---|---|---|
+| `/wamv/sensors/imu/imu/data` | 99.0 Hz | 2-4 절 · 과제 3 · 4주차 2-8 |
+| `/wamv/sensors/gps/gps/fix` | 19.8 Hz | 2-4 절 · 과제 3 · 4주차 2-8 |
+| `/wamv/sensors/position/ground_truth_odometry` | 9.9 Hz | 3주차 3-5 · 6\~10주차 VRX 모델 |
+| `/wamv/thrusters/left/thrust` · `right/thrust` | 구독자 1 | 모든 주차의 추력 명령 |
+
+- 추력 명령도 그대로 들음 — 좌우 200 N 을 6 초 주면 배가 약 7 m 나아감
+
+> [!note] 센서를 다시 켜는 법
+> - 위 1번 명령에서 `camera_enabled:=true` 또는 `lidar_enabled:=true` 로 바꿔 파일을 다시 만들면 됨
+> - 기본 명령(`urdf:=` 없이)으로 띄우면 원래 구성(카메라 3대 + LiDAR, 참값 오도메트리 없음)으로 돌아감
+> - `ground_truth_enabled:=True` 를 **런치 인자**로 주면 무시됨. 반드시 `xacro` 의 인자로 줌 (3-5 절과 같은 이유)
 
 ---
 
