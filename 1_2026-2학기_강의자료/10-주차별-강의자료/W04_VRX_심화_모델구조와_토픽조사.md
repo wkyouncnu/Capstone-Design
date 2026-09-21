@@ -28,6 +28,19 @@ summary: WAM-V URDF·Xacro 구조, 센서 배치 수정, Mapviz 위성지도, �
 > | MATLAB | [MATLAB Onramp](https://matlabacademy.mathworks.com/kr/details/matlab-onramp/gettingstarted) · [Core MATLAB Skills](https://matlabacademy.mathworks.com/details/core-matlab-skills/lpmlcms) |
 > | Simulink | [Simulink Onramp](https://matlabacademy.mathworks.com/kr/details/simulink-onramp/simulink) · 담당 교수 Simulink 강의 [1부](https://youtu.be/a-afHg_fSaU) · [2부](https://youtu.be/070Yn0Hw5a0) |
 
+> [!important] 강의자료 저장소 — 처음 한 번만 `git clone`, 그 뒤로는 `git pull`
+> **<https://github.com/wkyouncnu/Capstone-Design>** · 공개 저장소이므로 로그인 없이 받아짐
+>
+> | 언제 | 명령 (VS Code 의 WSL 창 터미널) | 하는 일 |
+> |---|---|---|
+> | 처음 한 번 | `cd ~ && git clone https://github.com/wkyouncnu/Capstone-Design.git` | 전체를 받음 (약 320 MB) |
+> | 매주 수업 전 | `cd ~/Capstone-Design && git pull` | **바뀐 파일만** 받음. 다시 clone 하지 않음 |
+> | 무엇이 바뀌었는지 | `git log --oneline -10` · `git show --stat HEAD` | 교수가 갱신한 내역을 확인 |
+>
+> - 주차 문서는 `~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/` 에 있음
+> - MATLAB 은 같은 폴더를 `\\wsl.localhost\Ubuntu-22.04\home\<사용자명>\Capstone-Design\...` 경로로 엶
+> - 본인이 고친 파일 때문에 `git pull` 이 멈추면 `git stash` 로 치워 두고 다시 받음 → [[강의자료는-한-번-받고-git-pull-로-갱신한다]]
+
 - **과목**: 캡스톤디자인 (2026-2) · 충남대학교 자율운항시스템공학과
 - **이번 주차 학습 내용**: ① WAM-V 내부를 뜯어보고 **센서를 직접 옮겨 보기** ② **토픽 전수조사표** 작성 ③ 위성지도에 항적 그리기
 

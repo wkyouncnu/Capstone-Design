@@ -211,6 +211,23 @@ check_struct() {
   done
   note "마무리 뒤에 놓인 실습 절" "$bad"
   FAIL=$((FAIL+bad))
+
+  head2 "16. 첫 페이지의 강의자료 저장소 블록"
+  # 학생이 어느 문서를 열어도 첫 페이지에서 저장소 주소와 git pull 절차를 보아야 한다.
+  # 원본은 _templates/강의자료저장소블록.md — 문서마다 고쳐 쓰지 않는다.
+  local miss=0 g
+  for g in 10-주차별-강의자료/W*.md 00-운영/강의계획서.md 00-운영/평가와-팀운영.md \
+           00-운영/AI에이전트-활용-정책.md; do
+    [ -f "$g" ] || continue
+    if ! grep -q '강의자료 저장소 — 처음 한 번만' "$g"; then
+      echo "     [블록 없음] $g"; miss=$((miss+1))
+    elif [ "$(grep -n 'github.com/wkyouncnu/Capstone-Design>' "$g" | head -1 | cut -d: -f1)" -gt 60 ]; then
+      echo "     [첫 페이지 아님] $g"; miss=$((miss+1))
+    fi
+  done
+  note "저장소 블록 누락" "$miss"
+  [ $miss -gt 0 ] && echo "     -> _templates/강의자료저장소블록.md 를 참조 강의 블록 뒤에 넣는다"
+  FAIL=$((FAIL+miss))
 }
 
 check_refs() {
