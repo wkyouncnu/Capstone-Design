@@ -31,7 +31,7 @@ function build_w09_models()
     build_offline();
     build_vrx();
     % 최상위 배치 — autorouting 에 맡기지 않고 규칙대로 직접 놓는다.
-    % 겹침 0 · 블록관통 0 · 꺾임3회+ 0 이 합격선 (references/line-routing.md)
+    % check_lines 의 일곱 항목이 전부 0 이 합격선 (references/line-routing.md)
     lay_chain('W09_0_offline', {'Guidance','Mission','InnerLoop','Thrusters','MotionModel'}, ...
               'Boxes', {'Animate','Logging'}, 'Wrap', 3);
     lay_chain('W09_1_vrx', {'Guidance','Mission','InnerLoop','Thrusters', ...

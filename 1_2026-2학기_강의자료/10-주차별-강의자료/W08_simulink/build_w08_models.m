@@ -31,7 +31,7 @@ function build_w08_models()
     build_offline();
     build_vrx();
     % 최상위 배치 — autorouting 에 맡기지 않고 규칙대로 직접 놓는다.
-    % 겹침 0 · 블록관통 0 · 꺾임3회+ 0 이 합격선 (references/line-routing.md)
+    % check_lines 의 일곱 항목이 전부 0 이 합격선 (references/line-routing.md)
     %  Wrap — 사슬을 접는 칸 수. 겹침 0 이 되는 것 중 가장 작은 쪽을 재서 골랐다
     lay_chain('W08_0_offline', {'Guidance','InnerLoop','Thrusters','MotionModel'}, ...
               'Boxes', {'Animate','Logging'}, 'Wrap', 2);

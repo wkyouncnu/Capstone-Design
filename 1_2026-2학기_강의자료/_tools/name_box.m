@@ -18,7 +18,7 @@ function t = name_box(blk, r)
 %       check_lines 의 (6) 블록겹침 · (7) 이름표 위 선과 같은 계산이다. 고칠 때는
 %       둘을 함께 고칠 것.
 
-nm = '';  ori = 'right';  alt = false;  known = false;
+ori = 'right';  alt = false;  known = false;  pos = [];
 try
     nm    = get_param(blk, 'Name');
     pos   = get_param(blk, 'Position');

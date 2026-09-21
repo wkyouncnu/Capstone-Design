@@ -320,7 +320,7 @@ pkill -f "vrx_gz|vrx_ros|ros_gz_bridge|gz sim|ruby|parameter_bridge"
 
 | 파일 | 읽을 때 |
 |---|---|
-| **`references/line-routing.md`** | **선을 그을 때마다. 블록 관통 0 · 꺾임 1회 · 겹침 0 이 합격선** |
+| **`references/line-routing.md`** | **선을 그을 때마다. `check_lines` 의 일곱 항목이 전부 0 이 합격선** |
 | `references/layout.md` | 배치가 마음에 안 들 때. `tidy_model` 의 도구를 고치기 전에 |
 | `references/build-models.md` | 새 모델을 만들 때마다 |
 | `references/subsystems.md` | **선이 겹치거나 최상위가 복잡할 때.** 서브시스템 관용구·색 이름표 |

@@ -33,7 +33,7 @@ function build_w06_pid_models()
     build_p2(ROW);
     build_p3(ROW);
 
-    fprintf('\n배선 검사 — 겹침 0 · 블록관통 0 · 꺾임3회+ 0 이 합격선\n');
+    fprintf('\n배선 검사 — check_lines 의 일곱 항목이 전부 0 이 합격선\n');
     names = {'W06_P1_pid_step','W06_P2_pid_byhand','W06_P3_boat_speed'};
     for k = 1:numel(names)
         check_lines(names{k}, true);
