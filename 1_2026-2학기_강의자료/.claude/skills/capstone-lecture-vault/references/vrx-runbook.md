@@ -69,6 +69,17 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "extra_gz_args:=-
 - GUI fps 측정: `timeout 10 gz topic -e -t /gui/camera/pose | grep -c "^position"` ÷ 10 (MinimalScene 이 렌더 프레임마다 발행)
 - 순간값이 아니라 **구간 평균**으로 판정한다 — `/stats` 의 sim_time·real_time 차분을 1 초 구간으로 나눠 평균·표준편차·최솟값
 - `--gui-config` 로 ComponentInspector·EntityTree 를 뺀 가벼운 GUI 설정은 **효과 없음** (1.5 fps) — 병목은 패널이 아니라 3D 렌더링
+- 학생용 도구는 `10-주차별-강의자료/W03_vrx_lite/` (`run_vrx.sh` · `make_wamv_lite.sh` · `measure_vrx.sh` · `wamv_lite.urdf`). 3주차 §2-3 "저사양 1\~7"
+- 60 초 비교 (2026-09-22, `measure_vrx.sh`): 기본 0.016 / 1.2 fps · 서버 ogre 0.925 / 0.9 · full 0.834 / 49.3 · **lite 0.984 / 49.5**
+- LiDAR 의 SDF 센서 형식은 `gpu_ray` (`gpu_lidar` 아님). 렌더링 센서 감지 grep 에 둘 다 넣는다
+
+### RTF 가 좋아도 Simulink 가 뒤처질 수 있다 — `u_ss` 로 판정 (2026-09-22)
+
+- Simulink(Windows) 와 VRX(WSL) 는 같은 CPU 를 나눠 쓴다. 옆에서 무거운 작업을 돌리면 모델 시각이 VRX 보다 느리게 흐른다
+- 실측: `/stats` 를 초당 250 건 JSON 으로 받는 측정을 겹쳐 돌렸더니 60 초 직진 **119.8 m · 2.016 m/s** (정상 77.5 m). VRX RTF 는 0.98 로 정상이었다
+- 판정: 좌우 200 N 의 마지막 10 초 대지속도 `u_ss` 가 **1.33 m/s** 면 동기. 1.4 이상이면 모델이 뒤처진 것
+- `sim()` 의 벽시계 시간에는 모델 시작 준비(ROS 노드 생성 등 2\~5 s)가 들어 있다 — 벽시계 ÷ 모델 시간으로 지연을 재면 과대평가된다
+- 그래서 `measure_vrx.sh` 는 `/stats` 를 **1 초에 한 번**만 읽는다
 
 ---
 

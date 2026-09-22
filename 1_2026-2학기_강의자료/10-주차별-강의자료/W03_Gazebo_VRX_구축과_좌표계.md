@@ -1104,6 +1104,9 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 - 시드니 레가타 해역에 WAM-V가 떠 있으면 성공
 - 이 터미널은 **실습 내내 켜 둠.** 이후 명령은 새 터미널(또는 새 분할)에서 실행
 
+> [!tip] 노트북에서 창이 끊기거나 배가 거의 안 움직이면
+> 이 절 뒤쪽 **"성능이 낮은 노트북에서 VRX 돌리기"** 의 한 줄 명령으로 띄움. 원인 · 방법 · 실측 비교가 모두 거기 있음
+
 > [!tip] 창이 표시되기까지 시간이 소요된다
 > 처음 실행하면 모델을 온라인에서 받음. 몇 분 기다릴 것
 > 받은 모델은 `~/.gz/fuel/` 에 저장되어 다음부터는 빠름
@@ -1123,7 +1126,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 | 2 | **부표**가 놓여 있음 | 빨강·검정·초록·흰색 원뿔과 주황 구 |
 | 3 | **해안과 나무**가 보임 | 화면 위쪽. 시드니 레가타 센터 |
 | 4 | **부두**가 있음 | 왼쪽 위 회색 구조물 |
-| 5 | 오른쪽 아래 **RTF** 가 0이 아님 | 예: `37 %` — 시간이 흐르고 있다는 뜻. 기준은 아래 "RTF 판단 기준" |
+| 5 | 오른쪽 아래 **RTF** 가 0이 아님 | 예: `37 %` — 시간이 흐르고 있다는 뜻. 기준은 아래 "저사양 6" 의 "RTF 판단 기준" |
 | 6 | **파도가 움직임** | 파랑 플러그인 동작 중 |
 | 7 | **배가 파도를 따라 흔들림** | 유체력 · 부력 플러그인 동작 중 |
 
@@ -1168,38 +1171,59 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | 확대·축소 | 휠 스크롤 |
 | 물체 정보 | 왼쪽 버튼 클릭 → 오른쪽 **Component inspector** |
 
-### RTF 가 1 % 미만이면 — 카메라 렌더링 병목
+### 성능이 낮은 노트북에서 VRX 돌리기 — 먼저 결론
 
-- 창은 떴는데 오른쪽 아래 실시간 계수가 **`0.2 %` \~ `1 %`** 이면 배가 사실상 멈춘 상태임
-- 이 상태에서는 §2-5·§2-6 에서 추력을 줘도 **움직임이 보이지 않음**
-- 새 터미널에서 수치로 확인
+> [!important] 창이 끊기거나 RTF 가 낮으면 이 한 줄로 띄운다
+> ```bash
+> cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash run_vrx.sh
+> ```
+> - 저장소에 들어 있는 **센서 최소 WAM-V**(`wamv_lite.urdf`)를 **GUI 렌더 엔진 `ogre`** 로 띄움
+> - Intel 그래픽 노트북 실측: RTF **0.016 → 0.984**, 화면 **1.2 → 49.5 fps** (60 초 평균)
+> - 6\~10주차 제어 실습(GPS · IMU · 참값 오도메트리)이 그대로 돌아감
+> - 카메라·LiDAR 가 필요한 2-4 절 · 4주차 토픽 조사는 `bash run_vrx.sh full`
 
-```bash
-gz topic -e -t /stats -n 1 | grep real_time_factor
-```
+- 아래 1\~7 은 **왜 느린지, 무엇을 바꾸는지, 얼마나 좋아지는지** 를 순서대로 설명함
+- 데스크톱처럼 이미 빠른 환경은 5 절의 진단만 해 보고 넘어가도 됨
 
-- 비정상 출력 (Intel Arc 140V 노트북 실측)
+### 저사양 1. 증상 — 두 가지 "느림" 은 서로 다르다
 
-```
-real_time_factor: 0.0026878428978619109
-```
+| 증상 | 화면에서 보이는 것 | 수치 (Intel Arc 140V 노트북) |
+|---|---|---|
+| **물리가 느림** | 추력을 줘도 배가 거의 안 움직임. 오른쪽 아래 RTF 가 `1.61 %` | RTF 0.016 |
+| **화면이 느림** | RTF 는 `90 %` 인데 창이 반쯤 그려진 채 멈춤. 드래그·휠에 1 초 넘게 늦게 반응 | 화면 0.9 fps |
 
-- 원인: **`ogre2` 렌더 엔진**. WSL 의 D3D12 그래픽 경로(Intel 그래픽)에서 `ogre2` 가 극단적으로 느려짐
-  - 서버 쪽: 카메라 센서 3대 → 물리 시간이 거의 흐르지 않음 (RTF)
-  - 화면 쪽: GUI 가 바다를 그리는 데 한 프레임에 약 1 초 → 마우스로 돌리거나 휠을 굴려도 반응 없음
-- 조치: 서버와 화면의 렌더 엔진을 **둘 다** `ogre` 로 바꿔 실행. **월드·모델 파일은 고치지 않음**
+- 두 증상은 **원인이 다르고 해법도 다름.** 하나만 고치면 다른 하나가 남음
+- 용어 정리
 
-```bash
-ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"
-```
+| 용어 | 뜻 | 좋은 값 |
+|---|---|---|
+| RTF (Real Time Factor) | 시뮬레이션 시간 ÷ 실제 시간. 물리 계산의 속도 | 1.0 에 가까울수록 |
+| fps (frames per second) | GUI 가 1 초에 화면을 몇 장 그리는가. 마우스 반응 속도 | 30 이상이면 매끄러움 |
+| 렌더 엔진 | 3D 장면을 그림으로 바꾸는 프로그램. Gazebo 는 `ogre2`(기본) 와 `ogre`(이전 세대) 를 가짐 | — |
+| 서버 / GUI | Gazebo 는 **물리를 계산하는 서버**와 **창을 그리는 GUI** 두 프로세스로 돎 | — |
+| D3D12 변환 층 | WSL 의 리눅스 그래픽 명령(OpenGL)을 Windows 그래픽(Direct3D 12)으로 바꿔 주는 층 | — |
 
-> [!warning] 위 명령은 **한 줄**이다. 따옴표까지 그대로 복사한다
+### 저사양 2. 원인 — 기본 렌더 엔진 `ogre2` 가 Intel 그래픽에서 극단적으로 느림
 
-- 정상 출력
+![Gazebo 의 두 프로세스와 렌더링 병목](../assets/w03-render-bottleneck.svg)
 
-```
-real_time_factor: 0.98737029965454381
-```
+| 그림에서 | 읽는 법 |
+|---|---|
+| 위 두 상자 | 서버와 GUI 는 **따로 그림을 그림**. 서버는 카메라·LiDAR 센서 영상, GUI 는 사람이 보는 화면 |
+| 가운데 빨간 상자 | 둘 다 기본값으로 `ogre2` 를 씀. WSL → D3D12 → Intel 그래픽 경로에서 한 장에 약 1 초 걸림 |
+| 아래 빨간 글씨 | 서버가 막히면 **RTF**, GUI 가 막히면 **fps** 가 떨어짐 |
+| 초록 상자 | 해법 1 은 서버의 그림 그릴 일을 없앰, 해법 2 는 GUI 의 엔진을 바꿈 |
+
+- **서버 쪽** — 카메라 3대와 LiDAR 는 매 순간 영상을 그려야 함. 이 작업이 물리 계산과 같은 스레드를 붙잡아 RTF 가 떨어짐
+- **GUI 쪽** — 바다 · 하늘 · 해안을 `ogre2` 로 그리는 데 한 장에 약 1 초. 한 장을 다 그려야 다음 마우스 입력을 받으므로 조작이 멈춘 것처럼 보임
+- 두 쪽 모두 **월드·모델 파일은 고치지 않고** 실행 인자만으로 해결됨
+
+> [!note] 원인을 이렇게 좁혔다 (기준 노트북, 2026-09-15 · 09-22 실측)
+> - GUI 없이(`headless:=true`) 띄워도 RTF 0.26 % → 서버 쪽 문제
+> - 센서를 하나씩 켜 보니 **카메라를 켜는 순간** 99 % → 0.85 % 로 떨어짐 → 센서 렌더링이 원인
+> - 서버만 `ogre` 로 바꾸니 RTF 는 0.925 로 회복했으나 **화면은 0.9 fps 그대로** → GUI 는 별도 원인
+> - GUI 패널(Component inspector · Entity tree 등)을 전부 뺀 설정으로 띄워도 1.5 fps → 패널이 아니라 3D 렌더링이 원인
+> - GUI 만 `ogre` 로 바꾸니 49.5 fps → 확정
 
 | 조건 (Intel Arc 140V · Core Ultra 7 258V, 2026-09-15 실측) | RTF |
 |---|---|
@@ -1207,61 +1231,301 @@ real_time_factor: 0.98737029965454381
 | 배 + GPS · IMU · LiDAR (카메라 제외) | 99 % |
 | 배 + 카메라 1대 | 0.85 % |
 | **기본 명령** (카메라 3대) | **0.26 %** |
-| 기본 + `--render-engine-server ogre` | **98 %** (GUI 포함 90 %) |
+| 기본 + `--render-engine-server ogre` | 98 % |
 
-### RTF 는 정상인데 화면이 멈춘 것처럼 보이면 — GUI 렌더 엔진
+### 저사양 3. 도구 — 강의자료 저장소의 `W03_vrx_lite` 폴더
 
-- 증상: RTF 는 90 % 이상으로 나오는데, 창을 드래그하거나 휠을 굴려도 **1 초 이상 늦게** 움직임
-- RTF 는 **물리 계산**의 속도, 화면 반응은 **GUI 가 초당 몇 장을 그리는가**(fps) — 서로 다른 값임
-- 화면 fps 확인 (새 터미널, 10 초 동안 센 개수를 10 으로 나눔)
+- 이 절에서 쓰는 파일은 전부 강의자료 저장소에 들어 있음 → [W03_vrx_lite 폴더 (GitHub)](https://github.com/wkyouncnu/Capstone-Design/tree/main/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite)
+- WSL 에서의 위치: `~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite/`
+
+| 파일 | 하는 일 | 쓰는 곳 |
+|---|---|---|
+| `wamv_lite.urdf` | GPS · IMU · 참값 오도메트리만 켠 WAM-V. **받아서 바로 씀** | 방법 A |
+| `run_vrx.sh` | 모드를 골라 VRX 를 띄움. 실행하는 `ros2 launch` 명령을 먼저 화면에 찍음 | 방법 A · B |
+| `make_wamv_lite.sh` | 켤 센서를 골라 URDF 를 직접 만듦 | 방법 B |
+| `measure_vrx.sh` | 떠 있는 VRX 의 **평균 RTF** 와 **화면 fps** 를 잼 | 진단 · 확인 |
+
+1. 저장소를 최신으로 받음 (처음이면 문서 첫머리의 "강의자료 저장소" 표대로 `git clone` 부터)
 
 ```bash
-timeout 10 gz topic -e -t /gui/camera/pose | grep -c "^position"
+cd ~/Capstone-Design && git pull
 ```
 
-- 비정상 출력 (Intel Arc 140V 노트북, `--render-engine-server ogre` 만 준 상태) — 10 초에 9 장 = **0.9 fps**
+2. 폴더로 들어감
 
-```
-9
-```
-
-- 정상 출력 (`--render-engine-gui ogre` 를 함께 준 상태) — 10 초에 약 500 장 = **약 50 fps**
-
-```
-496
+```bash
+cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite
 ```
 
-| 조건 (Intel Arc 140V · Core Ultra 7 258V, 2026-09-22 실측, 30 초 평균) | RTF 평균 | 화면 fps |
-|---|---|---|
-| 기본 명령 | 0.018 | 1.1 |
-| 기본 + `--render-engine-server ogre` | 0.946 | **0.9** |
-| **기본 + `--render-engine-server ogre --render-engine-gui ogre`** | **0.916** | **49.6** |
+3. 파일이 네 개 보이는지 확인
 
-- 서버만 `ogre` 로 바꾸면 RTF 는 살아나지만 **화면은 여전히 초당 1 장** — 배는 움직이는데 조작이 안 되는 상태
-- GUI 도 `ogre` 로 바꾸면 화면이 약 50 배 빨라지고 RTF 는 거의 그대로임
-- `ogre` GUI 에서도 바다·배·부표·해안이 모두 그려짐 (위 조건에서 화면 캡처로 확인)
+```bash
+ls
+```
 
-- **RTF 판단 기준** (본 과목 전체에서 이 기준 하나만 씀)
+- 정상 출력
 
-| RTF | 조치 |
+```
+make_wamv_lite.sh  measure_vrx.sh  run_vrx.sh  wamv_lite.urdf
+```
+
+> [!tip] 한글 폴더 이름은 치지 않는다
+> `1_2026*` 처럼 `*` 를 쓰면 셸이 나머지 글자를 채움. 또는 앞 몇 글자만 치고 `Tab` 키를 누르면 자동 완성됨
+
+### 저사양 4. 방법 A — 받은 URDF 로 바로 실행
+
+1. VS Code 의 WSL 터미널(또는 Ubuntu 창)을 엶
+2. 폴더로 들어가 실행
+
+```bash
+cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash run_vrx.sh
+```
+
+- 정상 출력 (첫 네 줄. 그 뒤로 Gazebo 로그가 이어짐)
+
+```
+ROS_DOMAIN_ID=8  (MATLAB W0X_setup 의 값과 같아야 함)
+실행 명령:
+  ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "urdf:=/home/wkyoun/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite/wamv_lite.urdf" "extra_gz_args:=--render-engine-gui ogre"
+끝낼 때는 이 터미널에서 Ctrl+C
+```
+
+- `/home/wkyoun` 부분은 각자의 사용자명으로 나옴
+- `ROS_DOMAIN_ID` 는 2주차 2-5 에서 `.bashrc` 에 넣은 값. **비어 있다는 경고가 나오면** MATLAB 과 통신이 안 되므로 2주차 2-5 를 다시 확인
+- Gazebo 창이 뜨기까지 1\~2 분. 뜨면 오른쪽 아래 RTF 가 **98 % 근처**면 정상
+3. 끝낼 때는 이 터미널에서 `Ctrl+C`
+
+> [!note] 스크립트 없이 같은 것을 직접 치려면
+> 위 출력의 `실행 명령:` 다음 줄이 그대로 명령임. 스크립트는 이 명령을 대신 쳐 줄 뿐임
+> ```bash
+> ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite/wamv_lite.urdf "extra_gz_args:=--render-engine-gui ogre"
+> ```
+> - 위 명령은 **한 줄**임. `urdf:=` 뒤에는 `*` 를 쓸 수 없으므로 전체 경로를 적음
+
+- `run_vrx.sh` 의 모드
+
+| 명령 | URDF | 렌더 엔진 | 언제 |
+|---|---|---|---|
+| `bash run_vrx.sh` (= `lite`) | 저장소의 `wamv_lite.urdf` | GUI `ogre` | **3 · 6\~10주차 VRX 실습 기본** |
+| `bash run_vrx.sh mine` | 방법 B 로 만든 `~/capstone_ws/wamv/wamv_lite.urdf` | GUI `ogre`. 카메라·LiDAR 를 켰으면 서버도 `ogre` | 센서를 직접 고를 때 |
+| `bash run_vrx.sh full` | VRX 기본 (카메라 3대 + LiDAR) | 서버 · GUI `ogre` | 2-4 절, 4주차 토픽 조사 |
+| `bash run_vrx.sh original` | VRX 기본 | 기본 (`ogre2`) | 비교용. 느린 노트북에서는 화면이 멈춤 |
+
+- 명령만 보고 실행하지 않으려면 `DRY=1 bash run_vrx.sh mine`
+- 월드를 바꾸려면 `WORLD=2023_practice/practice_2023_wayfinding0_task bash run_vrx.sh`
+- `run_vrx.sh` 의 핵심 — 모드에 따라 인자만 고름
+
+```bash
+case "$MODE" in
+  lite|mine)
+    # 카메라 · LiDAR 는 서버가 그림을 그리는 센서 → 켰으면 서버 엔진도 ogre 로
+    if grep -q 'type="camera"\|type="gpu_ray"\|type="gpu_lidar"' "$U"; then
+      ARGS=("urdf:=$U" "extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre")
+    else
+      ARGS=("urdf:=$U" "extra_gz_args:=--render-engine-gui ogre")
+    fi ;;
+  full)     ARGS=("extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre") ;;
+  original) ARGS=() ;;
+esac
+exec ros2 launch vrx_gz competition.launch.py world:="$WORLD" "${ARGS[@]}"
+```
+
+> [!caution] 창을 닫았는데 다시 띄우면 이상하게 동작하면
+> 앞 실행의 프로세스가 남아 있는 것임. 새 터미널에서 정리하고 다시 띄움
+> ```bash
+> pkill -f "[g]z sim"; pkill -f "[p]arameter_bridge"; pkill -f "[r]obot_state_publisher"
+> ```
+
+### 저사양 5. 방법 B — URDF 를 직접 만든다
+
+- **URDF** — 로봇 한 대의 부품(선체 · 추진기 · 센서)과 위치를 적은 XML 파일 (1-5 절)
+- **xacro** — URDF 의 틀. `인자:=true/false` 로 부품을 넣고 빼서 URDF 를 찍어냄
+- VRX 원본 틀 `wamv_gazebo.urdf.xacro` 에 센서 스위치가 이미 있음 → **원본을 고치지 않고 인자만 바꿔** 새 URDF 를 만듦
+
+- VRX 원본의 스위치 부분 (VRX `wamv_gazebo/urdf/wamv_gazebo.urdf.xacro`, Apache-2.0, 발췌)
+
+```xml
+<xacro:arg name="camera_enabled" default="false" />
+<xacro:arg name="gps_enabled" default="false" />
+<xacro:arg name="imu_enabled" default="false" />
+<xacro:arg name="lidar_enabled" default="false" />
+<xacro:arg name="ground_truth_enabled" default="false" />
+...
+<xacro:if value="$(arg camera_enabled)">
+  <xacro:wamv_camera name="front_camera" y="0.3" x="0.75" P="${radians(15)}" />
+</xacro:if>
+<xacro:if value="$(arg gps_enabled)">
+  <xacro:wamv_gps name="gps_wamv" x="-0.85" />
+</xacro:if>
+<xacro:if value="$(arg imu_enabled)">
+  <xacro:wamv_imu name="imu_wamv" y="-0.2" />
+</xacro:if>
+<xacro:if value="$(arg lidar_enabled)">
+  <xacro:lidar name="lidar_wamv" y="-0.3" type="16_beam"/>
+</xacro:if>
+<xacro:if value="$(arg ground_truth_enabled)">
+  <xacro:wamv_p3d name="p3d_wamv"/>
+</xacro:if>
+```
+
+| 원본에서 | 읽는 법 |
 |---|---|
-| **10 % 이상** | 기본 명령 그대로 사용. 1 보다 한참 낮아 반응이 굼뜨면 바로 아래 "쓰지 않는 센서를 끄고 띄운다" |
-| **1\~10 %** | 브라우저 · 화면 녹화 등 다른 프로그램을 끄고 다시 확인. 그래도 낮으면 워크스테이션 사용 |
-| **1 % 미만** | 이후 모든 주차에서 위 `ogre` 옵션을 붙여 실행 |
+| `xacro:arg ... default="false"` | 인자를 주지 않으면 그 센서는 **꺼짐** |
+| `xacro:if value="$(arg gps_enabled)"` | 인자가 `true` 일 때만 안쪽 부품이 URDF 에 들어감 |
+| `x="-0.85"` 등 | 선체 기준 장착 위치 [m]. GPS 가 선체 중심보다 0.85 m 뒤에 있음 (3-4 절의 GPS 원 운동) |
+| `wamv_p3d` | 참값 오도메트리. 그림을 그리지 않으므로 켜도 느려지지 않음 |
 
-- 카메라 토픽은 옵션을 붙여도 그대로 발행됨 (`front_left_camera_sensor/image_raw` 수신 확인)
+1. 만드는 스크립트를 실행 — 기본은 GPS · IMU · 참값 오도메트리만
 
-> [!note] 원인을 이렇게 좁혔다
-> - GUI 없이(`headless:=True`) 실행해도 0.26 % → GUI 문제가 아님
-> - 소프트웨어 렌더링(`LIBGL_ALWAYS_SOFTWARE=1`)이 오히려 3배 빠름(0.85 %) → GPU 경유 렌더링 병목
-> - 센서를 하나씩 켜 보니 **카메라를 켜는 순간** 떨어짐 → 표의 결과
+```bash
+cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash make_wamv_lite.sh
+```
 
-### RTF 가 1 보다 한참 낮고 흔들리면 — 쓰지 않는 센서를 끄고 띄운다
+- 정상 출력
 
-- 1 % 미만은 아니지만 **30\~60 % 에 머물고 값이 계속 흔들리는** 환경이 많음. 배가 명령에 굼뜨게 반응하고 창을 돌려도 끊김
-- 원인은 위와 같음 — **센서 렌더링**. 기본 런치는 WAM-V 에 카메라 3대와 3D LiDAR 를 달아 띄움
-- Gazebo 의 물리 계산은 **한 스레드**에서 돎. 센서 렌더링이 같은 스레드를 잡아먹으면 그 스레드가 100 % 에 붙고 RTF 가 흔들림 → 코어가 많아도 소용없음
-- 6\~10주차 제어 실습에 필요한 것은 **GPS · IMU · 참값 오도메트리**뿐. 카메라·LiDAR 는 2-4 절 토픽 탐색, 4주차 토픽 전수조사·센서 배치 실습에서만 씀 — 그때는 기본 명령으로 띄움
+```
+만든 파일 : /home/wkyoun/capstone_ws/wamv/wamv_lite.urdf
+켠 센서   : GPS=true IMU=true 참값오도메트리=true 카메라=false LiDAR=false
+센서 목록 :
+  sensor name="contact_sensor" type="contact"
+  sensor name="navsat" type="navsat"
+  sensor name="imu_wamv_sensor" type="imu"
+  plugin OdometryPublisher (참값 오도메트리)
+```
+
+- `contact_sensor` 는 충돌 판정용으로 늘 들어 있음. 그림을 그리지 않음
+- `navsat` = GPS, `imu_wamv_sensor` = IMU, `OdometryPublisher` = 참값 오도메트리
+
+2. 스크립트 속 실제 명령은 `xacro` 한 줄임 — 스크립트 없이 직접 쳐도 같은 파일이 나옴
+
+```bash
+mkdir -p ~/capstone_ws/wamv
+```
+
+```bash
+xacro $(ros2 pkg prefix wamv_gazebo)/share/wamv_gazebo/urdf/wamv_gazebo.urdf.xacro gps_enabled:=true imu_enabled:=true ground_truth_enabled:=true camera_enabled:=false lidar_enabled:=false > ~/capstone_ws/wamv/wamv_lite.urdf
+```
+
+> [!warning] 위 명령은 **한 줄**이다
+
+| 인자 | 값 | 이유 |
+|---|---|---|
+| `gps_enabled` · `imu_enabled` | `true` | 2-4 절 · 과제 3 · 4주차 2-8 이 씀 |
+| `ground_truth_enabled` | `true` | 3-5 절 · 6\~10주차 VRX 모델이 씀 |
+| `camera_enabled` · `lidar_enabled` | `false` | **렌더링 병목의 원인.** 제어 실습에는 안 씀 |
+
+3. 만든 파일로 띄움
+
+```bash
+bash run_vrx.sh mine
+```
+
+- 직접 치려면 (한 줄)
+
+```bash
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/wamv_lite.urdf "extra_gz_args:=--render-engine-gui ogre"
+```
+
+4. 센서를 골라 켜 봄 — 뒤에 이름을 붙임
+
+```bash
+bash make_wamv_lite.sh camera
+```
+
+- 정상 출력 — 목록에 `front_camera_sensor` 가 추가됨
+
+```
+만든 파일 : /home/wkyoun/capstone_ws/wamv/wamv_lite.urdf
+켠 센서   : GPS=true IMU=true 참값오도메트리=true 카메라=true LiDAR=false
+센서 목록 :
+  sensor name="contact_sensor" type="contact"
+  sensor name="front_camera_sensor" type="camera"
+  sensor name="navsat" type="navsat"
+  sensor name="imu_wamv_sensor" type="imu"
+  plugin OdometryPublisher (참값 오도메트리)
+```
+
+- `bash make_wamv_lite.sh camera lidar` 처럼 둘 다 켤 수 있음. 모르는 이름을 주면 `모르는 센서: ...` 로 멈춤
+- 카메라나 LiDAR 를 켠 파일은 `run_vrx.sh mine` 이 서버 엔진도 `ogre` 로 바꿔 띄움
+- 되돌리려면 인자 없이 `bash make_wamv_lite.sh` 를 다시 실행
+
+> [!caution] 만든 `.urdf` 를 손으로 고치지 않는다
+> 파일 첫머리에 `autogenerated by xacro` 라고 적혀 있음. 고칠 것은 **인자**이고, 인자를 바꿔 다시 만듦
+> `ground_truth_enabled:=true` 를 `ros2 launch` 의 인자로 주면 **조용히 무시됨** — 반드시 `xacro` 의 인자로 줌 (3-5 절과 같은 이유)
+
+### 저사양 6. 진단과 결과 비교 — 평균 RTF 와 화면 fps
+
+- VRX 를 띄운 채 **새 터미널**에서 60 초 동안 잼. 순간값이 아니라 **평균**으로 판정함
+
+```bash
+cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash measure_vrx.sh 60
+```
+
+- 비정상 출력 — 기본 명령 (`bash run_vrx.sh original`), 기준 노트북 실측
+
+```
+측정 중 (60 초) ...
+측정 구간      : 실제 58.6 s 동안 시뮬레이션 0.9 s 진행
+RTF 평균       : 0.016
+RTF 구간별     : 표준편차 0.144 · 최솟값 0.003 · 구간 38개
+화면 fps       : 1.2
+판정           : 느림 — 3주차 2-3 의 run_vrx.sh lite 로 다시 띄울 것
+```
+
+- 정상 출력 — 권장 (`bash run_vrx.sh`), 같은 노트북
+
+```
+측정 중 (60 초) ...
+측정 구간      : 실제 57.8 s 동안 시뮬레이션 56.9 s 진행
+RTF 평균       : 0.984
+RTF 구간별     : 표준편차 0.003 · 최솟값 0.970 · 구간 52개
+화면 fps       : 49.5
+판정           : 정상
+```
+
+| 출력 줄 | 뜻 |
+|---|---|
+| 측정 구간 | 실제로 흐른 시간 동안 시뮬레이션 시간이 얼마나 흘렀는가. 둘이 비슷할수록 좋음 |
+| RTF 평균 | 위 두 시간의 비. **이 값으로 판정함** |
+| RTF 구간별 | 1 초마다 잰 RTF 의 흔들림. 최솟값이 평균과 가까울수록 안정적 |
+| 화면 fps | GUI 가 10 초 동안 그린 장수 ÷ 10. `/gui/camera/pose` 토픽을 셈 |
+
+- 네 가지 실행 방식을 같은 노트북에서 비교 (Intel Arc 140V · Core Ultra 7 258V · WSL2, 2026-09-22 실측, 각 60 초, VRX 새로 띄움)
+
+| 방식 | 명령 | RTF 평균 | RTF 최솟값 | 화면 fps | 센서 토픽 |
+|---|---|---|---|---|---|
+| 1 기본 명령 | `run_vrx.sh original` | 0.016 | 0.003 | 1.2 | 17 |
+| 2 서버만 `ogre` (이전 판 자료의 조치) | `--render-engine-server ogre` | 0.925 | 0.849 | **0.9** | 17 |
+| 3 원래 센서 + 서버 · GUI `ogre` | `run_vrx.sh full` | 0.834 | 0.685 | 49.3 | 17 |
+| **4 센서 최소 + GUI `ogre` (권장)** | **`run_vrx.sh`** | **0.984** | **0.970** | **49.5** | 3 |
+
+![실행 방식별 평균 RTF 와 화면 fps](../assets/w03-laptop-rtf-fps.svg)
+
+- 기본 명령 대비: RTF **0.016 → 0.984 (약 61 배)**, 화면 **1.2 → 49.5 fps (약 41 배)**
+- 이전 판 자료의 조치(서버만 `ogre`) 대비: RTF 0.925 → 0.984, 화면 **0.9 → 49.5 fps (약 55 배)**
+- 방식 3 은 화면은 좋지만 RTF 가 0.685 까지 흔들림 — 카메라 · LiDAR 가 여전히 서버를 붙잡음
+- **RTF 와 fps 가 둘 다 커야** 정상임. 방식 2 는 숫자(RTF)만 좋고 조작이 안 됨
+
+- 각 방식의 화면 (VRX 가 뜨고 약 90 초 뒤 캡처. 카메라 따라가기 명령은 그보다 약 70 초 전에 보냄)
+
+![방식 1 — 기본 명령. 오른쪽 아래 1.61 %](../assets/w03-laptop-original.png)
+
+![방식 2 — 서버만 ogre. RTF 는 90 % 인데 창이 반쯤 그려진 채 멈춤](../assets/w03-laptop-server-ogre.png)
+
+![방식 4 — 권장. 98.63 %, 창과 도구 막대가 모두 그려지고 배를 따라감](../assets/w03-laptop-lite-gui-ogre.png)
+
+| 캡처에서 | 방식 1 · 2 | 방식 4 |
+|---|---|---|
+| 오른쪽 아래 RTF | 1.61 % · 90.09 % | 98.63 % |
+| 위쪽 주황 제목줄 · 도구 막대 | **없음** — 창 크기를 바꾼 뒤 다시 그리지 못함 | 있음 |
+| 오른쪽 패널 | 흰 영역이 절반 — 그리다 멈춤 | Component inspector · Entity tree · View Angle |
+| 시점 | 배에서 멂 — 따라가기 명령이 **60 초 넘게** 반영되지 않음 | 배 뒤쪽 위에서 따라감 |
+
+> [!note] `ogre` 화면은 모양이 조금 다르다
+> - 하늘이 구름 없는 회색, 물이 더 어둡게 그려짐 — 이전 세대 엔진의 표현 한계
+> - **보이는 모양만 다름.** 물리 계산 · 센서 값 · 토픽은 서버가 만들므로 GUI 엔진과 무관함
+
+- 참고 — 빠른 데스크톱에서는 센서를 끄는 것만으로 충분함 (GUI 는 RTX 그래픽이 처리)
 
 | 조건 (Ryzen 7 9700X · RTX 4070 SUPER · WSL2, 2026-09-21 실측, 40 초 · 1 초 구간 평균) | RTF 평균 | 표준편차 | 물리 스레드 CPU |
 |---|---|---|---|
@@ -1271,58 +1535,99 @@ timeout 10 gz topic -e -t /gui/camera/pose | grep -c "^position"
 | **센서 최소 (GPS · IMU · 참값 오도메트리) + GUI** | **0.987** | 0.018 | 50 % |
 | 센서 최소, GUI 없이 | 0.990 | 0.003 | 48 % |
 
-- 센서를 끄면 RTF 가 **0.39 → 0.99** 로 오르고, 흔들림(표준편차)도 거의 사라짐
-- **GUI 는 거의 공짜임.** 센서를 끈 뒤에는 창을 띄워도, 확대·회전해도 RTF 가 같음 (GPU 가 그림을 맡음)
-- `ogre` 옵션은 이 환경에서도 도움이 되지만(0.39 → 0.60) 센서를 끄는 것만 못함
+- Gazebo 의 물리 계산은 **한 스레드**에서 돎. 센서 렌더링이 그 스레드를 잡아먹으면 100 % 에 붙고 RTF 가 흔들림 → 코어가 많아도 소용없음
 
-1. 쓰지 않는 센서를 끈 WAM-V 를 만듦 — VRX 원본 파일을 **고치지 않고** 인자만 줌
+- **RTF 판단 기준** (본 과목 전체에서 이 기준 하나만 씀. `measure_vrx.sh` 의 60 초 평균으로 판정)
 
-```bash
-xacro $(ros2 pkg prefix wamv_gazebo)/share/wamv_gazebo/urdf/wamv_gazebo.urdf.xacro gps_enabled:=true imu_enabled:=true ground_truth_enabled:=true camera_enabled:=false lidar_enabled:=false > ~/capstone_ws/wamv/wamv_lite.urdf
-```
+| 측정 결과 | 조치 |
+|---|---|
+| RTF 0.9 이상 **그리고** 화면 10 fps 이상 | 지금 방식 그대로 사용 |
+| 화면 10 fps 미만 (RTF 와 무관) | GUI 엔진을 `ogre` 로 — `bash run_vrx.sh` |
+| RTF 0.9 미만 또는 크게 흔들림 | 센서 최소 URDF 로 — `bash run_vrx.sh` |
+| `run_vrx.sh` 로도 RTF 0.5 미만 | 브라우저 · 화면 녹화 등 다른 프로그램을 끄고 다시 잼. 그래도 낮으면 워크스테이션 사용 |
 
-> [!warning] 위 명령은 **한 줄**이다. `~/capstone_ws/wamv` 폴더가 없으면 먼저 `mkdir -p ~/capstone_ws/wamv`
+### 저사양 7. 알고리즘을 함께 돌려도 유지되는가
 
-2. 그 파일로 VRX 를 띄움
+- 목적: Simulink 제어 모델이 도는 동안에도 **RTF · 화면 · 모델 동기**가 유지되는지 확인
+- 순서 — 터미널 두 개와 MATLAB
 
-```bash
-ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/wamv_lite.urdf
-```
-
-- 위 "RTF 1 % 미만" 에 해당했던 노트북(Intel 그래픽)은 GUI 렌더 엔진 옵션을 함께 줌
+1. 터미널 1 — VRX 를 새로 띄움
 
 ```bash
-ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/wamv_lite.urdf "extra_gz_args:=--render-engine-gui ogre"
+cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash run_vrx.sh
 ```
 
-> [!warning] 위 명령은 **한 줄**이다. 카메라가 없으므로 `--render-engine-server` 는 필요 없음
+2. 터미널 2 — 창이 뜨고 30 초쯤 지난 뒤 90 초 측정 시작
 
-| 조건 (Intel Arc 140V · Core Ultra 7 258V, 2026-09-22 실측) | 구간 | RTF 평균 | 화면 fps |
-|---|---|---|---|
-| 센서 최소, GUI 기본(`ogre2`) | 30 초 | 0.990 | **1.6** |
-| **센서 최소 + `--render-engine-gui ogre`** | 30 초 | **0.985** | **49.5** |
-| 위 구성 + MATLAB `W03_vrx_run('W03_3_vrx_drive', 60)` 실행 중 | 120 초 | **0.986** | 49.5 |
-| 위 구성 + WSL 안의 폐루프 제어 노드(20 Hz) 실행 중 | 180 초 | 0.953 | 49.0 |
+```bash
+cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash measure_vrx.sh 90
+```
 
-- 센서를 끄는 것만으로는 **RTF 만** 살아남. Intel 그래픽에서 화면을 살리는 것은 GUI 옵션임
-- 두 가지를 함께 쓰면 제어 알고리즘을 돌리는 동안에도 **RTF 약 0.95 이상 · 화면 약 50 fps** 가 유지됨
-- 같은 조건의 `W03_vrx_run` 출력 — 페이싱 비율이 실측 RTF 로 자동 설정됨
+3. MATLAB — 측정이 도는 동안 3-4 절 모델을 60 초 주행
+
+```matlab
+>> W03_setup
+>> S = W03_vrx_run('W03_3_vrx_drive', 60);
+```
+
+- 정상 출력 — MATLAB (기준 노트북 실측)
 
 ```
 2) RTF 측정 (10초)
-   RTF = 0.965  ->  페이싱 비율을 이 값으로 둔다
+   RTF = 0.968  ->  페이싱 비율을 이 값으로 둔다
 3) W03_3_vrx_drive 실행 (60초)
    추력 0 송신 완료
-[W03_3_vrx_drive / 직진] 첫 유효 0.00 s | 이동 72.86 m | 평균 1.214 m/s | d(psi) +2.51 deg | r 평균 +0.0045 rad/s
+[W03_3_vrx_drive / 직진] 첫 유효 0.00 s | 이동 77.49 m | 평균 1.292 m/s | d(psi) +2.52 deg | r 평균 +0.0118 rad/s
 ```
 
-3. 수업 모델이 쓰는 토픽이 그대로 나오는지 확인 (새 터미널)
+- 정상 출력 — 터미널 2 (Simulink 60 초 주행과 겹친 90 초)
+
+```
+측정 구간      : 실제 86.7 s 동안 시뮬레이션 85.3 s 진행
+RTF 평균       : 0.983
+RTF 구간별     : 표준편차 0.004 · 최솟값 0.961 · 구간 79개
+화면 fps       : 49.6
+판정           : 정상
+```
+
+4. **모델과 VRX 가 같은 속도로 흘렀는지** 확인 — 마지막 10 초의 대지속도
+
+```matlab
+>> o = S.out;  t = o.log_x_n.Time;
+>> X = squeeze(o.log_x_n.Data);  Y = squeeze(o.log_y_n.Data);
+>> j = t >= 50;
+>> u_ss = sum(hypot(diff(X(j)), diff(Y(j)))) / (t(find(j,1,'last')) - t(find(j,1)))
+```
+
+- 정상 출력
+
+```
+u_ss =
+    1.3250
+```
+
+| `u_ss` | 판정 |
+|---|---|
+| **1.33 m/s 근처** (1.28 \~ 1.38) | 정상. 좌우 200 N 의 정상상태 속도는 1.33 m/s (6주차 §1-2 실측 1.33, VRX 대조 1.332) |
+| 1.4 m/s 이상 | **모델이 VRX 보다 느리게 흐름** — VRX 의 1 초가 모델의 1 초보다 김 |
+
+> [!warning] RTF 가 좋아도 모델이 뒤처질 수 있다
+> - Simulink 는 Windows 쪽에서, VRX 는 WSL 쪽에서 **같은 CPU** 를 나눠 씀
+> - CPU 를 많이 쓰는 프로그램을 함께 돌린 실행에서 60 초 이동 **119.8 m**, 평균 **2.016 m/s** 가 나옴 (기준 노트북 실측, 정상은 77.5 m)
+> - 이때 VRX 의 RTF 는 0.98 로 정상이었음 → **RTF 만 보고는 알 수 없음.** `u_ss` 로 확인함
+> - 조치: 다른 프로그램을 끄고, **VRX 를 새로 띄워** 다시 실행
+
+- 3 · 4 의 결과가 둘 다 정상이면 6\~10주차 VRX 실습을 이 노트북에서 그대로 진행할 수 있음
+
+### 수업 모델이 쓰는 토픽 확인 — 센서 최소 구성
+
+- `bash run_vrx.sh` 로 띄운 뒤 새 터미널에서 확인
 
 ```bash
 ros2 topic hz /wamv/sensors/imu/imu/data
 ```
 
-- 정상 출력 — 같은 환경, 센서 최소 구성 실측
+- 정상 출력 — 센서 최소 구성 실측 (데스크톱)
 
 | 토픽 | 주기 | 쓰는 곳 |
 |---|---|---|
@@ -1333,10 +1638,9 @@ ros2 topic hz /wamv/sensors/imu/imu/data
 
 - 추력 명령도 그대로 들음 — 좌우 200 N 을 6 초 주면 배가 약 7 m 나아감
 
-> [!note] 센서를 다시 켜는 법
-> - 위 1번 명령에서 `camera_enabled:=true` 또는 `lidar_enabled:=true` 로 바꿔 파일을 다시 만들면 됨
-> - 기본 명령(`urdf:=` 없이)으로 띄우면 원래 구성(카메라 3대 + LiDAR, 참값 오도메트리 없음)으로 돌아감
-> - `ground_truth_enabled:=True` 를 **런치 인자**로 주면 무시됨. 반드시 `xacro` 의 인자로 줌 (3-5 절과 같은 이유)
+> [!note] 카메라 · LiDAR 가 다시 필요할 때
+> - 2-4 절 토픽 탐색, 4주차 토픽 전수조사 · 센서 배치 실습은 `bash run_vrx.sh full` 로 띄움
+> - 일부만 필요하면 `bash make_wamv_lite.sh camera` 로 만든 뒤 `bash run_vrx.sh mine`
 
 ---
 
@@ -2261,6 +2565,8 @@ ros2 topic list | grep ground_truth
 - [ ] `colcon build --merge-install` 성공
 - [ ] `competition.launch.py world:=sydney_regatta` 로 WAM-V 스폰
 - [ ] 파도가 움직이고 배가 흔들리는 것을 확인
+- [ ] `bash measure_vrx.sh 60` 으로 **평균 RTF 와 화면 fps** 를 적어 두었음 (RTF 0.9 이상 · 10 fps 이상이 아니면 `bash run_vrx.sh` 로 다시 띄워 재측정)
+- [ ] `bash make_wamv_lite.sh` 로 센서 최소 URDF 를 만들고 `bash run_vrx.sh mine` 으로 띄웠음
 - [ ] GPS / IMU 토픽을 `echo`, `hz` 로 확인
 - [ ] IMU 토픽의 QoS `Reliability` 를 확인하고 적어 두었음
 - [ ] `ros2 topic pub` 으로 배를 **직진**시켰음
@@ -2367,9 +2673,10 @@ ros2 topic list | grep ground_truth
 | `colcon build` 중 프로세스가 죽음 | 메모리 부족 | `--parallel-workers 2`, `.wslconfig` 메모리 상향 |
 | 빌드는 됐는데 실행 시 플러그인 오류 | **브랜치 미지정** | `cd ~/vrx_ws/src/vrx && git checkout humble` 후 재빌드 |
 | Gazebo 창이 안 뜨고 멈춤 | WSLg 미작동 | `wsl --update` → `xeyes` 확인 |
-| Gazebo가 매우 느림 (RTF 1\~10 %) | GPU 미사용 / RAM 부족 | 다른 프로그램 종료, 그래도 낮으면 워크스테이션 사용 (§2-3 RTF 판단 기준) |
-| **RTF 가 1 % 미만** (창·배는 정상으로 보임) | WSL D3D12 경로의 카메라 센서 렌더링 병목 (Intel 그래픽에서 재현) | `"extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"` 를 붙여 실행 (§2-3) |
-| **RTF 는 정상인데 창을 돌려도·휠을 굴려도 반응 없음** | GUI 의 `ogre2` 렌더링이 초당 1 장 수준 (Intel 그래픽에서 재현) | `--render-engine-gui ogre` 를 함께 줌. 화면 fps 로 확인 (§2-3) |
+| Gazebo가 매우 느림 (RTF 1\~10 %) | 카메라 · LiDAR 센서 렌더링 / GPU 미사용 / RAM 부족 | `W03_vrx_lite` 폴더에서 `bash run_vrx.sh` 로 다시 띄움. 그래도 낮으면 다른 프로그램 종료 → 워크스테이션 (§2-3 저사양 4 · 6) |
+| **RTF 가 1 % 미만** (창·배는 정상으로 보임) | WSL D3D12 경로의 카메라 센서 렌더링 병목 (Intel 그래픽에서 재현) | `bash run_vrx.sh`. 카메라가 꼭 필요하면 `bash run_vrx.sh full` (§2-3 저사양 2 · 4) |
+| **RTF 는 정상인데 창을 돌려도·휠을 굴려도 반응 없음** | GUI 의 `ogre2` 렌더링이 초당 1 장 수준 (Intel 그래픽에서 재현) | `bash run_vrx.sh` — GUI 엔진이 `ogre` 로 바뀜. `bash measure_vrx.sh` 의 화면 fps 로 확인 (§2-3 저사양 6) |
+| Simulink 주행에서 배가 너무 멀리 감 (60 초 직진 100 m 이상) | 모델이 VRX 보다 느리게 흐름 (같은 CPU 를 나눠 씀) | 마지막 10 초 속도 `u_ss` 가 1.33 m/s 근처인지 확인. 다른 프로그램을 끄고 VRX 를 새로 띄움 (§2-3 저사양 7) |
 | `ros2 topic list` 에 wamv 토픽이 없음 | 환경 미적용 | `source ~/vrx_ws/install/setup.bash` |
 | `ros2 topic pub` 했는데 배가 안 움직임 | 토픽명 불일치 | `ros2 topic list \| grep thrusters` 로 정확한 이름 확인 |
 | `view_frames` 가 빈 PDF 생성 | TF 발행 노드 미실행 | VRX 실행 확인, 몇 초 더 대기 |
@@ -2413,6 +2720,16 @@ ros2 topic list | grep ground_truth
 | `W03_teleop_plot.m` | 4단계의 항적 + $\psi, u, v, r$ 그림 |
 | `W03_euler_order.m` | 같은 세 각을 두 순서로 돌려 자세가 달라지는 것을 그림 (1-6절) |
 | `W03_vrx_run.m` | 2 · 3단계 실행기 — 토픽 확인 → RTF 측정 → 페이싱 = RTF 로 실행 → (3단계만) 추력 0 송신 → 그림 |
+
+- **`W03_vrx_lite/`** — 성능이 낮은 노트북에서 VRX 를 띄우는 도구 (§2-3 "성능이 낮은 노트북에서 VRX 돌리기")
+  - GitHub: [W03_vrx_lite 폴더](https://github.com/wkyouncnu/Capstone-Design/tree/main/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite)
+
+| 파일 | 하는 일 |
+|---|---|
+| `wamv_lite.urdf` | GPS · IMU · 참값 오도메트리만 켠 WAM-V (카메라 · LiDAR 없음) |
+| `run_vrx.sh` | `lite` · `mine` · `full` · `original` 모드로 VRX 를 띄움. 실행 명령을 먼저 화면에 찍음 |
+| `make_wamv_lite.sh` | 켤 센서를 골라 `~/capstone_ws/wamv/wamv_lite.urdf` 를 만듦 (`camera` · `lidar`) |
+| `measure_vrx.sh` | 평균 RTF · 구간별 흔들림 · 화면 fps 를 재고 판정함 |
 
 ### 공식 문서
 

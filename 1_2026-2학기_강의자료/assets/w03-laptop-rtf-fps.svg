@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="400" viewBox="0 0 960 400" font-family="Malgun Gothic, sans-serif">
+  <rect width="960" height="400" fill="#ffffff"/>
+  <text x="480" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#1e293b">같은 노트북, 실행 방식만 바꿨을 때 (Intel Arc 140V, 60 초 평균)</text>
+
+  <!-- 패널 제목 -->
+  <text x="490" y="66" text-anchor="middle" font-size="17" font-weight="bold" fill="#1d4ed8">RTF 평균 — 물리 시간 속도</text>
+  <text x="800" y="66" text-anchor="middle" font-size="17" font-weight="bold" fill="#d97706">화면 fps — 마우스 반응</text>
+
+  <!-- 축 -->
+  <line x1="360" y1="80" x2="360" y2="330" stroke="#cbd5e1"/>
+  <line x1="620" y1="80" x2="620" y2="330" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+  <line x1="680" y1="80" x2="680" y2="330" stroke="#cbd5e1"/>
+  <line x1="920" y1="80" x2="920" y2="330" stroke="#cbd5e1" stroke-dasharray="4 4"/>
+  <text x="360" y="352" text-anchor="middle" font-size="15" fill="#64748b">0</text>
+  <text x="620" y="352" text-anchor="middle" font-size="15" fill="#64748b">1.0</text>
+  <text x="680" y="352" text-anchor="middle" font-size="15" fill="#64748b">0</text>
+  <text x="920" y="352" text-anchor="middle" font-size="15" fill="#64748b">50</text>
+
+  <!-- 행 1 : 기본 -->
+  <text x="20" y="112" font-size="16" fill="#334155">① 기본 명령</text>
+  <rect x="360" y="96" width="4" height="24" fill="#dc2626"/>
+  <text x="372" y="114" font-size="16" font-weight="bold" fill="#dc2626">0.016</text>
+  <rect x="680" y="96" width="6" height="24" fill="#dc2626"/>
+  <text x="694" y="114" font-size="16" font-weight="bold" fill="#dc2626">1.2</text>
+
+  <!-- 행 2 : 서버만 ogre -->
+  <text x="20" y="172" font-size="16" fill="#334155">② 서버만 ogre (이전 자료)</text>
+  <rect x="360" y="156" width="240" height="24" fill="#94a3b8"/>
+  <text x="598" y="174" text-anchor="end" font-size="16" font-weight="bold" fill="#ffffff">0.925</text>
+  <rect x="680" y="156" width="4" height="24" fill="#dc2626"/>
+  <text x="692" y="174" font-size="16" font-weight="bold" fill="#dc2626">0.9</text>
+
+  <!-- 행 3 : 원래 센서 + 둘 다 ogre -->
+  <text x="20" y="232" font-size="16" fill="#334155">③ 원래 센서 + 서버·GUI ogre</text>
+  <rect x="360" y="216" width="217" height="24" fill="#94a3b8"/>
+  <text x="575" y="234" text-anchor="end" font-size="16" font-weight="bold" fill="#ffffff">0.834</text>
+  <rect x="680" y="216" width="237" height="24" fill="#94a3b8"/>
+  <text x="912" y="234" text-anchor="end" font-size="16" font-weight="bold" fill="#ffffff">49.3</text>
+
+  <!-- 행 4 : 권장 -->
+  <rect x="12" y="270" width="938" height="44" rx="6" fill="#f0fdfa"/>
+  <text x="20" y="292" font-size="16" font-weight="bold" fill="#0d9488">④ 권장: 센서 최소 + GUI ogre</text>
+  <rect x="360" y="276" width="256" height="24" fill="#0d9488"/>
+  <text x="612" y="294" text-anchor="end" font-size="16" font-weight="bold" fill="#ffffff">0.984</text>
+  <rect x="680" y="276" width="238" height="24" fill="#0d9488"/>
+  <text x="912" y="294" text-anchor="end" font-size="16" font-weight="bold" fill="#ffffff">49.5</text>
+
+  <text x="20" y="384" font-size="15" fill="#64748b">둘 다 커야 정상 — ②는 RTF 만 좋고 화면이 멈춤, ③은 화면만 좋고 RTF 가 흔들림 (최솟값 0.685)</text>
+</svg>
