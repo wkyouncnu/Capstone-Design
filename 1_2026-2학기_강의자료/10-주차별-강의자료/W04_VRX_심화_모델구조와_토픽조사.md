@@ -559,6 +559,14 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 - 시뮬레이터 터미널은 그대로 둠. 닫으면 토픽이 전부 사라짐
 - 3주차 §2-3 에서 RTF 가 1 % 미만이었다면 `"extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"` 를 붙임
 
+> [!tip] 노트북에서는 `run_vrx.sh full` 로 띄운다 — 이번 주차는 카메라 · LiDAR 가 **필요함**
+> ```bash
+> cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash run_vrx.sh full
+> ```
+> - 원래 센서(카메라 3대 + LiDAR) 그대로, 서버 · GUI 렌더 엔진만 `ogre` 로 바꿔 띄움 (3주차 2-3 "성능이 낮은 노트북에서 VRX 돌리기")
+> - 3주차의 `bash run_vrx.sh`(센서 최소)는 카메라 · LiDAR 가 없어 이번 주차 2-2 · 2-3 · 2-4 를 할 수 없음
+> - Intel Arc 140V 노트북 실측 (2026-09-22): 토픽 36 개로 아래 기준 환경과 같음, 30 초 평균 RTF 0.879 · 화면 49.5 fps, 카메라 영상 8.3 Hz 수신, 이 절 · 2-4 · 2-5 · 2-6 · 2-7 · 2-8 예제 전부 동작
+
 > [!warning] `ground_truth_enabled:=True` 를 런치 인자로 주면 **조용히 무시됨**
 > - `competition.launch.py` 의 인자는 `world` · `sim_mode` · `bridge_competition_topics` · `config_file` · `robot` · `headless` · `urdf` · `paused` · `competition_mode` · `extra_gz_args` 뿐임
 > - 없는 인자를 줘도 오류가 나지 않음 → `ground_truth_odometry` 토픽도 생기지 않음
@@ -1203,6 +1211,12 @@ gymkhana_task.sdf
 ros2 launch vrx_gz competition.launch.py world:=stationkeeping_task
 ```
 
+- 노트북은 월드 이름을 `WORLD=` 로 넘겨 같은 옵션으로 띄움 (실측 20 초 평균 RTF 0.919 · 화면 49.5 fps, `/vrx` 토픽 7 개, 약 60 초 뒤 `state: running`)
+
+```bash
+cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && WORLD=stationkeeping_task bash run_vrx.sh full
+```
+
 ![정지 유지 과제 월드 — WAM-V 와 표식 부표](../assets/w04-task-stationkeeping.png)
 
 | 확인 항목 | 화면에서 |
@@ -1527,6 +1541,16 @@ S = W04_rates_run(20);
 |---|---|---|
 | IMU | 74.90 Hz | 76.05 Hz |
 | GPS | 15.25 Hz | 15.36 Hz |
+
+- 저사양 노트북에서 잰 값 (Intel Arc 140V, 2026-09-22, `bash run_vrx.sh full` — GUI 를 띄운 채)
+
+| 토픽 | 설계값 | Simulink | `ros2 topic hz` |
+|---|---|---|---|
+| GPS | 20 Hz | 17.65 Hz (0.88) | 17.78 Hz |
+| IMU | 100 Hz | 84.20 Hz (0.84) | 79.21 Hz |
+| wind | 20 Hz | 9.30 Hz (0.47) | — |
+
+- 노트북에서도 **Simulink ≈ `ros2 topic hz`** 가 성립함. 바람만 비율이 절반 근처인 것도 기준 PC 와 같음
 
 | 읽는 법 | 뜻 |
 |---|---|
