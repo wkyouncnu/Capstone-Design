@@ -1235,7 +1235,7 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 
 ### 저사양 3. 도구 — 강의자료 저장소의 `W03_vrx_lite` 폴더
 
-- 이 절에서 쓰는 파일은 전부 강의자료 저장소에 들어 있음 → [W03_vrx_lite 폴더 (GitHub)](https://github.com/wkyouncnu/Capstone-Design/tree/main/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite)
+- 이 절에서 쓰는 파일은 전부 강의자료 저장소에 들어 있음 → [W03_vrx_lite 폴더 (GitHub)](https://github.com/wkyouncnu/Capstone-Design/tree/main/1_2026-2%ED%95%99%EA%B8%B0_%EA%B0%95%EC%9D%98%EC%9E%90%EB%A3%8C/10-%EC%A3%BC%EC%B0%A8%EB%B3%84-%EA%B0%95%EC%9D%98%EC%9E%90%EB%A3%8C/W03_vrx_lite)
 - WSL 에서의 위치: `~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite/`
 
 | 파일 | 하는 일 | 쓰는 곳 |
@@ -2722,7 +2722,7 @@ ros2 topic list | grep ground_truth
 | `W03_vrx_run.m` | 2 · 3단계 실행기 — 토픽 확인 → RTF 측정 → 페이싱 = RTF 로 실행 → (3단계만) 추력 0 송신 → 그림 |
 
 - **`W03_vrx_lite/`** — 성능이 낮은 노트북에서 VRX 를 띄우는 도구 (§2-3 "성능이 낮은 노트북에서 VRX 돌리기")
-  - GitHub: [W03_vrx_lite 폴더](https://github.com/wkyouncnu/Capstone-Design/tree/main/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite)
+  - GitHub: [W03_vrx_lite 폴더](https://github.com/wkyouncnu/Capstone-Design/tree/main/1_2026-2%ED%95%99%EA%B8%B0_%EA%B0%95%EC%9D%98%EC%9E%90%EB%A3%8C/10-%EC%A3%BC%EC%B0%A8%EB%B3%84-%EA%B0%95%EC%9D%98%EC%9E%90%EB%A3%8C/W03_vrx_lite)
 
 | 파일 | 하는 일 |
 |---|---|
