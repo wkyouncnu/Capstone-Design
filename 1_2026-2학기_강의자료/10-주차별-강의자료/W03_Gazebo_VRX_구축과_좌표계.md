@@ -2349,6 +2349,13 @@ W03_0_offline 실행 — 좌 -200 N / 우 +200 N, 30 초 (VRX 없음)
 ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 ```
 
+> [!tip] 노트북에서는 터미널 1 을 `run_vrx.sh` 로 띄워도 된다
+> ```bash
+> cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash run_vrx.sh
+> ```
+> - 이 절과 3-4 · 3-5 가 쓰는 GPS · IMU · 참값 오도메트리가 모두 들어 있음 (2-3 "성능이 낮은 노트북에서 VRX 돌리기")
+> - Intel Arc 140V 노트북 실측 (2026-09-22): `W03_vrx_run` 이 잰 RTF 0.97 \~ 0.98, 이 절의 `valid` 100 %
+
 1. `W03_setup.m` 의 `ros_domain_id` 를 WSL 의 `echo $ROS_DOMAIN_ID` 값(2주차에서 정한 값)으로 바꿈
    - MATLAB 이 WSL 토픽을 못 보면 네트워크 조건을 [[WSL-VRX-환경구축]] §8.2 (미러 네트워크 · RMW)로 확인
 2. MATLAB 에서 실행
@@ -2426,6 +2433,15 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 
 - 마지막 5 초 평균 $r$ 은 `rad2deg(mean(S.out.log_r.Data(S.out.log_r.Time > 25)))` 로 꺼냄
 - 1-8 절의 식과 VRX 파일의 계수만으로 **선회율과 선수각이 1 % 안쪽**에서 맞음
+- 저사양 노트북에서도 같은 결과가 나옴 — `bash run_vrx.sh` 로 띄우고 실험마다 새로 띄움 (Intel Arc 140V, 2026-09-22 실측, RTF 0.972 · 0.968)
+
+| 항목 | 기준 환경 (위 표) | 노트북 | 차이 |
+|---|---|---|---|
+| 직진 — 30 초 이동 거리 | 38.61 m | 38.46 m | −0.4 % |
+| 직진 — 선수각 변화 | +1.14° | +1.21° | — |
+| 좌선회 — 선수각 변화 | −628.2° | −620.1° | −1.3 % |
+| 좌선회 — 마지막 5 초 평균 $r$ | −21.60 °/s | −21.29 °/s | −1.4 % |
+| 좌선회 — GPS 로 잰 이동 거리 | 7.85 m | 7.82 m | — |
 
 > [!note] 제자리 선회인데 VRX 는 7.85 m 를 움직였다
 > - VRX 의 위치는 **GPS 안테나**(선체 $x_b = -0.85$ m)의 위치임. 배가 돌면 안테나가 회전 중심 둘레로 원을 그림
@@ -2450,6 +2466,14 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 > - `OdomNav` 가 `/wamv/sensors/position/ground_truth_odometry` (`nav_msgs/Odometry`) 하나로 위치 · 자세 · 몸체 속도를 받음
 > - 기본 런치(`world:=sydney_regatta` 만)로 띄우면 이 토픽이 없어 모든 값이 0 에 머묾
 > - 6주차 §A 와 같은 절차로 켠 뒤 실행할 것. `ground_truth_enabled:=True` 를 런치 인자로 주면 **조용히 무시됨**
+
+> [!tip] 노트북에서는 1 · 2 번 대신 `run_vrx.sh` 한 줄로 끝난다
+> - 2-3 의 센서 최소 URDF(`wamv_lite.urdf`)에는 **참값 오도메트리가 이미 켜져 있음**
+> ```bash
+> cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash run_vrx.sh
+> ```
+> - Intel Arc 140V 노트북 실측 (2026-09-22) — 아래 1 · 2 번 구성(카메라 · LiDAR 포함 + `ogre` 옵션)은 20 초 평균 RTF 0.745, `run_vrx.sh` 는 0.99
+> - 두 구성 모두 이 모델이 동작함: ▲ 를 모델 시각 3 초 남짓 누르면 $u$ 가 1.29 \~ 1.32 m/s 까지 오르고, 떼면 0 으로 돌아옴 (운동모델 3.2 초 값 1.332 m/s)
 
 1. WAM-V 모델 파일을 복사하고 `ground_truth_enabled` 를 `true` 로 바꿈
 
@@ -2495,9 +2519,17 @@ ros2 topic list | grep ground_truth
 ```
 
 5. 페이싱 비율을 Gazebo RTF 로 맞춤. 모델은 `1` 로 만들어져 있음
-   - WSL 에서 `gz topic -e -t /stats -n 1 | grep real_time_factor` 로 RTF 확인 (예: `0.45`)
+   - WSL 에서 **20 초 평균** RTF 를 잼 — 2-3 의 `measure_vrx.sh` 가 출력하는 `RTF 평균` 값을 씀
    - MATLAB 에서 `set_param('W03_4_teleop','PacingRate','0.45')` — 숫자는 측정값으로
    - 맞추지 않으면 아래 관찰 과제의 "몇 초" 가 시뮬레이터 시간과 어긋남
+
+```bash
+cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash measure_vrx.sh 20
+```
+
+> [!warning] `gz topic -e -t /stats -n 1` 한 번으로 재지 않는다
+> 순간값은 크게 흔들림. 카메라 · LiDAR 를 켠 구성에서 평균 0.745 인데 한 번 잰 값이 **0.221** 로 나옴 (노트북 실측)
+> 이 값을 넣으면 모델이 VRX 보다 3 배 넘게 느리게 흘러, 아래 관찰 과제의 "몇 초" 가 맞지 않음
 
 6. **Run** 클릭 (정지 시간은 `T_end_teleop`, 기본 300 초)
 7. `TeleopPad` 를 더블클릭해 버튼 창을 엶
