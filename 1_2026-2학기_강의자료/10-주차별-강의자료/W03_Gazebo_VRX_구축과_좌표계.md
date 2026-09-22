@@ -1184,11 +1184,13 @@ gz topic -e -t /stats -n 1 | grep real_time_factor
 real_time_factor: 0.0026878428978619109
 ```
 
-- 원인: **센서 카메라 렌더링**. WSL 의 D3D12 그래픽 경로에서 `ogre2` 엔진의 카메라 3대가 극단적으로 느려짐
-- 조치: 센서 렌더 엔진만 `ogre` 로 바꿔 실행. **월드·모델 파일은 고치지 않음**
+- 원인: **`ogre2` 렌더 엔진**. WSL 의 D3D12 그래픽 경로(Intel 그래픽)에서 `ogre2` 가 극단적으로 느려짐
+  - 서버 쪽: 카메라 센서 3대 → 물리 시간이 거의 흐르지 않음 (RTF)
+  - 화면 쪽: GUI 가 바다를 그리는 데 한 프레임에 약 1 초 → 마우스로 돌리거나 휠을 굴려도 반응 없음
+- 조치: 서버와 화면의 렌더 엔진을 **둘 다** `ogre` 로 바꿔 실행. **월드·모델 파일은 고치지 않음**
 
 ```bash
-ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "extra_gz_args:=--render-engine-server ogre"
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"
 ```
 
 > [!warning] 위 명령은 **한 줄**이다. 따옴표까지 그대로 복사한다
@@ -1206,6 +1208,38 @@ real_time_factor: 0.98737029965454381
 | 배 + 카메라 1대 | 0.85 % |
 | **기본 명령** (카메라 3대) | **0.26 %** |
 | 기본 + `--render-engine-server ogre` | **98 %** (GUI 포함 90 %) |
+
+### RTF 는 정상인데 화면이 멈춘 것처럼 보이면 — GUI 렌더 엔진
+
+- 증상: RTF 는 90 % 이상으로 나오는데, 창을 드래그하거나 휠을 굴려도 **1 초 이상 늦게** 움직임
+- RTF 는 **물리 계산**의 속도, 화면 반응은 **GUI 가 초당 몇 장을 그리는가**(fps) — 서로 다른 값임
+- 화면 fps 확인 (새 터미널, 10 초 동안 센 개수를 10 으로 나눔)
+
+```bash
+timeout 10 gz topic -e -t /gui/camera/pose | grep -c "^position"
+```
+
+- 비정상 출력 (Intel Arc 140V 노트북, `--render-engine-server ogre` 만 준 상태) — 10 초에 9 장 = **0.9 fps**
+
+```
+9
+```
+
+- 정상 출력 (`--render-engine-gui ogre` 를 함께 준 상태) — 10 초에 약 500 장 = **약 50 fps**
+
+```
+496
+```
+
+| 조건 (Intel Arc 140V · Core Ultra 7 258V, 2026-09-22 실측, 30 초 평균) | RTF 평균 | 화면 fps |
+|---|---|---|
+| 기본 명령 | 0.018 | 1.1 |
+| 기본 + `--render-engine-server ogre` | 0.946 | **0.9** |
+| **기본 + `--render-engine-server ogre --render-engine-gui ogre`** | **0.916** | **49.6** |
+
+- 서버만 `ogre` 로 바꾸면 RTF 는 살아나지만 **화면은 여전히 초당 1 장** — 배는 움직이는데 조작이 안 되는 상태
+- GUI 도 `ogre` 로 바꾸면 화면이 약 50 배 빨라지고 RTF 는 거의 그대로임
+- `ogre` GUI 에서도 바다·배·부표·해안이 모두 그려짐 (위 조건에서 화면 캡처로 확인)
 
 - **RTF 판단 기준** (본 과목 전체에서 이 기준 하나만 씀)
 
@@ -1253,6 +1287,33 @@ xacro $(ros2 pkg prefix wamv_gazebo)/share/wamv_gazebo/urdf/wamv_gazebo.urdf.xac
 
 ```bash
 ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/wamv_lite.urdf
+```
+
+- 위 "RTF 1 % 미만" 에 해당했던 노트북(Intel 그래픽)은 GUI 렌더 엔진 옵션을 함께 줌
+
+```bash
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/wamv_lite.urdf "extra_gz_args:=--render-engine-gui ogre"
+```
+
+> [!warning] 위 명령은 **한 줄**이다. 카메라가 없으므로 `--render-engine-server` 는 필요 없음
+
+| 조건 (Intel Arc 140V · Core Ultra 7 258V, 2026-09-22 실측) | 구간 | RTF 평균 | 화면 fps |
+|---|---|---|---|
+| 센서 최소, GUI 기본(`ogre2`) | 30 초 | 0.990 | **1.6** |
+| **센서 최소 + `--render-engine-gui ogre`** | 30 초 | **0.985** | **49.5** |
+| 위 구성 + MATLAB `W03_vrx_run('W03_3_vrx_drive', 60)` 실행 중 | 120 초 | **0.986** | 49.5 |
+| 위 구성 + WSL 안의 폐루프 제어 노드(20 Hz) 실행 중 | 180 초 | 0.953 | 49.0 |
+
+- 센서를 끄는 것만으로는 **RTF 만** 살아남. Intel 그래픽에서 화면을 살리는 것은 GUI 옵션임
+- 두 가지를 함께 쓰면 제어 알고리즘을 돌리는 동안에도 **RTF 약 0.95 이상 · 화면 약 50 fps** 가 유지됨
+- 같은 조건의 `W03_vrx_run` 출력 — 페이싱 비율이 실측 RTF 로 자동 설정됨
+
+```
+2) RTF 측정 (10초)
+   RTF = 0.965  ->  페이싱 비율을 이 값으로 둔다
+3) W03_3_vrx_drive 실행 (60초)
+   추력 0 송신 완료
+[W03_3_vrx_drive / 직진] 첫 유효 0.00 s | 이동 72.86 m | 평균 1.214 m/s | d(psi) +2.51 deg | r 평균 +0.0045 rad/s
 ```
 
 3. 수업 모델이 쓰는 토픽이 그대로 나오는지 확인 (새 터미널)
@@ -2107,7 +2168,7 @@ grep ground_truth_enabled ~/capstone_ws/wamv/w3_wamv.urdf.xacro | head -1
 ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/w3_wamv.urdf.xacro
 ```
 
-> [!warning] 위 명령은 **한 줄**이다. RTF 가 1 % 미만인 환경은 끝에 `"extra_gz_args:=--render-engine-server ogre"` 를 붙인다
+> [!warning] 위 명령은 **한 줄**이다. RTF 가 1 % 미만인 환경은 끝에 `"extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"` 를 붙인다
 
 3. 토픽을 확인 (터미널 2)
 
@@ -2307,7 +2368,8 @@ ros2 topic list | grep ground_truth
 | 빌드는 됐는데 실행 시 플러그인 오류 | **브랜치 미지정** | `cd ~/vrx_ws/src/vrx && git checkout humble` 후 재빌드 |
 | Gazebo 창이 안 뜨고 멈춤 | WSLg 미작동 | `wsl --update` → `xeyes` 확인 |
 | Gazebo가 매우 느림 (RTF 1\~10 %) | GPU 미사용 / RAM 부족 | 다른 프로그램 종료, 그래도 낮으면 워크스테이션 사용 (§2-3 RTF 판단 기준) |
-| **RTF 가 1 % 미만** (창·배는 정상으로 보임) | WSL D3D12 경로의 카메라 센서 렌더링 병목 (Intel 그래픽에서 재현) | `"extra_gz_args:=--render-engine-server ogre"` 를 붙여 실행 (§2-3) |
+| **RTF 가 1 % 미만** (창·배는 정상으로 보임) | WSL D3D12 경로의 카메라 센서 렌더링 병목 (Intel 그래픽에서 재현) | `"extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"` 를 붙여 실행 (§2-3) |
+| **RTF 는 정상인데 창을 돌려도·휠을 굴려도 반응 없음** | GUI 의 `ogre2` 렌더링이 초당 1 장 수준 (Intel 그래픽에서 재현) | `--render-engine-gui ogre` 를 함께 줌. 화면 fps 로 확인 (§2-3) |
 | `ros2 topic list` 에 wamv 토픽이 없음 | 환경 미적용 | `source ~/vrx_ws/install/setup.bash` |
 | `ros2 topic pub` 했는데 배가 안 움직임 | 토픽명 불일치 | `ros2 topic list \| grep thrusters` 로 정확한 이름 확인 |
 | `view_frames` 가 빈 PDF 생성 | TF 발행 노드 미실행 | VRX 실행 확인, 몇 초 더 대기 |

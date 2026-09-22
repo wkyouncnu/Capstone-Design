@@ -731,7 +731,7 @@ W09_vrx_run(420)
 
 > [!important] VRX 를 새로 띄운 뒤 시작한다
 > - 앞 실험이 끝난 자리에서 이어 돌리면 첫 웨이포인트까지의 거리가 달라져 시각 비교가 무의미해짐
-> - RTF 가 1 % 미만인 노트북은 `"extra_gz_args:=--render-engine-server ogre"` 를 함께 줌
+> - RTF 가 1 % 미만인 노트북은 `"extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"` 를 함께 줌
 
 > [!caution] 스폰 위치는 설치마다 다르다 — 스크립트가 직접 잰다
 > - `competition.launch.py` 의 스폰 좌표가 같은 VRX 2.4.0-2 인데도 컴퓨터마다 달랐음: $y_{\text{ENU}}$ = **162** 인 설치와 **200** 인 설치

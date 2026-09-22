@@ -78,7 +78,7 @@ echo "[§2-6] 과제 월드 실행 (stationkeeping_task)"
 pkill -9 -f '[c]ompetition.launch' 2>/dev/null; pkill -9 -f '[g]z sim' 2>/dev/null; pkill -9 -f '[v]rx_ros' 2>/dev/null; pkill -9 -f '[p]arameter_bridge' 2>/dev/null; rm -f /dev/shm/fastrtps_* /dev/shm/sem.fastrtps_* 2>/dev/null; sleep 4
 ros2 daemon stop > /dev/null 2>&1; sleep 2
 setsid nohup ros2 launch vrx_gz competition.launch.py world:=stationkeeping_task \
-    "extra_gz_args:=--render-engine-server ogre" \
+    "extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre" \
     > /tmp/v4_sk.log 2>&1 < /dev/null & disown
 echo "  기동 대기..."
 sleep 20
@@ -98,7 +98,7 @@ echo
 echo "[§2-3 · §2-7] 센서와 rosbag"
 ros2 daemon stop > /dev/null 2>&1; sleep 2
 setsid nohup ros2 launch vrx_gz competition.launch.py world:=sydney_regatta \
-    "extra_gz_args:=--render-engine-server ogre" \
+    "extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre" \
     > /tmp/v4_sr.log 2>&1 < /dev/null & disown
 echo "  기동 대기..."
 sleep 20

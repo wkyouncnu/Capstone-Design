@@ -48,7 +48,7 @@ sed -i 's#ground_truth_enabled" default="false"#ground_truth_enabled" default="t
 WSL 의 D3D12 경로(Intel 그래픽 실측)에서는 카메라 3대가 RTF 를 **0.26 %** 로 떨어뜨린다.
 
 ```bash
-ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "extra_gz_args:=--render-engine-server ogre"
+ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"
 ```
 
 | 구성 | RTF |
@@ -60,6 +60,15 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "extra_gz_args:=-
 
 - 판정: `gz topic -e -t /stats -n 1 | grep real_time_factor`
 - RTF 는 같은 월드에서도 **0.46 \~ 0.98 로 흔들린다.** 비교 실험은 연속으로 돌린다
+
+### RTF 가 멀쩡해도 GUI 가 1 fps 일 수 있다 (2026-09-22, 같은 노트북)
+
+- 서버만 `ogre` 로 바꾸면 RTF 0.95 인데 **GUI 는 0.9 fps** — 사용자는 "스크롤해도 반응이 없다" 로 보고함
+- `--render-engine-gui ogre` 를 함께 주면 **49.6 fps**, RTF 0.92. 센서 최소(`wamv_lite.urdf`) + GUI ogre 는 RTF 0.985 · 49.5 fps
+- MATLAB `W03_vrx_run` 60 초 실행 중 120 초 평균 RTF **0.986** · 49.5 fps — 알고리즘과 함께 돌려도 유지
+- GUI fps 측정: `timeout 10 gz topic -e -t /gui/camera/pose | grep -c "^position"` ÷ 10 (MinimalScene 이 렌더 프레임마다 발행)
+- 순간값이 아니라 **구간 평균**으로 판정한다 — `/stats` 의 sim_time·real_time 차분을 1 초 구간으로 나눠 평균·표준편차·최솟값
+- `--gui-config` 로 ComponentInspector·EntityTree 를 뺀 가벼운 GUI 설정은 **효과 없음** (1.5 fps) — 병목은 패널이 아니라 3D 렌더링
 
 ---
 

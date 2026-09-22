@@ -557,7 +557,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 
 - 새 터미널을 하나 더 열고, 그 터미널에서 아래 명령들을 실행함
 - 시뮬레이터 터미널은 그대로 둠. 닫으면 토픽이 전부 사라짐
-- 3주차 §2-3 에서 RTF 가 1 % 미만이었다면 `"extra_gz_args:=--render-engine-server ogre"` 를 붙임
+- 3주차 §2-3 에서 RTF 가 1 % 미만이었다면 `"extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"` 를 붙임
 
 > [!warning] `ground_truth_enabled:=True` 를 런치 인자로 주면 **조용히 무시됨**
 > - `competition.launch.py` 의 인자는 `world` · `sim_mode` · `bridge_competition_topics` · `config_file` · `robot` · `headless` · `urdf` · `paused` · `competition_mode` · `extra_gz_args` 뿐임

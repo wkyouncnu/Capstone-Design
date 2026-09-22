@@ -1197,7 +1197,7 @@ ros2 launch vrx_gz competition.launch.py \
 
 > [!warning] 3주차에서 RTF 가 1 % 미만이었던 노트북은 옵션을 함께 줌
 > ```bash
-> ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/w7_wamv.urdf.xacro "extra_gz_args:=--render-engine-server ogre"
+> ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/w7_wamv.urdf.xacro "extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"
 > ```
 
 > [!important] 실험마다 VRX 를 **다시 띄움**

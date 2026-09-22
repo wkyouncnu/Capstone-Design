@@ -80,7 +80,7 @@ echo "[§2-3~2-6] VRX 실행과 조종"
 if [ -n "${DISPLAY:-}" ] && [ -d "$HOME/vrx_ws/install" ]; then
   pkill -9 -f '[c]ompetition.launch' 2>/dev/null; pkill -9 -f '[g]z sim' 2>/dev/null; pkill -9 -f '[v]rx_ros' 2>/dev/null; pkill -9 -f '[p]arameter_bridge' 2>/dev/null; rm -f /dev/shm/fastrtps_* /dev/shm/sem.fastrtps_* 2>/dev/null; sleep 3
   setsid nohup ros2 launch vrx_gz competition.launch.py world:=sydney_regatta \
-      "extra_gz_args:=--render-engine-server ogre" \
+      "extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre" \
       > /tmp/v3_vrx.log 2>&1 < /dev/null & disown
   echo "  VRX 기동 대기 90초..."
   sleep 90

@@ -646,7 +646,7 @@ ros2 launch vrx_gz competition.launch.py \
 > 3주차 §2-3 에서 확인한 값이 기준임. 해당하면 아래처럼 실행함. 6\~10주차 전부 같음
 >
 > ```bash
-> ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/w6_wamv.urdf.xacro "extra_gz_args:=--render-engine-server ogre"
+> ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/w6_wamv.urdf.xacro "extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"
 > ```
 
 > [!important] `ground_truth_enabled` 는 **런치 인자가 아니라 xacro 인자**
