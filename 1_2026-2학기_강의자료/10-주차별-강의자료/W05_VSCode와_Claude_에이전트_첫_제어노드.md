@@ -784,6 +784,8 @@ ros2 topic hz /wamv/thrusters/left/thrust
 **2단계 — VRX 에 물린다**
 
 - `wamv_sim.py` 를 `Ctrl+C` 로 끄고 VRX 를 띄운 뒤 같은 명령
+  - 노트북은 3주차 2-3 의 `cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash run_vrx.sh` 로 띄움. GPS · IMU 가 들어 있어 이 노드에 충분함
+  - Intel Arc 140V 노트북 실측 (2026-09-22): 웨이포인트 (20, 0) → (20, 20) 두 개를 벽시계 29 초에 돌고 정지, RTF 0.988 · 화면 49.7 fps
 
 ```bash
 ros2 run team_usv waypoint_pid
@@ -810,6 +812,30 @@ pytest 단위 테스트를 만들어줘.
 cd ~/capstone_ws/src/team_usv
 python3 -m pytest test/ -v
 ```
+
+- `test/` 에는 `ros2 pkg create` 가 미리 넣어 둔 **코드 스타일 검사** 세 개(`test_copyright` · `test_flake8` · `test_pep257`)가 함께 있음
+- 에이전트가 만든 코드는 이 검사에서 `FAILED` 가 나기 쉬움. 실측 예 (2026-09-22, E-2 요구사항대로 만든 노드)
+
+```
+test/test_flake8.py::test_flake8 FAILED
+test/test_pep257.py::test_pep257 FAILED
+test/test_waypoint_pid.py::test_enu_to_ned_yaw PASSED
+test/test_waypoint_pid.py::test_wrap PASSED
+test/test_waypoint_pid.py::test_allocate_sign_and_saturation PASSED
+```
+
+| 실패한 검사 | 실제 지적 | 뜻 |
+|---|---|---|
+| `test_flake8` | `E501 line too long`, `E731 do not assign a lambda expression` | 줄 길이 · 작성 방식. **동작은 같음** |
+| `test_pep257` | `D400 First line should end with a period` | 설명문(docstring) 형식 |
+
+- 기능 검증은 **직접 만든 테스트 파일만** 돌려서 봄
+
+```bash
+python3 -m pytest test/test_waypoint_pid.py -v
+```
+
+- 스타일 오류는 에이전트에게 "flake8 · pep257 오류를 고쳐줘" 로 맡기고, 고친 뒤 위 기능 테스트가 **여전히 통과하는지** 다시 확인함
 
 **2겹 — rosbag 재생**
 
@@ -982,10 +1008,13 @@ setupAgenticToolkit("configure", Scope="global", Agents="claude-code", Prompt=fa
 > | MATLAB · Simulink (§F) | **Windows 에서 연 VS Code 창**의 Claude Code 확장 (C-1 에서 Windows 쪽에 설치한 것) |
 
 - 확인 — Windows PowerShell 에서 아래 한 줄 (Windows 쪽 Claude 가 읽는 설정을 그대로 보여 줌)
+  - C-1 대로 Windows 에는 CLI 를 설치하지 않았으므로 `claude` 만 치면 **명령을 찾을 수 없음**. VS Code 확장 안에 들어 있는 `claude.exe` 를 찾아 실행함
 
 ```powershell
-claude mcp list
+& (Get-ChildItem "$env:USERPROFILE\.vscode\extensions\anthropic.claude-code-*\resources\native-binary\claude.exe" | Sort-Object LastWriteTime | Select-Object -Last 1).FullName mcp list
 ```
+
+> [!warning] 위 명령은 **한 줄**이다
 
 - 정상 출력 (2026-09-19 기준 환경 실측. 경로의 사용자 이름은 PC 마다 다름)
 
@@ -1249,11 +1278,22 @@ No executable found
 ```
 
 - 원인 — 패키지는 있는데 그 안에 그 이름의 실행 파일이 없음. 대개 오타임
-- 조치 — 패키지 안의 실행 파일 목록 확인
+- 조치 — 패키지 안의 실행 파일 목록 확인. 예: 2주차 `usv_basics`
 
 ```bash
-ros2 pkg executables vrx_gz
+ros2 pkg executables usv_basics
 ```
+
+- 정상 출력 (앞부분)
+
+```
+usv_basics qos_test_pub
+usv_basics qos_test_sub
+usv_basics simple_listener
+```
+
+- 목록에 없으면 `setup.py` 의 `entry_points` 등록이 빠진 것 (E-2 마지막 줄) → 고친 뒤 `colcon build` 다시
+- `vrx_gz` 처럼 **런치 파일만 있는 패키지**는 아무것도 출력하지 않음. 이런 패키지는 `ros2 run` 이 아니라 `ros2 launch` 로 씀
 
 ### G-6. 토픽이 두 개만 보인다
 
