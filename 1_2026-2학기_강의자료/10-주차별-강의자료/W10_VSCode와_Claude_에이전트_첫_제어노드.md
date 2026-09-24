@@ -99,7 +99,7 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 
 ### 도는 한 바퀴
 
-![에이전트 동작 루프](../assets/w05-agent-loop.svg)
+![에이전트 동작 루프](../assets/w10-agent-loop.svg)
 
 | 단계 | 하는 일 |
 |---|---|
@@ -137,7 +137,7 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 
 ## 1-3. 검증하는 세 겹
 
-![검증 세 겹](../assets/w05-verify.svg)
+![검증 세 겹](../assets/w10-verify.svg)
 
 ### 1겹 — 단위 테스트
 
@@ -228,7 +228,7 @@ ros2 bag play run1
 
 # 2부 · 실습
 
-![개발 환경 구성](../assets/w05-vscode-claude.svg)
+![개발 환경 구성](../assets/w10-vscode-claude.svg)
 
 > [!note] 무엇이 어디에 설치되는지 먼저 이해할 것
 > - **VS Code** → Windows 에 설치
@@ -244,7 +244,7 @@ ros2 bag play run1
 
 1. 브라우저에서 <https://code.visualstudio.com/download> 접속
 
-![VS Code 다운로드 페이지](../assets/w05-download-vscode.png)
+![VS Code 다운로드 페이지](../assets/w10-download-vscode.png)
 
 2. **Windows** 칸의 파란 버튼 클릭. 화면이 현재 OS 를 알아서 골라 줌
 3. 받아진 `VSCodeUserSetup-x64-*.exe` 실행
@@ -267,7 +267,7 @@ ros2 bag play run1
 
 > [!important] 설치가 끝나면 이런 화면이 나옴
 
-![VS Code 로 강의자료 폴더를 연 화면](../assets/w05-vscode-vault.png)
+![VS Code 로 강의자료 폴더를 연 화면](../assets/w10-vscode-vault.png)
 
 - 기준 환경에서 배포 폴더를 **Windows 창**으로 열어 캡처한 것
   - WSL 접속 전 화면이며, 위쪽에 Restricted Mode 띠가 켜진 상태 (아래 경고 참조)
@@ -397,7 +397,7 @@ ms-vscode-remote.remote-wsl
 
 - 공식 문서 — <https://docs.claude.com/en/docs/claude-code/overview>
 
-![Claude Code 공식 문서](../assets/w05-claudecode-docs.png)
+![Claude Code 공식 문서](../assets/w10-claudecode-docs.png)
 
 - 설치 방법이 **Terminal · VS Code · Desktop app · Web · JetBrains** 탭으로 나뉨
   본 과목은 **Terminal**(WSL) 과 **VS Code** 두 가지를 씀
@@ -1312,7 +1312,7 @@ usv_basics simple_listener
 
 ### G-7. VS Code 에서 Claude 명령이 안 보인다
 
-![Restricted Mode — 확장이 동작하지 않음](../assets/w05-restricted-mode.png)
+![Restricted Mode — 확장이 동작하지 않음](../assets/w10-restricted-mode.png)
 
 - 증상 — 명령 팔레트(`Ctrl` + `Shift` + `P`)에서 `Claude` 를 쳐도 **`No matching commands`**
 - 원인 — 위쪽 노란 띠의 **Restricted Mode**. 신뢰하지 않은 폴더에서는 확장이 전부 꺼짐

@@ -159,12 +159,12 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | `w03-diff-thrust.svg` | **차동 추진** — 키 4개와 좌·우 추력 조합 |
 | `w03-vrx-start.png` · `w03-teleop-*.png` | VRX 기동 · 전진 · 좌선회 실화면 |
 | `w03-vscode-teleop.png` | VS Code 로 연 `wamv_teleop_key.py` |
-| `w04-task-stationkeeping.png` | VRX 정지유지 과제 월드 |
-| `w04-sensor-layout.svg` | WAM-V 센서 배치와 사각지대 |
-| `w04-topic-map.svg` | 토픽 흐름 한 바퀴 |
-| `w05-agent-loop.svg` | AI 에이전트 동작 루프와 사람의 몫 |
-| `w05-vscode-claude.svg` | VS Code · Claude · MATLAB 설치 위치 |
-| `w05-verify.svg` | 검증 세 겹 |
+| `w09-task-stationkeeping.png` | VRX 정지유지 과제 월드 |
+| `w09-sensor-layout.svg` | WAM-V 센서 배치와 사각지대 |
+| `w09-topic-map.svg` | 토픽 흐름 한 바퀴 |
+| `w10-agent-loop.svg` | AI 에이전트 동작 루프와 사람의 몫 |
+| `w10-vscode-claude.svg` | VS Code · Claude · MATLAB 설치 위치 |
+| `w10-verify.svg` | 검증 세 겹 |
 | `w06-control-loop.svg` | 속도 루프 · 헤딩 루프 · 차동 배분 |
 | `w07-course-crab.svg` | 선수각 · 침로각 · 크랩각과 조류 |
 | `w07-los-geometry.svg` | LOS 기하 — π_p, y_e, Δ, R |

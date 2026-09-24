@@ -214,7 +214,7 @@ $$
 
 ## 1-3. 센서 배치가 인지 성능을 결정한다
 
-![WAM-V 센서 배치 — 실측 좌표와 시야](../assets/w04-sensor-layout.svg)
+![WAM-V 센서 배치 — 실측 좌표와 시야](../assets/w09-sensor-layout.svg)
 
 > [!warning] 이 그림과 표는 **ROS `base_link` 좌표** — 3주차 몸체축과 두 축의 부호가 반대임
 > URDF·Xacro 는 ROS 규약(REP-103)을 따라 $x$ 선수, $y$ **좌현**, $z$ **위** 를 씀(FLU)
@@ -304,7 +304,7 @@ $$
 
 ## 1-4. 토픽 맵 — 데이터가 도는 한 바퀴
 
-![토픽 맵](../assets/w04-topic-map.svg)
+![토픽 맵](../assets/w09-topic-map.svg)
 
 ### 흐름
 
@@ -837,7 +837,7 @@ ros2 run rviz2 rviz2
 3. 추가된 항목의 **Reliability Policy** 는 기본값 **Reliable** 그대로 둠 (발행자가 RELIABLE — §2-3-4)
 4. **Add** → **TF**, **Add** → **By topic** → 카메라의 **Image**
 
-![RViz2 — LiDAR 포인트클라우드와 전방 카메라](../assets/w04-rviz-lidar.png)
+![RViz2 — LiDAR 포인트클라우드와 전방 카메라](../assets/w09-rviz-lidar.png)
 
 - 정상이면 이렇게 보임
   - **붉은 동심원** — LiDAR 빔이 수면에 닿아 생기는 고리. 배를 중심으로 퍼짐
@@ -845,7 +845,7 @@ ros2 run rviz2 rviz2
   - 왼쪽 위 작은 창 — 전방 좌현 카메라 영상. 아래에 **선체 두 개**가 보이면 정상
 - 아무것도 안 보이면 → §2-3-9 의 표를 볼 것
 
-![RViz2 — TF 프레임](../assets/w04-rviz-tf-frames.png)
+![RViz2 — TF 프레임](../assets/w09-rviz-tf-frames.png)
 
 - **TF** 를 켜면 센서마다 작은 좌표축(빨강 x · 초록 y · 파랑 z)이 뜸
 - 뒤쪽에 떨어져 있는 네 개가 **좌·우 추진기와 프로펠러**. 쌍동선 폭이 눈에 보임
@@ -1090,7 +1090,7 @@ curl -s -o /tmp/tile.png -w "%{http_code}\n" "http://localhost:8080/wmts/gm_laye
 > 그대로 실행하면 아래처럼 텍사스의 위성사진이 뜨고, 시드니에 있는 배의 항적은 **화면 밖**에 그려짐
 > 오류 메시지도 나오지 않음
 
-![기본 런치 — 원점이 텍사스라 항적이 보이지 않음](../assets/w04-mapviz-wrong-origin.png)
+![기본 런치 — 원점이 텍사스라 항적이 보이지 않음](../assets/w09-mapviz-wrong-origin.png)
 
 - 원점만 `sydney_regatta` 기준점(3주차 §1-5 의 `lla0`)으로 바꾼 런치 파일을 만듦
 
@@ -1152,7 +1152,7 @@ http://localhost:8080/wmts/gm_layer/gm_grid/{level}/{x}/{y}.png
 5. 다시 **add** → **navsat** 선택 → Topic 을 GPS 토픽으로 지정
 6. 배를 움직이면 지도 위에 궤적이 그려짐
 
-![시드니 원점 — 레가타 해역 위에 배의 선회 항적(빨강)](../assets/w04-mapviz-sydney.png)
+![시드니 원점 — 레가타 해역 위에 배의 선회 항적(빨강)](../assets/w09-mapviz-sydney.png)
 
 - 2026-09-15 실측. 좌 150 N · 우 300 N 으로 선회시키며 45초간 기록한 화면
 
@@ -1217,7 +1217,7 @@ ros2 launch vrx_gz competition.launch.py world:=stationkeeping_task
 cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && WORLD=stationkeeping_task bash run_vrx.sh full
 ```
 
-![정지 유지 과제 월드 — WAM-V 와 표식 부표](../assets/w04-task-stationkeeping.png)
+![정지 유지 과제 월드 — WAM-V 와 표식 부표](../assets/w09-task-stationkeeping.png)
 
 | 확인 항목 | 화면에서 |
 |---|---|

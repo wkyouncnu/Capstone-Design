@@ -152,7 +152,7 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 
 ## 1-4. 화면 구성 — 네 군데만 알면 된다
 
-![Simulink 편집기 화면 구성](../assets/w06-0-canvas.svg)
+![Simulink 편집기 화면 구성](../assets/a1-canvas.svg)
 
 - 그림 읽는 법
 
@@ -167,7 +167,7 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 
 ## 1-5. 이번 주차에 학습하는 블록
 
-![이번 주차에 학습하는 블록 지도](../assets/w06-0-blocks-map.svg)
+![이번 주차에 학습하는 블록 지도](../assets/a1-blocks-map.svg)
 
 - Simulink 블록은 수백 개임. 그중 **실제로 쓰는 것만** 골랐음
 - 고른 기준: 본 과목의 기존 모델들이 실제로 사용하는 블록
@@ -510,7 +510,7 @@ open_system('SB4_bus_todo')
 
 ### D-1. 버스가 무엇인가
 
-![버스 구조](../assets/w06-0-bus.svg)
+![버스 구조](../assets/a1-bus.svg)
 
 - 그림 읽는 법
 
