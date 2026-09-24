@@ -1,6 +1,6 @@
 # 주차 자료 완성도 기준
 
-2026-09-06 에 W02~W04 를 이 기준으로 올렸다. **모든 주차가 이 기준을 만족해야 한다.**
+2026-09-06 에 W02·W03·W09 를 이 기준으로 올렸다. **모든 주차가 이 기준을 만족해야 한다.**
 
 > [!important] 한 줄로
 > 학생이 문서만 보고 따라 했을 때, **자기 화면이 맞는지 스스로 판정할 수 있어야 한다.**
@@ -205,10 +205,10 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | 주차 | 결과 | 고친 것 |
 |---|---|---|
 | W03 | 통과 | 카메라 렌더링 병목(RTF 0.26 %) → `extra_gz_args:=--render-engine-server ogre` 절 신설 |
-| W04 | 통과 | Livox 행 삭제 · `ground_truth_enabled` 는 런치 인자가 아님 · LiDAR `z` 0.9 → 1.4 (서버 충돌) · QoS 전수 RELIABLE · Mapviz 원점 런치 파일 |
-| W05 | 통과 | Claude Code 설치 명령 · MCP 서버/애드온/`satk_initialize` 절차 · 정답지 경로 |
-| W06 | 통과 | 도메인 정렬 절 · 페이싱 = 실측 RTF · 스폰 좌표 표 |
-| W07~W10 | 통과 | `origin_north` 200 → **162** · `ros2node(...,0)` → 프로필 도메인 · 실험마다 VRX 재기동 |
+| W09 | 통과 | Livox 행 삭제 · `ground_truth_enabled` 는 런치 인자가 아님 · LiDAR `z` 0.9 → 1.4 (서버 충돌) · QoS 전수 RELIABLE · Mapviz 원점 런치 파일 |
+| W10 | 통과 | Claude Code 설치 명령 · MCP 서버/애드온/`satk_initialize` 절차 · 정답지 경로 |
+| W04 | 통과 | 도메인 정렬 절 · 페이싱 = 실측 RTF · 스폰 좌표 표 |
+| W05~W08 | 통과 | `origin_north` 200 → **162** · `ros2node(...,0)` → 프로필 도메인 · 실험마다 VRX 재기동 |
 
 > [!important] 이 검증에서 배운 것 — **조용히 실패하는 것부터 검사한다**
 > 도메인 불일치 · 스폰 좌표 · 렌더 엔진 · 앞 실험 잔류 상태는 **오류 메시지가 없다.**
@@ -216,7 +216,7 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 
 > [!warning] 검증 스크립트와 실험을 **동시에 돌리지 않는다**
 > `verify_w0N.sh` 는 시작·종료 때 VRX 를 `pkill` 한다.
-> 실험이 도는 중에 돌리면 그 실험이 조용히 망가진다 (실제로 W09 주행 하나를 잃었다).
+> 실험이 도는 중에 돌리면 그 실험이 조용히 망가진다 (실제로 7주차 주행 하나를 잃었다).
 
 ---
 
@@ -227,14 +227,14 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | W01 | 3 | 4 | 충족 |
 | W02 | **46** | **50** | 충족 — turtlesim 4종 통신 + **중계 노드·Simulink 목표 자세 제어**. `verify_w02.sh` PASS 42 / FAIL 0 (2026-09-15) |
 | W03 | **10** | **15** | 충족 — VRX 실측 빌드값·키보드 조종 절 신설·차동추진 개념도. `verify_w03.sh` PASS 18 / FAIL 0 (2026-09-08) |
-| W04 | **5** | **20** | 충족 — 과제 월드 12종·채점 토픽·rosbag 절 신설. `verify_w04.sh` PASS 22 / FAIL 0 (2026-09-08) |
-| W05 | 4 | 2 | 충족 — VS Code 실제 화면 추가 |
-| W06_0 | 15 | 2 | 충족 |
-| W06 | 8 | 2 | 충족 — Simulink 창 화면 추가 |
-| W07 | 11 | 4 | 충족 |
-| W08 | 8 | 3 | 충족 — 벡터필드 개념도 추가 |
-| W09 | 8 | 3 | 충족 — 상태기계 개념도 추가 |
-| W10 | 9 | 2 | 충족 — DP 루프 개념도 추가 |
+| W04 | 8 | 2 | 충족 — Simulink 창 화면 추가 |
+| W05 | 11 | 4 | 충족 |
+| W06 | 8 | 3 | 충족 — 벡터필드 개념도 추가 |
+| W07 | 8 | 3 | 충족 — 상태기계 개념도 추가 |
+| W08 | 9 | 2 | 충족 — DP 루프 개념도 추가 |
+| W09 | **5** | **20** | 충족 — 과제 월드 12종·채점 토픽·rosbag 절 신설. `verify_w09.sh` PASS 22 / FAIL 0 (2026-09-08) |
+| W10 | 4 | 2 | 충족 — VS Code 실제 화면 추가 |
+| A1 | 15 | 2 | 충족 |
 
 - **11개 주차 전부 기준 통과** (2026-09-06)
 - 11~15주차는 아직 작성 전이다. 작성할 때 이 기준을 처음부터 적용한다

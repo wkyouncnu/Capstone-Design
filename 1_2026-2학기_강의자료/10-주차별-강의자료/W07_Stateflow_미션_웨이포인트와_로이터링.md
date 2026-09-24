@@ -118,7 +118,7 @@ summary: 상태기계로 두 유도법칙을 갈아 끼운다 — 항주 중 로
 
 ## 1-2. 이번 주차에 작성할 상태기계
 
-![미션 상태기계와 모델 구조](../assets/w09-mission-fsm.svg)
+![미션 상태기계와 모델 구조](../assets/w07-mission-fsm.svg)
 
 ![미션 FSM](W07_simulink/img/MissionFSM.png)
 

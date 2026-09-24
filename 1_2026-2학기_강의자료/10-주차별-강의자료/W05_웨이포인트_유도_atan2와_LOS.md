@@ -109,7 +109,7 @@ Guidance  →  Inner Loop  →  Thrusters  →  운동모델  →  Navigation
 
 ## 1-2. 뱃머리가 향한 곳과 배가 가는 곳은 다르다
 
-![선수각 침로각 크랩각](../assets/w07-course-crab.svg)
+![선수각 침로각 크랩각](../assets/w05-course-crab.svg)
 
 ### 용어 정리
 
@@ -184,7 +184,7 @@ $$
 - 경로를 따라간다는 말을 숫자로 바꾸려면 **오차가 두 개** 필요함. 하나로는 부족함
 - 경로는 자기 좌표계를 만듦. 그 좌표계로 배의 위치를 옮겨 적으면 두 오차가 **한꺼번에** 나옴
 
-![경로가 만드는 좌표계와 두 오차](../assets/w07-track-error.svg)
+![경로가 만드는 좌표계와 두 오차](../assets/w05-track-error.svg)
 
 ### 먼저 경로 방위각
 
@@ -256,7 +256,7 @@ $$
   - 그 점은 경로에서 배와 가장 가까운 점보다 $\Delta$ 만큼 앞선 점
 - 이름의 뜻: LOS = Line Of Sight, **시선(視線)**. 눈으로 목표를 좇는 것과 같음
 
-![LOS 유도의 기하](../assets/w07-los-geometry.svg)
+![LOS 유도의 기하](../assets/w05-los-geometry.svg)
 
 ### 그림 읽는 법
 
@@ -347,7 +347,7 @@ $$
 - LOS 법칙에서 **자유롭게 고를 수 있는 값은 $\Delta$ 하나뿐**임. 나머지는 경로와 위치가 정함
 - $\Delta$ 는 분모임. 같은 이탈량이어도 $\Delta$ 가 작으면 크게 꺾음
 
-![lookahead distance 가 하는 일](../assets/w07-lookahead.svg)
+![lookahead distance 가 하는 일](../assets/w05-lookahead.svg)
 
 - 그림의 세 경우는 **이탈량이 똑같음.** $\Delta$ 만 바뀌었는데 꺾으라는 각이 $53.1^\circ$ 에서 $7.6^\circ$ 로 일곱 배 차이가 남
 
@@ -495,7 +495,7 @@ $$
 
 - 구간은 끝나야 함. 무엇을 보고 끝났다고 판단할지가 남았고, **널리 쓰이는 방법이 두 가지인데 둘은 같지 않음**
 
-![전환 판정 두 가지](../assets/w07-switching.svg)
+![전환 판정 두 가지](../assets/w05-switching.svg)
 
 $$
 \text{경로 방향 판정:}\quad d - x_e < R
@@ -1075,7 +1075,7 @@ LOS   / 조류 0.4            2.673      1.504     20.000      207.0      8.04
   atan2 는 LOS 보다 2.51 배 (조류 없음), 2.56 배 (조류 있음) 더 벗어난다
 ```
 
-![atan2 와 LOS](../assets/w07-atan2-vs-los.svg)
+![atan2 와 LOS](../assets/w05-atan2-vs-los.svg)
 
 ### 관찰할 것
 

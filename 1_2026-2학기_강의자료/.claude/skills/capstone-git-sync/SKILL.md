@@ -70,7 +70,7 @@ ssh -T git@github.com
 직접 부를 때
 
 ```bash
-bash _tools/git_autopush.sh "10주차 DP 게인 재측정"
+bash _tools/git_autopush.sh "8주차 DP 게인 재측정"
 ```
 
 ### 스크립트가 스스로 멈추는 두 경우

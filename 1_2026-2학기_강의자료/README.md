@@ -166,9 +166,9 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | `w10-vscode-claude.svg` | VS Code · Claude · MATLAB 설치 위치 |
 | `w10-verify.svg` | 검증 세 겹 |
 | `w06-control-loop.svg` | 속도 루프 · 헤딩 루프 · 차동 배분 |
-| `w07-course-crab.svg` | 선수각 · 침로각 · 크랩각과 조류 |
-| `w07-los-geometry.svg` | LOS 기하 — π_p, y_e, Δ, R |
-| `w07-atan2-vs-los.svg` | 두 유도법칙 궤적 대비 + 실측 표 |
+| `w05-course-crab.svg` | 선수각 · 침로각 · 크랩각과 조류 |
+| `w05-los-geometry.svg` | LOS 기하 — π_p, y_e, Δ, R |
+| `w05-atan2-vs-los.svg` | 두 유도법칙 궤적 대비 + 실측 표 |
 
 ## 📦 자산 인벤토리 — `40-자산/`
 
