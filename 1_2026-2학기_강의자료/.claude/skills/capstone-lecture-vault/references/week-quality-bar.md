@@ -199,7 +199,7 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 
 ## 6-0. 재현 검증 이력 (2026-09-15, 다른 노트북)
 
-다른 컴퓨터(Intel Arc 140V + Core Ultra 7 258V)에 **자료대로 처음부터 설치**하고 W03~W10 을 실행했다.
+다른 컴퓨터(Intel Arc 140V + Core Ultra 7 258V)에 **자료대로 처음부터 설치**하고 W03\~W10 을 실행했다.
 발견한 결함은 전부 문서·스크립트에 반영했다.
 
 | 주차 | 결과 | 고친 것 |
@@ -208,7 +208,7 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | W09 | 통과 | Livox 행 삭제 · `ground_truth_enabled` 는 런치 인자가 아님 · LiDAR `z` 0.9 → 1.4 (서버 충돌) · QoS 전수 RELIABLE · Mapviz 원점 런치 파일 |
 | W10 | 통과 | Claude Code 설치 명령 · MCP 서버/애드온/`satk_initialize` 절차 · 정답지 경로 |
 | W04 | 통과 | 도메인 정렬 절 · 페이싱 = 실측 RTF · 스폰 좌표 표 |
-| W05~W08 | 통과 | `origin_north` 200 → **162** · `ros2node(...,0)` → 프로필 도메인 · 실험마다 VRX 재기동 |
+| W05\~W08 | 통과 | `origin_north` 200 → **162** · `ros2node(...,0)` → 프로필 도메인 · 실험마다 VRX 재기동 |
 
 > [!important] 이 검증에서 배운 것 — **조용히 실패하는 것부터 검사한다**
 > 도메인 불일치 · 스폰 좌표 · 렌더 엔진 · 앞 실험 잔류 상태는 **오류 메시지가 없다.**
@@ -237,6 +237,6 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | A1 | 15 | 2 | 충족 |
 
 - **11개 주차 전부 기준 통과** (2026-09-06)
-- 11~15주차는 아직 작성 전이다. 작성할 때 이 기준을 처음부터 적용한다
+- 11\~15주차는 아직 작성 전이다. 작성할 때 이 기준을 처음부터 적용한다
 
 - 주차를 손볼 때마다 이 표를 갱신한다

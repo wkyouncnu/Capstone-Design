@@ -3170,7 +3170,7 @@ W02_setup
 W02_setup 완료 — 목표 (9.00, 2.00, 90.0 deg), ROS_DOMAIN_ID=7
 ```
 
-5. Simulink 쪽 도메인 확인 — 툴스트립 **시뮬레이션 → ROS 네트워크** 의 Domain ID 를 우분투 값과 같게 함 (4주차 B-1 과 같은 절차)
+5. Simulink 쪽 도메인 확인 — 툴스트립 **시뮬레이션 → ROS 네트워크** 의 Domain ID 를 우분투 값과 같게 함 (4주차 2-14-5 와 같은 절차)
    - Simulink ROS 2 블록은 `ROS_DOMAIN_ID` 환경변수가 아니라 **이 프로필 값**을 읽음. `W02_setup` 의 `setenv` 만으로는 모델이 값을 받지 못함
 6. 우분투의 토픽이 MATLAB 에서 보이는지 확인
 

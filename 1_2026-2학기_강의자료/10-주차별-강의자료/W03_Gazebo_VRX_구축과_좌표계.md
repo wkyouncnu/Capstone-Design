@@ -907,7 +907,7 @@ $$
 > | 빠진 것 | VRX 에는 | 영향 |
 > |---|---|---|
 > | 상하 · 횡동요 · 종동요, 부력 | `Surface` 플러그인 | 수평 운동에는 거의 없음 |
-> | 무게중심 이동 $x_g$ | 있음 ($-0.350$ m) | 선회 반경이 조금 다름 (4주차 J절) |
+> | 무게중심 이동 $x_g$ | 있음 ($-0.350$ m) | 선회 반경이 조금 다름 (4주차 2-19절) |
 > | 파랑 · 바람 | 월드 설정에 따라 | 기본 `sydney_regatta` 는 약함. 8주차에서 바람을 모델에 넣음 |
 > | 센서 위치 · 잡음 | GPS 는 $x_b = -0.85$ m 에 달림 | 제자리 선회에서도 GPS 는 원을 그림 (3-4) |
 > | 추진기 반응 | 명령을 거의 즉시 추력으로 | 5주차에서 모터 지연을 **양쪽에** 붙임 |
@@ -2465,7 +2465,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 > [!important] 이 모델은 참값 오도메트리를 쓴다 — 기본 런치에는 없음
 > - `OdomNav` 가 `/wamv/sensors/position/ground_truth_odometry` (`nav_msgs/Odometry`) 하나로 위치 · 자세 · 몸체 속도를 받음
 > - 기본 런치(`world:=sydney_regatta` 만)로 띄우면 이 토픽이 없어 모든 값이 0 에 머묾
-> - 4주차 §A 와 같은 절차로 켠 뒤 실행할 것. `ground_truth_enabled:=True` 를 런치 인자로 주면 **조용히 무시됨**
+> - 4주차 2-14-4 와 같은 절차로 켠 뒤 실행할 것. `ground_truth_enabled:=True` 를 런치 인자로 주면 **조용히 무시됨**
 
 > [!tip] 노트북에서는 1 · 2 번 대신 `run_vrx.sh` 한 줄로 끝난다
 > - 2-3 의 센서 최소 URDF(`wamv_lite.urdf`)에는 **참값 오도메트리가 이미 켜져 있음**

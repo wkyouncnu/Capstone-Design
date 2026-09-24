@@ -24,14 +24,14 @@ summary: Term Project 무대가 될 커스텀 월드와 재사용 가능한 Pyth
 
 | 월드 | 출처 | 구성 | 투입 |
 |---|---|---|---|
-| `sydney_regatta.sdf` | upstream | 기본 해역 | 3~10주 |
-| `stationkeeping_task.sdf` | upstream | 위치유지 과제 | 13주 |
-| `gymkhana_task.sdf` | upstream | 컬러 게이트 + 장애물 | 11주 |
-| `scan_dock_deliver_task.sdf` | upstream | 표식 판독 + 도킹 (VRX 원본) | 12주 |
-| `sydney_regatta_ca.sdf` | **연구실 추가** | **적색 마커부표 36개 장애물 필드** + post 13개 | 10~11주 |
-| `sydney_regatta_ca_v2.sdf` | **연구실 추가** | 색상 혼합 소규모 필드 (적/녹/백/흑/주황) | 10주 |
+| `sydney_regatta.sdf` | upstream | 기본 해역 | 3\~10주 |
+| `stationkeeping_task.sdf` | upstream | 위치유지 과제 | 8주 |
+| `gymkhana_task.sdf` | upstream | 컬러 게이트 + 장애물 | 12주 |
+| `scan_dock_deliver_task.sdf` | upstream | 표식 판독 + 도킹 (VRX 원본) | 13주 |
+| `sydney_regatta_ca.sdf` | **연구실 추가** | **적색 마커부표 36개 장애물 필드** + post 13개 | 11\~12주 |
+| `sydney_regatta_ca_v2.sdf` | **연구실 추가** | 색상 혼합 소규모 필드 (적/녹/백/흑/주황) | 11주 |
 | `scan_dock_deliver_CA.sdf` | **연구실 추가** | **부표 80개** + 도킹 플랫폼 2개 | Term Project 통합 |
-| `scan_dock_deliver_full.sdf` | **연구실 추가** | `custom_docking_station` — bay1 / bay2 / bay3 | 12~13주 |
+| `scan_dock_deliver_full.sdf` | **연구실 추가** | `custom_docking_station` — bay1 / bay2 / bay3 | 13\~14주 |
 
 - 연구실 추가 파일의 원본 위치: `[2025] ROS2_VRX_Gazebo_Simulink/src/vrx/`
 - `custom_docking_station` 모델 실체: `vrx_urdf/vrx_gazebo/models/custom_docking_station/`
@@ -44,11 +44,11 @@ summary: Term Project 무대가 될 커스텀 월드와 재사용 가능한 Pyth
 
 | 파일 | 내용 | 투입 |
 |---|---|---|
-| `vrx_control/collision_avoidance_v2.py` | 고정 각도 회피. **나쁜 baseline 교보재** | 11주 |
-| `vrx_control/collision_avoidance_kaboat.py` | LaserScan → 슬라이딩윈도우 장애물 밀도 → 비용 기반 안전방위 선정. 장애물 임계 5.0 m, 전방 각도범위 ±30°, 최대거리 40 m | 11주 |
+| `vrx_control/collision_avoidance_v2.py` | 고정 각도 회피. **나쁜 baseline 교보재** | 12주 |
+| `vrx_control/collision_avoidance_kaboat.py` | LaserScan → 슬라이딩윈도우 장애물 밀도 → 비용 기반 안전방위 선정. 장애물 임계 5.0 m, 전방 각도범위 ±30°, 최대거리 40 m | 12주 |
 | `vrx_control/wamv_pid_control_v2.py` | UTM 웨이포인트 PID, 10 Hz. 거리 게인 7.0 / 0.5, 헤딩 게인 300.0 / 0.7 | 10주 정답지 |
-| `ros2_simulink/auto_berthing_seek.py` | 복셀 0.1 m → 2D 필터 3.5 m → **RANSAC 평면분할**(임계 0.05, n=3, 1000회) → 도크 법선 → `/docking_info` | 13주 |
-| `pointcloud_to_laserscan/` | PointCloud2 → LaserScan. **16빔 LiDAR에 맞게 재튜닝 필요** | 10주 |
+| `ros2_simulink/auto_berthing_seek.py` | 복셀 0.1 m → 2D 필터 3.5 m → **RANSAC 평면분할**(임계 0.05, n=3, 1000회) → 도크 법선 → `/docking_info` | 14주 |
+| `pointcloud_to_laserscan/` | PointCloud2 → LaserScan. **16빔 LiDAR에 맞게 재튜닝 필요** | 11주 |
 
 - 런치 파일: `vrx_kaboat.launch.py`, `wamv_collision_avoidance.launch.py`, `ros2_simulink.launch.py`
 
@@ -91,7 +91,7 @@ right_rear    (-2.374, -1.027, 0.318)   mount yaw -45 deg
 - **틸트 한계 ±45°는 URDF 가 아니라 제어기의 소프트웨어 제약**
   - `engine.xacro` 조인트 한계는 `lower="-pi" upper="pi"` (±180°) — 2026-09-03 upstream 확인
   - ±45° 는 `VRX_SHIFT_MINI_Full.m` 의 `alpha_max` 와 `rpi_otter` 안에 하드코딩됨
-- 5주차에 **본 과목 구성과 대조하는 비교 자료**로만 쓴다
+- 8주차에 **본 과목 구성과 대조하는 비교 자료**로만 쓴다
 - 그 밖: 3추진기 바우스러스터(`bow_wamv/`), 커스텀 2추진기(`my_wamv/`)
 
 ## 주요 토픽

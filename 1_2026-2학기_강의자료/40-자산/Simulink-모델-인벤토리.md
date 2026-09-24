@@ -24,8 +24,8 @@ summary: 연구실 워크스페이스의 8개 slx 모델과 실행 스크립트 
 |---|---|---|
 | `X_pose_config_test_2022a.slx` | 제어기 없는 **순수 ROS 2 인터페이스·프레임 변환 테스트**. Subscribe 11 / Publish 9, Bus Assignment 9개 | **4주** |
 | `GPS_INS_integration.slx` | GPS + IMU 융합 → `/gnss_ins_odom` (`nav_msgs/Odometry`) 발행. 모든 tilt4 모델이 이걸 구독 | 4주 |
-| `VRX_tilt4_controller_unberthing.slx` | tilt4 **축약판** — FSM 없이 이안 + 위치/헤딩 제어만 | **5~6주** |
-| `VRX_tilt4_controller_full.slx` | **완성본**. Stateflow 미션 FSM + 추력배분 + LOS + 상태추정 | 7 · 13주 |
+| `VRX_tilt4_controller_unberthing.slx` | tilt4 **축약판** — FSM 없이 이안 + 위치/헤딩 제어만 | **5\~6주** |
+| `VRX_tilt4_controller_full.slx` | **완성본**. Stateflow 미션 FSM + 추력배분 + LOS + 상태추정 | 7 · 14주 |
 | `VRX_manual_control.slx` | 조이스틱 수동조종 (3추진기) | 9주 |
 | `RC_transimitter_test.slx` | 조이스틱 매핑 확인. ROS 없음 | 예비 |
 | `VRX_control_final_docking_2022.slx` | 3추진기 접안. 내부에 WAM-V 동역학 모델 포함 → **Gazebo 없이 오프라인 실행 가능** | 대체 실습 |
@@ -33,7 +33,7 @@ summary: 연구실 워크스페이스의 8개 slx 모델과 실행 스크립트 
 
 ## VRX_tilt4_controller_full.slx 내부 구조
 
-- 전체 아키텍처의 참조 구현이다. 13주차에 통째로 뜯는다.
+- 전체 아키텍처의 참조 구현이다. 14주차에 통째로 뜯는다.
 
 ### Stateflow 미션 FSM
 
@@ -61,7 +61,7 @@ Docking_Approach    -> Docking_Final       [approach_finished == 1]
 |---|---|
 | `VRX_SHIFT_MINI_Full.m` | **마스터 실행 스크립트**. 위성지도 `ginput` 으로 7점 미션 클릭(이안 / WP×3 / DP / 접근 / 도킹), 추진기 기하와 전 게인 정의 |
 | `VRX_SHIFT_MINI_Unberthing.m` | 축약판. 1점만 클릭 |
-| `WAMV_USV_Control_Allocation.m` | **독립 실행형 추력배분 교재**. 로직 스윕 · 4시나리오 벡터도 · Monte-Carlo 도달가능 제어집합 그림 자동 생성 → 5주차 |
+| `WAMV_USV_Control_Allocation.m` | **독립 실행형 추력배분 교재**. 로직 스윕 · 4시나리오 벡터도 · Monte-Carlo 도달가능 제어집합 그림 자동 생성 → 8주차 |
 | `USV_display.m` · `USV_draw.m` · `circle_draw.m` | 위성지도 위 실시간 항적 애니메이션 (7 웨이포인트 라벨링 지원) |
 | `deg2utm.m` · `utm2deg.m` | WGS84 UTM 변환 유틸 |
 | `mission_points.mat` | 저장된 7점 미션 |

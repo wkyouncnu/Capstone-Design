@@ -50,17 +50,17 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 
 | 주차 | 문서 | 그림 | 주제 |
 |---|---|---|---|
-| 1 | [[W01_개발환경_구축과_USV_자율운항_개관]] | 3장 · PDF 19쪽 | 인지·판단·제어 · KABOAT/VRX 임무 · WSL2 · 리눅스 기본기 |
-| 2 | [[W02_ROS2_기초_노드와_토픽]] | 46장 | VS Code+WSL · 노드·토픽·**서비스·액션·파라미터** · **turtlesim** · rqt와 RViz2 · QoS · **중계 노드와 Simulink 목표 자세 제어** · **모델 3개 배포** |
-| 3 | [[W03_Gazebo_VRX_구축과_좌표계]] | 10장 | Gazebo·VRX 설치 · 6자유도 · ENU/NED · TF2 · **키보드 조종(차동 추진)** · **WAM-V 3자유도 운동모델** · **모델 5개 배포 (오프라인 버튼 조종 `W03_0_offline` 먼저)** |
-| 4 전 | [[A1_Simulink_기초]] | 12장 · PDF 42쪽 | **부록 A1 · Simulink 속성 입문 (3시간 x 2회)** · 1일차 블록·솔버·MATLAB Function·Subsystem·버스·PID·로깅 · 2일차 Mux·Unit Delay·Integrator·Switch·Enabled·Mask · **모델 26개 배포 (빈칸본 13 + 완성본 13)** |
-| 4 | [[W04_Simulink_PID와_첫_제어기]] | 10장 · PDF 41쪽 | **PID 입문 — 직접 조립·pseudo-derivative·안티와인드업** · Simulink↔ROS 2 연동 · 직진·선회·헤딩·속도 제어 · **오프라인 쌍둥이 먼저 → VRX** · **모델 10개 배포 (VRX 4 + 오프라인 3 + PID 입문 3)** |
-| 5 | [[W05_웨이포인트_유도_atan2와_LOS]] | 3장 · PDF 24쪽 | 웨이포인트 유도 atan2 vs LOS · 조류 실험 · **오프라인+VRX 모델 2개** |
-| 6 | [[W06_한점을_중심으로_도는_로이터링]] | PDF 20쪽 | 벡터필드 로이터링 · 방향·속도·반경 변경 · **오프라인+VRX 모델 2개** |
-| 7 | [[W07_Stateflow_미션_웨이포인트와_로이터링]] | PDF 18쪽 | **Stateflow 미션 FSM** · WP → 로이터 → WP · **오프라인+VRX 모델 2개** |
-| 8 | [[W08_틸팅추진기_추력배분과_동적위치유지]] | 8장 · PDF 23쪽 | **방위추진기 ±45°** · 추력 배분 · **동적위치유지(DP)** · 바람·파랑 · **모델 2개** |
-| 9 | [[W09_VRX_심화_모델구조와_토픽조사]] | 5장 | WAM-V URDF·Xacro · 센서 배치 · 토픽 전수조사 · Mapviz · **과제 월드와 채점** · **ros2 bag** · **센서 모델** · **모델 3개 배포 (오프라인 `W09_0_offline` 먼저)** |
-| 10 | [[W10_VSCode와_Claude_에이전트_첫_제어노드]] | 3장 · PDF 21쪽 | VS Code 설치 · Claude Code 연동 · 첫 제어 노드 (**`wamv_sim.py` 먼저, VRX 다음**) · **MATLAB MCP** 연동 |
+| 1 | [[W01_개발환경_구축과_USV_자율운항_개관]] | 3장 · PDF 21쪽 | 인지·판단·제어 · KABOAT/VRX 임무 · WSL2 · 리눅스 기본기 |
+| 2 | [[W02_ROS2_기초_노드와_토픽]] | 47장 · PDF 98쪽 | VS Code+WSL · 노드·토픽·**서비스·액션·파라미터** · **turtlesim** · rqt와 RViz2 · QoS · **중계 노드와 Simulink 목표 자세 제어** · **모델 3개 배포** |
+| 3 | [[W03_Gazebo_VRX_구축과_좌표계]] | 27장 · PDF 62쪽 | Gazebo·VRX 설치 · 6자유도 · ENU/NED · TF2 · **키보드 조종(차동 추진)** · **WAM-V 3자유도 운동모델** · **모델 5개 배포 (오프라인 버튼 조종 `W03_0_offline` 먼저)** |
+| 4 전 | [[A1_Simulink_기초]] | 17장 · PDF 53쪽 | **부록 A1 · Simulink 속성 입문 (3시간 x 2회)** · 1일차 블록·솔버·MATLAB Function·Subsystem·버스·PID·로깅 · 2일차 Mux·Unit Delay·Integrator·Switch·Enabled·Mask · **모델 26개 배포 (빈칸본 13 + 완성본 13)** |
+| 4 | [[W04_Simulink_PID와_첫_제어기]] | 55장 · PDF 97쪽 | **PID 입문 — 직접 조립·pseudo-derivative·안티와인드업** · Simulink↔ROS 2 연동 · 직진·선회·헤딩·속도 제어 · **오프라인 쌍둥이 먼저 → VRX** · **모델 10개 배포 (VRX 4 + 오프라인 3 + PID 입문 3)** |
+| 5 | [[W05_웨이포인트_유도_atan2와_LOS]] | 17장 · PDF 46쪽 | 웨이포인트 유도 atan2 vs LOS · 조류 실험 · **오프라인+VRX 모델 2개** |
+| 6 | [[W06_한점을_중심으로_도는_로이터링]] | 8장 · PDF 29쪽 | 벡터필드 로이터링 · 방향·속도·반경 변경 · **오프라인+VRX 모델 2개** |
+| 7 | [[W07_Stateflow_미션_웨이포인트와_로이터링]] | 8장 · PDF 30쪽 | **Stateflow 미션 FSM** · WP → 로이터 → WP · **오프라인+VRX 모델 2개** |
+| 8 | [[W08_틸팅추진기_추력배분과_동적위치유지]] | 9장 · PDF 34쪽 | **방위추진기 ±45°** · 추력 배분 · **동적위치유지(DP)** · 바람·파랑 · **모델 2개** |
+| 9 | [[W09_VRX_심화_모델구조와_토픽조사]] | 11장 · PDF 46쪽 | WAM-V URDF·Xacro · 센서 배치 · 토픽 전수조사 · Mapviz · **과제 월드와 채점** · **ros2 bag** · **센서 모델** · **모델 3개 배포 (오프라인 `W09_0_offline` 먼저)** |
+| 10 | [[W10_VSCode와_Claude_에이전트_첫_제어노드]] | 7장 · PDF 36쪽 | VS Code 설치 · Claude Code 연동 · 첫 제어 노드 (**`wamv_sim.py` 먼저, VRX 다음**) · **MATLAB MCP** 연동 |
 | 11 | *(예정)* | | LiDAR 신호처리 · 부표 탐지 |
 | 12 | *(예정)* | | LiDAR 기반 충돌회피 · **역할 로테이션** |
 | 13 | *(예정)* | | 영상처리 · LiDAR-카메라 융합 · 도킹 표식 |
@@ -133,42 +133,66 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 
 ## 🖼 그림 — `assets/`
 
-| 파일 | 쓰이는 곳 |
-|---|---|
-| `w01-pipeline.svg` | 인지·판단·제어 3단계 |
-| `w01-stack.svg` | Windows / WSL / MATLAB 구성 |
-| `w01-mission.svg` | Term Project 4구간 |
-| `w02-pubsub.svg` | 노드와 토픽 발행·구독 |
-| `w02-aliasing.svg` | 에일리어싱 (9 Hz → 1 Hz) |
-| `w02-ros2-overview.svg` | **ROS 2 전체** — 노드와 네 가지 통신, DDS |
-| `w02-service.svg` · `w02-action.svg` | 서비스 요청·응답 · 액션 goal/feedback/result |
-| `w02-turtlesim-*.png` | turtlesim 기동·토픽·서비스·파라미터·노드그래프 (5장) |
-| `w02-wsl-explorer.png` | Windows 탐색기로 연 WSL 폴더 |
-| `w02-where-installed.svg` | Windows / WSL 경계 — 무엇이 어디에 |
-| `w02-build-flow.svg` | 작성 → 등록 → 빌드 → source → 실행 |
-| `w02-vscode-*.png` | VS Code 확장 검색 · WSL 연결 · 편집기 · 통합 터미널 (4장) |
-| `w02-code-pub-sub.png` · `w02-code-setup.png` | 발행자↔구독자 · `setup.py`↔`package.xml` 대비 |
-| `w02-relay-flow.svg` | turtlesim ↔ 중계 노드 ↔ Simulink 토픽 흐름 |
-| `w02-goto-modes.svg` | 목표 자세 제어의 기하와 모드 3개 |
-| `w02-relay-code-*.png` (3장) · `w02-relay-setup.png` | 중계 노드 코드 · `setup.py` 등록 |
-| `w02-simulink-turtlesim-window.png` · `w02-turtlesim-goto.png` | Simulink 모델 창 · 목표 자세에 도착한 turtlesim |
-| `w02-git-clone.png` · `w02-colcon-build.png` | 실습 패키지 clone 과 빌드 화면 |
-| `w02-rqt-*.png` · `w02-rviz2.png` | rqt_graph · Topic Monitor · rqt_console · RViz2 |
-| `w03-frames.svg` | ENU vs NED |
-| `w03-6dof.svg` | 선박 6자유도 |
-| `w03-diff-thrust.svg` | **차동 추진** — 키 4개와 좌·우 추력 조합 |
-| `w03-vrx-start.png` · `w03-teleop-*.png` | VRX 기동 · 전진 · 좌선회 실화면 |
-| `w03-vscode-teleop.png` | VS Code 로 연 `wamv_teleop_key.py` |
-| `w09-task-stationkeeping.png` | VRX 정지유지 과제 월드 |
-| `w09-sensor-layout.svg` | WAM-V 센서 배치와 사각지대 |
-| `w09-topic-map.svg` | 토픽 흐름 한 바퀴 |
-| `w10-agent-loop.svg` | AI 에이전트 동작 루프와 사람의 몫 |
-| `w10-vscode-claude.svg` | VS Code · Claude · MATLAB 설치 위치 |
-| `w10-verify.svg` | 검증 세 겹 |
-| `w06-control-loop.svg` | 속도 루프 · 헤딩 루프 · 차동 배분 |
-| `w05-course-crab.svg` | 선수각 · 침로각 · 크랩각과 조류 |
-| `w05-los-geometry.svg` | LOS 기하 — π_p, y_e, Δ, R |
-| `w05-atan2-vs-los.svg` | 두 유도법칙 궤적 대비 + 실측 표 |
+주차 순서대로 적는다. **파일 이름의 `wNN` 은 만들 때의 주차 번호라 지금 쓰는 주차와 다를 수 있다** — 4주차가 쓰는 `w06-*` 넉 장이 그렇다.
+
+| 주차 | 파일 | 쓰이는 곳 |
+|---|---|---|
+| 1 | `w01-pipeline.svg` | 인지·판단·제어 3단계 |
+| 1 | `w01-stack.svg` | Windows / WSL / MATLAB 구성 |
+| 1 | `w01-mission.svg` | Term Project 4구간 |
+| 2 | `w02-ros2-overview.svg` | **ROS 2 전체** — 노드와 네 가지 통신, DDS |
+| 2 | `w02-pubsub.svg` | 노드와 토픽 발행·구독 |
+| 2 | `w02-service.svg` · `w02-action.svg` | 서비스 요청·응답 · 액션 goal/feedback/result |
+| 2 | `w02-build-flow.svg` | 작성 → 등록 → 빌드 → source → 실행 |
+| 2 | `w02-dds-domain.svg` | DDS 자동 발견과 `ROS_DOMAIN_ID` |
+| 2 | `w02-aliasing.svg` | 에일리어싱 (9 Hz → 1 Hz) |
+| 2 | `w02-where-installed.svg` | Windows / WSL 경계 — 무엇이 어디에 |
+| 2 | `w02-download-vscode.png` · `w02-vscode-*.png` (4장) | VS Code 내려받기 · 확장 · WSL 연결 · 통합 터미널 |
+| 2 | `w02-wsl-explorer.png` | Windows 탐색기로 연 WSL 폴더 |
+| 2 | `w02-turtlesim-*.png` (5장) | turtlesim 기동·토픽·스폰·파라미터·노드그래프 |
+| 2 | `w02-git-clone.png` · `w02-colcon-build.png` | 실습 패키지 clone 과 빌드 화면 |
+| 2 | `w02-code-pub-sub.png` · `w02-code-setup.png` | 발행자↔구독자 · `setup.py`↔`package.xml` 대비 |
+| 2 | `w02-rqt-*.png` (3장) · `w02-rviz2.png` | rqt_graph · Topic Monitor · rqt_console · RViz2 |
+| 2 | `w02-relay-flow.svg` | turtlesim ↔ 중계 노드 ↔ Simulink 토픽 흐름 |
+| 2 | `w02-relay-code-*.png` (3장) · `w02-relay-setup.png` | 중계 노드 코드 · `setup.py` 등록 |
+| 2 | `w02-goto-modes.svg` | 목표 자세 제어의 기하와 모드 3개 |
+| 2 | `w02-simulink-turtlesim-window.png` · `w02-turtlesim-goto.png` | Simulink 모델 창 · 목표 자세에 도착한 turtlesim |
+| 3 | `w03-6dof.svg` | 선박 6자유도 |
+| 3 | `w03-frames.svg` | ENU vs NED |
+| 3 | `w03-body-vs-ned-velocity.svg` | 몸체 속도와 지구 속도 |
+| 3 | `w03-latlon-ned.svg` | 위도·경도와 NED |
+| 3 | `w03-euler.svg` | 오일러각 세 가지 |
+| 3 | `w03-wamv-model.svg` | 3자유도 운동모델이 보는 WAM-V |
+| 3 | `w03-github-vrx.png` · `w03-gazebo-vrx-overview.png` · `w04-wamv-closeup.png` | VRX 저장소 브랜치 · 실행 화면 · WAM-V 근접 |
+| 3 | `w03-render-bottleneck.svg` · `w03-laptop-rtf-fps.svg` | 렌더링 병목 · 실행 방식별 RTF 와 fps |
+| 3 | `w03-laptop-*.png` (3장) | 실행 방식 1 · 2 · 4 의 화면과 RTF |
+| 3 | `w03-diff-thrust.svg` | **차동 추진** — 키 4개와 좌·우 추력 조합 |
+| 3 | `w03-vscode-teleop.png` | VS Code 로 연 `wamv_teleop_key.py` |
+| 3 | `w03-vrx-start.png` · `w03-teleop-*.png` (2장) | VRX 기동 · 전진 · 좌선회 실화면 |
+| A1 | `a1-canvas.svg` · `a1-blocks-map.svg` · `a1-bus.svg` | 편집기 화면 네 군데 · 블록 지도 · 버스 구조 |
+| 4 | `w06-simulink-window.png` | Simulink 편집기 창 |
+| 4 | `w06-openloop-vs-feedback.svg` | 개루프와 피드백 |
+| 4 | `w06-step-response-terms.svg` | 스텝응답에서 재는 다섯 숫자 |
+| 4 | `w06-control-loop.svg` | 속도 루프 · 헤딩 루프 · 차동 배분 |
+| 4 | `W04_simulink/img/*.png` (50장) | 예제마다의 결과 그래프 — `assets/` 가 아니라 모델 폴더에 있다 |
+| 5 | `w05-course-crab.svg` | 선수각 · 침로각 · 크랩각과 조류 |
+| 5 | `w05-track-error.svg` | 경로가 만드는 좌표계와 두 오차 |
+| 5 | `w05-los-geometry.svg` | LOS 기하 — π_p, y_e, Δ, R |
+| 5 | `w05-lookahead.svg` | lookahead distance Δ 가 하는 일 |
+| 5 | `w05-switching.svg` | 웨이포인트 전환 판정 두 가지 |
+| 5 | `w05-atan2-vs-los.svg` | 두 유도법칙 궤적 대비 + 실측 표 |
+| 6 | `w06-vector-field.svg` | 벡터필드 로이터링 개념 |
+| 7 | `w07-mission-fsm.svg` | 미션 상태기계와 모델 구조 |
+| 8 | `w08-dp-loop.svg` | DP 제어 루프 |
+| 9 | `w09-sensor-layout.svg` | WAM-V 센서 배치와 사각지대 |
+| 9 | `w09-topic-map.svg` | 토픽 흐름 한 바퀴 |
+| 9 | `w09-rviz-lidar.png` · `w09-rviz-tf-frames.png` | RViz2 점군·카메라 · TF 프레임 |
+| 9 | `w09-mapviz-*.png` (2장) | Mapviz 원점 오류 · 시드니 해역 위 항적 |
+| 9 | `w09-task-stationkeeping.png` | VRX 정지유지 과제 월드 |
+| 10 | `w10-agent-loop.svg` | AI 에이전트 동작 루프와 사람의 몫 |
+| 10 | `w10-verify.svg` | 검증 세 겹 |
+| 10 | `w10-vscode-claude.svg` | VS Code · Claude · MATLAB 설치 위치 |
+| 10 | `w10-download-vscode.png` · `w10-vscode-vault.png` · `w10-claudecode-docs.png` · `w10-restricted-mode.png` | VS Code 내려받기 · 볼트 열기 · Claude Code 문서 · Restricted Mode |
 
 ## 📦 자산 인벤토리 — `40-자산/`
 

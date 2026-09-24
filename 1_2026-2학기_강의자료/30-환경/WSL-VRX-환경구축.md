@@ -296,19 +296,19 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 | 월드 | 용도 | 주차 |
 |---|---|---|
 | `sydney_regatta` | 기본 해역, 조종 연습 | 3\~10주 |
-| `stationkeeping_task` | 위치유지 과제 | 13주 |
-| `wayfinding_task` | 자세 리스트 추종 | 7주 |
-| `perception_task` | 부표·토템 인식 | 12주 |
-| `gymkhana_task` | 컬러 게이트 항로 + 장애물 | 11주 |
-| `scan_dock_deliver_task` | 표식 판독 + 도킹 | 12주 |
+| `stationkeeping_task` | 위치유지 과제 | 8주 |
+| `wayfinding_task` | 자세 리스트 추종 | 5주 |
+| `perception_task` | 부표·토템 인식 | 11\~13주 |
+| `gymkhana_task` | 컬러 게이트 항로 + 장애물 | 12주 |
+| `scan_dock_deliver_task` | 표식 판독 + 도킹 | 13주 |
 
 **연구실이 추가한 월드** — 배포 파일을 받아 덮어써야 사용 가능
 
 | 월드 | 용도 | 주차 |
 |---|---|---|
-| `sydney_regatta_ca` | **적색 마커부표 36개 장애물 필드** | 10\~11주 |
-| `sydney_regatta_ca_v2` | 색상 혼합 소규모 필드 | 10주 |
-| `scan_dock_deliver_full` | **도킹 스테이션 3개 베이** | 12\~13주 |
+| `sydney_regatta_ca` | **적색 마커부표 36개 장애물 필드** | 11\~12주 |
+| `sydney_regatta_ca_v2` | 색상 혼합 소규모 필드 | 11주 |
+| `scan_dock_deliver_full` | **도킹 스테이션 3개 베이** | 13\~14주 |
 | `scan_dock_deliver_CA` | 부표 80개 + 도킹 플랫폼 (통합) | Term Project |
 
 > [!caution] 아래 파일은 `git clone` 으로 받아지지 않는다

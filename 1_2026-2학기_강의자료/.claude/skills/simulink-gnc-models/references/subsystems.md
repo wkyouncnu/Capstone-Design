@@ -104,7 +104,7 @@ case 'W03_4_teleop'
   적지 않아도 **언제나 회색**이다
 - 표에 없는 모델은 관례 이름(`Guidance` · `InnerLoop` · `Thrusters` ·
   `MotionModel` · `CmdPublisher` · `PoseSubscriber` · `Animate` · `Logging`)이
-  그대로 맞는다. 그래서 5~7주차는 `case` 한 줄로 끝난다
+  그대로 맞는다. 그래서 5\~7주차는 `case` 한 줄로 끝난다
 - 새 이름을 쓰면 `gnc_roles.m` 에 `case` 를 추가한다. **고칠 곳은 그 한 파일뿐이다**
 
 > [!important] 빠뜨렸는지는 `check_colour` 가 말해 준다

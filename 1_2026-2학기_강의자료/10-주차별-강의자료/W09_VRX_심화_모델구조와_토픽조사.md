@@ -570,7 +570,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 > [!warning] `ground_truth_enabled:=True` 를 런치 인자로 주면 **조용히 무시됨**
 > - `competition.launch.py` 의 인자는 `world` · `sim_mode` · `bridge_competition_topics` · `config_file` · `robot` · `headless` · `urdf` · `paused` · `competition_mode` · `extra_gz_args` 뿐임
 > - 없는 인자를 줘도 오류가 나지 않음 → `ground_truth_odometry` 토픽도 생기지 않음
-> - 참값 위치 토픽이 필요하면 **4주차 §A (ground truth odometry 켜기)** 를 따름
+> - 참값 위치 토픽이 필요하면 **4주차 2-14-4 (ground truth odometry 켜기)** 를 따름
 > - 인자 목록 확인: `ros2 launch vrx_gz competition.launch.py --show-args`
 
 ---
@@ -1732,7 +1732,7 @@ out = sim('W09_2_qos_test');     % 20 초, 벽시계
 | 센서를 바꿨는데 그대로임 | `config_file:=` 로 넘김 | 모델 지정은 **`urdf:=`** 임 |
 | xacro 처리 오류 | XML 문법 오류 | 닫는 태그와 따옴표 확인 |
 | `urdf:=` 로 띄웠더니 창은 뜨는데 토픽이 안 나옴 | LiDAR `z` 가 1.3465 m 이하 → 서버 충돌 (`Assertion '0.0 < _height' failed`) | `z` 를 1.4 이상으로 (§2-4 3단계) |
-| `ground_truth_enabled:=True` 를 줬는데 토픽이 없음 | 존재하지 않는 런치 인자라 무시됨 | 4주차 §A (ground truth odometry 켜기) |
+| `ground_truth_enabled:=True` 를 줬는데 토픽이 없음 | 존재하지 않는 런치 인자라 무시됨 | 4주차 2-14-4 (ground truth odometry 켜기) |
 | Mapviz 에 **엉뚱한 지역** 지도가 뜨고 항적이 없음 | 기본 런치의 원점이 미국 텍사스(SwRI) | `mapviz_sydney.launch.py` 로 실행 (§2-5 5단계) |
 | `docker: permission denied` | 그룹 미적용 | `sudo usermod -aG docker $USER` 후 `wsl --shutdown` |
 | `docker: Cannot connect to the Docker daemon` | 데몬 미실행 | `sudo service docker start` |

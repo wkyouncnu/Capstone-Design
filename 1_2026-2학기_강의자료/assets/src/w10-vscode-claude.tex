@@ -5,7 +5,7 @@
 % 요점: ROS 2 코드를 다루는 Claude Code 는 WSL 쪽에, MATLAB 을 부르는 Claude 는 Windows 쪽에 둔다.
 %       MATLAB MCP 서버는 Windows 의 MATLAB 에 붙는 Windows 프로그램이다.
 %
-% 고친 것 (2026-09-18) — MCP 서버를 WSL 상자에 그려 두었는데, 5주차 F-3 의 설정은 Windows 쪽
+% 고친 것 (2026-09-18) — MCP 서버를 WSL 상자에 그려 두었는데, 10주차 F-3 의 설정은 Windows 쪽
 % (C:\Users\<사용자>\.claude.json) 에 들어간다. WSL 의 claude 는 그 설정을 읽지 않는다.
 
 \documentclass[border=6pt]{standalone}
@@ -43,7 +43,7 @@
 \node[note, accent, below=0.6mm of cc] {\textbf{ROS 2 코드용은 여기에 설치한다}};
 
 \node[pblk, minimum width=52mm, minimum height=11mm] (ros) at (46,3) {ROS 2 · VRX · 작성한 코드};
-\node[note, below=0.6mm of ros] {1$\sim$4주차에 만든 것};
+\node[note, below=0.6mm of ros] {1$\sim$3 · 9주차에 만든 것};
 
 % ===================== 연결 =====================
 \draw[sig] (ext.east) -- node[sname, above, font=\scriptsize] {접속} (ext -| wsl.west);
