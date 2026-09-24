@@ -94,6 +94,21 @@ function addThrusterPublisher(m, side, tag, x, y)
     add_line(m, ['Asg'   tag '/1'], ['Pub' tag '/1'], 'autorouting','on');
 end
 
+function addFirstMsgGate(m, src, tag, x, y)
+% odom_ok = 0 인 동안(첫 오도메트리 전 + 그 뒤 1 초) 추력 0 을 발행한다.
+%   Subscribe 는 첫 메시지 전에 0 으로 채운 버스를 내고, Quat2Yaw 는 그것을 선수각 90 deg 로 읽는다.
+%   또 Simulink 는 시작 직후 몇 스텝을 벽시계로 수 초씩 멈추는데, 그동안 Gazebo 는 첫 추력을 계속 준다.
+%   막지 않으면 계단이 시작되기도 전에 배가 돌아, 헤딩 오버슈트가 실행마다 3 · 54 · 347 % 로
+%   달리 찍혔다 (2026-09-24 노트북 실측). 1 초 예열 뒤 정지한 배에서 계단을 시작한다.
+    add_block('simulink/Signal Routing/From', [m '/From_ok' tag], ...
+              'GotoTag','odom_ok', 'Position',[x y+45 x+70 y+67]);
+    add_block('simulink/Math Operations/Product', [m '/Gate' tag], ...
+              'Position',[x+100 y x+130 y+60]);
+    add_line(m, src,                  ['Gate' tag '/1'], 'autorouting','on');
+    add_line(m, ['From_ok' tag '/1'], ['Gate' tag '/2'], 'autorouting','on');
+    add_line(m, ['Gate' tag '/1'],    ['Asg' tag '/2'],  'autorouting','on');
+end
+
 function setSolver(m)
     set_param(m, 'SolverType','Fixed-step', 'SolverName','FixedStepDiscrete', ...
                  'FixedStep','0.05', 'StopTime','inf', 'SimulationMode','normal');
@@ -265,10 +280,11 @@ end
 % =====================================================================
 % 상태 읽기 블록 (3·4단계 공통)
 % =====================================================================
-function addOdomReader(m, withSpeed, anim)
+function addOdomReader(m, withSpeed, anim, gate)
 %   ANIM  true 이면 실시간 화면이 쓸 신호(위치·속도)를 **더 뽑아** 태그로 건다.
 %         제어에는 쓰이지 않는다. 뽑는 자리가 늘 뿐 제어 경로는 그대로다.
     if nargin < 3, anim = false; end
+    if nargin < 4, gate = false; end
     add_block('ros2lib/Subscribe', [m '/OdomSub'], 'Position',[40 40 160 100]);
     set_param([m '/OdomSub'], 'topicSource','Specify your own', ...
               'topic','/wamv/sensors/position/ground_truth_odometry', ...
@@ -301,10 +317,31 @@ function addOdomReader(m, withSpeed, anim)
     set_param([m '/Sel'], 'OutputSignals', sig);
     add_line(m,'OdomSub/2','Sel/1','autorouting','on');
 
+    %  GATE  true 이면 Quat2Yaw 가 셋째 출력 ok 를 내고 태그 odom_ok 로 건다.
+    %        제어기가 있는 모델(3·4단계)만 쓴다 — addFirstMsgGate 가 이 태그로 추력을 막는다.
+    if gate
+        hdr   = 'function [psi_ned, r, ok] = Quat2Yaw(qx, qy, qz, qw, wz)';
+        okFcn = [ newline ...
+            '% ok = 0 holds the thrusters at 0 (addFirstMsgGate). Two reasons:' newline ...
+            '%  1) Before the first odometry arrives the Subscribe block outputs an all-zero bus.' newline ...
+            '%     A zero quaternion reads as exactly 90 deg.' newline ...
+            '%  2) Simulink stalls for up to a few wall-clock seconds in its first steps while' newline ...
+            '%     Gazebo keeps running on the first thrust command. The boat turned 9 to 55 deg' newline ...
+            '%     before the model resumed (2026-09-24). So wait 1 s (20 samples) after the first' newline ...
+            '%     valid message, then start the step from a boat that is still at rest.' newline ...
+            'persistent n' newline ...
+            'if isempty(n), n = 0; end' newline ...
+            'valid = qx ~= 0 || qy ~= 0 || qz ~= 0 || qw ~= 0;' newline ...
+            'if valid, n = n + 1; end' newline ...
+            'ok = double(valid && n > 20);' newline];
+    else
+        hdr   = 'function [psi_ned, r] = Quat2Yaw(qx, qy, qz, qw, wz)';
+        okFcn = '';
+    end
     add_block('simulink/User-Defined Functions/MATLAB Function', [m '/Quat2Yaw'], ...
               'Position',[280 40 400 110]);
     setFcn(m, 'Quat2Yaw', [ ...
-        'function [psi_ned, r] = Quat2Yaw(qx, qy, qz, qw, wz)' newline ...
+        hdr newline ...
         '%#codegen' newline ...
         '% ROS quaternion (ENU body) -> NED heading [rad] and yaw rate [rad/s]' newline ...
         'yaw_enu = atan2(2*(qw*qz + qx*qy), 1 - 2*(qy*qy + qz*qz));' newline ...
@@ -313,11 +350,14 @@ function addOdomReader(m, withSpeed, anim)
         '' newline ...
         '% psi_ned = pi/2 - yaw_enu  ->  d(psi_ned)/dt = -d(yaw_enu)/dt.' newline ...
         '% ENU is z-up and NED is z-down, so the turn direction flips.' newline ...
-        'r = -wz;' newline]);
+        'r = -wz;' newline okFcn]);
     for k = 1:4
         add_line(m, sprintf('Sel/%d',k), sprintf('Quat2Yaw/%d',k), 'autorouting','on');
     end
     add_line(m, sprintf('Sel/%d',iWz), 'Quat2Yaw/5', 'autorouting','on');
+    if gate
+        tapGotos(m, 'Quat2Yaw', {'', '', 'odom_ok'}, 500);
+    end
 
     if ~anim, return, end
 
@@ -586,7 +626,7 @@ function build_heading(offline)
         sPsi = 'MotionModel/1';  sR = 'MotionModel/2';
     else
         m = 'W04_3_heading'; fresh(m);
-        addOdomReader(m, false, true);
+        addOdomReader(m, false, true, true);     % 마지막 true = 첫 메시지 전 추력 차단
         sPsi = 'Quat2Yaw/1';  sR = 'Quat2Yaw/2';
     end
 
@@ -635,8 +675,8 @@ function build_heading(offline)
     else
         addThrusterPublisher(m, 'left',  'L', 1000, 150);
         addThrusterPublisher(m, 'right', 'R', 1000, 320);
-        add_line(m,'PortEff/1','AsgL/2','autorouting','on');
-        add_line(m,'Alloc/2',  'AsgR/2','autorouting','on');
+        addFirstMsgGate(m, 'PortEff/1', 'L', 960, 120);
+        addFirstMsgGate(m, 'Alloc/2',   'R', 960, 300);
     end
 
     % 관찰용
@@ -645,8 +685,14 @@ function build_heading(offline)
     add_line(m,sPsi,'Scope_psi/1','autorouting','on');
     add_line(m,'deg2rad/1','Scope_psi/2','autorouting','on');
     addLog(m, sPsi, 'psi', 1200, 60);
-    addLog(m, 'PortEff/1', 'FL', 1200, 110);
-    addLog(m, 'Alloc/2',   'FR', 1200, 160);
+    if offline
+        addLog(m, 'PortEff/1', 'FL', 1200, 110);
+        addLog(m, 'Alloc/2',   'FR', 1200, 160);
+    else
+        %  VRX 는 게이트를 지난 값 — 배로 실제 나간 추력. 지표의 시작 시각을 여기서 읽는다
+        addLog(m, 'GateL/1', 'FL', 1200, 110);
+        addLog(m, 'GateR/1', 'FR', 1200, 160);
+    end
     addLog(m, sR,          'r',  1200, 210);
     addLog(m, 'OpenLoop/1','N',  1200, 260);
 
@@ -656,9 +702,9 @@ function build_heading(offline)
     %  그래서 속도 칸은 응답 u 만 그리고 "지령 없음" 이라고 적힌다.
     tapGotos(m, 'deg2rad', {'psi_ref'}, 230);
     if ~offline
-        %  VRX 에서는 배로 실제 나가는 추력을 잡는다 — 좌현은 PortEff 를 지난 값
-        tapGotos(m, 'PortEff', {'FL'},    960);
-        tapGotos(m, 'Alloc',   {'', 'FR'}, 1090);
+        %  VRX 에서는 배로 실제 나가는 추력을 잡는다 — 첫 메시지 게이트를 지난 값
+        tapGotos(m, 'GateL', {'FL'}, 1100);
+        tapGotos(m, 'GateR', {'FR'}, 1100);
     end
     addW04Animate(m, 40, 700, false, true);
 
@@ -705,7 +751,7 @@ function build_inner_loop(offline)
         sPsi = 'MotionModel/1';  sR = 'MotionModel/2';  sU = 'MotionModel/3';
     else
         m = 'W04_4_inner_loop'; fresh(m);
-        addOdomReader(m, true, true);    % twist.twist.linear.x 까지 뽑음
+        addOdomReader(m, true, true, true);    % twist.twist.linear.x 까지 뽑음 · 첫 메시지 전 추력 차단
         sPsi = 'Quat2Yaw/1';  sR = 'Quat2Yaw/2';  sU = 'Sel/5';
     end
 
@@ -735,7 +781,20 @@ function build_inner_loop(offline)
     add_line(m,sR,  'HeadingCtrl/3','autorouting','on');
     add_line(m,'u_ref/1','SumU/1','autorouting','on');
     add_line(m,sU,'SumU/2','autorouting','on');
-    add_line(m,'SumU/1','PI_u/1','autorouting','on');
+    if offline
+        add_line(m,'SumU/1','PI_u/1','autorouting','on');
+    else
+        %  추력을 막아 둔 예열 동안 PI_u 의 적분기가 오차 1.5 m/s 를 쌓지 않게 오차도 0 으로 묶는다.
+        %  묶지 않으면 게이트가 열리는 순간 포화 500 N 에서 출발해 u 가 63 % 에 1.4 s 만에 닿는다
+        %  (오프라인 2.5 s, 2026-09-24 실측). 열린 뒤에는 오프라인과 같은 0 에서 출발한다
+        add_block('simulink/Signal Routing/From', [m '/From_okE'], ...
+                  'GotoTag','odom_ok', 'Position',[200 380 270 402]);
+        add_block('simulink/Math Operations/Product', [m '/GateE'], ...
+                  'Position',[250 320 270 360]);
+        add_line(m,'SumU/1',    'GateE/1','autorouting','on');
+        add_line(m,'From_okE/1','GateE/2','autorouting','on');
+        add_line(m,'GateE/1',   'PI_u/1', 'autorouting','on');
+    end
     add_line(m,'PI_u/1','Alloc/1','autorouting','on');
     add_line(m,'HeadingCtrl/1','Alloc/2','autorouting','on');
 
@@ -743,10 +802,10 @@ function build_inner_loop(offline)
         add_line(m,'Alloc/1','MotionModel/1','autorouting','on');
         add_line(m,'Alloc/2','MotionModel/2','autorouting','on');
     else
-        addThrusterPublisher(m, 'left',  'L', 780, 180);
-        addThrusterPublisher(m, 'right', 'R', 780, 350);
-        add_line(m,'Alloc/1','AsgL/2','autorouting','on');
-        add_line(m,'Alloc/2','AsgR/2','autorouting','on');
+        addThrusterPublisher(m, 'left',  'L', 920, 180);
+        addThrusterPublisher(m, 'right', 'R', 920, 350);
+        addFirstMsgGate(m, 'Alloc/1', 'L', 740, 180);
+        addFirstMsgGate(m, 'Alloc/2', 'R', 740, 350);
     end
 
     % 관찰용
@@ -761,8 +820,14 @@ function build_inner_loop(offline)
     add_line(m,'deg2rad/1','Scope_psi/2','autorouting','on');
     addLog(m, sPsi, 'psi', 1000, 60);
     addLog(m, sU,   'u',   1000, 110);
-    addLog(m, 'Alloc/1', 'FL', 1000, 160);
-    addLog(m, 'Alloc/2', 'FR', 1000, 210);
+    if offline
+        addLog(m, 'Alloc/1', 'FL', 1000, 160);
+        addLog(m, 'Alloc/2', 'FR', 1000, 210);
+    else
+        %  VRX 는 게이트를 지난 값 — 배로 실제 나간 추력. 지표의 시작 시각을 여기서 읽는다
+        addLog(m, 'GateL/1', 'FL', 1000, 160);
+        addLog(m, 'GateR/1', 'FR', 1000, 210);
+    end
 
     %  ---- 실시간 화면 ----------------------------------------------------
     %  이 모델만 **지령이 둘 다 있다.** 속도 칸과 헤딩 칸에 지령선이 함께 그려지므로
@@ -770,7 +835,8 @@ function build_inner_loop(offline)
     tapGotos(m, 'deg2rad', {'psi_ref'}, 230);
     tapGotos(m, 'u_ref',   {'u_ref'},   160);
     if ~offline
-        tapGotos(m, 'Alloc', {'FL','FR'}, 760);
+        tapGotos(m, 'GateL', {'FL'}, 880);
+        tapGotos(m, 'GateR', {'FR'}, 880);
     end
     addW04Animate(m, 40, 680, true, true);
 

@@ -64,7 +64,14 @@ RTF = measureRTF(TOP, 10);
 fprintf('   RTF = %.3f  ->  페이싱 비율\n', RTF);
 load_system(mVrx);
 set_param(mVrx, 'EnablePacing','on', 'PacingRate', num2str(RTF), 'StopTime', num2str(T_end));
-oVrx = sim(mVrx);
+%  재는 동안에는 실시간 화면을 끈다. 화면을 그리느라 Simulink 가 처음 몇 초 VRX 를 못 따라가면
+%  배는 그동안 앞 추력대로 돌고, 계단응답이 오프라인보다 두 배 빨리 오른 것처럼 찍힌다
+%  (2026-09-24 노트북 실측: 화면 켬 오버슈트 3.5 % · 정착 3.5 s, 끔 2.9 % · 6.2 s).
+%  화면은 모델을 직접 열어 Run 할 때 본다 (2-0-1).
+fprintf('   측정 중 실시간 화면 끔 (animate = 0)\n');
+in   = Simulink.SimulationInput(mVrx);
+in   = in.setVariable('animate', 0);
+oVrx = sim(in);
 set_param(mVrx, 'StopTime','inf');
 stopThrusters();
 R.vrx = metrics(oVrx, stage);
@@ -80,6 +87,13 @@ psi = unwrap(squeeze(o.log_psi.Data));
 % VRX 는 첫 odom 이 오기 전 쿼터니언이 0 이다. Quat2Yaw 가 그것을 정확히 90 deg 로 바꾼다
 k0  = find(abs(psi - pi/2) > 1e-9 & abs(psi) > 1e-9, 1);
 if isempty(k0), k0 = 1; end
+% VRX 모델은 첫 메시지 1 초 뒤까지 추력을 0 으로 묶는다 (Quat2Yaw 의 ok · GateL/R).
+% 계단은 추력이 실제로 나가기 시작한 그 순간부터 잰다 — 오프라인은 처음부터 나가므로 k0 그대로
+if any(strcmp(o.who, 'log_FL'))
+    F  = abs(squeeze(o.log_FL.Data)) + abs(squeeze(o.log_FR.Data));
+    kF = find(F > 0, 1);
+    if ~isempty(kF), k0 = max(k0, find(t >= o.log_FL.Time(kF), 1)); end
+end
 M.psi0 = rad2deg(psi(k0));
 ref = 45;
 M.step = ref - M.psi0;
