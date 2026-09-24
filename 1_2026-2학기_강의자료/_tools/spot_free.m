@@ -14,7 +14,7 @@ function tf = spot_free(sys, rect, name, pts, skip)
 %   왜 필요한가 / why this exists
 %       tag_feedback 은 태그를 포트에서 정해진 거리(90 px) 아래에 매단다. 그 자리에
 %       이미 다른 블록이 있으면 태그가 그 위에 포개진다 (2026-09-19 SB8 의
-%       Fr_SumA_1_1 이 One 위에, W06_3·W06_4 의 Go_/Fr_ 가 Scope 위에).
+%       Fr_SumA_1_1 이 One 위에, W04_3·W04_4 의 Go_/Fr_ 가 Scope 위에).
 %       자리를 먼저 재 보고 비어 있을 때만 놓는다.
 
 if nargin < 5, skip = {}; end
@@ -41,7 +41,7 @@ for i = 1:numel(L)
     for k = 1:size(q,1)-1
         if seg_hits(q(k,:), q(k+1,:), rect), return, end
         %  이미 있는 선이 **새 태그의 이름표** 위를 지나면 태그 이름을 읽을 수 없다
-        %  (2026-09-21 W08_0·W08_1 의 Fr_psi_b)
+        %  (2026-09-21 W06_0·W06_1 의 Fr_psi_b)
         if seg_hits(q(k,:), q(k+1,:), nb), return, end
     end
 end

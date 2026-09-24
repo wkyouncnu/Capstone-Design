@@ -1,7 +1,7 @@
 function s = add_animate_box(m, tags, fcnName, code, pos, ts)
 %ADD_ANIMATE_BOX  포트 없는 Animate 서브시스템. 실시간 그림 블록을 한 상자에 넣는다.
 %
-%   add_animate_box(m, {'pn','pe','psi'}, 'W07_animate', code, [x y], 'Ts_ctrl')
+%   add_animate_box(m, {'pn','pe','psi'}, 'W05_animate', code, [x y], 'Ts_ctrl')
 %
 %     TAGS     그릴 신호의 Goto 태그 이름들. 이 순서가 함수 인자 순서가 된다
 %     FCNNAME  실제로 그림을 그리는 MATLAB 함수 이름 (coder.extrinsic 로 부른다)
@@ -46,7 +46,7 @@ ch = sfroot().find('-isa','Stateflow.EMChart','Path', fb);
 ch.Script = code;
 %  포트가 생기며 블록이 멋대로 자라는데, 그때 읽은 포트 위치는 저장했다 다시 열면
 %  달라진다 (간격 55 -> 60 px). 한 번 다시 놓으면 지금 읽는 값이 저장 뒤와 같다.
-%  이것을 빼면 From 여섯 개가 전부 5~15 px 기운 사선이 된다 (2026-09-19 W09).
+%  이것을 빼면 From 여섯 개가 전부 5~15 px 기운 사선이 된다 (2026-09-19 W07).
 set_param(fb, 'Position', [340 100 500 100+H]);
 
 %  From · Clock · 상수를 각자 포트 높이에 놓는다 -> 선이 전부 수평 직선

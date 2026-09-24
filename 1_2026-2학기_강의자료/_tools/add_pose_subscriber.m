@@ -48,7 +48,7 @@ set_param([s '/Nav'], 'Position', [520 180 700 740]);
 
 %  Bus Selector 의 아홉 출력을 Nav 의 1~9 번 입력 높이에 **정확히** 맞춘다.
 %  두 블록의 포트 간격이 다르면 아홉 선이 전부 몇 px 기운 사선이 된다
-%  (2026-09-19 W07~W10 PoseSubscriber, 9건씩). 높이를 계산하지 않고 읽어서 맞춘다.
+%  (2026-09-19 W05~W08 PoseSubscriber, 9건씩). 높이를 계산하지 않고 읽어서 맞춘다.
 a = port_xy(s, 'Nav', 'Inport', 1);
 b = port_xy(s, 'Nav', 'Inport', 9);
 fit_span(s, 'Sel', 'Outport', a(2), b(2));

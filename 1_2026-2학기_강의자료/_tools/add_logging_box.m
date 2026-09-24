@@ -11,7 +11,7 @@ function s = add_logging_box(m, sig, tag, pos, ts)
 %   왜 상자에 넣는가 / why this goes in a box
 %       로깅은 신호 사슬이 아니다. From 과 To Workspace 를 최상위에 늘어놓으면
 %       블록 수가 배로 늘고, 배치 도구가 그것들을 사슬 한가운데로 끌어들인다.
-%       W07 오프라인 모델은 최상위 68 블록 중 **28 개가 로깅**이었다.
+%       W05 오프라인 모델은 최상위 68 블록 중 **28 개가 로깅**이었다.
 %
 %       Logging is not part of the signal chain. Leaving the From and To
 %       Workspace blocks on the top level doubles the block count and lets the

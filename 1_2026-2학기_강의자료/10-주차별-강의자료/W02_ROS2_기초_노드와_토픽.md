@@ -21,7 +21,7 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 > | 4 | **제어공학특론** — 좌표계, 6자유도 운동방정식, 회전행렬과 오일러각, 선형화와 트림 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvJmvF2ljx4KM5dj1P5jEcw0) | [드라이브](https://drive.google.com/drive/folders/1GUxbbONl916lNd0ggnFnXrNwNkd13-2-) |
 > | 5 | **센서신호처리 및 융합** — 센서 모델, 잡음, 추정, 다중센서 융합 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvK-aP2Gdoyp5-AWvMn7Fo8E) | [드라이브](https://drive.google.com/drive/folders/1MEVJP7TzMcm8w6TZwUjhWJtL34WeNY3u) |
 >
-> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 6주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
+> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 4주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
 >
 > | 도구 | 시작 지점 |
 > |---|---|
@@ -84,7 +84,7 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 | 편집기 | **VS Code** (Windows 에 설치). 이번 주차 2-2절에서 함께 설치함 |
 | 터미널 | VS Code 통합 터미널을 기본으로 씀. `terminator`(1주차 2-6절)도 그대로 사용 가능 |
 | 인터넷 | 패키지 내려받기. 학교 와이파이면 시간이 더 걸림 |
-| MATLAB (§2-11 만) | **R2024b** + Simulink + ROS Toolbox. 없으면 §2-11 은 6주차 뒤로 미룸 |
+| MATLAB (§2-11 만) | **R2024b** + Simulink + ROS Toolbox. 없으면 §2-11 은 4주차 뒤로 미룸 |
 
 > [!note] 이번 주차부터 편집기가 바뀜
 > 1주차에서는 `nano` 로 파일을 만들었음. 이번 주차부터는 **VS Code** 를 씀
@@ -107,7 +107,7 @@ summary: VS Code로 WSL 편집, 노드·토픽·패키지, rqt와 RViz2, QoS 불
 | **수업 전** — 설치 | 2-1 ROS 2 설치 · 2-2 VS Code | 수업 시간에 설치로 막히지 않음 |
 | **수업 중** — 개념 | 1-1 \~ 1-2 · 1-4 \~ 1-6 | 노드 · 토픽 · 메시지 · Domain ID · QoS 가 무엇인가 |
 | **수업 중** — 손으로 | 2-3 첫 통신 → 2-4 turtlesim → 2-6 패키지 → 2-7 첫 노드 → 2-9 QoS 실험 | 이 주차의 뼈대. 순서대로 함 |
-| **수업 중** — Simulink | 2-10 중계 노드 → 2-11 목표 자세 제어 | 6주차 Simulink 연동의 예고편. 2-10 을 먼저 해야 2-11 이 돎 |
+| **수업 중** — Simulink | 2-10 중계 노드 → 2-11 목표 자세 제어 | 4주차 Simulink 연동의 예고편. 2-10 을 먼저 해야 2-11 이 돎 |
 | **과제** | 1-7 표본화 | 과제 2(가상 IMU 표본화) 가 이 절에서 나옴 |
 | **필요할 때** — 참고 | 1-3 워크스페이스 · 2-5 조사 명령어 · 2-8 rqt · RViz2 | 명령어가 기억나지 않을 때 돌아와 찾음 |
 
@@ -155,7 +155,7 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 | 재현성 | `rosbag2` 로 모든 데이터를 기록·재생 |
 
 > [!note] 본 과목에서 결정적인 지점
-> 6주차에 **Windows의 Simulink**와 **WSL의 Gazebo**가 서로 대화하게 됨.
+> 4주차에 **Windows의 Simulink**와 **WSL의 Gazebo**가 서로 대화하게 됨.
 > 그것을 가능하게 하는 것이 바로 이 구조임.
 
 ### ROS 1과 ROS 2
@@ -215,8 +215,8 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 
 > [!important] 본 과목의 90%는 토픽임
 > 나머지 셋은 "이런 것이 있고, 언제 쓰는지" 를 알아 두는 수준으로 충분함
-> 다만 **9주차 Stateflow 미션**의 상태 전환이 액션의 goal → feedback → result 와 같은 발상임 (ROS 액션을 쓰지는 않는다)
-> 파라미터는 5주차 이후 직접 작성하는 ROS 노드에서 씀. Simulink 제어기의 게인은 `W0X_setup.m` 변수로 다룸
+> 다만 **7주차 Stateflow 미션**의 상태 전환이 액션의 goal → feedback → result 와 같은 발상임 (ROS 액션을 쓰지는 않는다)
+> 파라미터는 10주차 이후 직접 작성하는 ROS 노드에서 씀. Simulink 제어기의 게인은 `W0X_setup.m` 변수로 다룸
 
 ---
 
@@ -293,7 +293,7 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 | **cancel** | 중간에 그만두게 함 |
 
 - 쓰는 곳 — 이동, 도킹, 탐색처럼 **오래 걸리는 일**
-- **9주차 Stateflow 미션**의 상태 전환이 goal → feedback → result 와 같은 발상임 (ROS 액션을 쓰지는 않는다)
+- **7주차 Stateflow 미션**의 상태 전환이 goal → feedback → result 와 같은 발상임 (ROS 액션을 쓰지는 않는다)
 
 ---
 
@@ -309,7 +309,7 @@ GNSS 드라이버   IMU 드라이버   LiDAR 드라이버   카메라 드라이�
 | `ros2 param set <노드> <이름> <값>` | 값 변경 |
 | `ros2 param dump <노드>` | 전체를 YAML 로 저장 |
 
-- 5주차 이후 직접 작성하는 ROS 노드에서 씀. Simulink 제어기의 **게인**은 `W0X_setup.m` 변수로 다룸
+- 10주차 이후 직접 작성하는 ROS 노드에서 씀. Simulink 제어기의 **게인**은 `W0X_setup.m` 변수로 다룸
 
 > [!note] 네 가지를 한 문장으로
 > **토픽**은 방송, **서비스**는 전화, **액션**은 택배 배송 조회, **파라미터**는 설정 화면
@@ -351,7 +351,7 @@ capstone_ws/                  ← ① 워크스페이스 (작업 상자)
 | 빌드 타입 | 언어 | 본 과목에서 |
 |---|---|---|
 | `ament_python` | 파이썬 | **이번 주차에 쓸 것** |
-| `ament_cmake` | C++ | 4주차 이후 참고용 |
+| `ament_cmake` | C++ | 9주차 이후 참고용 |
 
 ### `package.xml` — 패키지의 신분증
 
@@ -509,7 +509,7 @@ echo $ROS_DOMAIN_ID
 
 - 정상 출력: `7` (자기 팀 번호)
 
-> [!note] 6주차 복선
+> [!note] 4주차 복선
 > MATLAB과 연동할 때 **양쪽 Domain ID가 같아야** 통신됨. 지금 기억해 둘 것.
 
 ---
@@ -594,7 +594,7 @@ ros2 topic info /토픽이름 --verbose
 
 ### 센서는 연속 신호를 잘라서 준다
 
-| 센서 | 주파수 | VRX (설계값, 4주차 2-3-7) |
+| 센서 | 주파수 | VRX (설계값, 9주차 2-3-7) |
 |---|---|---|
 | IMU | 100\~200 Hz | 100 Hz |
 | GNSS | 1\~20 Hz | 20 Hz |
@@ -1352,7 +1352,7 @@ ros2 param dump /turtlesim
 
 > [!note] 파라미터는 직접 작성하는 ROS 노드에서 씀
 > 코드를 고쳐 다시 빌드하는 대신 **파라미터로 빼 두면 실행 중에 바꿔 가며 튜닝**할 수 있음
-> 5주차 이후 직접 작성하는 ROS 노드가 대상임. Simulink 제어기의 게인은 `W0X_setup.m` 변수로 다룸
+> 10주차 이후 직접 작성하는 ROS 노드가 대상임. Simulink 제어기의 게인은 `W0X_setup.m` 변수로 다룸
 
 ---
 
@@ -1427,7 +1427,7 @@ Goal finished with status: SUCCEEDED
 > [!important] 액션을 쓰는 이유가 여기 있음
 > 서비스였다면 다 돌 때까지 **아무 소식이 없음**
 > 액션은 **남은 각도를 계속 알려 주고**, 중간에 취소할 수도 있음
-> 9주차 Stateflow 미션의 상태 전환이 goal → feedback → result 와 같은 발상임 (ROS 액션을 쓰지는 않는다)
+> 7주차 Stateflow 미션의 상태 전환이 goal → feedback → result 와 같은 발상임 (ROS 액션을 쓰지는 않는다)
 
 ---
 
@@ -1784,7 +1784,7 @@ ros2 bag play rosbag2_2026_09_10-14_30_00
 > [!important] 두 가지 길이 있음. **수업에서는 ①로 진행함**
 > | 길 | 무엇을 하는가 | 언제 |
 > |---|---|---|
-> | ① **직접 만들기** | `ros2 pkg create` 부터 손으로 | **수업 시간.** 구조를 알아야 4주차부터 스스로 만듦 |
+> | ① **직접 만들기** | `ros2 pkg create` 부터 손으로 | **수업 시간.** 구조를 알아야 9주차부터 스스로 만듦 |
 > | ② **저장소에서 받기** | `git clone` 한 줄 | 복습할 때 · 실습이 밀렸을 때 · 코드가 꼬였을 때 |
 >
 > ②는 아래 "저장소에서 받기" 를 보면 됨. **①을 건너뛰지 말 것**
@@ -2450,7 +2450,7 @@ rviz2
   - 3주차에서 VRX 를 띄우면 이 경고가 사라짐
 
 > [!note] 이번 주차에는 띄워 보는 것까지가 목표
-> RViz2 를 제대로 쓰는 것은 **3주차(좌표계·TF)** 와 **4주차(센서 토픽)** 의 내용임
+> RViz2 를 제대로 쓰는 것은 **3주차(좌표계·TF)** 와 **9주차(센서 토픽)** 의 내용임
 > 지금은 "이런 도구가 있고, 실행하면 이런 화면이 나온다" 를 확인함
 
 ---
@@ -2469,7 +2469,7 @@ rviz2
 ## 2-9. QoS 불일치 재현 실험
 
 > [!important] 이번 주차 실습에서 가장 중요한 부분
-> 이 유의 사항을 지금 손으로 만들어 봐야, 실선 LiDAR·카메라 드라이버(흔히 BEST_EFFORT)를 만났을 때 스스로 알아챔. VRX 는 전부 RELIABLE 이라 시뮬레이터에서는 걸리지 않음 (4주차 2-3 절)
+> 이 유의 사항을 지금 손으로 만들어 봐야, 실선 LiDAR·카메라 드라이버(흔히 BEST_EFFORT)를 만났을 때 스스로 알아챔. VRX 는 전부 RELIABLE 이라 시뮬레이터에서는 걸리지 않음 (9주차 2-3 절)
 
 ### 발행자 — BEST_EFFORT
 
@@ -2687,7 +2687,7 @@ cd ~/capstone_ws && colcon build --symlink-install && source install/setup.bash
 
 > [!important] 이 절에서 만드는 것
 > - `/turtle1/pose` 를 받아 **MATLAB 에 내장된 메시지 형식**으로 다시 발행하는 노드 하나
-> - 6주차부터 Simulink 가 ROS 2 와 통신함. 그때 **"토픽은 보이는데 형식이 없다"** 는 문제를 반드시 만남
+> - 4주차부터 Simulink 가 ROS 2 와 통신함. 그때 **"토픽은 보이는데 형식이 없다"** 는 문제를 반드시 만남
 > - 해결 방법은 한 가지 — **중계 노드**. 이번 주차에 만든 노드 작성법 그대로 씀
 
 ### 용어 정리
@@ -3066,9 +3066,9 @@ average rate: 62.504
 ## 2-11. Simulink 로 turtlesim 을 목표 자세까지 보낸다
 
 > [!important] 이 절의 성격 — 미리 보기 실습
-> - Simulink 기초는 **6주차**에 배움. 이번 주차에는 모델을 **만들지 않고 실행해서 구조를 읽음**
+> - Simulink 기초는 **4주차**에 배움. 이번 주차에는 모델을 **만들지 않고 실행해서 구조를 읽음**
 > - 목표: §2-10 의 중계 노드가 **실제 제어 루프의 한 부분**으로 쓰이는 것을 눈으로 확인
-> - MATLAB 이 아직 설치되지 않았다면 이 절은 6주차 이후 다시 와도 됨
+> - MATLAB 이 아직 설치되지 않았다면 이 절은 4주차 이후 다시 와도 됨
 
 ### 준비물
 
@@ -3170,7 +3170,7 @@ W02_setup
 W02_setup 완료 — 목표 (9.00, 2.00, 90.0 deg), ROS_DOMAIN_ID=7
 ```
 
-5. Simulink 쪽 도메인 확인 — 툴스트립 **시뮬레이션 → ROS 네트워크** 의 Domain ID 를 우분투 값과 같게 함 (6주차 B-1 과 같은 절차)
+5. Simulink 쪽 도메인 확인 — 툴스트립 **시뮬레이션 → ROS 네트워크** 의 Domain ID 를 우분투 값과 같게 함 (4주차 B-1 과 같은 절차)
    - Simulink ROS 2 블록은 `ROS_DOMAIN_ID` 환경변수가 아니라 **이 프로필 값**을 읽음. `W02_setup` 의 `setenv` 만으로는 모델이 값을 받지 못함
 6. 우분투의 토픽이 MATLAB 에서 보이는지 확인
 
@@ -3417,7 +3417,7 @@ S = W02_plot(out, 'turtlesim')
 > [!note] 실물 대조는 초 단위 시각보다 최종 오차를 먼저 봄
 > turtlesim 은 **벽시계**로 움직이고, Simulink 의 기록 시각은 **시뮬레이션 시계**임. 서로 다른 두 시계
 > 페이싱(`PacingRate = 1`)으로 맞추지만 회차 간 차이가 실측으로 위치 도착 0.60 s, 완료 0.85 s 났음
-> 시뮬레이터와 Simulink 의 시계를 맞추는 페이싱은 6주차 VRX 연동에서 자세히 다룸
+> 시뮬레이터와 Simulink 의 시계를 맞추는 페이싱은 4주차 VRX 연동에서 자세히 다룸
 
 ### 해 볼 것 — 목표를 바꾼다
 

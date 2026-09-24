@@ -31,7 +31,7 @@ for k = 1:2
 
     %  Blank 는 Asg 의 **1번 포트 높이**에, Publish 는 Asg 의 출력 높이에 놓는다.
     %  Asg 가운데에 맞추면 1번 포트가 가운데보다 위에 있어 20 px 기운 사선이 된다
-    %  (2026-09-19 W07~W09 CmdPublisher). 포트 높이는 계산하지 않고 읽는다.
+    %  (2026-09-19 W05~W07 CmdPublisher). 포트 높이는 계산하지 않고 읽는다.
     bb = [s '/Blank' t];
     add_block('ros2lib/Blank Message', bb, 'Position', [160 y-20 260 y+20]);
     set_param(bb, 'entityType','std_msgs/Float64', ...

@@ -21,7 +21,7 @@ summary: 인지·판단·제어 파이프라인, KABOAT 5임무와 VRX 8 Task, W
 > | 4 | **제어공학특론** — 좌표계, 6자유도 운동방정식, 회전행렬과 오일러각, 선형화와 트림 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvJmvF2ljx4KM5dj1P5jEcw0) | [드라이브](https://drive.google.com/drive/folders/1GUxbbONl916lNd0ggnFnXrNwNkd13-2-) |
 > | 5 | **센서신호처리 및 융합** — 센서 모델, 잡음, 추정, 다중센서 융합 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvK-aP2Gdoyp5-AWvMn7Fo8E) | [드라이브](https://drive.google.com/drive/folders/1MEVJP7TzMcm8w6TZwUjhWJtL34WeNY3u) |
 >
-> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 6주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
+> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 4주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
 >
 > | 도구 | 시작 지점 |
 > |---|---|
@@ -139,7 +139,7 @@ summary: 인지·판단·제어 파이프라인, KABOAT 5임무와 VRX 8 Task, W
 
 ### 본 과목의 진행 순서
 
-- **전반부 (5\~10주차)** — 그림의 **오른쪽(제어)**
+- **전반부 (4\~8주차)** — 그림의 **오른쪽(제어)**
   - Gazebo가 계산하는 진짜 선박 운동모델 위에서
   - **Simulink 제어기**로 배를 움직임
 - **후반부 (11\~13주차)** — 그림의 **왼쪽·가운데(인지·판단)**
@@ -153,7 +153,7 @@ summary: 인지·판단·제어 파이프라인, KABOAT 5임무와 VRX 8 Task, W
 |---|---|
 | 장애물은 찾았는데 배를 못 움직임 | 움직이는 배를 쥔 채로 인지를 붙임 |
 | 결과가 화면 위 점 몇 개뿐 | 매주 눈에 보이는 결과가 나옴 |
-| 중반까지 배가 안 움직임 | 8주차에 이미 자율 항주 성공 |
+| 중반까지 배가 안 움직임 | 6주차에 이미 자율 항주 성공 |
 
 ---
 
@@ -229,11 +229,11 @@ summary: 인지·판단·제어 파이프라인, KABOAT 5임무와 VRX 8 Task, W
 | **WSL2 + Ubuntu 22.04** | 리눅스 환경. ROS는 리눅스가 사실상 표준 | **이번 주차** |
 | **ROS 2 Humble** | 프로그램끼리 데이터를 주고받는 미들웨어 | 2주차 |
 | **Gazebo Garden + VRX** | 물리 시뮬레이터, 선박 운동모델 | 3주차 |
-| **VSCode + Claude Code** | 인지 알고리즘 코딩 | 5주차 |
-| **MATLAB / Simulink** | 제어기 설계 | 6주차 |
+| **VSCode + Claude Code** | 인지 알고리즘 코딩 | 10주차 |
+| **MATLAB / Simulink** | 제어기 설계 | 4주차 |
 
 > [!note] 재미있는 지점
-> 6주차가 되면 **Windows의 Simulink**와 **WSL의 Gazebo**가 서로 데이터를 주고받음.
+> 4주차가 되면 **Windows의 Simulink**와 **WSL의 Gazebo**가 서로 데이터를 주고받음.
 > 서로 다른 OS인데도 가능한 이유가 ROS 2의 통신 구조(DDS)임.
 
 ---
@@ -317,7 +317,7 @@ Free_GB
 > [!caution] RAM 8 GB 이하 또는 4코어 미만인 경우
 > - **이번 주차 과제에 반드시 신고할 것**
 > - **불이익 없음.** 연구실 워크스테이션 원격 접속을 배정함
-> - 숨기고 버티다 5주차에 이탈하는 것이 최악의 경로임
+> - 숨기고 버티다 10주차에 이탈하는 것이 최악의 경로임
 
 ---
 

@@ -9,7 +9,7 @@ function [X, Y, hx, hy] = W03_hull(x, y, th, L)
 %     th   : 선수각 [rad]  (+x 축 기준 반시계 +)
 %     L    : 반길이. 생략하면 3.0  (WAM-V 전장 약 4.9 m)
 %
-%   모양은 W07_animate 의 WAM-V 선체와 같다
+%   모양은 W05_animate 의 WAM-V 선체와 같다
 %
 %        by
 %        ^     ___________

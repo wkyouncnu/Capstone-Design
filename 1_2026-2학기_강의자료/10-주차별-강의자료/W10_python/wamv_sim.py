@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""wamv_sim — VRX 없이 도는 WAM-V (5주차 E-4)
+"""wamv_sim — VRX 없이 도는 WAM-V (10주차 E-4)
 
 VRX 와 **같은 토픽 이름 · 같은 메시지 형식**으로 GPS · IMU 를 내고 추력을 받는다.
 그래서 에이전트가 만든 제어 노드를 한 글자도 바꾸지 않고 먼저 여기에 물려 볼 수 있다.
@@ -9,7 +9,7 @@ VRX 와 **같은 토픽 이름 · 같은 메시지 형식**으로 GPS · IMU 를
 
 안에 든 것
     운동모델   3주차 1-8 절 — Simulink 의 EOM 블록과 같은 식, 같은 계수
-    센서 모델  4주차 1-5 절 — GPS 20 Hz (안테나 x_b = -0.85 m), IMU 100 Hz (자이로 잡음)
+    센서 모델  9주차 1-5 절 — GPS 20 Hz (안테나 x_b = -0.85 m), IMU 100 Hz (자이로 잡음)
 
 토픽
     구독  /wamv/thrusters/left/thrust    std_msgs/Float64   [N]
@@ -47,7 +47,7 @@ NR, NRR = 800.0, 800.0   # 요 항력
 B_HALF = 1.027135        # 추진기 좌우 반폭 [m]
 F_MAX = 2353.6           # VRX 추진기 명령 한계 [N] (wamv_gazebo_thruster_config.xacro)
 
-# ---- 4주차 1-5 절: 센서 설정 ----------------------------------------------
+# ---- 9주차 1-5 절: 센서 설정 ----------------------------------------------
 GPS_HZ, IMU_HZ = 20, 100
 GPS_XB, GPS_YB = -0.85, 0.0          # 안테나 위치 (선체 축 FRD) [m]
 GYRO_STD, GYRO_BIAS = 0.009, 0.00075  # [rad/s]
@@ -129,7 +129,7 @@ class WamvSim(Node):
 
     def publish_gps(self, stamp):
         u, v, r, x_n, y_n, psi = self.s
-        # 4주차 1-5: 안테나 위치 = 원점 + 선체 오프셋을 NED 로 돌린 것
+        # 9주차 1-5: 안테나 위치 = 원점 + 선체 오프셋을 NED 로 돌린 것
         xa = x_n + GPS_XB * math.cos(psi) - GPS_YB * math.sin(psi)
         ya = y_n + GPS_XB * math.sin(psi) + GPS_YB * math.cos(psi)
         m = NavSatFix()

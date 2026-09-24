@@ -1,14 +1,14 @@
 ---
 type: week
-week: 6
-title: 6주차 — Simulink ROS 2 연동과 첫 제어기
+week: 4
+title: 4주차 — Simulink PID 와 첫 제어기
 date: 2026-09-03
 tags: [week, simulink, ros2, pid]
 status: done
 summary: PID 를 직접 조립해 보고 그 PID 로 WAM-V 를 직진·선회·헤딩·속도 제어까지
 ---
 
-# 6주차 · Simulink ROS 2 연동과 첫 제어기
+# 4주차 · Simulink PID 와 첫 제어기
 
 > [!important] 참조 강의 — 본 과목이 전제하는 배경
 > <span style="font-size:0.88em">아래 다섯 과목은 **본 과목 담당 교수가 직접 강의한 것**이며, 본 과목이 전제하는 배경 지식에 해당함. 학부 기초에서 대학원 과정까지 이어지므로 부족한 지점부터 시작하면 됨. 본 문서에서 쓰는 좌표계·기호·유도 과정은 아래 강의에서 상세히 다루므로, 선수 지식이 부족한 경우 먼저 보고 돌아올 것.</span>
@@ -21,7 +21,7 @@ summary: PID 를 직접 조립해 보고 그 PID 로 WAM-V 를 직진·선회·�
 > | 4 | **제어공학특론** — 좌표계, 6자유도 운동방정식, 회전행렬과 오일러각, 선형화와 트림 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvJmvF2ljx4KM5dj1P5jEcw0) | [드라이브](https://drive.google.com/drive/folders/1GUxbbONl916lNd0ggnFnXrNwNkd13-2-) |
 > | 5 | **센서신호처리 및 융합** — 센서 모델, 잡음, 추정, 다중센서 융합 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvK-aP2Gdoyp5-AWvMn7Fo8E) | [드라이브](https://drive.google.com/drive/folders/1MEVJP7TzMcm8w6TZwUjhWJtL34WeNY3u) |
 >
-> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 6주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
+> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 4주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
 >
 > | 도구 | 시작 지점 |
 > |---|---|
@@ -54,13 +54,13 @@ summary: PID 를 직접 조립해 보고 그 PID 로 WAM-V 를 직진·선회·�
 > - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-6)
 > - MATLAB **R2024b + Simulink + ROS Toolbox** 설치 확인
 > - VRX 가 실행되는 상태여야 함
-> - 4주차에 배운 **urdf 복사 후 `urdf:=` 로 실행**을 이번 주차 다시 씀
-> - **Simulink 가 처음이면 [[W06_0_Simulink_기초]] 를 먼저 할 것** — 이번 주차에는 블록·버스·MATLAB Function 을 이미 안다고 전제함
+> - 9주차에 배운 **urdf 복사 후 `urdf:=` 로 실행**을 이번 주차 다시 씀
+> - **Simulink 가 처음이면 [[A1_Simulink_기초]] 를 먼저 할 것** — 이번 주차에는 블록·버스·MATLAB Function 을 이미 안다고 전제함
 
 > [!note] 이번 주차의 순서 — PID 를 먼저 손에 쥐고 배로 감
 > - 실습 **E\~G 절**은 Gazebo 없이 MATLAB 만으로 돎. PID 게인 세 개가 무엇을 하는지 여기서 봄
 > - 실습 **H\~J 절**의 헤딩·속도 게인 값은 **미리 주어진 것**을 씀
-> - 헤딩 게인을 **계산으로 정하는 방법**은 1-7절(극배치)에서, 틸팅 추진기의 추력 배분은 10주차에서 다룸
+> - 헤딩 게인을 **계산으로 정하는 방법**은 1-7절(극배치)에서, 틸팅 추진기의 추력 배분은 8주차에서 다룸
 
 ---
 
@@ -81,9 +81,9 @@ summary: PID 를 직접 조립해 보고 그 PID 로 WAM-V 를 직진·선회·�
 
 | 항목 | 내용 |
 |---|---|
-| 환경 | 1\~5주차 WSL2 + ROS 2 + VRX |
+| 환경 | 1\~3주차 WSL2 + ROS 2 + VRX |
 | MATLAB | R2024b + Simulink + **ROS Toolbox** |
-| 배포 파일 | `W06_simulink/` 폴더 (모델 10개 + 생성 스크립트 2개) |
+| 배포 파일 | `W04_simulink/` 폴더 (모델 10개 + 생성 스크립트 2개) |
 
 ---
 
@@ -184,7 +184,7 @@ Blank Message ──► Bus Assignment ──► Publish
 
 > [!warning] ROS 가 주는 값에 제어식의 글자를 바로 붙이지 않음
 > ROS 의 선체축은 $x_b$ 선수·$y_b$ **좌현**·$z_b$ **위**(FLU), 제어식은 $x_b$ 선수·$y_b$ **우현**·$z_b$ **아래**(FRD)
-> $y_b$ 와 $z_b$ 가 뒤집혀 있으므로 옆 속도와 요각속도는 **부호가 반대** (4주차 센서 배치 절, 3주차 ENU→NED)
+> $y_b$ 와 $z_b$ 가 뒤집혀 있으므로 옆 속도와 요각속도는 **부호가 반대** (9주차 센서 배치 절, 3주차 ENU→NED)
 > 그래서 이 주차 모델의 `Quat2Yaw` 블록은 `r = -wz` 로 뒤집어서 내보냄 — 헤딩 제어기의 $-K_{d,\psi}\,r$ 이
 > 감쇠가 되려면 $r$ 이 선수각과 같은 방향(시계 $+$)이어야 하기 때문
 
@@ -217,7 +217,7 @@ Blank Message ──► Bus Assignment ──► Publish
 
 ```matlab
 rtf = 0.85;   % gz topic -e -t /stats 로 잰 값
-set_param('W06_1_straight','EnablePacing','on','PacingRate',num2str(rtf));
+set_param('W04_1_straight','EnablePacing','on','PacingRate',num2str(rtf));
 ```
 
 > [!caution] 매 학기 반복되는 오류
@@ -234,7 +234,7 @@ set_param('W06_1_straight','EnablePacing','on','PacingRate',num2str(rtf));
 > gz topic -e -t /stats -n 1 | grep real_time_factor
 > ```
 >
-> - 7주차부터 쓰는 `W0X_vrx_run` 은 이 측정을 자동으로 하고 그 값을 페이싱에 넣음
+> - 5주차부터 쓰는 `W0X_vrx_run` 은 이 측정을 자동으로 하고 그 값을 페이싱에 넣음
 
 > [!warning] RTF 는 고정값이 아님
 > 기준 노트북에서 같은 월드를 놓고 5초 간격으로 재면 **0.46 \~ 0.91** 까지 흔들렸음 (2026-09-15 실측)
@@ -271,7 +271,7 @@ set_param('W06_1_straight','EnablePacing','on','PacingRate',num2str(rtf));
 | 모델이 틀리면 | 그대로 틀림 | 어느 정도 덮어 줌 |
 | 대가 | 없음 | 잘못 설계하면 **진동하거나 발산**함 |
 
-- 4주차의 "추력 200 N 을 준다"는 **개루프**였음. 배가 몇 m/s 로 가는지 보지 않았음
+- 9주차의 "추력 200 N 을 준다"는 **개루프**였음. 배가 몇 m/s 로 가는지 보지 않았음
 - 이번 주차부터는 **속도를 재서** 목표와 비교함. 그것이 피드백
 
 > [!note] 피드백이 공짜가 아닌 이유
@@ -322,7 +322,7 @@ $$
 > 한 페이지에서 $u$ 가 속도이기도 하고 제어입력이기도 하면 읽을 수가 없음
 > 그래서 목표값은 $y_d$, 제어입력은 $\tau$ 로 씀 (대학원 강의 · Fossen 과 같은 표기)
 > $y$ 도 이 절에서는 일반 출력이며 동쪽 위치 $y$ 아님
-> 실습 모델 `W06_P1` · `W06_P2` 의 제어입력 신호도 `tau` 로 이름 붙였음
+> 실습 모델 `W04_P1` · `W04_P2` 의 제어입력 신호도 `tau` 로 이름 붙였음
 
 ### 오차 하나를 세 가지 방식으로 읽는다
 
@@ -405,7 +405,7 @@ $$
 | **속도 루프** | `u_ref` − `u` | 전진력 `X` | PI |
 | **헤딩 루프** | `psi_ref` − `psi` | 요모멘트 `N` | PD |
 
-### 그 뒤는 4주차에 배운 차동 배분
+### 그 뒤는 9주차에 배운 차동 배분
 
 $$
 \begin{aligned}
@@ -432,7 +432,7 @@ $$
 
 ### 요 운동 — Nomoto 1차 모델
 
-- 배를 돌리는 모멘트 $N$ 과 요각속도 $r$ 사이는 1차 시스템 (6주차 오프라인 모델과 같은 식에서 $N_{rr}$ 항만 뺀 것)
+- 배를 돌리는 모멘트 $N$ 과 요각속도 $r$ 사이는 1차 시스템 (4주차 오프라인 모델과 같은 식에서 $N_{rr}$ 항만 뺀 것)
 
 $$
 I_z\,\dot r + N_r\,r = N,
@@ -461,7 +461,7 @@ $$
 
 ### 제어기를 붙이면 2차 시스템이 된다
 
-- 6주차 헤딩 제어기는 요각속도를 되먹이는 P-D (H절)
+- 4주차 헤딩 제어기는 요각속도를 되먹이는 P-D (H절)
 - 목표 선수각은 $\psi_{\text{ref}}$ (모델·코드·그림의 `psi_ref` 와 같은 이름). 오차 $e = \psi_{\text{ref}} - \psi$
 - 헤딩 루프 이득은 $K_{p,\psi}$, $K_{d,\psi}$ 로 적음 (속도 루프 $K_{p,u}$, $K_{i,u}$ 와 구분)
 
@@ -524,7 +524,7 @@ $$
 ### 과목에 나온 게인은 어디에 있는가
 
 ```matlab
->> W06_pole_place
+>> W04_pole_place
 ```
 
 - 정상 출력 (선수각 30° 계단, 비선형 요 모델 $I_z\dot r = N - (N_r + N_{rr}|r|)\,r$ · 포화 ±500 N·m)
@@ -533,30 +533,30 @@ $$
 
 ```
 게인                           Kp     Kd      wn   zeta     OS선형%   OS비선형%  Ts2%[s]   |N|max
-6주차 (800, 400)              800    400   1.107   0.83      0.93      0.37     4.27      419
-7주차~ (400, 200)             400    200   0.783   0.98      0.00      0.00     7.88      209
+4주차 (800, 400)              800    400   1.107   0.83      0.93      0.37     4.27      419
+5주차~ (400, 200)             400    200   0.783   0.98      0.00      0.00     7.88      209
 설계 zeta=0.9 wn=1.0          653    375   1.000   0.90      0.15      0.05     5.39      342
 ```
 
-![닫힌 루프의 극과 계단 응답](W06_simulink/img/W06_pole_place.png)
+![닫힌 루프의 극과 계단 응답](W04_simulink/img/W04_pole_place.png)
 
 | 읽는 법 | 뜻 |
 |---|---|
-| 6주차 게인 $\omega_n = 1.11$, $\zeta = 0.83$ | 셋 중 가장 빠르고(4.3 s) 아주 조금 넘침 |
-| 7주차부터 게인 $\omega_n = 0.78$, $\zeta = 0.98$ | 가장 느리지만(7.9 s) 넘치지 않음. 극이 실수축에 붙어 있음 |
+| 4주차 게인 $\omega_n = 1.11$, $\zeta = 0.83$ | 셋 중 가장 빠르고(4.3 s) 아주 조금 넘침 |
+| 5주차부터 게인 $\omega_n = 0.78$, $\zeta = 0.98$ | 가장 느리지만(7.9 s) 넘치지 않음. 극이 실수축에 붙어 있음 |
 | 설계값 | 두 세트의 **사이**. 극배치로 원하는 지점에 정확히 놓을 수 있음 |
 | OS 선형 > OS 비선형(`OS비선형%` 열) | 비선형 모델에는 $N_{rr}|r|$ 감쇠가 더 있음. 선형 예측은 **보수적** |
 | 세 세트 모두 극이 왼쪽 반평면 | 모두 안정함. 다른 것은 속도와 넘침의 **맞바꿈** |
 
-- 6주차의 "적당히 되는 값"과 7주차의 값은 어느 쪽도 틀리지 않았음. **다른 지점을 고른 것**이고, 이 표가 그 지점이 어디인지 보여 줌
-- 같은 800/400 게인인데 H절 `W06_heading_sign` 표는 오버슈트 0.2 %, 이 표는 0.37 % 인 이유
+- 4주차의 "적당히 되는 값"과 5주차의 값은 어느 쪽도 틀리지 않았음. **다른 지점을 고른 것**이고, 이 표가 그 지점이 어디인지 보여 줌
+- 같은 800/400 게인인데 H절 `W04_heading_sign` 표는 오버슈트 0.2 %, 이 표는 0.37 % 인 이유
   - 계단 크기가 다름 — 이 표는 30°, H절은 45°
   - 45° 에서는 $K_{p,\psi} e = 800 \times 0.785 = 628$ N·m 로 포화(±500)에 걸림. 30° 에서는 419 N·m 로 포화 전
   - H절 스크립트는 0.05 s 샘플링, 이 표는 연속시간
 - 실습 E 의 "Kp 를 키우면 빨라지고 넘친다"가 식으로는 $\omega_n = \sqrt{K_{p,\psi}/I_z}$ 가 커지고 $\zeta \propto 1/\sqrt{K_{p,\psi}}$ 가 작아지는 것
 
 > [!tip] 해 볼 것
-> `W06_pole_place.m` 의 `zeta_d`, `wn_d` 를 바꿔 극이 어디로 가는지 봄
+> `W04_pole_place.m` 의 `zeta_d`, `wn_d` 를 바꿔 극이 어디로 가는지 봄
 > `step_deg` 를 90 으로 올리면 $K_{p,\psi} e$ 가 포화(±500 N·m)에 걸려 **선형 예측이 맞지 않게 됨**
 > 극배치는 포화 전까지만 약속을 지킴
 
@@ -570,8 +570,8 @@ $$
 - 먼저 어디를 눌러야 하는지부터 익힘
 
 ```matlab
-cd('<배포 폴더>/W06_simulink')
-open_system('W06_5_offline')
+cd('<배포 폴더>/W04_simulink')
+open_system('W04_5_offline')
 ```
 
 ![Simulink 편집기 창](../assets/w06-simulink-window.png)
@@ -605,7 +605,7 @@ open_system('W06_5_offline')
 
 ## A. ground truth odometry 켜기
 
-> 4주차에 배운 **"urdf 복사 → 수정 → `urdf:=` 로 실행"** 을 그대로 씀
+> 9주차에 배운 **"urdf 복사 → 수정 → `urdf:=` 로 실행"** 을 그대로 씀
 
 ### A-1. 모델 파일 복사
 
@@ -643,7 +643,7 @@ ros2 launch vrx_gz competition.launch.py \
 ```
 
 > [!warning] RTF 가 1 % 미만인 노트북은 렌더 엔진 옵션을 함께 줌
-> 3주차 §2-3 에서 확인한 값이 기준임. 해당하면 아래처럼 실행함. 6\~10주차 전부 같음
+> 3주차 §2-3 에서 확인한 값이 기준임. 해당하면 아래처럼 실행함. 4\~8주차 전부 같음
 >
 > ```bash
 > ros2 launch vrx_gz competition.launch.py world:=sydney_regatta urdf:=$HOME/capstone_ws/wamv/w6_wamv.urdf.xacro "extra_gz_args:=--render-engine-server ogre --render-engine-gui ogre"
@@ -677,7 +677,7 @@ ros2 topic echo /wamv/sensors/position/ground_truth_odometry --once
 | `frame_id` | `map` | 지구 고정 좌표계 |
 | `child_frame_id` | `wamv/base_link` | 선체 |
 | 발행 주기 | **9.07 Hz** | 설계 10 Hz (`wamv_p3d.xacro` 의 `odom_publish_frequency`). 벽시계로 재므로 설계값보다 낮음 |
-| 발행 주기 (재측정) | 7.54 · 6.36 Hz | 2026-09-19 데스크톱, 같은 실행에서 `gz` RTF 0.905 · 0.903 과 번갈아 잼. **RTF 비율(0.90)보다 더 떨어짐** — 4주차 2-8-1 과 같은 현상. 판정은 주기가 아니라 `twist` 값이 오는지로 |
+| 발행 주기 (재측정) | 7.54 · 6.36 Hz | 2026-09-19 데스크톱, 같은 실행에서 `gz` RTF 0.905 · 0.903 과 번갈아 잼. **RTF 비율(0.90)보다 더 떨어짐** — 9주차 2-8-1 과 같은 현상. 판정은 주기가 아니라 `twist` 값이 오는지로 |
 | QoS | `RELIABLE`, 발행자 1 | |
 | 스폰 위치 | `pose.position.x = -532.0`, `pose.position.y = 162.0` (이 표를 잰 노트북) | **ENU** 성분. 즉 NED 로 (x, y) = (162, −532) — 북쪽 $x$ 가 ENU 의 `y`. 다른 설치에서는 `pose.position.y = 200.0` |
 
@@ -685,7 +685,7 @@ ros2 topic echo /wamv/sensors/position/ground_truth_odometry --once
 > - 기준은 `vrx_gz/launch/competition.launch.py` 의 `Model('wamv','wam-v',[-532, y, 0, 0, 0, 1])`
 > - 같은 VRX 2.4.0-2 인데 `y` 가 **162** 인 설치와 **200** 인 설치가 있었음 (2026-09-18 확인)
 > - 자기 설치의 값 확인: `grep -n "Model('wamv'" ~/vrx_ws/src/vrx/vrx_gz/launch/competition.launch.py`
-> - 7\~10주차 `W0X_vrx_run` 은 ground truth 첫 샘플을 원점으로 쓰므로 손댈 필요가 없음. 모델을 **직접** 돌릴 때만 `origin_north` · `origin_east` 를 맞춤
+> - 5\~8주차 `W0X_vrx_run` 은 ground truth 첫 샘플을 원점으로 쓰므로 손댈 필요가 없음. 모델을 **직접** 돌릴 때만 `origin_north` · `origin_east` 를 맞춤
 
 ---
 
@@ -730,9 +730,9 @@ if isempty(getenv("ROS_DOMAIN_ID")), setenv("ROS_DOMAIN_ID","0"); end
 fprintf("ROS_DOMAIN_ID = %s\n", getenv("ROS_DOMAIN_ID"));
 ```
 
-> [!note] `W06_vrx_record` 스크립트는 이 작업을 자동으로 함 (J-4절)
+> [!note] `W04_vrx_record` 스크립트는 이 작업을 자동으로 함 (J-4절)
 > 실행하면 첫 줄에 `0) ROS_DOMAIN_ID = 8` 처럼 무엇을 쓰는지 찍음
-> 이 값이 WSL 의 값과 다르면 거기서 멈추고 고칠 것. 7주차부터 쓰는 `W0X_vrx_run` 도 같음
+> 이 값이 WSL 의 값과 다르면 거기서 멈추고 고칠 것. 5주차부터 쓰는 `W0X_vrx_run` 도 같음
 
 ### B-2. 토픽이 보이는지
 
@@ -761,7 +761,7 @@ clear sub node
 
 ## C. 1단계 — 직진
 
-![1단계 모델](W06_simulink/img/W06_1_straight.png)
+![1단계 모델](W04_simulink/img/W04_1_straight.png)
 
 > [!note] 블록 색은 역할 표시
 > 이 과목의 모든 Simulink 모델은 같은 색 규칙을 따름
@@ -772,8 +772,8 @@ clear sub node
 ### 모델 열기
 
 ```matlab
-cd('<배포 폴더>/W06_simulink')
-open_system('W06_1_straight')
+cd('<배포 폴더>/W04_simulink')
+open_system('W04_1_straight')
 ```
 
 ### 구조
@@ -818,7 +818,7 @@ ros2 topic echo /wamv/sensors/position/ground_truth_odometry --once | grep -A3 "
 
 ## D. 2단계 — 직진 · 우선회 · 좌선회
 
-![2단계 모델](W06_simulink/img/W06_2_turn.png)
+![2단계 모델](W04_simulink/img/W04_2_turn.png)
 
 ### 구조
 
@@ -846,7 +846,7 @@ end
 
 > [!important] 좌현 추력이 크면 뱃머리가 **오른쪽**으로 돎
 > - 왼쪽이 더 세게 밀기 때문
-> - 4주차의 `N = (F_L − F_R) × 1.027` 에서 `F_L > F_R` 이면 `N > 0` = 우선회
+> - 9주차의 `N = (F_L − F_R) × 1.027` 에서 `F_L > F_R` 이면 `N > 0` = 우선회
 > - **직접 보고 부호를 몸으로 익힐 것.** 3단계 헤딩 제어의 부호가 여기서 갈림
 
 ### 해 볼 것
@@ -862,7 +862,7 @@ end
 > MATLAB 하나로 돎. 10초 시뮬레이션이 1초 안에 끝남
 > 헤딩 제어(H절)로 넘어가기 전에, 게인 세 개가 무엇을 하는지 손으로 만져 보는 것이 목적
 
-![PID 입문 1 모델](W06_simulink/img/W06_P1_pid_step.png)
+![PID 입문 1 모델](W04_simulink/img/W04_P1_pid_step.png)
 
 ### E-0. 왜 배가 아닌가
 
@@ -884,15 +884,15 @@ $$
 ### E-1. 준비와 실행
 
 ```matlab
-cd('<배포 폴더>/W06_simulink')
-W06_pid_setup
-open_system('W06_P1_pid_step')
+cd('<배포 폴더>/W04_simulink')
+W04_pid_setup
+open_system('W04_P1_pid_step')
 ```
 
 - 정상 출력
 
 ```
-W06_pid_setup 완료.
+W04_pid_setup 완료.
   플랜트  G(s) = 1/(s^2 + 2s + 2)
   P1 게인  Kp=10  Ki=0  Kd=0  Nf=20
   P2 게인  Kp2=10 Ki2=8 Kd2=4 Nf2=20  (r_step=1, u_max=2.5, noise_var=1e-05)
@@ -901,7 +901,7 @@ W06_pid_setup 완료.
 
 > [!note] 게인이 블록 안에 숫자가 아니라 **변수 이름**으로 들어 있음
 > `Kp`, `Ki`, `Kd` 를 명령창에서 바꾸고 다시 Run 하면 됨
-> 6주차 보충자료 E-1 절에서 배운 방식 → [[W06_0_Simulink_기초]]
+> 부록 A1자료 E-1 절에서 배운 방식 → [[A1_Simulink_기초]]
 
 - **Run** 후 `Logging` 서브시스템 안 `Scope_all` 을 엶
   - 출력 `y` 와 제어입력 `tau` 가 그려짐
@@ -910,7 +910,7 @@ W06_pid_setup 완료.
 ### E-2. P 만 키운다 — 빨라지지만 출렁인다
 
 ```matlab
-W06_pid_compare('Kp')
+W04_pid_compare('Kp')
 ```
 
 - `Ki = 0`, `Kd = 0` 으로 고정하고 `Kp` 만 2 → 10 → 50 으로 바꾼 결과
@@ -921,7 +921,7 @@ W06_pid_compare('Kp')
 | 10 | 0.833 | 1.157 | **38.8 %** | 0.377 | 3.94 | **0.167** |
 | 50 | 0.962 | 1.581 | **64.4 %** | 0.158 | 3.64 | **0.038** |
 
-![게인의 역할](W06_simulink/img/W06_P1_gains.png)
+![게인의 역할](W04_simulink/img/W04_P1_gains.png)
 
 - 읽는 법 — **세 가지가 동시에 일어남**
 
@@ -942,7 +942,7 @@ W06_pid_compare('Kp')
 ### E-3. D 를 더한다 — 오버슈트를 깎는다
 
 ```matlab
-W06_pid_compare('Kd')
+W04_pid_compare('Kd')
 ```
 
 - `Kp = 10` 고정, `Kd` 만 0 → 2 → 6
@@ -966,7 +966,7 @@ W06_pid_compare('Kd')
 ### E-4. I 를 더한다 — 남는 오차를 시간이 메운다
 
 ```matlab
-W06_pid_compare('Ki')
+W04_pid_compare('Ki')
 ```
 
 - `Kp = 10`, `Kd = 4` 고정, `Ki` 만 0 → 4 → 12
@@ -1014,7 +1014,7 @@ W06_pid_compare('Ki')
 > 이 절에서 PID 블록과 **똑같이 동작하는 것**을 Gain · Integrator · Sum 으로 직접 만듦
 > 그러고 나면 블록 대화상자의 항목들이 무엇을 켜고 끄는지 알게 됨
 
-![PID 입문 2 모델](W06_simulink/img/W06_P2_pid_byhand.png)
+![PID 입문 2 모델](W04_simulink/img/W04_P2_pid_byhand.png)
 
 - 위 줄 : 라이브러리 **PID Controller** 블록
 - 아래 줄 : 직접 조립한 **`PID_byhand`** 서브시스템
@@ -1024,7 +1024,7 @@ W06_pid_compare('Ki')
 
 - `PID_byhand` 를 더블클릭해서 열어 볼 것
 
-![직접 조립한 PID](W06_simulink/img/W06_PID_byhand.png)
+![직접 조립한 PID](W04_simulink/img/W04_PID_byhand.png)
 
 | 갈래 | 블록 | 계산 |
 |---|---|---|
@@ -1042,10 +1042,10 @@ W06_pid_compare('Ki')
 ### F-2. 정말 같은지 확인한다
 
 ```matlab
-W06_pid_compare('hand')
+W04_pid_compare('hand')
 ```
 
-![직접 만든 것 vs 라이브러리](W06_simulink/img/W06_P2_hand_vs_lib.png)
+![직접 만든 것 vs 라이브러리](W04_simulink/img/W04_P2_hand_vs_lib.png)
 
 - 기준 환경 실측값
 
@@ -1076,7 +1076,7 @@ W06_pid_compare('hand')
 > 미분 필터 계수는 코드에서 `Nf`, `Nf2` 이므로 수식에서도 $N_f$ 로 씀
 > Simulink PID 블록 대화상자의 **Filter coefficient (N)** 가 이것
 
-![Dcompare 서브시스템 — 1번 순수 미분, 2번 pseudo-derivative, 3번 참값](W06_simulink/img/W06_Dcompare.png)
+![Dcompare 서브시스템 — 1번 순수 미분, 2번 pseudo-derivative, 3번 참값](W04_simulink/img/W04_Dcompare.png)
 
 - 결과는 서브시스템 안 `Scope_D` 를 열어 봄
 - 순수 미분은 **참값의 220 배**가 나옴. 신호는 알아볼 수 없음
@@ -1101,7 +1101,7 @@ W06_pid_compare('hand')
 ### F-4. 미분 필터를 풀면 어떻게 되는가
 
 ```matlab
-W06_pid_compare('D')
+W04_pid_compare('D')
 ```
 
 - 닫힌 루프에서 `Nf2` 만 5 → 20 → 200 으로 (200 은 거의 순수 미분)
@@ -1112,7 +1112,7 @@ W06_pid_compare('D')
 | 20 | 0.998 | 3.53 | 2.76 | **0.265** |
 | 200 | **0.889** | **18.50** | **5.00** | **1.106** |
 
-![미분 필터 계수에 따른 출력과 제어입력](W06_simulink/img/W06_P2_derivative.png)
+![미분 필터 계수에 따른 출력과 제어입력](W04_simulink/img/W04_P2_derivative.png)
 
 - 아래 그림은 $N_f = 200$ (회색)을 먼저 그려 뒤에 깔았음. $N_f$ = 5 · 20 의 제어입력 크기는 위 표의 표준편차로도 비교할 수 있음
 - $N_f = 200$ 의 "한 스텝에 튀는 폭 5.00" 은 제어입력이 **+2.5 와 −2.5 사이를 왕복**한다는 뜻
@@ -1158,10 +1158,10 @@ $$
 - `Kb_gain` 이 그 되감기 이득이며, **`Kb = 0` 으로 두면 안티와인드업이 사라짐**
 
 ```matlab
-W06_pid_compare('AW')
+W04_pid_compare('AW')
 ```
 
-![안티와인드업](W06_simulink/img/W06_P2_antiwindup.png)
+![안티와인드업](W04_simulink/img/W04_P2_antiwindup.png)
 
 - 기준 환경 실측값 (목표 1, 제어입력 한계 2.5)
 
@@ -1210,7 +1210,7 @@ W06_pid_compare('AW')
 > [!important] 바뀌는 상자는 **플랜트 하나뿐**
 > 제어기는 F절에서 만든 것을 그대로 씀. 전달함수 자리에 배의 운동방정식이 들어갈 뿐
 
-![PID 입문 3 모델](W06_simulink/img/W06_P3_boat_speed.png)
+![PID 입문 3 모델](W04_simulink/img/W04_P3_boat_speed.png)
 
 ### G-1. 무엇이 달라졌는가
 
@@ -1248,8 +1248,8 @@ $$
 ### G-3. 돌려 보기
 
 ```matlab
-W06_pid_setup
-open_system('W06_P3_boat_speed')
+W04_pid_setup
+open_system('W04_P3_boat_speed')
 ```
 
 - **Run** — 60초 시나리오가 1초 안에 끝남
@@ -1258,10 +1258,10 @@ open_system('W06_P3_boat_speed')
 ### G-4. 되감기를 끄면 배가 돌아오지 못한다
 
 ```matlab
-W06_pid_compare('boat')
+W04_pid_compare('boat')
 ```
 
-![배 속도 제어와 안티와인드업](W06_simulink/img/W06_P3_boat.png)
+![배 속도 제어와 안티와인드업](W04_simulink/img/W04_P3_boat.png)
 
 - 기준 환경 실측값 (30초 이후, 목표 1.0 m/s 구간)
 
@@ -1291,14 +1291,14 @@ W06_pid_compare('boat')
 > [!important] 여기서 만든 것이 구조 그대로 다음 절로 감
 > I절 속도 제어의 `PI_u` 는 **같은 PI 구조**의 라이브러리 Discrete PID 블록임. 블록과 게인은 다름
 >
-> | | G절 `PID_byhand` | I절 `PI_u` | 7주차 \~ |
+> | | G절 `PID_byhand` | I절 `PI_u` | 5주차 \~ |
 > |---|---|---|---|
 > | 블록 | 직접 조립, 연속시간 | 라이브러리 Discrete PID | 라이브러리 |
 > | 안티와인드업 | back-calculation (`Kb_u`) | clamping | clamping |
 > | P / I | 300 / **300** | 300 / **40** | 300 / **100** |
 >
 > - 같은 게인을 쓰지 않으므로 G절의 응답 수치를 I절에 그대로 기대하지 않음
-> - 7주차 값은 `W07_setup.m` 에 있음
+> - 5주차 값은 `W05_setup.m` 에 있음
 > H절 헤딩 제어만 예외임. 거기서는 D 항을 오차 미분이 아니라 **요각속도**에서
 > 얻음. 이유는 H절에서 숫자로 확인함
 
@@ -1306,7 +1306,7 @@ W06_pid_compare('boat')
 
 ## H. 3단계 — 헤딩 제어
 
-![3단계 모델](W06_simulink/img/W06_3_heading.png)
+![3단계 모델](W04_simulink/img/W04_3_heading.png)
 
 ### 구조
 
@@ -1402,7 +1402,7 @@ $$
 - $\dot{e}$ — 오차가 한 스텝에 껑충 뛰므로 미분값이 폭발함 (**미분 킥**)
 - $r$ — 배가 실제로 도는 속도. 지령이 아무리 튀어도 배는 천천히 돎
 
-- `W06_heading_sign` 을 실행하면 같은 배 모델에 세 가지를 걸어 본 결과가 나옴
+- `W04_heading_sign` 을 실행하면 같은 배 모델에 세 가지를 걸어 본 결과가 나옴
   - 조건: 요 자유도만 뗀 비선형 모델, 0 → 45° 계단(t = 1 s), 0.05 s 샘플링, 포화 ±500 N·m, 모터 지연 없음
 
 | D 항 | 오버슈트 | 정착시간 | 포화 전 $\lvert N \rvert$ 최대 |
@@ -1450,36 +1450,36 @@ $$
 > 오버슈트가 100 %를 넘으면 쓸 수 있는 응답이 아님. **$K_{d,\psi}$ 에 비례해 나빠진다는
 > 것이 D 항이 하는 일이 정확히 감쇠라는 증거**
 
-![D 항 세 가지](W06_simulink/img/W06_heading_dterm.png)
+![D 항 세 가지](W04_simulink/img/W04_heading_dterm.png)
 
 > [!note] MSS 툴박스도 같은 구조
 > Fossen 의 `demoOtterUSVHeadingControl` 을 열어 보면 `Heading autopilot` 이
 > $\psi$ 와 **$r$ 을 따로 입력으로 받음**. D 항은 $K_{p,\psi} T_d\,(r_{\text{ref}} - r)$ 이고,
 > 목표 각속도 $r_{\text{ref}} = 0$ 이면 $-K_{p,\psi} T_d\,r$ 임
 > $T_d$ = 미분시간 [s] ($K_{d,\psi} = K_{p,\psi} T_d$)
-> (MSS 원문은 $r_d$ 로 적음. 8주차 로이터 반경 $r_d$ 와 겹쳐 여기서는 $r_{\text{ref}}$ 로 씀)
-> 7주차 이후의 `InnerLoop` 도 이 식을 그대로 씀
+> (MSS 원문은 $r_d$ 로 적음. 6주차 로이터 반경 $r_d$ 와 겹쳐 여기서는 $r_{\text{ref}}$ 로 씀)
+> 5주차 이후의 `InnerLoop` 도 이 식을 그대로 씀
 
 ### 실행 ① — 오프라인 쌍둥이로 먼저 (VRX 불필요)
 
-![3단계 오프라인 쌍둥이](W06_simulink/img/W06_3_heading_offline.png)
+![3단계 오프라인 쌍둥이](W04_simulink/img/W04_3_heading_offline.png)
 
-- `W06_3_heading_offline` 은 이 절의 모델과 **`HeadingCtrl` · `Alloc` 이 같은 함수로 만들어진** 쌍둥이임
+- `W04_3_heading_offline` 은 이 절의 모델과 **`HeadingCtrl` · `Alloc` 이 같은 함수로 만들어진** 쌍둥이임
 
 | 모델 | 배의 상태를 어디서 받는가 | 추력을 어디로 보내는가 |
 |---|---|---|
-| `W06_3_heading` | `OdomSub` → `Sel` → `Quat2Yaw` (Gazebo) | Blank → Bus Assignment → Publish (Gazebo) |
-| `W06_3_heading_offline` | **`MotionModel`** — 3주차 1-8 절 운동방정식, 초기 선수각 32.7° | 같은 `MotionModel` |
+| `W04_3_heading` | `OdomSub` → `Sel` → `Quat2Yaw` (Gazebo) | Blank → Bus Assignment → Publish (Gazebo) |
+| `W04_3_heading_offline` | **`MotionModel`** — 3주차 1-8 절 운동방정식, 초기 선수각 32.7° | 같은 `MotionModel` |
 
 ```matlab
-cd('<배포 폴더>/W06_simulink')
-R = W06_step_compare(3);
+cd('<배포 폴더>/W04_simulink')
+R = W04_step_compare(3);
 ```
 
 - VRX 가 꺼져 있으면 오프라인만 돌고 끝남 (1 초 안쪽). 정상 출력의 첫 두 줄
 
 ```
-1) 오프라인 쌍둥이 W06_3_heading_offline (40 초)
+1) 오프라인 쌍둥이 W04_3_heading_offline (40 초)
    [오프라인] 초기 32.7 deg -> 45 deg (계단 12.3 deg), 오버슈트 0.6 %, 2% 정착 4.0 s, 마지막 5 s 평균 45.00 deg
 ```
 
@@ -1488,22 +1488,22 @@ R = W06_step_compare(3);
 ### 실행 ② — 같은 제어기를 VRX 로
 
 1. VRX 를 **새로** 띄움 (스폰 자세에서 시작해야 같은 계단이 됨)
-2. 같은 명령을 다시 실행 — VRX 토픽이 보이면 `W06_3_heading` 을 실측 RTF 로 페이싱해 40 초 돌리고, 끝나면 추력 0 을 보냄
+2. 같은 명령을 다시 실행 — VRX 토픽이 보이면 `W04_3_heading` 을 실측 RTF 로 페이싱해 40 초 돌리고, 끝나면 추력 0 을 보냄
 
 ```matlab
-R = W06_step_compare(3);
+R = W04_step_compare(3);
 ```
 
 - 정상 출력 (2026-09-19 기준 환경 실측, VRX 부분)
 
 ```
-2) VRX W06_3_heading — RTF 측정 (10초)
+2) VRX W04_3_heading — RTF 측정 (10초)
    RTF = 0.662  ->  페이싱 비율
    [VRX] 초기 32.7 deg -> 45 deg (계단 12.3 deg), 오버슈트 2.9 %, 2% 정착 6.2 s, 마지막 5 s 평균 45.03 deg
-   그림 저장: img/W06_3_offline_vs_vrx.png
+   그림 저장: img/W04_3_offline_vs_vrx.png
 ```
 
-![3단계 오프라인 vs VRX](W06_simulink/img/W06_3_offline_vs_vrx.png)
+![3단계 오프라인 vs VRX](W04_simulink/img/W04_3_offline_vs_vrx.png)
 
 | 항목 | 오프라인 쌍둥이 | VRX | 읽는 법 |
 |---|---|---|---|
@@ -1542,7 +1542,7 @@ R = W06_step_compare(3);
 
 ## I. 4단계 — 속도 + 헤딩 (inner loop 완성)
 
-![4단계 모델](W06_simulink/img/W06_4_inner_loop.png)
+![4단계 모델](W04_simulink/img/W04_4_inner_loop.png)
 
 ### 3단계에서 달라진 점
 
@@ -1564,27 +1564,27 @@ u_ref(1.5) − u  →  PI_u  →  X
 
 ### 실행 — 오프라인 쌍둥이 먼저, 그다음 VRX
 
-- H 절과 같은 순서. 쌍둥이는 `W06_4_inner_loop_offline` (`HeadingCtrl` · `PI_u` · `Alloc` 이 같은 함수)
+- H 절과 같은 순서. 쌍둥이는 `W04_4_inner_loop_offline` (`HeadingCtrl` · `PI_u` · `Alloc` 이 같은 함수)
 
 ```matlab
-R = W06_step_compare(4);     % VRX 가 꺼져 있으면 오프라인만, 켜져 있으면 둘 다
+R = W04_step_compare(4);     % VRX 가 꺼져 있으면 오프라인만, 켜져 있으면 둘 다
 ```
 
 - 정상 출력 (2026-09-19 기준 환경 실측, VRX 는 새로 띄운 뒤)
 
 ```
-1) 오프라인 쌍둥이 W06_4_inner_loop_offline (40 초)
+1) 오프라인 쌍둥이 W04_4_inner_loop_offline (40 초)
    [오프라인] 초기 32.7 deg -> 45 deg (계단 12.3 deg), 오버슈트 0.6 %, 2% 정착 4.0 s, 마지막 5 s 평균 45.00 deg
    [오프라인] u 63 % 도달 2.5 s, 마지막 5 s 평균 u 1.413 m/s
 
-2) VRX W06_4_inner_loop — RTF 측정 (10초)
+2) VRX W04_4_inner_loop — RTF 측정 (10초)
    RTF = 0.672  ->  페이싱 비율
    [VRX] 초기 32.7 deg -> 45 deg (계단 12.3 deg), 오버슈트 2.6 %, 2% 정착 6.3 s, 마지막 5 s 평균 45.04 deg
    [VRX] u 63 % 도달 2.5 s, 마지막 5 s 평균 u 1.414 m/s
-   그림 저장: img/W06_4_offline_vs_vrx.png
+   그림 저장: img/W04_4_offline_vs_vrx.png
 ```
 
-![4단계 오프라인 vs VRX](W06_simulink/img/W06_4_offline_vs_vrx.png)
+![4단계 오프라인 vs VRX](W04_simulink/img/W04_4_offline_vs_vrx.png)
 
 | 항목 | 오프라인 쌍둥이 | VRX | 읽는 법 |
 |---|---|---|---|
@@ -1597,9 +1597,9 @@ R = W06_step_compare(4);     % VRX 가 꺼져 있으면 오프라인만, 켜져 
 > [!note] 속도 PI 게인이 과목 안에서 세 가지다 — 쓰임새가 다름
 > | 어디 | $K_{p,u}$ | $K_{i,u}$ | 추력 한계 | 왜 그 값인가 |
 > |---|---|---|---|---|
-> | G 절 `W06_P3_boat_speed` | 300 | 300 | 전체 $X$ 500 N 하나 | **와인드업을 일부러 보이려는** 설정. $K_{i,u}$ 가 커야 적분기가 빨리 차올라 차이가 드러남 |
+> | G 절 `W04_P3_boat_speed` | 300 | 300 | 전체 $X$ 500 N 하나 | **와인드업을 일부러 보이려는** 설정. $K_{i,u}$ 가 커야 적분기가 빨리 차올라 차이가 드러남 |
 > | 이 절 `PI_u` | 300 | 40 | 편당 250 N (배분 뒤) | 헤딩 루프와 추력을 나눠 씀. 선회 여유가 편당 6 N 뿐이라 **보수적**으로 둠 — 대가로 40 초에 1.41 m/s (위 표) |
-> | 7주차 이후 `InnerLoop` | 300 | 100 | 편당 500 N | 한계를 500 N 으로 올려 여유가 생겨 $K_{i,u}$ 를 키움 (7주차 Thrusters 절) |
+> | 5주차 이후 `InnerLoop` | 300 | 100 | 편당 500 N | 한계를 500 N 으로 올려 여유가 생겨 $K_{i,u}$ 를 키움 (5주차 Thrusters 절) |
 > - 게인은 **플랜트만이 아니라 포화 한계와 함께** 정해짐. 한계가 바뀌면 게인도 다시 봄
 
 > [!warning] `u_ref = 1.5` 에서는 선회 여유가 거의 없음 — 추력 포화
@@ -1607,7 +1607,7 @@ R = W06_step_compare(4);     % VRX 가 꺼져 있으면 오프라인만, 켜져 
 > - `Alloc` 의 한계가 편당 250 N 이므로 선회 모멘트에 쓸 수 있는 여유는 **편당 약 6 N** 뿐
 > - 선회 중에는 한쪽 추진기가 250 N 에 붙어 전진력과 모멘트를 다 내지 못함
 > - 따라서 선회 중 속도 저하의 상당 부분은 **포화** 때문임. 운동방정식의 결합(J-2)만의 효과가 아님
-> - 7주차 `Thrusters` 서브시스템 절(`F_max` 를 500 N 으로 두는 이유)에서 이 한계를 다시 다룸
+> - 5주차 `Thrusters` 서브시스템 절(`F_max` 를 500 N 으로 두는 이유)에서 이 한계를 다시 다룸
 
 ### 해 볼 것
 
@@ -1633,19 +1633,19 @@ R = W06_step_compare(4);     % VRX 가 꺼져 있으면 오프라인만, 켜져 
 >
 > | 모델 | 앞단 | 뒷단 |
 > |---|---|---|
-> | `W06_2_turn` | `Scenario` | Blank → Bus Assignment → **Publish → Gazebo** |
-> | `W06_5_offline` | `Scenario` | **모터 지연 → WAM-V 운동방정식 → Scope** |
+> | `W04_2_turn` | `Scenario` | Blank → Bus Assignment → **Publish → Gazebo** |
+> | `W04_5_offline` | `Scenario` | **모터 지연 → WAM-V 운동방정식 → Scope** |
 
-![5단계 모델](W06_simulink/img/W06_5_offline.png)
+![5단계 모델](W04_simulink/img/W04_5_offline.png)
 
 ### J-1. 왜 오프라인 모델이 필요한가
 
 - Gazebo 없이 **MATLAB 하나로** 돌릴 수 있음 — 집에서, 수업 전에, 노트북이 약해도
 - 실시간 페이싱이 필요 없어 80초 시나리오가 **1초 안에** 끝남
 - 게인을 바꿔 가며 열 번 돌려 보고, 마음에 드는 값만 VRX 로 가져가면 됨
-- 이 절의 `W06_5_offline` 은 2단계(개루프 시나리오)의 쌍둥이임. 3 · 4단계의 쌍둥이(`W06_3_heading_offline`, `W06_4_inner_loop_offline`)는 H · I 절에서 먼저 돌렸음
+- 이 절의 `W04_5_offline` 은 2단계(개루프 시나리오)의 쌍둥이임. 3 · 4단계의 쌍둥이(`W04_3_heading_offline`, `W04_4_inner_loop_offline`)는 H · I 절에서 먼저 돌렸음
 - 운동방정식의 유도와 계수의 출처는 **3주차 1-8 절**에 있음. 이 절은 요약만 둠
-- 7주차부터는 이 방식이 **기본**이 됨
+- 5주차부터는 이 방식이 **기본**이 됨
 
 ### J-2. 운동방정식
 
@@ -1669,7 +1669,7 @@ $$
 | 기호 | 값 | 출처 |
 |---|---|---|
 | $m$ | 211 kg | `wamv_base.urdf.xacro` (선체 180 + 엔진 2×15 + 프로펠러 2×0.5) |
-| $I_z$ | 653 kg·m² | `wamv_base.urdf.xacro` 의 `izz` 446 + 엔진 질량의 평행축 항 (`W07_setup.m` 주석) |
+| $I_z$ | 653 kg·m² | `wamv_base.urdf.xacro` 의 `izz` 446 + 엔진 질량의 평행축 항 (`W05_setup.m` 주석) |
 | $X_u,\ X_{uu}$ | 100, 150 | `wamv_gazebo_dynamics_plugin.xacro` |
 | $Y_v,\ Y_{vv}$ | 100, 100 | 〃 |
 | $N_r,\ N_{rr}$ | 800, 800 | 〃 |
@@ -1683,9 +1683,9 @@ $$
 ### J-3. 돌려 보기
 
 ```matlab
-cd('<배포 폴더>/W06_simulink')
-out = sim('W06_5_offline');
-W06_offline_plot(out)
+cd('<배포 폴더>/W04_simulink')
+out = sim('W04_5_offline');
+W04_offline_plot(out)
 ```
 
 - 기준 환경 실측값
@@ -1705,12 +1705,12 @@ W06_offline_plot(out)
 - VRX 를 띄운 상태에서 같은 시나리오를 기록함
 
 ```matlab
-V   = W06_vrx_record;              % VRX 에서 80초 기록
-out = sim('W06_5_offline');        % 오프라인 80초
-W06_offline_plot(out, V)           % 겹쳐 그리기
+V   = W04_vrx_record;              % VRX 에서 80초 기록
+out = sim('W04_5_offline');        % 오프라인 80초
+W04_offline_plot(out, V)           % 겹쳐 그리기
 ```
 
-![오프라인 vs VRX](W06_simulink/img/W06_5_offline_vs_vrx.png)
+![오프라인 vs VRX](W04_simulink/img/W04_5_offline_vs_vrx.png)
 
 - 기준 환경 실측값
 
@@ -1733,7 +1733,7 @@ W06_offline_plot(out, V)           % 겹쳐 그리기
 > [!warning] 선수각은 ±180° 에서 접힘
 > VRX 의 쿼터니언에서 뽑은 $\psi$ 는 항상 $[-\pi,\pi]$ 안에 있음
 > 배가 한 바퀴 넘게 돌면 그래프가 위아래로 튐
-> `W06_vrx_record` 는 `unwrap` 으로 풀어서 저장함. 코드를 열어 볼 것
+> `W04_vrx_record` 는 `unwrap` 으로 풀어서 저장함. 코드를 열어 볼 것
 
 ### J-5. 해 볼 것
 
@@ -1749,21 +1749,21 @@ W06_offline_plot(out, V)           % 겹쳐 그리기
 - 모델이 깨졌거나 처음부터 다시 만들고 싶으면
 
 ```matlab
-cd('<배포 폴더>/W06_simulink')
-build_w06_models
+cd('<배포 폴더>/W04_simulink')
+build_w04_models
 ```
 
 - VRX 연동 모델 다섯 개가 모두 새로 생성됨
 - PID 입문 모델 세 개는 **생성 스크립트가 따로 있음**
 
 ```matlab
-W06_pid_setup
-build_w06_pid_models
+W04_pid_setup
+build_w04_pid_models
 ```
 
 - 생성이 끝나면 **겹친 선 0 쌍**이 찍힘. 그것이 배치가 정상이라는 뜻
 - **스크립트를 읽어 보면 각 블록이 어떻게 만들어지는지 알 수 있음**
-- 5주차에 배운 대로 Claude 에게 이 스크립트를 읽혀 구조를 물어봐도 좋음
+- 10주차에 배운 대로 Claude 에게 이 스크립트를 읽혀 구조를 물어봐도 좋음
 
 ---
 
@@ -1818,18 +1818,18 @@ build_w06_pid_models
 - [ ] **페이싱을 켜고** 1단계 실행 → 배가 전진
 - [ ] 2단계 실행 → 좌·우 선회 확인
 - [ ] **좌현 추력이 크면 우선회**한다는 것을 눈으로 확인
-- [ ] `W06_pid_compare('Kp')` 실행 → Kp 2/10/50 성능표를 옮겨 적음
-- [ ] `W06_pid_compare('hand')` 실행 → 직접 만든 PID 와 블록의 출력 차이 10⁻¹⁵ 이하, 제어입력 차이 10⁻¹³ 이하
+- [ ] `W04_pid_compare('Kp')` 실행 → Kp 2/10/50 성능표를 옮겨 적음
+- [ ] `W04_pid_compare('hand')` 실행 → 직접 만든 PID 와 블록의 출력 차이 10⁻¹⁵ 이하, 제어입력 차이 10⁻¹³ 이하
 - [ ] `PID_byhand` 를 열어 P · I · D 세 갈래를 눈으로 확인
 - [ ] `Dcompare` 에서 순수 미분이 참값의 몇 배까지 튀는지 확인
-- [ ] `W06_pid_compare('AW')` 실행 → Kb 0 과 2 의 오버슈트 비교
-- [ ] `W06_pid_compare('boat')` 실행 → 되감기 없이는 목표가 내려가도 못 따라오는 것 확인
-- [ ] 3단계 **오프라인 쌍둥이 먼저** (`W06_step_compare(3)`, 오버슈트 0.6 %), 그다음 VRX → 목표 선수각 45도 유지 (스폰 32.7° 에서 12.3° 계단)
+- [ ] `W04_pid_compare('AW')` 실행 → Kb 0 과 2 의 오버슈트 비교
+- [ ] `W04_pid_compare('boat')` 실행 → 되감기 없이는 목표가 내려가도 못 따라오는 것 확인
+- [ ] 3단계 **오프라인 쌍둥이 먼저** (`W04_step_compare(3)`, 오버슈트 0.6 %), 그다음 VRX → 목표 선수각 45도 유지 (스폰 32.7° 에서 12.3° 계단)
 - [ ] `Scope_psi` 에서 목표와 실제를 함께 확인
-- [ ] 4단계 **오프라인 쌍둥이 먼저** (`W06_step_compare(4)`), 그다음 VRX → 속도와 헤딩 동시 제어. 40 초 뒤 $u$ 가 두 모델 모두 1.41 m/s 인지 확인
+- [ ] 4단계 **오프라인 쌍둥이 먼저** (`W04_step_compare(4)`), 그다음 VRX → 속도와 헤딩 동시 제어. 40 초 뒤 $u$ 가 두 모델 모두 1.41 m/s 인지 확인
 - [ ] `Scope_u` 에서 목표 속도 도달 확인
-- [ ] **5단계 오프라인 모델**을 Gazebo 없이 실행 (`W06_offline_plot`)
-- [ ] `W06_vrx_record` 로 VRX 를 기록해 **두 결과를 겹쳐** 봄
+- [ ] **5단계 오프라인 모델**을 Gazebo 없이 실행 (`W04_offline_plot`)
+- [ ] `W04_vrx_record` 로 VRX 를 기록해 **두 결과를 겹쳐** 봄
 - [ ] 직진 속도는 맞고 선회는 몇 % 다른지 적어 둠
 
 ### 관찰 기록
@@ -1840,14 +1840,14 @@ build_w06_pid_models
 
 ---
 
-## 과제 6 — 첫 제어기 응답 측정
+## 과제 4 — 첫 제어기 응답 측정
 
-- **제출 기한**: 7주차 수업 전
+- **제출 기한**: 5주차 수업 전
 - **제출**: 그래프 + 성능표 + 짧은 분석
 
 ### ① PID 게인의 역할 측정 (Gazebo 불필요)
 
-- `W06_P1_pid_step` 에서 아래 세 조건의 스텝응답을 재고 표를 채움
+- `W04_P1_pid_step` 에서 아래 세 조건의 스텝응답을 재고 표를 채움
 
 | 조건 | `Kp` | `Ki` | `Kd` |
 |---|---|---|---|
@@ -1859,11 +1859,11 @@ build_w06_pid_models
 |---|---|---|---|---|
 | | | | | |
 
-- 검산: P 만 행은 `W06_pid_compare('Kp')` 의 `Kp = 10` 행, PD 행은 `W06_pid_compare('Ki')` 의 `Ki = 0` 행과 일치해야 함
+- 검산: P 만 행은 `W04_pid_compare('Kp')` 의 `Kp = 10` 행, PD 행은 `W04_pid_compare('Ki')` 의 `Ki = 0` 행과 일치해야 함
 - PID 행(`Ki = 8`)은 스크립트가 만들지 않으므로 `Kp = 10; Ki = 8; Kd = 4;` 로 두고 직접 실행함
 - 스텝은 t = 1 s 에 들어감. 상승시간·정착시간은 1 s 부터 잼
 
-- 이어서 `W06_P2_pid_byhand` 에서 두 가지를 잼
+- 이어서 `W04_P2_pid_byhand` 에서 두 가지를 잼
 
 | 실험 | 바꾸는 값 | 적을 것 |
 |---|---|---|
@@ -1921,7 +1921,7 @@ build_w06_pid_models
 
 | 항목 | 배점 |
 |---|---|
-| PID 입문 모델 세 개와 `W06_1`\~`W06_5` 다섯 개(VRX 네 개 + 오프라인 하나) 모두 정상 실행 | 15% |
+| PID 입문 모델 세 개와 `W04_1`\~`W04_5` 다섯 개(VRX 네 개 + 오프라인 하나) 모두 정상 실행 | 15% |
 | **①의 PID 성능표 수치 정확성** (미분 필터·안티와인드업 비교 포함) | 25% |
 | **②③의 성능표 수치 정확성** (그래프에서 제대로 읽었는가) | 25% |
 | 커플링 관찰 기록 | 15% |
@@ -1946,12 +1946,12 @@ build_w06_pid_models
 | 배가 한 바퀴 돌아서 목표로 감 | wrap 처리 누락 | `HeadingErr` 의 `atan2(sin,cos)` 확인 |
 | 속도가 목표를 크게 넘음 | 안티와인드업 꺼짐 | `PI_u` 의 Anti-windup = clamping |
 | Bus Selector 오류 | 필드 경로 오타 | `twist.twist.linear.x` 처럼 전체 경로 |
-| PID 모델 실행 시 `정의되지 않은 함수 또는 변수 Kp` | 파라미터가 워크스페이스에 없음 | `W06_pid_setup` 을 먼저 실행 |
+| PID 모델 실행 시 `정의되지 않은 함수 또는 변수 Kp` | 파라미터가 워크스페이스에 없음 | `W04_pid_setup` 을 먼저 실행 |
 | 게인을 바꿨는데 응답이 그대로 | 스크립트가 아니라 **base workspace** 의 값을 모델이 봄 | 명령창에서 직접 `Kp = 30` 후 Run |
-| `W06_pid_compare` 가 `함수를 찾을 수 없음` | 현재 폴더가 `W06_simulink` 가 아님 | `cd` 로 배포 폴더로 이동 |
+| `W04_pid_compare` 가 `함수를 찾을 수 없음` | 현재 폴더가 `W04_simulink` 가 아님 | `cd` 로 배포 폴더로 이동 |
 | 제어입력이 초당 수십 번 최대·최소를 오감 | 미분이 잡음을 증폭 | `Nf2` 를 낮춤 (10\~20) |
 | 목표를 낮췄는데 배가 안 내려옴 | 적분기 와인드업 | `Kb` · `Kb_u` 를 0 보다 크게 |
-| 모델 배치가 엉킴 | 손으로 블록을 옮김 | `build_w06_pid_models` 재실행 |
+| 모델 배치가 엉킴 | 손으로 블록을 옮김 | `build_w04_pid_models` 재실행 |
 
 ---
 
@@ -1966,7 +1966,7 @@ build_w06_pid_models
 
 ### 볼트 내 문서
 
-- [[W04_VRX_심화_모델구조와_토픽조사]] — urdf 복사·수정 방법, 차동 배분
+- [[W09_VRX_심화_모델구조와_토픽조사]] — urdf 복사·수정 방법, 차동 배분
 - [[QoS가-어긋나면-에러없이-끊긴다]] — 데이터가 안 올 때
 - [[ENU와-NED를-섞으면-조용히-틀린다]] — `Quat2Yaw` 의 배경
 - [[WSL-VRX-환경구축]] §8 — MATLAB 연동 문제해결
@@ -1981,39 +1981,39 @@ build_w06_pid_models
 
 | 파일 | 내용 |
 |---|---|
-| `W06_simulink/W06_1_straight.slx` | 직진 |
-| `W06_simulink/W06_2_turn.slx` | 선회 시나리오 |
-| `W06_simulink/W06_3_heading.slx` | 헤딩 제어 |
-| `W06_simulink/W06_4_inner_loop.slx` | 속도 + 헤딩 |
-| `W06_simulink/W06_5_offline.slx` | **오프라인 WAM-V** — Gazebo 없이 직진·우선회·좌선회 |
-| `W06_simulink/W06_3_heading_offline.slx` | 3단계의 **오프라인 쌍둥이** — 같은 제어기, Gazebo 대신 운동방정식 |
-| `W06_simulink/W06_4_inner_loop_offline.slx` | 4단계의 **오프라인 쌍둥이** |
-| `W06_simulink/W06_step_compare.m` | 3·4단계 쌍둥이를 먼저 돌리고, VRX 가 떠 있으면 같은 제어기를 VRX 로 돌려 지표 · 그림을 나란히 |
-| `W06_simulink/W06_offline_plot.m` | 오프라인 결과 그림 + VRX 대조 |
-| `W06_simulink/W06_vrx_record.m` | VRX 에서 같은 시나리오를 기록 |
-| `W06_simulink/W06_P1_pid_step.slx` | **PID 입문 ①** — 전달함수 + 라이브러리 PID 블록 |
-| `W06_simulink/W06_P2_pid_byhand.slx` | **PID 입문 ②** — PID 를 직접 조립 · 미분 필터 · 안티와인드업 |
-| `W06_simulink/W06_P3_boat_speed.slx` | **PID 입문 ③** — 오프라인 배 종방향 속도 제어 |
-| `W06_simulink/W06_pid_setup.m` | PID 입문 실습의 파라미터 |
-| `W06_simulink/W06_pid_compare.m` | 게인·옵션을 바꿔 가며 겹쳐 그리는 비교 스크립트 |
-| `W06_simulink/W06_pole_place.m` | 1-7절 극배치 — 게인 세 세트의 극과 계단응답 |
-| `W06_simulink/W06_heading_sign.m` | H절 헤딩 D 항 세 가지 비교 |
-| `W06_simulink/build_w06_models.m` | VRX 연동 모델 네 개와 오프라인 모델 세 개를 다시 만드는 스크립트 |
-| `W06_simulink/build_w06_pid_models.m` | PID 입문 모델 세 개를 다시 만드는 스크립트 |
-| `W06_simulink/tidy_layout.m` | 배치·색 복구 |
+| `W04_simulink/W04_1_straight.slx` | 직진 |
+| `W04_simulink/W04_2_turn.slx` | 선회 시나리오 |
+| `W04_simulink/W04_3_heading.slx` | 헤딩 제어 |
+| `W04_simulink/W04_4_inner_loop.slx` | 속도 + 헤딩 |
+| `W04_simulink/W04_5_offline.slx` | **오프라인 WAM-V** — Gazebo 없이 직진·우선회·좌선회 |
+| `W04_simulink/W04_3_heading_offline.slx` | 3단계의 **오프라인 쌍둥이** — 같은 제어기, Gazebo 대신 운동방정식 |
+| `W04_simulink/W04_4_inner_loop_offline.slx` | 4단계의 **오프라인 쌍둥이** |
+| `W04_simulink/W04_step_compare.m` | 3·4단계 쌍둥이를 먼저 돌리고, VRX 가 떠 있으면 같은 제어기를 VRX 로 돌려 지표 · 그림을 나란히 |
+| `W04_simulink/W04_offline_plot.m` | 오프라인 결과 그림 + VRX 대조 |
+| `W04_simulink/W04_vrx_record.m` | VRX 에서 같은 시나리오를 기록 |
+| `W04_simulink/W04_P1_pid_step.slx` | **PID 입문 ①** — 전달함수 + 라이브러리 PID 블록 |
+| `W04_simulink/W04_P2_pid_byhand.slx` | **PID 입문 ②** — PID 를 직접 조립 · 미분 필터 · 안티와인드업 |
+| `W04_simulink/W04_P3_boat_speed.slx` | **PID 입문 ③** — 오프라인 배 종방향 속도 제어 |
+| `W04_simulink/W04_pid_setup.m` | PID 입문 실습의 파라미터 |
+| `W04_simulink/W04_pid_compare.m` | 게인·옵션을 바꿔 가며 겹쳐 그리는 비교 스크립트 |
+| `W04_simulink/W04_pole_place.m` | 1-7절 극배치 — 게인 세 세트의 극과 계단응답 |
+| `W04_simulink/W04_heading_sign.m` | H절 헤딩 D 항 세 가지 비교 |
+| `W04_simulink/build_w04_models.m` | VRX 연동 모델 네 개와 오프라인 모델 세 개를 다시 만드는 스크립트 |
+| `W04_simulink/build_w04_pid_models.m` | PID 입문 모델 세 개를 다시 만드는 스크립트 |
+| `W04_simulink/tidy_layout.m` | 배치·색 복구 |
 
 ---
 
 ## 다음 주 예고
 
-- **7주차 — 웨이포인트 유도: atan2 와 LOS**
+- **5주차 — 웨이포인트 유도: atan2 와 LOS**
 - 이번 주차까지는 **제어만** 했음. "어디로 갈지"를 정하는 것이 **유도(Guidance)**
 - 할 일
   - 웨이포인트 배열을 주면 배가 스스로 사각형 경로를 도는 것까지
   - 가장 단순한 유도 `atan2` 와 경로를 따라가는 **LOS** 를 비교
   - **조류**를 켜서 두 유도법칙이 어떻게 갈라지는지 확인
 - 이번 주차에 작성한 4단계 inner loop 가 **구조 그대로 안쪽에 들어감**. 앞단에 유도 블록만 붙음
-  - 게인은 7주차 값(헤딩 400/200, 속도 PI 300/100)으로 바뀜 — 두 헤딩 게인 세트의 차이는 1-7절 표
+  - 게인은 5주차 값(헤딩 400/200, 속도 PI 300/100)으로 바뀜 — 두 헤딩 게인 세트의 차이는 1-7절 표
 - 준비물
-  - 이번 주차 과제의 응답 그래프 (7주차 게인과 비교하는 기준)
+  - 이번 주차 과제의 응답 그래프 (5주차 게인과 비교하는 기준)
   - `ground_truth_odometry` 를 켠 urdf

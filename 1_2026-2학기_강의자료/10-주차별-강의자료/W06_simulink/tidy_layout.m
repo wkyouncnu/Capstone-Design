@@ -1,8 +1,8 @@
 function tidy_layout(m, varargin)
 % TIDY_LAYOUT  Simulink 모델을 읽기 좋게 정리한다. 선은 전부 직선이 된다.
 %
-%   tidy_layout('W07_0_offline')
-%   tidy_layout('W07_0_offline','Recurse',false)     % 서브시스템은 두고
+%   tidy_layout('W05_0_offline')
+%   tidy_layout('W05_0_offline','Recurse',false)     % 서브시스템은 두고
 %
 %   하는 일
 %     1) 포트가 많은 블록을 세로로 늘려 포트 간격을 확보한다

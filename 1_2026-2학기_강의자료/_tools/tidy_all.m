@@ -14,8 +14,8 @@ if nargin < 1
 end
 addpath(fileparts(mfilename('fullpath')));
 
-folders = {'W06_0_simulink','W06_simulink','W07_simulink', ...
-           'W08_simulink','W09_simulink'};
+folders = {'A1_simulink','W04_simulink','W05_simulink', ...
+           'W06_simulink','W07_simulink'};
 
 home = pwd;
 fprintf('\n%-26s %6s %6s %6s %6s\n','모델','블록','겹침','선','꺾임');

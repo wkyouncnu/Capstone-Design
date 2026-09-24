@@ -1,14 +1,14 @@
 ---
 type: week
-week: 5
-title: 5주차 — VSCode와 Claude 에이전트, 첫 ROS 2 제어 노드
+week: 10
+title: 10주차 — VSCode와 Claude 에이전트, 첫 ROS 2 제어 노드
 date: 2026-09-03
 tags: [week, ai-agent, vscode, matlab]
 status: done
 summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이포인트 PID 노드 만들고 검증하기, MATLAB MCP 로 Simulink 조작
 ---
 
-# 5주차 · VSCode와 Claude 에이전트, 첫 ROS 2 제어 노드
+# 10주차 · VSCode와 Claude 에이전트, 첫 ROS 2 제어 노드
 
 > [!important] 참조 강의 — 본 과목이 전제하는 배경
 > <span style="font-size:0.88em">아래 다섯 과목은 **본 과목 담당 교수가 직접 강의한 것**이며, 본 과목이 전제하는 배경 지식에 해당함. 학부 기초에서 대학원 과정까지 이어지므로 부족한 지점부터 시작하면 됨. 본 문서에서 쓰는 좌표계·기호·유도 과정은 아래 강의에서 상세히 다루므로, 선수 지식이 부족한 경우 먼저 보고 돌아올 것.</span>
@@ -21,7 +21,7 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 > | 4 | **제어공학특론** — 좌표계, 6자유도 운동방정식, 회전행렬과 오일러각, 선형화와 트림 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvJmvF2ljx4KM5dj1P5jEcw0) | [드라이브](https://drive.google.com/drive/folders/1GUxbbONl916lNd0ggnFnXrNwNkd13-2-) |
 > | 5 | **센서신호처리 및 융합** — 센서 모델, 잡음, 추정, 다중센서 융합 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvK-aP2Gdoyp5-AWvMn7Fo8E) | [드라이브](https://drive.google.com/drive/folders/1MEVJP7TzMcm8w6TZwUjhWJtL34WeNY3u) |
 >
-> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 6주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
+> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 4주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
 >
 > | 도구 | 시작 지점 |
 > |---|---|
@@ -52,7 +52,7 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 
 > [!important] 시작 전 확인
 > - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-6)
-> - 4주차 **토픽 전수조사표**를 가져올 것. 이번 주차 에이전트에게 줄 자료임
+> - 9주차 **토픽 전수조사표**를 가져올 것. 이번 주차 에이전트에게 줄 자료임
 > - VRX가 실행되는 상태여야 함
 > - **Claude 계정이 필요함** — 아래 준비물 표를 반드시 먼저 볼 것
 
@@ -71,8 +71,8 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 
 | 항목 | 내용 |
 |---|---|
-| 환경 | 1\~4주차에 만든 WSL2 + ROS 2 + VRX |
-| 자료 | **4주차 토픽 전수조사표** |
+| 환경 | 1\~3 · 9주차에 만든 WSL2 + ROS 2 + VRX |
+| 자료 | **9주차 토픽 전수조사표** |
 | 계정 | **Claude 유료 플랜 계정** (아래 경고 참조) |
 | 인터넷 | 설치 · 로그인 · 에이전트 사용 모두 필요 |
 
@@ -126,7 +126,7 @@ summary: VS Code 설치부터 Claude Code 연동까지, 에이전트로 웨이�
 | **QoS 설정** | 기본값 RELIABLE 로 만들어 BEST_EFFORT 토픽을 못 받음 | [[QoS가-어긋나면-에러없이-끊긴다]] |
 | **단위** | deg/rad, m/s vs RPM, 시각의 기준 시계 | 3주차 |
 | **ROS 버전** | Humble 에 없는 최신 API 를 자신 있게 씀 | 2주차 |
-| **없는 경로** | 존재하지 않는 패키지 경로를 그럴듯하게 만들어냄 | 4주차 |
+| **없는 경로** | 존재하지 않는 패키지 경로를 그럴듯하게 만들어냄 | 9주차 |
 
 > [!warning] 다섯 경우 모두 오류 메시지가 발생하지 않음
 > - 문법 오류는 에이전트가 스스로 고침
@@ -192,7 +192,7 @@ ros2 bag play run1
 |---|---|
 | 버전 | ROS 2 Humble, Gazebo Garden, Python 3.10 |
 | 좌표계 규약 | 내부 계산은 NED. 변수명에 `_ned` / `_enu` 를 붙임 |
-| 토픽 규약 | 4주차 전수조사표의 정확한 이름 |
+| 토픽 규약 | 9주차 전수조사표의 정확한 이름 |
 | 코딩 규칙 | 단위를 변수명에 붙임 (`psi_ned_rad`) |
 | 하지 말 것 | upstream `vrx` 폴더를 직접 수정하지 않음 |
 
@@ -572,7 +572,7 @@ creating folder ./team_usv
 nano CLAUDE.md
 ```
 
-- 아래를 붙여넣고 **팀 상황에 맞게 고칠 것** (특히 토픽 이름은 4주차 조사표에서)
+- 아래를 붙여넣고 **팀 상황에 맞게 고칠 것** (특히 토픽 이름은 9주차 조사표에서)
 
 ```markdown
 # 팀 USV 프로젝트
@@ -589,7 +589,7 @@ nano CLAUDE.md
 - 변환 함수는 `frames.py` **한 곳에만** 둔다
 - 변수명에 좌표계와 단위를 붙인다: `psi_ned_rad`, `speed_mps`
 
-## 토픽 (4주차 전수조사 결과)
+## 토픽 (9주차 전수조사 결과)
 | 토픽 | 타입 | 방향 |
 |---|---|---|
 | `/wamv/sensors/gps/gps/fix` | `sensor_msgs/NavSatFix` | 구독 |
@@ -600,7 +600,7 @@ nano CLAUDE.md
 - VRX 브리지의 센서 토픽은 전부 **RELIABLE** (2026-09-15 실측). 구독자 QoS 를 기본값으로 두면 맞음
 - 다만 토픽을 추가할 때는 `ros2 topic info <토픽> --verbose` 로 **직접 확인**할 것
 
-## 추력 배분 (4주차 1-2)
+## 추력 배분 (9주차 1-2)
 - 요 모멘트 N > 0 이면 **우선회** (NED, 시계방향 +)
 - F_L = X/2 + N/(2b), F_R = X/2 - N/(2b), b = 1.027 m
 - 좌현 추진기가 더 세게 밀면 우선회. 이 부호를 바꾸지 않는다
@@ -647,7 +647,7 @@ CLAUDE.md 를 읽고, 본 프로젝트의 좌표계 규약을 한 문장으로 �
 | 주기 | 10 Hz |
 | 종료 조건 | 목표까지 7 m 이내면 다음 웨이포인트 |
 | 마지막 웨이포인트 | 도착하면 좌우 추력 0 (정지) |
-| 추력 배분 | $N>0$ 이면 우선회. $F_L = X/2 + N/(2b)$, $F_R = X/2 - N/(2b)$, $b = 1.027$ m (4주차 1-2) |
+| 추력 배분 | $N>0$ 이면 우선회. $F_L = X/2 + N/(2b)$, $F_R = X/2 - N/(2b)$, $b = 1.027$ m (9주차 1-2) |
 | 안전 | 추력 포화, 각도 wrap |
 
 ### E-2. 프롬프트 작성
@@ -721,20 +721,20 @@ Summary: 1 package finished [0.67s]
 ```
 
 > [!important] 순서 — VRX 를 띄우기 전에 운동모델로 먼저 돌린다
-> 3주차 `W03_0_offline` → `W03_4_teleop`, 7주차 `W07_0_offline` → `W07_1_vrx` 와 같은 순서임
+> 3주차 `W03_0_offline` → `W03_4_teleop`, 5주차 `W05_0_offline` → `W05_1_vrx` 와 같은 순서임
 > - 1단계: **`wamv_sim.py`** (VRX 와 같은 토픽을 내는 파이썬 운동모델)에 물려 봄. 수 초 안에 뜨고 GPU 가 필요 없음
 > - 2단계: 같은 노드를 **한 글자도 바꾸지 않고** VRX 에 물림
 > - 1단계에서 이미 틀리면 VRX 에서도 틀림. VRX 를 30초씩 다시 띄울 필요가 없음
 
 **1단계 — `wamv_sim.py` 에 물려 본다 (VRX 불필요)**
 
-- 배포 폴더 `10-주차별-강의자료/W05_python/wamv_sim.py` — 한 파일짜리 ROS 2 노드
+- 배포 폴더 `10-주차별-강의자료/W10_python/wamv_sim.py` — 한 파일짜리 ROS 2 노드
 
 | 안에 든 것 | 출처 | Simulink 에서 같은 것 |
 |---|---|---|
 | 운동방정식 (`eom`) · RK4 적분 100 Hz | 3주차 1-8 절 — 계수 · 식이 같음 | `W03_0_offline` 의 `MotionModel` |
-| GPS 20 Hz, 안테나 $x_b = -0.85$ m | 4주차 1-5 절 | `W04_0_offline` 의 `SensorModel` |
-| IMU 100 Hz, 자이로 잡음 0.009 rad/s | 4주차 1-5 절 | 같음 |
+| GPS 20 Hz, 안테나 $x_b = -0.85$ m | 9주차 1-5 절 | `W09_0_offline` 의 `SensorModel` |
+| IMU 100 Hz, 자이로 잡음 0.009 rad/s | 9주차 1-5 절 | 같음 |
 
 | 토픽 | 방향 | 형식 |
 |---|---|---|
@@ -745,7 +745,7 @@ Summary: 1 package finished [0.67s]
 
 ```bash
 # 터미널 1 — VRX 대신
-python3 <배포 폴더>/W05_python/wamv_sim.py
+python3 <배포 폴더>/W10_python/wamv_sim.py
 ```
 
 - 정상 출력 (2026-09-19 기준 환경 실측)
@@ -901,8 +901,8 @@ ros2 bag play wp_run
 
 ## F. MATLAB · Simulink 를 Claude 로 조작하기
 
-> [!note] 이 절은 6주차 Simulink 연동의 준비 단계
-> 이번 주차에는 **연결만** 하고, 실제 제어기 설계는 6\~8주차에 함
+> [!note] 이 절은 4주차 Simulink 연동의 준비 단계
+> 이번 주차에는 **연결만** 하고, 실제 제어기 설계는 4\~6주차에 함
 
 ### F-1. MCP 란 무엇인가
 
@@ -1090,7 +1090,7 @@ T = 0.816 s, K = 1.25e-3 rad/(s·N·m) 이고, 선수각은 r 의 적분이다.
 스텝응답을 그리고 상승시간과 정정시간을 알려줘.
 ```
 
-- 수치는 6주차 1-7 의 WAM-V 값 — $T\dot r + r = KN$, $T = 0.816$ s, $K = 1.25\times10^{-3}$ rad/(s·N·m)
+- 수치는 4주차 1-7 의 WAM-V 값 — $T\dot r + r = KN$, $T = 0.816$ s, $K = 1.25\times10^{-3}$ rad/(s·N·m)
   - WAM-V 에는 방향타가 없으므로 입력이 방향타 각이 아니라 **요 모멘트** $N$ 임
   - 여기 $K$ 는 Nomoto 이득 — 3주차 표의 롤 모멘트 $K$ 아님
 
@@ -1099,8 +1099,8 @@ T = 0.816 s, K = 1.25e-3 rad/(s·N·m) 이고, 선수각은 r 의 적분이다.
 
 ### F-6. Simulink 모델을 Claude 로 읽기 (중요)
 
-> [!important] 이것이 6주차 실습의 예고편
-> 7\~8주차에 참고할 `VRX_tilt4_controller_unberthing.slx` 는 블록이 수백 개임
+> [!important] 이것이 4주차 실습의 예고편
+> 5\~6주차에 참고할 `VRX_tilt4_controller_unberthing.slx` 는 블록이 수백 개임
 > (4추진기용 연구실 모델이며, 본 과목에서는 **참고만** 함)
 > 눈으로 다 따라가기 어려움. **에이전트에게 읽혀서 구조를 파악**하는 것이 훨씬 빠름
 
@@ -1154,7 +1154,7 @@ open_system('VRX_tilt4_controller_unberthing')
 
 - `model_resolve_params` 로 워크스페이스 변수를 실제 값으로 풀어 줌
   - 1단계의 스크립트 선택 실행을 빠뜨리면 변수를 찾지 못함
-- 6주차에 게인을 튜닝할 때 계속 쓰게 됨
+- 4주차에 게인을 튜닝할 때 계속 쓰게 됨
 
 ### F-7. Claude 가 MATLAB 에서 쓸 수 있는 도구
 
@@ -1454,9 +1454,9 @@ claude --version && which claude
 
 ---
 
-## 과제 5 — 에이전트 검증 보고서
+## 과제 10 — 에이전트 검증 보고서
 
-- **제출 기한**: 6주차 수업 전
+- **제출 기한**: 4주차 수업 전
 - **제출**: 개인별 1부 (팀 레포에 커밋 + 문서 제출)
 
 ### ① 프롬프트 로그
@@ -1562,11 +1562,12 @@ diff -u waypoint_pid_draft.py waypoint_pid.py > agent_diff.txt
 
 ## 다음 주 예고
 
-- **6주차 — Simulink ↔ ROS 2 연동**
+- **11주차 — LiDAR 신호처리: 전처리와 부표 탐지**
+- 이번 주차까지가 **제어·도구 트랙의 끝**. 다음 주부터 **인지 트랙**으로 넘어감
 - 할 일
-  - Windows 의 **Simulink** 와 WSL 의 **Gazebo** 를 서로 대화하게 만들기
-  - ground truth odometry 켜기 → 직진·선회 → PID → 헤딩 제어
-  - Domain ID · RMW 정합 확인
+  - LiDAR 포인트클라우드를 받아 지면·잡음 제거
+  - 군집화로 부표 후보 찾기
+  - 좌표계 변환으로 부표를 NED 위치로
 - 준비물
-  - 이번 주차에 작성한 `CLAUDE.md` 와 토픽 조사표
-  - MATLAB R2024b 실행 확인 (**ROS Toolbox 포함 여부** 미리 확인할 것)
+  - 9주차의 토픽 전수조사표 (LiDAR 항목)
+  - 이번 주차에 작성한 `CLAUDE.md` 와 검증 기록

@@ -9,8 +9,8 @@ function role = gnc_roles(mdl)
 %
 %   WHY ONE TABLE AND NOT ONE PER BUILDER
 %
-%   전에는 빌더마다 같은 루프를 들고 있었다. W07~W10 만 들고 있었고 W02·W03·
-%   W04·W06 은 빠져 있었다 — 2026-09-17 감사에서 48개 모델 전부가 걸렸다.
+%   전에는 빌더마다 같은 루프를 들고 있었다. W05~W08 만 들고 있었고 W02·W03·
+%   W09·W04 은 빠져 있었다 — 2026-09-17 감사에서 48개 모델 전부가 걸렸다.
 %   표가 하나면 새 모델을 만들 때 어디에 적어야 할지 헷갈릴 일이 없고,
 %   "3주차 Nav 는 무슨 색인가" 를 한 파일에서 답할 수 있다.
 %
@@ -22,7 +22,7 @@ function role = gnc_roles(mdl)
 
 [~, m] = fileparts(char(mdl));
 
-%  주차별로 공통인 사슬. 7~9주차가 같은 이름을 쓴다
+%  주차별로 공통인 사슬. 5~7주차가 같은 이름을 쓴다
 GNC = {'Guidance','guidance'; 'Mission','mission'; 'InnerLoop','control'; ...
        'Thrusters','thruster'; 'MotionModel','plant'; ...
        'CmdPublisher','ros'; 'PoseSubscriber','ros'; ...
@@ -46,43 +46,43 @@ case 'W03_1_frame_check'
 case {'W03_2_vrx_nav','W03_3_vrx_drive'}
     role = [GNC; {'SensorSubscriber','ros'; 'Nav','ros'}];
 case {'W03_0_offline','W03_4_teleop'}
-    %   TeleopPad 가 파랑인 이유 — 유도 자리에 사람이 들어간다. 7주차에서
+    %   TeleopPad 가 파랑인 이유 — 유도 자리에 사람이 들어간다. 5주차에서
     %   LOS 가 대신하게 될 그 자리다
     role = [GNC; {'TeleopPad','guidance'; 'OdomNav','ros'}];
 
-% ---- 4주차 · 토픽 조사 -------------------------------------------------
-case 'W04_0_offline'
+% ---- 9주차 · 토픽 조사 -------------------------------------------------
+case 'W09_0_offline'
     %   SensorModel 은 1단계 SensorSubscriber 자리를 대신한다 — 같은 연보라
     role = [GNC; {'Command','guidance'; 'SensorModel','ros'; 'RateMeter','ros'}];
-case 'W04_1_sensor_rates'
+case 'W09_1_sensor_rates'
     role = [GNC; {'SensorSubscriber','ros'; 'RateMeter','ros'}];
-case 'W04_2_qos_test'
+case 'W09_2_qos_test'
     role = [GNC; {'QosSubscribers','ros'; 'RxCount','ros'}];
 
-% ---- 6주차 · ROS2 연동과 첫 제어기 -------------------------------------
-case {'W06_1_straight','W06_2_turn'}
+% ---- 4주차 · ROS2 연동과 첫 제어기 -------------------------------------
+case {'W04_1_straight','W04_2_turn'}
     role = [GNC; {'PubL','ros'; 'PubR','ros'; 'BlankL','ros'; 'BlankR','ros'; ...
                   'AsgL','ros'; 'AsgR','ros'; 'Scenario','guidance'}];
-case {'W06_3_heading','W06_4_inner_loop','W06_3_heading_offline','W06_4_inner_loop_offline'}
+case {'W04_3_heading','W04_4_inner_loop','W04_3_heading_offline','W04_4_inner_loop_offline'}
     role = [GNC; {'PubL','ros'; 'PubR','ros'; 'BlankL','ros'; 'BlankR','ros'; ...
                   'AsgL','ros'; 'AsgR','ros'; 'OdomSub','ros'; ...
                   'Quat2Yaw','ros'; 'Sel','ros'; ...
                   'HeadingCtrl','control'; 'PI_u','control'; 'SumU','control'; ...
                   'Alloc','allocation'}];
-case 'W06_5_offline'
+case 'W04_5_offline'
     role = [GNC; {'Scenario','guidance'; 'HeadingCtrl','control'; ...
                   'Alloc','allocation'; 'MotorLag','thruster'; ...
                   'EOM','plant'; 'States','plant'; 'Integ','plant'; 'MuxF','plant'}];
 
-% ---- 6주차 · PID 연습 --------------------------------------------------
-case {'W06_P1_pid_step','W06_P2_pid_byhand','W06_P3_boat_speed'}
+% ---- 4주차 · PID 연습 --------------------------------------------------
+case {'W04_P1_pid_step','W04_P2_pid_byhand','W04_P3_boat_speed'}
     role = [GNC; {'PID','control'; 'PID_lib','control'; 'PID_byhand','control'; ...
                   'SumE','control'; 'SumE_hand','control'; 'SumE_lib','control'; ...
                   'Plant','plant'; 'Plant_hand','plant'; 'Plant_lib','plant'; ...
                   'Boat','plant'; 'SensorNoise','env'; ...
                   'SumY_hand','env'; 'SumY_lib','env'; 'Dcompare','measurement'}];
 
-% ---- 6주차 기초 · SB 드릴 ----------------------------------------------
+% ---- 부록 A1 · SB 드릴 ----------------------------------------------
 %   SB 는 GNC 사슬이 아니라 Simulink 블록 자체를 가르친다. 그래서 단계 색을
 %   억지로 입히지 않는다. 뜻이 분명한 것만 — 전달함수는 초록, 제어기는 주황,
 %   계산용 서브시스템은 연보라(신호처리) — 칠하고 나머지는 흰색으로 둔다
@@ -100,11 +100,11 @@ case {'SB12_reuse_done','SB12_reuse_todo'}
 case {'SB13_stateflow_done','SB13_stateflow_todo'}
     role = {'Mission','mission'; 'Dist','plant'};
 
-% ---- 7~10주차 · 유도·제어 사슬 ------------------------------------------
-case {'W07_0_offline','W07_1_vrx','W08_0_offline','W08_1_vrx', ...
-      'W09_0_offline','W09_1_vrx'}
+% ---- 5~8주차 · 유도·제어 사슬 ------------------------------------------
+case {'W05_0_offline','W05_1_vrx','W06_0_offline','W06_1_vrx', ...
+      'W07_0_offline','W07_1_vrx'}
     role = GNC;
-case {'W10_0_offline','W10_1_vrx'}
+case {'W08_0_offline','W08_1_vrx'}
     role = [GNC; {'DPRef','guidance'; 'WaveFilter','ros'; 'DPCtrl','control'; ...
                   'Alloc','allocation'; 'Env','env'}];
 

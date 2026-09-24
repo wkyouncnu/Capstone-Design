@@ -1,14 +1,14 @@
 ---
 type: week
-week: 9
-title: 9주차 — Stateflow 미션, 웨이포인트와 로이터링을 잇는다
+week: 7
+title: 7주차 — Stateflow 미션, 웨이포인트와 로이터링을 잇는다
 date: 2026-09-03
 tags: [week, stateflow, mission, guidance]
 status: done
 summary: 상태기계로 두 유도법칙을 갈아 끼운다 — 항주 중 로이터링 후 복귀
 ---
 
-# 9주차 · Stateflow 미션 — 웨이포인트와 로이터링을 잇는다
+# 7주차 · Stateflow 미션 — 웨이포인트와 로이터링을 잇는다
 
 > [!important] 참조 강의 — 본 과목이 전제하는 배경
 > <span style="font-size:0.88em">아래 다섯 과목은 **본 과목 담당 교수가 직접 강의한 것**이며, 본 과목이 전제하는 배경 지식에 해당함. 학부 기초에서 대학원 과정까지 이어지므로 부족한 지점부터 시작하면 됨. 본 문서에서 쓰는 좌표계·기호·유도 과정은 아래 강의에서 상세히 다루므로, 선수 지식이 부족한 경우 먼저 보고 돌아올 것.</span>
@@ -21,7 +21,7 @@ summary: 상태기계로 두 유도법칙을 갈아 끼운다 — 항주 중 로
 > | 4 | **제어공학특론** — 좌표계, 6자유도 운동방정식, 회전행렬과 오일러각, 선형화와 트림 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvJmvF2ljx4KM5dj1P5jEcw0) | [드라이브](https://drive.google.com/drive/folders/1GUxbbONl916lNd0ggnFnXrNwNkd13-2-) |
 > | 5 | **센서신호처리 및 융합** — 센서 모델, 잡음, 추정, 다중센서 융합 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvK-aP2Gdoyp5-AWvMn7Fo8E) | [드라이브](https://drive.google.com/drive/folders/1MEVJP7TzMcm8w6TZwUjhWJtL34WeNY3u) |
 >
-> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 6주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
+> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 4주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
 >
 > | 도구 | 시작 지점 |
 > |---|---|
@@ -52,8 +52,8 @@ summary: 상태기계로 두 유도법칙을 갈아 끼운다 — 항주 중 로
 
 > [!important] 시작 전 확인
 > - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-6)
-> - 7주차 LOS 와 8주차 로이터링이 각각 동작했어야 함
-> - 배포 폴더 `W09_simulink/`
+> - 5주차 LOS 와 6주차 로이터링이 각각 동작했어야 함
+> - 배포 폴더 `W07_simulink/`
 
 > [!note] 이번 주차 새로 만드는 것은 **하나뿐**이다
 > 유도법칙 두 개(LOS, 벡터필드)와 내부루프·추진기·운동모델은 이미 다 있음
@@ -74,8 +74,8 @@ summary: 상태기계로 두 유도법칙을 갈아 끼운다 — 항주 중 로
 
 | 항목 | 내용 |
 |---|---|
-| 환경 | 1\~8주차 그대로 |
-| 배포 파일 | `W09_simulink/` (모델 2개 + 스크립트 6개: setup · plot · animate · vrx_run · build · tidy_layout) |
+| 환경 | 1\~6주차 그대로 |
+| 배포 파일 | `W07_simulink/` (모델 2개 + 스크립트 6개: setup · plot · animate · vrx_run · build · tidy_layout) |
 
 ---
 
@@ -87,8 +87,8 @@ summary: 상태기계로 두 유도법칙을 갈아 끼운다 — 항주 중 로
 
 | 주차 | 하는 일 | 언제 끝나는가 |
 |---|---|---|
-| 7주차 | 웨이포인트 따라가기 | 마지막 점에 닿으면 |
-| 8주차 | 한 점 주위 돌기 | 정한 바퀴 수를 돌면 |
+| 5주차 | 웨이포인트 따라가기 | 마지막 점에 닿으면 |
+| 6주차 | 한 점 주위 돌기 | 정한 바퀴 수를 돌면 |
 
 - 실제 임무는 **여러 동작을 순서대로** 함
 
@@ -120,7 +120,7 @@ summary: 상태기계로 두 유도법칙을 갈아 끼운다 — 항주 중 로
 
 ![미션 상태기계와 모델 구조](../assets/w09-mission-fsm.svg)
 
-![미션 FSM](W09_simulink/img/MissionFSM.png)
+![미션 FSM](W07_simulink/img/MissionFSM.png)
 
 ```
         ●
@@ -181,7 +181,7 @@ $$
 > - 도착 신호 `at_loiter`, `at_end` 는 MATLAB Function 이 내는 **0 또는 1 의 double** 임
 > - 실수를 `== 1` 로 비교하면 계산 오차에 걸릴 수 있음
 > - 그래서 0 과 1 의 한가운데인 0.5 로 가름
-> - 6_0주차 M-4 절(SB13)에서 같은 관용구를 작은 모델로 먼저 연습함
+> - 부록 A1 M-4 절(SB13)에서 같은 관용구를 작은 모델로 먼저 연습함
 
 ### 차트의 데이터 — 입력 4개, 출력 1개
 
@@ -194,7 +194,7 @@ $$
 | `mode` | 출력 | 1 | → `ModeSwitch` (바로), → `ModeDly` → `WpManager`·`TurnCount` (한 스텝 뒤) |
 
 - 차트 설정: 동작 언어 **MATLAB**, 갱신 방식 **Discrete**, 샘플 시간 `Ts_ctrl` (0.05 s)
-- 차트 경로: `W09_0_offline/Mission/MissionFSM`
+- 차트 경로: `W07_0_offline/Mission/MissionFSM`
 
 ### Stateflow 가 차트를 실행하는 규칙
 
@@ -212,7 +212,7 @@ $$
 > [!warning] `loiter_wp` 를 마지막 웨이포인트로 두지 않는다
 > - `loiter_wp = 5` 이면 WP5 에 닿는 스텝에 `at_loiter` 와 `at_end` 가 **동시에 1** 이 됨
 > - `WpFollow` 에서 나가는 두 전이가 함께 참 → 실행 순서가 결과를 정함
-> - 그래서 `W09_setup` 은 `loiter_wp` 를 **2 이상 $n-1$ 이하**로만 받음 (기본 경로에서는 2·3·4). 벗어나면 오류로 멈춤
+> - 그래서 `W07_setup` 은 `loiter_wp` 를 **2 이상 $n-1$ 이하**로만 받음 (기본 경로에서는 2·3·4). 벗어나면 오류로 멈춤
 
 > [!note] 연구실 UGV 예제와 같은 구조다
 > `UGV_Control_StateFlow_260529.slx` 의 미션 차트가
@@ -268,15 +268,15 @@ end
 - 실측 조건: 기본 설정에서 `wp_north(4) = 4; wp_east(4) = 47;` 만 바꿈 (2026-09-18, 오프라인)
 - 잠금이 없으면 임무가 **더 빨리 끝남** — 들러야 할 점 하나를 조용히 빼먹었기 때문. 성공처럼 보이는 실패
 
-> [!note] 7주차는 "경로 방향" 판정이 기본인데 여기는 왜 수락 원인가
-> - 7주차 1-8절: 수락 원 판정은 **조류에 밀리면 걸릴 수 있음**
+> [!note] 5주차는 "경로 방향" 판정이 기본인데 여기는 왜 수락 원인가
+> - 5주차 1-8절: 수락 원 판정은 **조류에 밀리면 걸릴 수 있음**
 > - 이 주차는 아래 두 이유로 원을 그대로 씀
 >
-> - **조류가 없음.** 조류가 없으면 두 판정의 결과가 완전히 같음 (7주차 1-8절 표, $R = 5$ m · 조류 0 의 두 줄)
+> - **조류가 없음.** 조류가 없으면 두 판정의 결과가 완전히 같음 (5주차 1-8절 표, $R = 5$ m · 조류 0 의 두 줄)
 > - **로이터 진입은 "그 점에 왔다" 는 뜻임.** 경로 방향 판정은 옆으로 멀리 떨어져 있어도 구간 끝에 닿았다고 봄. 원을 그리며 돌 중심에 다가왔는지를 묻는 데는 거리가 더 맞는 질문임
 >
 > 조류를 넣는 과제로 확장할 때
-> - `WpManager` 안의 `reached = d_next <= R;` 한 줄을 7주차 `GuidanceLaw` 처럼 경로 방향 판정 $d - x_e < R$ 로 바꿈
+> - `WpManager` 안의 `reached = d_next <= R;` 한 줄을 5주차 `GuidanceLaw` 처럼 경로 방향 판정 $d - x_e < R$ 로 바꿈
 > - 또는 $R$ 을 넉넉히 둠
 
 ### 해결 — 인덱스 전진을 모드로 잠근다
@@ -322,7 +322,7 @@ $$
 \lvert r - r_d \rvert \;\le\; \text{tol} = 0.3\,r_d \quad (r_d = 18 \text{ m 이면 } 5.4 \text{ m})
 $$
 
-- 무장 뒤에는 중심에서 본 방위 $\theta$ 의 변화 $\Delta\theta$ 를 $(-\pi, \pi]$ 로 감아서 누적함 ($r$·$\theta$ 의 뜻은 8주차 1-4절 경고표)
+- 무장 뒤에는 중심에서 본 방위 $\theta$ 의 변화 $\Delta\theta$ 를 $(-\pi, \pi]$ 로 감아서 누적함 ($r$·$\theta$ 의 뜻은 6주차 1-4절 경고표)
 
 $$
 \text{turns} \;=\; \frac{\left\lvert \sum \Delta\theta \right\rvert}{2\pi}
@@ -331,8 +331,8 @@ $$
 - 진입 순간 배는 중심(= 로이터 웨이포인트) 에서 $R$ = 5 m 안에 있음 → 원으로 나가는 동안은 세지 않음
   - 그래서 로이터 체류 시간에는 중심에서 원까지 나가는 구간이 포함됨
   - 기본 설정 실측: 진입 74.7 s → **85.6 s 에 무장** ($r = 13.30$ m, $\lvert r - r_d\rvert = 4.70 \le 5.4$). 약 11 s 가 나가는 구간
-- 무장 허용폭을 $0.3\,r_d$ 로 넓게 둔 이유: 정착 반경 오차가 $p_c v \tau_{\text{eff}}$ 만큼 남음 (8주차 1-8절). $p_c = 1$ 이면 약 7 m 라 좁은 폭으로는 **영영 무장하지 못함** (8주차 C-1 표)
-- 허용폭은 8주차 `TurnCount` 와 같은 $0.3\,r_d$
+- 무장 허용폭을 $0.3\,r_d$ 로 넓게 둔 이유: 정착 반경 오차가 $p_c v \tau_{\text{eff}}$ 만큼 남음 (6주차 1-8절). $p_c = 1$ 이면 약 7 m 라 좁은 폭으로는 **영영 무장하지 못함** (6주차 C-1 표)
+- 허용폭은 6주차 `TurnCount` 와 같은 $0.3\,r_d$
 
 ---
 
@@ -353,8 +353,8 @@ MissionFSM ──mode──→ WpManager ──at_loiter (입력 1)──┐
 - Simulink 는 이것을 **대수 루프(algebraic loop)** 라고 부르고 거부함
 
 ```
-'W09_0_offline/MissionFSM' 또는 이를 참조하는 모델은 대수 루프에서 지원되지 않습니다.
-'W09_0_offline/MissionFSM'의 입력 포트(1, 2, 4)가 루프에 연결되어 있습니다.
+'W07_0_offline/MissionFSM' 또는 이를 참조하는 모델은 대수 루프에서 지원되지 않습니다.
+'W07_0_offline/MissionFSM'의 입력 포트(1, 2, 4)가 루프에 연결되어 있습니다.
 ```
 
 ### 끊는 법 — 단위지연
@@ -380,8 +380,8 @@ MissionFSM ──→ [ 1/z ] ──mode──→ WpManager, TurnCount
 
 > [!important] 직접 통과 블록만으로 닫힌 루프에는 상태가 하나 필요하다
 > - 상태 = 한 스텝 전 값을 기억하는 블록 (Unit Delay) 또는 적분기
-> - 7주차의 웨이포인트 인덱스, 8주차의 회전수 누적은 Unit Delay 로 끊음
-> - 6_0주차 M절 SB13 은 차트 출력이 적분기 `Dist` 를 거쳐 돌아옴 → Unit Delay 없이도 대수 루프가 아님
+> - 5주차의 웨이포인트 인덱스, 6주차의 회전수 누적은 Unit Delay 로 끊음
+> - 부록 A1 M절 SB13 은 차트 출력이 적분기 `Dist` 를 거쳐 돌아옴 → Unit Delay 없이도 대수 루프가 아님
 > - **"자기 출력을 같은 스텝의 자기 입력으로 쓸 수 없다"** — 이산 시스템의 기본 규칙
 
 ---
@@ -395,28 +395,28 @@ MissionFSM ──→ [ 1/z ] ──mode──→ WpManager, TurnCount
 - 기본 설정 실측: 로이터 종료 248.0 s 에 $y_e = -7.60$ m, 복귀 뒤 최대 $\lvert y_e \rvert$ 도 **7.60 m** (빠져나온 순간이 최대)
 - 이때 **LOS 가 다시 경로로 끌어옴**
 
-> [!note] 7주차 실습이 여기서 쓰인다
-> 7주차에서 배를 일부러 20 m 벗어난 곳에서 출발시킨 이유가 이것임
+> [!note] 5주차 실습이 여기서 쓰인다
+> 5주차에서 배를 일부러 20 m 벗어난 곳에서 출발시킨 이유가 이것임
 > "경로 밖에서 시작해 경로로 붙는 것"이 LOS 의 본래 역할이고,
 > 미션 중에 그 상황이 **실제로 발생함**
 
 ---
 
-## 1-7. 7·8주차에서 이름과 뜻이 바뀐 것
+## 1-7. 5·6주차에서 이름과 뜻이 바뀐 것
 
 > [!warning] 같은 이름이 다른 뜻으로 쓰이는 곳이 있다
-> 7·8주차 설정 파일을 보며 옮겨 올 때 아래 표를 먼저 확인할 것.
+> 5·6주차 설정 파일을 보며 옮겨 올 때 아래 표를 먼저 확인할 것.
 
-| 7·8주차 | 9주차 | 달라진 점 |
+| 5·6주차 | 7주차 | 달라진 점 |
 |---|---|---|
-| 7주차 `GuidanceLaw` 출력 `psi_ref` | `WpManager` 출력 `psi_los` | LOS 지령에 새 이름. `psi_ref` 는 이제 `ModeSwitch` 가 고른 최종 지령 |
-| 7주차 `mode` (1 = atan2, 2 = LOS) | `mode` (1 = WpFollow, 2 = Loiter, 3 = Finish) | **같은 이름, 다른 뜻.** 9주차 웨이포인트 유도는 LOS 하나뿐이고, `mode` 는 미션 상태 |
-| 7주차 `wp_idx` | `idx` | 이름만 바뀜. 구간 시작 인덱스라는 뜻은 같음 |
-| 7주차 `sw_mode` (기본 1 = 경로 방향) | 없음 | 9주차는 모든 구간을 **수락 원** $d_{k+1} \le R$ 로 판정 (1-4절 note) |
-| 7주차 `gate` — `GuidanceLaw` 가 냄 | `gate` — `ModeSwitch` 가 냄 | `Finish` 상태에서 0 |
-| 8주차 `r_d` | `loiter_radius` | 이름만 바뀜 |
-| 8주차 중심 `center_north`·`center_east` | `loiter_xc`·`loiter_yc` | 지정한 웨이포인트 좌표로 자동 설정 |
-| 8주차 `required_turns` | 설정 `loiter_turns`, 차트 입력 `req_turns` | 8주차는 0 이면 **멈추지 않고 계속 돎.** 9주차는 0 이면 조건 $\text{turns} \ge 0$ 이 곧바로 참 → 다음 스텝에 `WpFollow` 로 돌아가 **사실상 로이터를 건너뜀** |
+| 5주차 `GuidanceLaw` 출력 `psi_ref` | `WpManager` 출력 `psi_los` | LOS 지령에 새 이름. `psi_ref` 는 이제 `ModeSwitch` 가 고른 최종 지령 |
+| 5주차 `mode` (1 = atan2, 2 = LOS) | `mode` (1 = WpFollow, 2 = Loiter, 3 = Finish) | **같은 이름, 다른 뜻.** 7주차 웨이포인트 유도는 LOS 하나뿐이고, `mode` 는 미션 상태 |
+| 5주차 `wp_idx` | `idx` | 이름만 바뀜. 구간 시작 인덱스라는 뜻은 같음 |
+| 5주차 `sw_mode` (기본 1 = 경로 방향) | 없음 | 7주차는 모든 구간을 **수락 원** $d_{k+1} \le R$ 로 판정 (1-4절 note) |
+| 5주차 `gate` — `GuidanceLaw` 가 냄 | `gate` — `ModeSwitch` 가 냄 | `Finish` 상태에서 0 |
+| 6주차 `r_d` | `loiter_radius` | 이름만 바뀜 |
+| 6주차 중심 `center_north`·`center_east` | `loiter_xc`·`loiter_yc` | 지정한 웨이포인트 좌표로 자동 설정 |
+| 6주차 `required_turns` | 설정 `loiter_turns`, 차트 입력 `req_turns` | 6주차는 0 이면 **멈추지 않고 계속 돎.** 7주차는 0 이면 조건 $\text{turns} \ge 0$ 이 곧바로 참 → 다음 스텝에 `WpFollow` 로 돌아가 **사실상 로이터를 건너뜀** |
 
 ---
 
@@ -428,16 +428,16 @@ MissionFSM ──→ [ 1/z ] ──mode──→ WpManager, TurnCount
 > 값이 크게 다르면 설정 파일을 먼저 확인함. 소수점 마지막 자리는 달라질 수 있음
 
 ```matlab
-cd('<배포 폴더>/W09_simulink')
-W09_setup
+cd('<배포 폴더>/W07_simulink')
+W07_setup
 ```
 
-- `W09_setup` 한 줄이 설정 → 모델 실행(`sim`) → 그림·지표 출력(`W09_plot`)까지 함 (`auto_run = 1`)
+- `W07_setup` 한 줄이 설정 → 모델 실행(`sim`) → 그림·지표 출력(`W07_plot`)까지 함 (`auto_run = 1`)
   - 따로 `sim` 을 다시 부를 필요 없음. 결과는 작업공간의 `out` 에 남음
 - 정상 출력
 
 ```
-W09 설정 완료
+W07 설정 완료
   웨이포인트 5개
   WP3 도착 시 로이터링 — 반경 18 m, 2 바퀴, 시계방향
   로이터 중심 (x,y) = (20, 55)
@@ -458,15 +458,15 @@ W09 설정 완료
 | 진입 74.7 s → 종료 248.0 s | 로이터에 **173.3 초** 머물렀음. 앞부분은 중심에서 원으로 나가는 구간이라 회전수를 세지 않음 (1-4절) |
 | (2.00 바퀴) | 정확히 2바퀴에서 빠져나왔음. 어긋나면 회전수 세기를 의심함 |
 | 임무 종료 314.4 s | 로이터 뒤 남은 웨이포인트를 마저 돌았다는 뜻 |
-| 반경오차 1.282 m | 크랩 보상 켬(`crab_comp = 1`) → 8주차 1-8절 예측 $p_c\,v\,\tau_{\text{eff}} = 0.313 \times 1.5 \times 2.8 = 1.31$ m 와 일치. 8주차 2.136 m 는 보상 끔 |
+| 반경오차 1.282 m | 크랩 보상 켬(`crab_comp = 1`) → 6주차 1-8절 예측 $p_c\,v\,\tau_{\text{eff}} = 0.313 \times 1.5 \times 2.8 = 1.31$ m 와 일치. 6주차 2.136 m 는 보상 끔 |
 
 > [!note] 반경오차 두 값은 조건과 계산 방식이 다르다
-> - 8주차 2.136 m: `crab_comp = 0`, $r_d = 25$ m, 원에 도달한 뒤 평균
-> - 9주차 1.282 m: `crab_comp = 1`, $r_d = 18$ m, 로이터 표본의 앞 30 % 를 버리고 평균 (`W09_plot.m`)
+> - 6주차 2.136 m: `crab_comp = 0`, $r_d = 25$ m, 원에 도달한 뒤 평균
+> - 7주차 1.282 m: `crab_comp = 1`, $r_d = 18$ m, 로이터 표본의 앞 30 % 를 버리고 평균 (`W07_plot.m`)
 
 > [!note] $p_c$ 는 반경 25 m 기준으로 정한 값이다
-> - 8주차 식 (28) $p_c = 4\zeta_c^2 v \tau_r / r_d$ 는 반경 $r_d$ 에 반비례
-> - 9주차는 $r_d = 18$ m 인데 $p_c = 0.313$ ($r_d = 25$ m 로 계산한 값) 을 그대로 씀
+> - 6주차 식 (28) $p_c = 4\zeta_c^2 v \tau_r / r_d$ 는 반경 $r_d$ 에 반비례
+> - 7주차는 $r_d = 18$ m 인데 $p_c = 0.313$ ($r_d = 25$ m 로 계산한 값) 을 그대로 씀
 > - $r_d = 18$ m 로 다시 계산하면 $p_c = 4 \times 1^2 \times 1.5 \times 1.31 / 18 = 0.437$
 > - 0.313 을 그대로 두면 $\zeta_c = \tfrac{1}{2}\sqrt{p_c\,r_d/(v\,\tau_r)} \approx 0.85$ 로 1 보다 작아져 원에 붙는 과정이 조금 덜 감쇠됨. 대신 반경오차 $p_c\,v\,\tau_{\text{eff}}$ 는 작게 유지됨
 
@@ -479,8 +479,8 @@ W09 설정 완료
 ## A. 미션 한 번 돌려 보기 (20분)
 
 ```matlab
-cd('<배포 폴더>/W09_simulink')
-W09_setup
+cd('<배포 폴더>/W07_simulink')
+W07_setup
 ```
 
 - 정상 출력은 앞의 「실행하면 이런 결과가 나온다」 블록과 같음
@@ -488,7 +488,7 @@ W09_setup
 
 ### 실시간 창
 
-![미션 실행](W09_simulink/img/animate.png)
+![미션 실행](W07_simulink/img/animate.png)
 
 - **배 색이 상태를 나타냄**
 
@@ -508,7 +508,7 @@ W09_setup
 
 ### 성능 그림
 
-![결과](W09_simulink/img/result.png)
+![결과](W07_simulink/img/result.png)
 
 | 그림 | 볼 것 |
 |---|---|
@@ -522,19 +522,19 @@ W09_setup
 
 ## B. 모델 구조 읽기 (20분)
 
-![오프라인 모델](W09_simulink/img/W09_0_offline.png)
+![오프라인 모델](W07_simulink/img/W07_0_offline.png)
 
 | 블록 | 출처 | 하는 일 |
 |---|---|---|
-| `WpManager` | 7주차 확장 | LOS + 인덱스 관리 + 도착 판정 |
-| `LoiterVF` | 8주차 그대로 | 벡터필드 유도 |
-| `TurnCount` | 8주차 수정 | 로이터 모드일 때만 회전수 누적 |
+| `WpManager` | 5주차 확장 | LOS + 인덱스 관리 + 도착 판정 |
+| `LoiterVF` | 6주차 그대로 | 벡터필드 유도 |
+| `TurnCount` | 6주차 수정 | 로이터 모드일 때만 회전수 누적 |
 | **`MissionFSM`** | **신규** | Stateflow 상태기계 |
 | **`ModeSwitch`** | **신규** | 두 유도 중 하나 선택 |
 | `ModeDly` | 신규 | 대수 루프를 끊는 단위지연 |
-| `InnerLoop` | 7주차 그대로 | 헤딩 P-D + 속도 PI + 배분 |
-| `Thrusters` | 7주차 그대로 | 프로펠러·모터 |
-| `MotionModel` | 7주차 그대로 | 운동방정식 + 적분 |
+| `InnerLoop` | 5주차 그대로 | 헤딩 P-D + 속도 PI + 배분 |
+| `Thrusters` | 5주차 그대로 | 프로펠러·모터 |
+| `MotionModel` | 5주차 그대로 | 운동방정식 + 적분 |
 
 > [!important] 최상위에는 상자 다섯 개만 보인다
 > `Guidance` -> `Mission` -> `InnerLoop` -> `Thrusters` -> `MotionModel`
@@ -547,7 +547,7 @@ W09_setup
 
 ### 블록 색으로 역할을 구분한다
 
-> [!note] 7\~9주차의 모든 모델이 같은 색 규칙을 따른다
+> [!note] 5\~7주차의 모든 모델이 같은 색 규칙을 따른다
 
 | 색 | 역할 | 예 |
 |---|---|---|
@@ -565,28 +565,28 @@ W09_setup
 - 배치를 흐트러뜨렸으면 생성 스크립트를 다시 돌림 (배치까지 다시 만듦)
 
 > [!caution] 생성 스크립트는 모델 파일을 지우고 새로 만든다
-> - `build_w09_models` 는 `W09_0_offline.slx`·`W09_1_vrx.slx` 를 **삭제한 뒤** 다시 만듦
+> - `build_w07_models` 는 `W07_0_offline.slx`·`W07_1_vrx.slx` 를 **삭제한 뒤** 다시 만듦
 > - 과제 ②·④ 에서 고친 내용이 **경고 없이 사라짐**
 > - 모델을 고치기 전에 사본을 만들어 두고 (B-2 절 2단계), 과제 작업은 사본에서 할 것
 
 ```matlab
-W09_setup
-build_w09_models
+W07_setup
+build_w07_models
 ```
 
 - 정상 출력 — 끝에 아래 세 줄이 찍히면 정상 (앞의 배치·색 점검 메시지는 생략)
-  - 폴더에 다른 `W09_*.slx` 사본이 있으면 그 이름도 함께 찍힘
+  - 폴더에 다른 `W07_*.slx` 사본이 있으면 그 이름도 함께 찍힘
 
 ```
 완료. 생성된 모델:
-  W09_0_offline.slx
-  W09_1_vrx.slx
+  W07_0_offline.slx
+  W07_1_vrx.slx
 ```
 
 ### B-1. Stateflow 차트 열어 보기
 
 ```matlab
-open_system('W09_0_offline/Mission/MissionFSM')
+open_system('W07_0_offline/Mission/MissionFSM')
 ```
 
 - Stateflow 편집기 창이 열리고 상태 세 개가 보이면 정상
@@ -603,20 +603,20 @@ open_system('W09_0_offline/Mission/MissionFSM')
 1. 설정을 불러옴 (모델이 한 번 돌고 그림이 뜸)
 
 ```matlab
-W09_setup
+W07_setup
 ```
 
-2. 오프라인 모델의 사본을 만듦 — 이후 모든 작업은 `W09_my` 에서
+2. 오프라인 모델의 사본을 만듦 — 이후 모든 작업은 `W07_my` 에서
 
 ```matlab
-open_system('W09_0_offline')
-save_system('W09_0_offline', 'W09_my')
+open_system('W07_0_offline')
+save_system('W07_0_offline', 'W07_my')
 ```
 
 3. 사본의 차트를 엶
 
 ```matlab
-open_system('W09_my/Mission/MissionFSM')
+open_system('W07_my/Mission/MissionFSM')
 ```
 
 4. 차트 안의 상태·전이를 모두 지움 — 빈 곳 클릭 → `Ctrl`+`A` → `Delete`
@@ -648,17 +648,17 @@ open_system('W09_my/Mission/MissionFSM')
 11. 저장하고 실행
 
 ```matlab
-save_system('W09_my')
-out = sim('W09_my');
-S = W09_plot(out, 'W09_my');
+save_system('W07_my')
+out = sim('W07_my');
+S = W07_plot(out, 'W07_my');
 ```
 
 12. 출력의 세 시각이 원본과 같은지 확인 — 로이터 진입 **74.7 s**, 종료 **248.0 s**, 임무 종료 **314.4 s**
     - 다르면 조건식의 오타, 데이터 포트 번호, 실행 순서를 차례로 확인
 
 > [!tip] 모델 이름만 바뀌었다
-> - `W09_my` 는 `W09_0_offline` 과 내용이 같고 이름만 다름
-> - `W09_setup` 은 계속 `W09_0_offline` 을 돌림. 사본은 위처럼 `sim('W09_my')` 로 직접 돌릴 것
+> - `W07_my` 는 `W07_0_offline` 과 내용이 같고 이름만 다름
+> - `W07_setup` 은 계속 `W07_0_offline` 을 돌림. 사본은 위처럼 `sim('W07_my')` 로 직접 돌릴 것
 
 > [!tip] 시뮬레이션 중 활성 상태 확인
 > Stateflow 차트를 열어 둔 채로 실행하면 활성 상태가 **파랗게 표시**됨
@@ -699,7 +699,7 @@ S = W09_plot(out, 'W09_my');
 
 ## D. VRX 연동 (30분)
 
-- 7·8주차와 절차가 같음
+- 5·6주차와 절차가 같음
 
 ```bash
 ros2 launch vrx_gz competition.launch.py \
@@ -708,25 +708,25 @@ ros2 launch vrx_gz competition.launch.py \
 ```
 
 ```matlab
-setappdata(0, 'W09_skip_run', true);   % W09_setup 의 오프라인 자동 실행을 건너뜀
-W09_setup
-W09_vrx_run(420)
+setappdata(0, 'W07_skip_run', true);   % W07_setup 의 오프라인 자동 실행을 건너뜀
+W07_setup
+W07_vrx_run(420)
 ```
 
-- `W09_vrx_run.m` 이 하는 일
+- `W07_vrx_run.m` 이 하는 일
 
 | 단계 | 화면에 찍히는 줄 | 내용 |
 |---|---|---|
 | 0 | `0) ROS_DOMAIN_ID = 8` | Simulink 프로필과 MATLAB 의 도메인을 맞춤 |
 | 1 | `1) VRX 토픽 확인` | ground truth 토픽이 없으면 여기서 멈춤 |
 | 2 | `2) RTF 측정 (20초)` · `스폰 위치 (x, y) = ...` | 실측 RTF 로 페이싱을 정하고, **배가 지금 있는 자리를 원점으로** 삼음 |
-| 3 | `3) W09_1_vrx 실행 (420초)` | 실시간 그림. 상태가 바뀌면 배 색이 바뀜 |
-| 4 | `4) 결과 그림` · `===== VRX 미션 ... =====` | VRX 지표 5줄, 그림 `img/W09_1_vrx_result.png` |
-| 5 | `5) 같은 초기 선수각으로 오프라인 모델 실행` | 오프라인 지표 5줄, 대조 그림 `img/W09_vrx_vs_offline.png` |
+| 3 | `3) W07_1_vrx 실행 (420초)` | 실시간 그림. 상태가 바뀌면 배 색이 바뀜 |
+| 4 | `4) 결과 그림` · `===== VRX 미션 ... =====` | VRX 지표 5줄, 그림 `img/W07_1_vrx_result.png` |
+| 5 | `5) 같은 초기 선수각으로 오프라인 모델 실행` | 오프라인 지표 5줄, 대조 그림 `img/W07_vrx_vs_offline.png` |
 
 > [!warning] 인자 없이 부르면 **300초** 에서 끊긴다
 > - 임무 종료가 약 300\~314 s 라 300 s 로는 마지막 웨이포인트에 닿기 전에 끝남 → `임무 종료  미완료`
-> - **`W09_vrx_run(420)`** 처럼 여유를 두고 부름
+> - **`W07_vrx_run(420)`** 처럼 여유를 두고 부름
 > - 전이 시각은 **시뮬레이션 시각**임. 페이싱이 실측 RTF 와 맞으면 느린 컴퓨터에서도 같은 시각이 나옴. 벽시계로는 더 오래 걸릴 뿐
 
 > [!important] VRX 를 새로 띄운 뒤 시작한다
@@ -735,12 +735,12 @@ W09_vrx_run(420)
 
 > [!caution] 스폰 위치는 설치마다 다르다 — 스크립트가 직접 잰다
 > - `competition.launch.py` 의 스폰 좌표가 같은 VRX 2.4.0-2 인데도 컴퓨터마다 달랐음: $y_{\text{ENU}}$ = **162** 인 설치와 **200** 인 설치
-> - `W09_setup.m` 의 `origin_north = 162` 는 기본값일 뿐. `W09_vrx_run` 이 ground truth 첫 샘플로 **덮어씀** (2단계 출력의 `스폰 위치`)
+> - `W07_setup.m` 의 `origin_north = 162` 는 기본값일 뿐. `W07_vrx_run` 이 ground truth 첫 샘플로 **덮어씀** (2단계 출력의 `스폰 위치`)
 > - 고정값 162 를 200 인 설치에서 그대로 쓰면 경로 전체가 **38 m 남쪽으로** 밀림. 실측 결과
 >   - 출발점이 $(x, y) = (38, 0)$ 으로 찍히고, WP4 → WP5 구간이 안전 수역 $x \ge -28$ 밖으로 나가 육지에 걸려 **멈춤** ($x \approx 1$ 에서 정지, 추력 한계)
 >   - 궤적 평균 이격 25.70 m — 경로 오차가 아니라 원점 오차
 
-![VRX 모델](W09_simulink/img/W09_1_vrx.png)
+![VRX 모델](W07_simulink/img/W07_1_vrx.png)
 
 ### D-1. 결과
 
@@ -755,7 +755,7 @@ W09_vrx_run(420)
   로이터 평균 반경오차    1.213 m
 ```
 
-![VRX 미션 결과](W09_simulink/img/W09_1_vrx_result.png)
+![VRX 미션 결과](W07_simulink/img/W07_1_vrx_result.png)
 
 | 읽는 법 | |
 |---|---|
@@ -766,11 +766,11 @@ W09_vrx_run(420)
 
 ### D-2. 오프라인과 비교
 
-![오프라인 vs VRX](W09_simulink/img/W09_vrx_vs_offline.png)
+![오프라인 vs VRX](W07_simulink/img/W07_vrx_vs_offline.png)
 
-- 오프라인 열은 `W09_vrx_run` 이 **VRX 의 초기 선수각(32.69°)으로 다시 돌린** 값임
-  - 그래서 `W09_setup` 기본 실행(초기 선수각 135°, 진입 74.7 s)과 다름
-  - `W09_vrx_run` 은 끝나면 `x0` 를 원래대로 되돌림. 뒤이어 오프라인을 돌려도 기본 조건 그대로
+- 오프라인 열은 `W07_vrx_run` 이 **VRX 의 초기 선수각(32.69°)으로 다시 돌린** 값임
+  - 그래서 `W07_setup` 기본 실행(초기 선수각 135°, 진입 74.7 s)과 다름
+  - `W07_vrx_run` 은 끝나면 `x0` 를 원래대로 되돌림. 뒤이어 오프라인을 돌려도 기본 조건 그대로
 
 | 항목 | 오프라인 | VRX | 차이 |
 |---|---|---|---|
@@ -834,12 +834,12 @@ W09_vrx_run(420)
 
 ### 실습 완료
 
-- [ ] `W09_setup` 실행만으로 미션이 끝까지 돌았음
+- [ ] `W07_setup` 실행만으로 미션이 끝까지 돌았음
 - [ ] 실시간 창에서 **배 색이 세 번 바뀌는 것**을 봤음
 - [ ] 미션 상태 그래프가 1→2→1→3 인 것을 확인했음
 - [ ] 웨이포인트 인덱스가 로이터 구간에서 평평한 것을 확인했음
 - [ ] Stateflow 차트를 열어 상태와 전이조건을 읽었음
-- [ ] 사본 `W09_my` 에 차트를 직접 그려 74.7 s · 248.0 s · 314.4 s 를 다시 얻었음
+- [ ] 사본 `W07_my` 에 차트를 직접 그려 74.7 s · 248.0 s · 314.4 s 를 다시 얻었음
 - [ ] `loiter_wp`, `loiter_turns`, `p_c` 를 바꿔 봤음
 - [ ] VRX 에서 같은 미션을 실행했음
 
@@ -851,9 +851,9 @@ W09_vrx_run(420)
 
 ---
 
-## 과제 9 — 미션 상태기계
+## 과제 7 — 미션 상태기계
 
-- **제출 기한**: 10주차 수업 전
+- **제출 기한**: 8주차 수업 전
 
 ### ① 상태 전이 기록
 
@@ -869,8 +869,8 @@ W09_vrx_run(420)
 ### ② 인덱스 잠금을 풀어 보기
 
 - 기본 경로에서는 잠금을 풀어도 결과가 같음 (1-4절). 먼저 WP4 를 로이터 원 위로 옮김
-  - `W09_setup.m` 에서 `wp_north(4) = 4; wp_east(4) = 47;` 로 바꾼 뒤 실행 → 1-4절 표의 "잠금 있음" 열과 비교
-- 사본 모델(B-2 의 `W09_my`)의 `Guidance/WpManager` 에서 인덱스 전진 조건의 `(mode < 1.5) &&` 를 **지우고** 실행
+  - `W07_setup.m` 에서 `wp_north(4) = 4; wp_east(4) = 47;` 로 바꾼 뒤 실행 → 1-4절 표의 "잠금 있음" 열과 비교
+- 사본 모델(B-2 의 `W07_my`)의 `Guidance/WpManager` 에서 인덱스 전진 조건의 `(mode < 1.5) &&` 를 **지우고** 실행
 - 제출
   - 두 경우의 궤적 그림과 웨이포인트 진행 그래프
   - `idx` 가 로이터 중 몇 초에 바뀌었는지, WP4 를 들렀는지
@@ -885,7 +885,7 @@ W09_vrx_run(420)
 | 18 | 2 | | | |
 | 25 | 2 | | | |
 
-- 복귀 후 최대 $\lvert y_e \rvert$ 는 `W09_plot` 이 내지 않음. `W09_setup` 을 돌린 뒤 아래로 구함
+- 복귀 후 최대 $\lvert y_e \rvert$ 는 `W07_plot` 이 내지 않음. `W07_setup` 을 돌린 뒤 아래로 구함
   - 구간: 로이터 마지막 샘플 다음부터 임무 종료까지 (`mode` = 1)
 
 ```matlab
@@ -903,9 +903,9 @@ ye_max = max(abs(ye(k1:k2)))
 ### ④ 로이터를 두 번 하기
 
 - 상태기계를 고쳐 **두 지점에서 각각 로이터링**하게 만드시오
-- 고칠 곳: 차트 `W09_my/Mission/MissionFSM`, 도착 판정 `W09_my/Guidance/WpManager`
-  - 원본 대신 B-2 절에서 만든 사본 `W09_my` 에서 작업할 것 — `build_w09_models` 는 원본을 지우고 다시 만듦
-  - 차트 편집 절차는 B-2 절과 6_0주차 M-5 절
+- 고칠 곳: 차트 `W07_my/Mission/MissionFSM`, 도착 판정 `W07_my/Guidance/WpManager`
+  - 원본 대신 B-2 절에서 만든 사본 `W07_my` 에서 작업할 것 — `build_w07_models` 는 원본을 지우고 다시 만듦
+  - 차트 편집 절차는 B-2 절과 부록 A1 M-5 절
 - 방법은 자유 (상태 추가 / 배열화 / 카운터 사용)
 - 상태 전이도를 그리고 실행 결과를 제출
 
@@ -937,7 +937,7 @@ ye_max = max(abs(ye(k1:k2)))
 
 | 증상 | 원인 | 해결 |
 |---|---|---|
-| `먼저 W09_setup 을 실행하십시오` | 워크스페이스에 변수 없음 | `W09_setup` 먼저 |
+| `먼저 W07_setup 을 실행하십시오` | 워크스페이스에 변수 없음 | `W07_setup` 먼저 |
 | **대수 루프 오류** | `mode` 되먹임에 지연이 없음 | `ModeDly` 확인 |
 | 로이터를 안 하고 지나감 | `at_loiter` 가 안 뜸 | `loiter_wp` 값과 `R_LOS` 확인 |
 | 로이터에서 안 나옴 | `turns` 가 안 오름 | 원에 도달했는지 반경 그래프 확인 |
@@ -965,26 +965,26 @@ ye_max = max(abs(ye(k1:k2)))
 
 ### 볼트 내 문서
 
-- [[W07_웨이포인트_유도_atan2와_LOS]] — LOS 유도, 내부루프
-- [[W08_한점을_중심으로_도는_로이터링]] — 벡터필드, 회전수
+- [[W05_웨이포인트_유도_atan2와_LOS]] — LOS 유도, 내부루프
+- [[W06_한점을_중심으로_도는_로이터링]] — 벡터필드, 회전수
 - [[오프라인-모델이-시뮬레이터와-같아야-게인이-옮겨간다]]
 
 ### 배포 파일
 
 | 파일 | 내용 |
 |---|---|
-| `W09_simulink/W09_setup.m` | **학생이 고치는 설정 파일. 실행하면 바로 돎** |
-| `W09_simulink/W09_0_offline.slx` | 오프라인 미션 |
-| `W09_simulink/W09_1_vrx.slx` | VRX 연동 |
-| `W09_simulink/W09_plot.m` | 상태별 성능 그림 |
-| `W09_simulink/W09_animate.m` | 실시간 그리기 (상태별 색) |
-| `W09_simulink/build_w09_models.m` | 모델 재생성 (Stateflow 차트 포함) |
+| `W07_simulink/W07_setup.m` | **학생이 고치는 설정 파일. 실행하면 바로 돎** |
+| `W07_simulink/W07_0_offline.slx` | 오프라인 미션 |
+| `W07_simulink/W07_1_vrx.slx` | VRX 연동 |
+| `W07_simulink/W07_plot.m` | 상태별 성능 그림 |
+| `W07_simulink/W07_animate.m` | 실시간 그리기 (상태별 색) |
+| `W07_simulink/build_w07_models.m` | 모델 재생성 (Stateflow 차트 포함) |
 
 ---
 
 ## 다음 주 예고
 
-- **10주차** — 틸팅 추진기, 추력 배분과 동적위치유지(DP). 제어 트랙의 마지막 주차
+- **8주차** — 틸팅 추진기, 추력 배분과 동적위치유지(DP). 제어 트랙의 마지막 주차
 - **11주차부터** — 인지 트랙 (11주차 LiDAR 신호처리, 12주차 충돌회피, 13주차 영상처리)
 - 이번 주차에 작성한 상태기계에 **회피 상태**를 끼워 넣는 일
   - 12주차: 회피 노드를 LOS 유도단과 결합

@@ -3,7 +3,7 @@
 #
 #   bash run_vrx.sh            # = lite. 이 폴더의 wamv_lite.urdf + GUI ogre   (권장)
 #   bash run_vrx.sh mine       # make_wamv_lite.sh 로 직접 만든 ~/capstone_ws/wamv/wamv_lite.urdf + GUI ogre
-#   bash run_vrx.sh full       # 원래 센서(카메라 3대 + LiDAR) + 서버·GUI ogre   (4주차 토픽 조사용)
+#   bash run_vrx.sh full       # 원래 센서(카메라 3대 + LiDAR) + 서버·GUI ogre   (9주차 토픽 조사용)
 #   bash run_vrx.sh original   # 원래 명령 그대로 (비교용 — 느린 노트북에서는 화면이 멈춘 것처럼 보임)
 #
 #   명령만 확인   : DRY=1 bash run_vrx.sh mine

@@ -1,7 +1,7 @@
 function moved = lay_sinks(sys, varargin)
 %LAY_SINKS  선이 지저분해진 종착 블록만 아래 한 열로 내리고, 갈래마다 제 통로를 준다.
 %
-%   lay_sinks('W04_1_sensor_rates')
+%   lay_sinks('W09_1_sensor_rates')
 %   n = lay_sinks(m, 'Band', 120, 'Row', 45, 'Lane', 26)
 %
 %   종착 블록 / a sink
@@ -23,7 +23,7 @@ function moved = lay_sinks(sys, varargin)
 %       **이미 깨끗한 선은 손대지 않는다.** 깨끗하다는 것은 두 포트의 높이가
 %       같아 직선 한 토막이고, 그 토막이 어떤 블록도 지나지 않는다는 뜻이다.
 %       1:1 로 곧게 이어진 선까지 아래로 내리면 내려간 선들이 통로에 몰려
-%       서로 겹친다 (2026-09-17 에 W04 Logging 에서 15건 재현).
+%       서로 겹친다 (2026-09-17 에 W09 Logging 에서 15건 재현).
 %
 %       사슬 블록과 사슬 선은 그대로 두므로
 %       Simulink.BlockDiagram.arrangeSystem 뒤에 이어서 부를 수 있다.
@@ -113,7 +113,7 @@ stay  = ~ismember(name, down);
 occ   = box(stay,:);
 %  통로는 사각형뿐 아니라 **이름표**도 피해야 한다. 이름은 블록 밖에 쓰이므로,
 %  사각형만 보고 고른 통로가 이름 글자 위를 지나 이름을 읽을 수 없게 만든다
-%  (2026-09-21 W02_1 의 SelVel · W06_4 의 psi_ref_deg · W06_3 의 log_FL).
+%  (2026-09-21 W02_1 의 SelVel · W04_4 의 psi_ref_deg · W04_3 의 log_FL).
 nbx  = nan(numel(blks), 4);
 nbNm = name;
 for q = find(stay)'
@@ -164,7 +164,7 @@ for i = mv
     if isempty(got)
         %  한계 안에 깨끗한 자리가 없다. 그래도 **유일하기는** 해야 한다.
         %  겹친 통로는 인쇄물에서 한 선이 되지만, 블록을 스치는 통로는
-        %  뒤에 오는 lay_links 가 다시 그어 준다 (2026-09-17 W06_5 에서 재현).
+        %  뒤에 오는 lay_links 가 다시 그어 준다 (2026-09-17 W04_5 에서 재현).
         got = r(3);
         while any(taken == got), got = got + o.Lane; end
     end

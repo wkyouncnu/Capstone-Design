@@ -1,7 +1,7 @@
 function lay_chain(m, stages, varargin)
 %LAY_CHAIN  최상위를 GNC 신호 사슬로 배치하고, 모든 선을 규칙대로 다시 긋는다.
 %
-%   lay_chain('W07_0_offline', {'Guidance','InnerLoop','Thrusters','MotionModel'})
+%   lay_chain('W05_0_offline', {'Guidance','InnerLoop','Thrusters','MotionModel'})
 %   lay_chain(m, stages, 'Row', 400, 'Pitch', 330, 'Boxes', {'Animate','Logging'})
 %
 %   하는 일 / what it does
@@ -21,7 +21,7 @@ function lay_chain(m, stages, varargin)
 %   NAME/VALUE
 %     'Row'    사슬이 놓이는 높이. 기본 400
 %     'Pitch'  단계 사이의 간격. 기본 340. 태그 열과 통로가 들어갈 만큼 띄운다 —
-%              좁히면 From 태그 열과 사슬 통로가 부딪힌다 (2026-09-17 W07 에서 재현)
+%              좁히면 From 태그 열과 사슬 통로가 부딪힌다 (2026-09-17 W05 에서 재현)
 %     'X0'     첫 단계의 왼쪽. 기본 260
 %     'Boxes'  포트 없는 서브시스템 이름들. 사슬 아래에 놓는다
 %     'Gap'    태그 블록과 포트 사이의 간격. 기본 45
@@ -36,7 +36,7 @@ function lay_chain(m, stages, varargin)
 %       Goto/From 한 쌍으로 바꾼다 — 선으로 이으면 오른쪽 끝에서 왼쪽 끝으로
 %       거슬러 올라가야 해서 도면을 가로지른다.
 %
-%       측정 (W10_0_offline, 39블록) — 한 줄 3660 x 624 에서 두 줄 1900 x 1290 으로.
+%       측정 (W08_0_offline, 39블록) — 한 줄 3660 x 624 에서 두 줄 1900 x 1290 으로.
 %       2000 px 안에 담을 때 39 dpi 에서 79 dpi 로, 글씨 크기가 두 배가 된다.
 
 p = inputParser;
@@ -96,7 +96,7 @@ end
 
 %  크기를 먼저 정하고, 줄마다 **가장 큰 블록**에 맞춰 높이를 잡는다. 한 블록의
 %  가운데에 맞춰 줄을 시작하면 그 줄의 키 큰 블록이 위아래로 삐져나와 옆 줄과
-%  겹친다 (2026-09-17 W08_0 에서 InnerLoop 와 MotionModel 이 40 px 겹쳤다).
+%  겹친다 (2026-09-17 W06_0 에서 InnerLoop 와 MotionModel 이 40 px 겹쳤다).
 W = zeros(1,numel(stages));  H = zeros(1,numel(stages));  D = zeros(1,numel(stages));
 for k = 1:numel(stages)
     r  = get_param([m '/' stages{k}], 'Position');
@@ -120,14 +120,14 @@ for rr = 1:nRow
         set_param([m '/' stages{k}], 'Position', ...
                   round([x, yc-H(k)/2, x+W(k), yc+H(k)/2]));
         %  간격은 **그 단계가 내는 태그 수**에 맞춘다. 태그가 여덟 개인 블록 하나
-        %  때문에 모든 칸을 넓히면 도면이 통째로 늘어난다 (W07_1_vrx 가 그랬다).
+        %  때문에 모든 칸을 넓히면 도면이 통째로 늘어난다 (W05_1_vrx 가 그랬다).
         g  = o.Pitch;
         nt = 0;  if isKey(cnt, stages{k}), nt = cnt(stages{k}); end
         if nt > 0, g = max(g, 26*nt + 130); end
         x = x + W(k) + g;
     end
     %  태그 더미는 **각 블록의 아래 테두리**에서 D 만큼 내려간다. 줄 가운데(yc)에서 재면
-    %  키 큰 블록의 태그가 다음 줄에 닿아 이름표가 가려진다 (2026-09-19 W07_0 의
+    %  키 큰 블록의 태그가 다음 줄에 닿아 이름표가 가려진다 (2026-09-19 W05_0 의
     %  Go_psi_ref 가 MotionModel 에 — check_lines 의 (6) 블록겹침)
     yTop = yc + max(hMax/2, max(H(idx)/2 + D(idx))) + 60;
 end
@@ -159,7 +159,7 @@ end
 
 % --- 4) 포트 없는 상자는 맨 아래에 --------------------------------------
 %   아래 줄도 사슬 폭을 넘으면 접는다. 상자 몇 개 때문에 도면 전체가 옆으로
-%   늘어나면 사슬을 접은 뜻이 없다 (2026-09-17 W10_1 이 그랬다).
+%   늘어나면 사슬을 접은 뜻이 없다 (2026-09-17 W08_1 이 그랬다).
 xLim = o.X0;
 for k = 1:numel(stages)
     r    = get_param([m '/' stages{k}], 'Position');
@@ -179,11 +179,11 @@ end
 
 %  사슬에도 상자에도 들지 않은 블록 — 태그에만 신호를 주는 상수 따위. 자리를 정해
 %  주지 않으면 빌더가 놓았던 자리에 그대로 남아 도면을 옆으로 늘린다
-%  (2026-09-17 W10_1 의 ZeroEnv·ZeroThr 가 x=2440 에 남아 폭이 2685 였다).
+%  (2026-09-17 W08_1 의 ZeroEnv·ZeroThr 가 x=2440 에 남아 폭이 2685 였다).
 %
 %  **사슬로 신호를 주는 블록은 내리지 않는다.** 그런 블록은 받는 포트 옆에 있어야
 %  선이 곧다. 아래로 내리면 화면을 가로질러 올라오며 남의 태그를 뚫는다
-%  (2026-09-17 W09_1 의 URf2 가 Go_chi 를 뚫었다).
+%  (2026-09-17 W07_1 의 URf2 가 Go_chi 를 뚫었다).
 rest = find_system(m, 'SearchDepth',1, 'Type','Block');
 for k = 1:numel(rest)
     nmk = get_param(rest{k}, 'Name');
@@ -214,7 +214,7 @@ yBot = by + bh;
 %
 %   통로 x 는 **도면 전체에서** 겹치지 않아야 한다. 사슬을 여러 줄로 접으면 윗줄과
 %   아랫줄의 같은 칸이 x 를 나눠 쓰게 되고, 두 신호의 세로 토막이 포개진다
-%   (2026-09-17 W07_0 을 두 줄로 접었을 때 재현). 높이가 겹치는 통로끼리만
+%   (2026-09-17 W05_0 을 두 줄로 접었을 때 재현). 높이가 겹치는 통로끼리만
 %   따지면 되므로, 쓰고 있는 [x, 위, 아래] 를 적어 두고 부딪히면 옆으로 민다.
 used  = zeros(0, 2);
 busy  = zeros(0, 3);
@@ -251,7 +251,7 @@ for i = 1:numel(conn)
         move_to(m, c.src, x, y, 'right');                 % 출력이 오른쪽 테두리
         %  이 태그 열의 **이름표까지**가 사슬 통로의 오른쪽 한계다. 통로를 그
         %  안쪽에 두면 세로 토막이 태그 이름 위를 지나 이름을 읽을 수 없게 된다
-        %  (2026-09-21 W08_0·W08_1 의 Fr_psi_b — check_lines 의 (7) 이름표 위 선).
+        %  (2026-09-21 W06_0·W06_1 의 Fr_psi_b — check_lines 의 (7) 이름표 위 선).
         rr = get_param([m '/' c.src], 'Position');
         tt = name_box([m '/' c.src]);
         xl = rr(1);

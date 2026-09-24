@@ -295,7 +295,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 
 | 월드 | 용도 | 주차 |
 |---|---|---|
-| `sydney_regatta` | 기본 해역, 조종 연습 | 3\~9주 |
+| `sydney_regatta` | 기본 해역, 조종 연습 | 3\~10주 |
 | `stationkeeping_task` | 위치유지 과제 | 13주 |
 | `wayfinding_task` | 자세 리스트 추종 | 9주 |
 | `perception_task` | 부표·토템 인식 | 12주 |
@@ -317,7 +317,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 > - 모델 — `custom_docking_station`
 >
 > **전부 연구실이 upstream 에 얹은 파일임.** 2026-09-03 기준 osrf/vrx `humble` 브랜치에 없음을 확인함.
-> 10주차 전에 배포 파일을 받아 아래처럼 덮어쓴 뒤 재빌드할 것.
+> 8주차 전에 배포 파일을 받아 아래처럼 덮어쓴 뒤 재빌드할 것.
 
 ```bash
 # 배포 파일(vrx_overlay.tar.gz)을 받았다고 가정
@@ -502,7 +502,7 @@ def generate_launch_description():
 
 ## 8. MATLAB / Simulink ROS 2 연동
 
-> 원본 자료에 없던 부분이다. 6주차 실습의 전제 조건이므로 반드시 확인할 것.
+> 원본 자료에 없던 부분이다. 4주차 실습의 전제 조건이므로 반드시 확인할 것.
 
 ### 8.1 전제
 
@@ -586,7 +586,7 @@ WSL에서:
 ros2 topic echo /from_matlab
 ```
 
-- 네 단계가 모두 통과하면 6주차 실습 준비가 끝난 것이다.
+- 네 단계가 모두 통과하면 4주차 실습 준비가 끝난 것이다.
 
 ### 8.4 VRX와 직접 연동 확인
 
@@ -685,7 +685,7 @@ wsl --export Ubuntu-22.04 D:\dist\vrx-ubuntu2204.tar
 | 6 | §2.1 | — | `.wslconfig` 리소스 제한 **추가** | 메모리 부족으로 인한 빌드·실행 실패 예방 |
 | 7 | §2.2 | — | WSLg GUI 확인 절차 **추가** | 원본은 GUI 동작을 전제만 하고 확인 절차가 없음 |
 | 8 | §7.3 | — | WSL Docker 데몬 시작 절차 **추가** | WSL2는 systemd 기본 비활성 |
-| 9 | **§8 전체** | — | **MATLAB ROS 2 연동 신규 작성** | 6주차 실습의 전제 조건인데 원본에 전무 |
+| 9 | **§8 전체** | — | **MATLAB ROS 2 연동 신규 작성** | 4주차 실습의 전제 조건인데 원본에 전무 |
 | 10 | **§9 전체** | — | **WSL 이미지 배포/import 신규 작성** | 1주차 설치 실패 시간 손실 최소화 |
 
 ---

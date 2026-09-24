@@ -1,7 +1,7 @@
 function n = square_lines(mdl)
 %SQUARE_LINES  사선 토막을 없앤다. 꺾임 수는 늘리지 않는다.
 %
-%   n = square_lines('W08_0_offline')      % 최상위와 모든 서브시스템
+%   n = square_lines('W06_0_offline')      % 최상위와 모든 서브시스템
 %
 %   왜 생기나 / where the diagonals come from
 %       선을 긋고 **나서** 블록 크기가 바뀌면 (mss_style 이 Sum 을 20x20 원으로,

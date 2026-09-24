@@ -1,7 +1,7 @@
 function n = tag_feedback(sys, varargin)
 %TAG_FEEDBACK  아직도 세 번 이상 꺾이는 선을 Goto/From 한 쌍으로 바꾼다.
 %
-%   n = tag_feedback('W06_5_offline')
+%   n = tag_feedback('W04_5_offline')
 %   tag_feedback(sys, 'MinTurns', 3, 'Dy', 90)
 %
 %   왜 태그인가 / why a tag pair
@@ -12,7 +12,7 @@ function n = tag_feedback(sys, varargin)
 %
 %           내려감 ─ 가로지름 ─ 올라옴 ─ 포트에 붙는 토막   = 세 번
 %
-%       W07~W10 이 쓴 방법을 그대로 쓴다. 신호에 이름을 붙여 내보내고 받는다.
+%       W05~W08 이 쓴 방법을 그대로 쓴다. 신호에 이름을 붙여 내보내고 받는다.
 %       선이 사라지는 대신 **이름이 남는다.** 되먹임이 있다는 사실은 태그 이름으로
 %       읽히고, 도면은 앞으로만 흐른다.
 %
@@ -43,7 +43,7 @@ for i = 1:numel(L)
     s = get_param(L(i), 'SrcPortHandle');
     if s < 0, continue, end
     %  태그를 또 태그하지 않는다. 한 번 더 돌리면 Fr_Fr_x_1_1 같은 이름이
-    %  겹겹이 쌓이고 블록만 늘어난다 (2026-09-17 W06_4 에서 재현).
+    %  겹겹이 쌓이고 블록만 늘어난다 (2026-09-17 W04_4 에서 재현).
     if strcmp(get_param(get_param(s,'Parent'), 'BlockType'), 'From'), continue, end
     for dd = get_param(L(i), 'DstPortHandle')'
         if dd < 0, continue, end

@@ -1,14 +1,13 @@
 ---
-type: week
-week: 6
-title: 6주차 보충 — Simulink 속성 입문 (2회 6시간)
+type: reference
+title: 부록 A1 — Simulink 속성 입문 (2회 6시간)
 date: 2026-09-03
-tags: [week, simulink, basics]
+tags: [appendix, simulink, basics]
 status: done
 summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분기·조건부 실행·마스크까지
 ---
 
-# 6주차 보충 · Simulink 속성 입문 (2회 6시간)
+# 부록 A1 · Simulink 속성 입문 (2회 6시간)
 
 > [!important] 참조 강의 — 본 과목이 전제하는 배경
 > <span style="font-size:0.88em">아래 다섯 과목은 **본 과목 담당 교수가 직접 강의한 것**이며, 본 과목이 전제하는 배경 지식에 해당함. 학부 기초에서 대학원 과정까지 이어지므로 부족한 지점부터 시작하면 됨. 본 문서에서 쓰는 좌표계·기호·유도 과정은 아래 강의에서 상세히 다루므로, 선수 지식이 부족한 경우 먼저 보고 돌아올 것</span>
@@ -21,7 +20,7 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 > | 4 | **제어공학특론** — 좌표계, 6자유도 운동방정식, 회전행렬과 오일러각, 선형화와 트림 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvJmvF2ljx4KM5dj1P5jEcw0) | [드라이브](https://drive.google.com/drive/folders/1GUxbbONl916lNd0ggnFnXrNwNkd13-2-) |
 > | 5 | **센서신호처리 및 융합** — 센서 모델, 잡음, 추정, 다중센서 융합 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvK-aP2Gdoyp5-AWvMn7Fo8E) | [드라이브](https://drive.google.com/drive/folders/1MEVJP7TzMcm8w6TZwUjhWJtL34WeNY3u) |
 >
-> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 6주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
+> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 4주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
 >
 > | 도구 | 시작 지점 |
 > |---|---|
@@ -49,7 +48,7 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 
 - **과목**: 캡스톤디자인 (2026-2) · 충남대학교 자율운항시스템공학과
 - **이번 주차 학습 내용**: Simulink 를 **직접 만들어 봄**. 열세 개의 빈칸 모델을 채움
-- **구성**: 1일차 A\~F (문법, 절 합계 160분) · 2일차 G\~M (7\~9주차에서 쓰는 블록, 절 합계 195분)
+- **구성**: 1일차 A\~F (문법, 절 합계 160분) · 2일차 G\~M (5\~7주차에서 쓰는 블록, 절 합계 195분)
 
 > [!important] 시작 전 확인
 > - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-6)
@@ -60,19 +59,19 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 > [!note] 이번 주차에는 ROS 도 Gazebo 도 VRX 도 쓰지 않는다
 > - 인터넷도, WSL 도, 배도 필요 없음. **MATLAB 하나만** 켜면 됨
 > - 이번 주차의 학습 대상은 **Simulink 라는 도구의 사용법**뿐임
-> - 동역학, 제어 이론, 배의 물리는 **다루지 않음** (7·8주차)
+> - 동역학, 제어 이론, 배의 물리는 **다루지 않음** (5·6주차)
 > - 예제 숫자는 전부 아무 의미 없는 숫자임. 의미를 찾지 말 것
 
 > [!important] 두 번에 나눠 한다
 > | | 절 | 무엇을 |
 > |---|---|---|
 > | **1일차** (약 3시간 — 절 합계 160분 + 질문) | A\~F | Simulink 문법 — 블록·서브시스템·버스·PID·로깅 |
-> | **2일차** (약 3시간 15분 — 절 합계 195분) | G\~M | **7\~9주차 모델을 읽기 위한 블록들** |
+> | **2일차** (약 3시간 15분 — 절 합계 195분) | G\~M | **5\~7주차 모델을 읽기 위한 블록들** |
 >
 > 2일차는 "쓸모 있는 블록 모음"이 아니라 **본 과목의 모델을 읽기 위한 어휘**
-> `Unit Delay` 를 모르면 9주차 대수 루프를 이해할 수 없고,
-> `Transfer Fcn` 을 모르면 7주차 모터 모델(이산판 `Discrete Transfer Fcn`)을 읽을 수 없음
-> 일부 블록(`Unit Delay`·`Integrator` 등)은 7\~9주차 모델에 그대로 들어 있고, 나머지는 그 모델에서 MATLAB Function 이 대신하는 일을 블록으로 보여 줌
+> `Unit Delay` 를 모르면 7주차 대수 루프를 이해할 수 없고,
+> `Transfer Fcn` 을 모르면 5주차 모터 모델(이산판 `Discrete Transfer Fcn`)을 읽을 수 없음
+> 일부 블록(`Unit Delay`·`Integrator` 등)은 5\~7주차 모델에 그대로 들어 있고, 나머지는 그 모델에서 MATLAB Function 이 대신하는 일을 블록으로 보여 줌
 > 내용은 MathWorks 공식 교재 `Simulink Fundamentals.pdf` 의 각 장에서 가져왔음
 
 ---
@@ -101,7 +100,7 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 |---|---|
 | 소프트웨어 | MATLAB R2024b + Simulink + Stateflow (M절) |
 | 필요 없는 것 | ROS 2, WSL, Gazebo, VRX, 인터넷 |
-| 배포 파일 | `W06_0_simulink/` 폴더 (모델 26개 + 생성 스크립트 2개) |
+| 배포 파일 | `A1_simulink/` 폴더 (모델 26개 + 생성 스크립트 2개) |
 | 소요 시간 | **약 3시간 x 2회** — 1일차 A\~F 절 합계 160분, 2일차 G\~M 절 합계 195분. 2일차가 길면 L 절(30분)을 과제로 돌림 |
 
 ---
@@ -140,12 +139,12 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 > ROS 2 연동 모델과, 이산 블록만 있는 SB 모델에 이 값을 똑같이 씀. 연속 블록이 있는 모델은 아래 note 참고
 
 - **고정 스텝(Fixed-step)** — 항상 0.05 초씩 일정하게 진행
-- **이산(discrete)** — 미분방정식을 풀지 않음. **ROS 2 연동 모델(6주차 `W06_1`\~`W06_4`, 7\~10주차 `W0X_1_vrx`)에 연속 상태가 없음**
+- **이산(discrete)** — 미분방정식을 풀지 않음. **ROS 2 연동 모델(4주차 `W04_1`\~`W04_4`, 5\~8주차 `W0X_1_vrx`)에 연속 상태가 없음**
 - **0.05 초 = 20 Hz** — 1초에 20번 계산
 
 > [!note] 연속 시간 블록을 쓰는 모델은 솔버가 다르다
 > - 실습 I(`SB9_continuous`)와 실습 L(`SB12_reuse`)은 **`ode45`**(가변 스텝)
-> - 오프라인 운동모델(`W06_5_offline`, 7\~10주차 `W0X_0_offline`)은 **`ode4`**(고정 스텝 연속)
+> - 오프라인 운동모델(`W04_5_offline`, 5\~8주차 `W0X_0_offline`)은 **`ode4`**(고정 스텝 연속)
 > - 즉 **ROS 와 주고받는 모델만 이산 0.05 초**로 맞춤. 이유는 실제 장비의 제어주기와 맞추기 위해서임
 
 - 가변 스텝(Variable-step)을 쓰면 스텝 간격이 들쭉날쭉해짐
@@ -172,8 +171,8 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 
 - Simulink 블록은 수백 개임. 그중 **실제로 쓰는 것만** 골랐음
 - 고른 기준: 본 과목의 기존 모델들이 실제로 사용하는 블록
-- **Stateflow 는 M절(SB13)에서 첫걸음만 봄** — 본격적으로는 9주차 미션에서 씀
-- **ROS 2 블록도 이번 주차 없음** — 6주차 본편(W06)에서 이 보충 자료의 내용 위에 얹음
+- **Stateflow 는 M절(SB13)에서 첫걸음만 봄** — 본격적으로는 7주차 미션에서 씀
+- **ROS 2 블록도 이번 주차 없음** — 4주차 본편(W04)에서 이 보충 자료의 내용 위에 얹음
 
 ---
 
@@ -189,7 +188,7 @@ summary: Simulink 입문 2회 — 블록·버스·PID에서 Unit Delay·적분�
 ### 시작하기
 
 ```matlab
-cd('<배포 폴더>/W06_0_simulink')
+cd('<배포 폴더>/A1_simulink')
 ```
 
 - 모델을 여는 방법은 두 가지
@@ -209,12 +208,12 @@ open_system('SB1_first_todo')
 
 ## A. 첫 모델과 솔버 (20분)
 
-![완성본](W06_0_simulink/img/SB1_first_done.png)
+![완성본](A1_simulink/img/SB1_first_done.png)
 
 > [!note] 블록 색은 역할 표시다
 > 이 과목의 모든 Simulink 모델은 같은 색 규칙을 따름
 > **연보라 = ROS 통신**, **주황 = 계산·제어**, **회색 = 관찰(Scope·로깅)**, **흰색 = 설정값(Constant)**.
-> 7주차부터는 파랑(유도)·노랑(추진기)·초록(운동모델)이 더해짐
+> 5주차부터는 파랑(유도)·노랑(추진기)·초록(운동모델)이 더해짐
 > 배치를 흐트러뜨렸으면 `tidy_layout('모델이름')` 한 줄로 되돌림
 
 ### A-1. 모델 열기
@@ -304,7 +303,7 @@ open_system('SB1_first_todo')
 
 ## B. MATLAB Function 블록 (35분)
 
-![완성본](W06_0_simulink/img/SB2_mfcn_done.png)
+![완성본](A1_simulink/img/SB2_mfcn_done.png)
 
 > [!important] 이번 주차 가장 중요한 절이다
 > 본 과목의 기존 모델에서 **가장 많이 쓰이는 블록**이 이것임
@@ -432,7 +431,7 @@ y = zeros(1, a) + b;   % 출력 크기가 a 의 "값" 에 달려 있다
 
 ## C. Subsystem 과 Goto/From (30분)
 
-![완성본](W06_0_simulink/img/SB3_subsys_done.png)
+![완성본](A1_simulink/img/SB3_subsys_done.png)
 
 ```matlab
 open_system('SB3_subsys_todo')
@@ -503,7 +502,7 @@ open_system('SB3_subsys_todo')
 
 ## D. 버스 (25분)
 
-![완성본](W06_0_simulink/img/SB4_bus_done.png)
+![완성본](A1_simulink/img/SB4_bus_done.png)
 
 ```matlab
 open_system('SB4_bus_todo')
@@ -565,7 +564,7 @@ Outer.stamp   = 12.34
 > [!note] Bus Assignment 가 하는 일
 > 버스를 **통째로** 받아서 **지정한 칸만** 바꿔 내보냄
 > 나머지 원소는 손대지 않고 그대로 지나감
-> 6주차에 ROS 메시지를 채울 때 이 블록을 쓰게 됨
+> 4주차에 ROS 메시지를 채울 때 이 블록을 쓰게 됨
 
 ### 확인
 
@@ -576,7 +575,7 @@ Outer.stamp   = 12.34
 
 ## E. 파라미터 · 로깅 · Data Inspector (25분)
 
-![완성본](W06_0_simulink/img/SB6_param_done.png)
+![완성본](A1_simulink/img/SB6_param_done.png)
 
 ```matlab
 open_system('SB6_param_todo')
@@ -684,8 +683,8 @@ K_gain = 5;
 5. 그 두 Run 의 `y` 를 **모두 체크**하면 한 그래프에 겹쳐 그려짐
 6. 그래프 위를 클릭하면 **커서**가 생겨 그 시각의 값을 정확히 읽을 수 있음
 
-> [!tip] 이 도구는 6주차 본편에서 바로 사용한다
-> 6주차 본편 E\~G절(PID 입문)부터 "상승시간 몇 초, 오버슈트 몇 %" 같은 표를 만들게 됨
+> [!tip] 이 도구는 4주차 본편에서 바로 사용한다
+> 4주차 본편 E\~G절(PID 입문)부터 "상승시간 몇 초, 오버슈트 몇 %" 같은 표를 만들게 됨
 > 그 숫자를 눈대중으로 읽지 말고 **여기 커서로 읽어서** 적으면 됨
 
 ### 확인
@@ -699,12 +698,12 @@ K_gain = 5;
 
 ## F. PID · 포화 · 안티와인드업 (25분)
 
-![완성본](W06_0_simulink/img/SB5_pid_done.png)
+![완성본](A1_simulink/img/SB5_pid_done.png)
 
 > [!note] 이번 주차에는 제어 이론을 배우지 않는다
 > 배우는 것은 **블록을 어떻게 놓고 대화상자를 어떻게 채우는가**뿐임
 > `Plant` 는 아무 의미 없는 장난감 전달함수임. 배와 상관없음
-> 게인을 왜 그 값으로 정하는지는 6주차 1-7절(극배치)에서 다룸
+> 게인을 왜 그 값으로 정하는지는 4주차 1-7절(극배치)에서 다룸
 
 ```matlab
 open_system('SB5_pid_todo')
@@ -815,45 +814,45 @@ t(find(t >= 10 & abs(v - 0.5) <= 0.05*0.5, 1))      % 닿은 시각
 
 ---
 
-# 2일차 · 7\~9주차에서 실제로 쓰는 블록들
+# 2일차 · 5\~7주차에서 실제로 쓰는 블록들
 
 > [!important] 이후 절은 **2일차(절 합계 195분)** 다
 > 1일차(A\~F)가 Simulink 문법이라면, 2일차(G\~M)는 **본 과목의 모델을 읽기 위한 최소 어휘**
-> 아래 블록 중 `Unit Delay`·`Integrator`·`Switch` 는 7\~9주차 모델에 그대로 들어 있음
-> 나머지는 7\~9주차 모델에서 MATLAB Function 이나 이산 블록이 대신하는 일을 **블록으로 보여 주는 것**
+> 아래 블록 중 `Unit Delay`·`Integrator`·`Switch` 는 5\~7주차 모델에 그대로 들어 있음
+> 나머지는 5\~7주차 모델에서 MATLAB Function 이나 이산 블록이 대신하는 일을 **블록으로 보여 주는 것**
 
 ## 이 블록들이 어디에 쓰이는가
 
 | 절 | 블록 | 본 과목에서 쓰이는 곳 |
 |---|---|---|
-| G | `Mux` `Demux` `Selector` | 7주 운동모델은 상태 6개를 MATLAB Function(`States`)이 풂. 같은 일을 블록으로 하는 법 |
-| H | **`Unit Delay`** | **그대로 쓰임** — 웨이포인트 번호 되먹임(7·9주 `IdxDly`), **대수 루프 차단**(9주 `ModeDly`) |
+| G | `Mux` `Demux` `Selector` | 5주 운동모델은 상태 6개를 MATLAB Function(`States`)이 풂. 같은 일을 블록으로 하는 법 |
+| H | **`Unit Delay`** | **그대로 쓰임** — 웨이포인트 번호 되먹임(5·7주 `IdxDly`), **대수 루프 차단**(7주 `ModeDly`) |
 | H | 샘플타임 · `Rate Transition` | 제어 0.05 s ↔ 센서 다른 주기 (본 과목 모델은 전부 0.05 s 하나라 아직 없음) |
-| I | `Integrator` | **그대로 쓰임** — 운동방정식 적분(7\~9주 `MotionModel`). 배의 위치가 여기서 나옴 |
-| I | `Transfer Fcn` | 모터 1차 지연. 7주 `MotorLag`(`Discrete Transfer Fcn`)의 연속 버전 |
+| I | `Integrator` | **그대로 쓰임** — 운동방정식 적분(5\~7주 `MotionModel`). 배의 위치가 여기서 나옴 |
+| I | `Transfer Fcn` | 모터 1차 지연. 5주 `MotorLag`(`Discrete Transfer Fcn`)의 연속 버전 |
 | I | 적분기 출력 제한 | 물리 한계가 있는 상태 |
-| J | `Switch` | **그대로 쓰임** — 7주 `InnerLoop` 의 D 항 방식 선택(`Dsel`) |
-| J | `Multiport Switch` | 9주 `ModeSwitch`(MATLAB Function)와 같은 원리 — 유도법칙 갈아 끼우기 |
-| J | `Stop Simulation` | 임무 종료를 블록으로 거는 법. 8·9주는 `gate = 0` 으로 속도 지령을 끄고 고정 정지 시간까지 돎 |
+| J | `Switch` | **그대로 쓰임** — 5주 `InnerLoop` 의 D 항 방식 선택(`Dsel`) |
+| J | `Multiport Switch` | 7주 `ModeSwitch`(MATLAB Function)와 같은 원리 — 유도법칙 갈아 끼우기 |
+| J | `Stop Simulation` | 임무 종료를 블록으로 거는 법. 6·7주는 `gate = 0` 으로 속도 지령을 끄고 고정 정지 시간까지 돎 |
 | K | `Enabled Subsystem` | "새 메시지가 왔을 때만 계산" (ROS `IsNew` 를 쓸 때의 구조) |
 | L | `Mask` | PID 블록처럼 다이얼로그를 가진 서브시스템 |
-| M | Stateflow `Chart` | **그대로 쓰임** — 9주 `MissionFSM` |
+| M | Stateflow `Chart` | **그대로 쓰임** — 7주 `MissionFSM` |
 
 ### 2일차 모델 만들기
 
 ```matlab
-cd('<배포 폴더>/W06_0_simulink')
-build_w06_1_models
+cd('<배포 폴더>/A1_simulink')
+build_a1_1_models
 ```
 
 - `SB7` \~ `SB13` 의 `_done` / `_todo` 14개가 만들어짐
-- 1일차 모델(`SB1`\~`SB6`)은 `build_w06_0_models` 가 만듦
+- 1일차 모델(`SB1`\~`SB6`)은 `build_a1_0_models` 가 만듦
 
 ---
 
 ## G. 신호 묶기와 풀기 — Mux · Demux · Selector (25분)
 
-![완성본](W06_0_simulink/img/SB7_signal_done.png)
+![완성본](A1_simulink/img/SB7_signal_done.png)
 
 ### G-1. 왜 필요한가
 
@@ -900,7 +899,7 @@ build_w06_1_models
 
 ## H. 이산 시스템 — 샘플타임과 Unit Delay (35분)
 
-![완성본](W06_0_simulink/img/SB8_discrete_done.png)
+![완성본](A1_simulink/img/SB8_discrete_done.png)
 
 ### H-1. 샘플타임이란
 
@@ -958,11 +957,11 @@ SB8_discrete_todo/SumA (algebraic variable)
 ```
 
 - **오류로 멈추지 않음.** 경고를 띄우고 반복 계산으로 풀려고 시도함. $b = b + 0.05$ 처럼 해가 없는 식이면 결과는 의미가 없음
-  - 9주차처럼 Stateflow 차트가 고리에 들어가면 그때는 **오류로 멈춤** (9주차 1-5절의 메시지)
+  - 7주차처럼 Stateflow 차트가 고리에 들어가면 그때는 **오류로 멈춤** (7주차 1-5절의 메시지)
 
 - 원인: $b$ 를 구하려면 $b$ 가 필요한 구조
 - 해법: 고리 안에 **`Unit Delay` 를 하나** 넣음 → "한 스텝 전 값"으로 끊음
-- **9주차에서 실제로 겪음.** 상태(`mode`)가 자기 자신에게 되먹임되기 때문
+- **7주차에서 실제로 겪음.** 상태(`mode`)가 자기 자신에게 되먹임되기 때문
 
 > [!tip] 대수 루프의 시각적 확인
 > - 명령창에서 `Simulink.BlockDiagram.getAlgebraicLoops('SB8_discrete_todo')` 를 실행하면 고리를 찾아 블록을 강조해 줌
@@ -992,7 +991,7 @@ SB8_discrete_todo/SumA (algebraic variable)
 
 ## I. 연속 시스템 — Integrator · Transfer Fcn · 솔버 (30분)
 
-![완성본](W06_0_simulink/img/SB9_continuous_done.png)
+![완성본](A1_simulink/img/SB9_continuous_done.png)
 
 ### I-1. 배의 위치는 적분에서 나온다
 
@@ -1008,7 +1007,7 @@ $$
 
 - 여기 $u$ 는 **전후 속도**, $v$ 는 좌우 속도, $\psi$ 는 선수각, $x$ 는 북쪽 위치, $X$ 는 전후 방향 힘
 - Simulink 에서 미분방정식을 푸는 방법은 **한 가지** — $\dot{u}$ 를 만들어 `Integrator` 에 넣음
-- 7주차 `MotionModel` 안이 정확히 이 모양임
+- 5주차 `MotionModel` 안이 정확히 이 모양임
 
 ### I-2. 1차 지연 — 모터가 즉시 돌지 않는 이유
 
@@ -1024,8 +1023,8 @@ $$
 > | $u$ | 전후 속도 (I-1) | 교과서의 "입력 $u$" 와 겹침 → 입력은 $a$ 로 씀 |
 > | $x$, $y$ | 북·동 위치 (I-1) | 교과서의 "입력 $x$ · 출력 $y$" 와 겹침 → 입력 $a$, 출력 $b$, 전달함수 $B(s)/A(s)$ 로 씀 |
 > | $X$ | 전후 방향 힘 (I-1) | 교과서의 입력 라플라스 변환 $X(s)$ 와 겹침 → $A(s)$ 로 씀 |
-> | $\tau$ | 제어입력 (6주차 본편 1-5) | 교과서의 "시상수 $\tau$" 와 겹침 → 시상수는 $T$ 로 씀 (7주차 모터도 $T_n$, 코드 `tau_n`) |
-> | $b$ | 추진기 좌우 반폭 (4·6·7주차) | 이 절의 $b$ 는 블록 출력일 뿐 — 4·6·7주차 $b$ 는 반폭 |
+> | $\tau$ | 제어입력 (4주차 본편 1-5) | 교과서의 "시상수 $\tau$" 와 겹침 → 시상수는 $T$ 로 씀 (5주차 모터도 $T_n$, 코드 `tau_n`) |
+> | $b$ | 추진기 좌우 반폭 (4·5·9주차) | 이 절의 $b$ 는 블록 출력일 뿐 — 4·5·9주차 $b$ 는 반폭 |
 
 - 같은 식을 두 가지로 만들 수 있음
 
@@ -1047,7 +1046,7 @@ $$
 
 > [!important] 시상수 $T$ 의 의미
 > **63.2 % 에 도달하는 시간**. $5T$ 면 거의 다 왔다고 봄
-> 7주차 모터 시상수 `tau_n = 0.30 s` 도 같은 뜻임
+> 5주차 모터 시상수 `tau_n = 0.30 s` 도 같은 뜻임
 
 ### I-3. 물리적 한계가 있는 상태
 
@@ -1064,11 +1063,11 @@ $$
 | 솔버 | 언제 |
 |---|---|
 | `FixedStepDiscrete` | **이산 블록만** 있을 때. 1일차 모델 전부 |
-| `ode4` (고정 스텝) | 연속 상태가 있고 **실시간·코드생성**이 필요할 때. 6주차 `W06_5_offline`, 7\~9주차 오프라인 모델 |
+| `ode4` (고정 스텝) | 연속 상태가 있고 **실시간·코드생성**이 필요할 때. 4주차 `W04_5_offline`, 5\~7주차 오프라인 모델 |
 | `ode45` (가변 스텝) | 연속 상태가 있고 **정확도**가 중요할 때 (새 모델의 기본 설정은 `auto`) |
 
 - `SB9` 는 `ode45`(최대 스텝 `MaxStep = 0.01`)로 저장돼 있음. 고정 스텝 `ode4`, 0.05 로 바꿔 보면 곡선이 살짝 달라짐
-- **가변 스텝은 실시간 연동에 쓰지 않음** — 6주차 이후 VRX 모델이 전부 고정 스텝인 이유
+- **가변 스텝은 실시간 연동에 쓰지 않음** — 4주차 이후 VRX 모델이 전부 고정 스텝인 이유
 
 > [!note] 영점 교차 검출 (Zero-Crossing)
 > `Saturation`, `Switch`, `abs` 같은 블록은 값이 꺾이는 순간이 있음
@@ -1090,7 +1089,7 @@ $$
 
 ## J. 판단 블록 — Switch · Multiport Switch · Stop (25분)
 
-![완성본](W06_0_simulink/img/SB10_logic_done.png)
+![완성본](A1_simulink/img/SB10_logic_done.png)
 
 ### J-1. `if` 문을 블록으로
 
@@ -1103,8 +1102,8 @@ $$
 
 > [!tip] MATLAB Function 블록과의 사용 구분
 > - 조건이 **한두 개**면 블록이 나음 — 신호 흐름이 시각적으로 확인됨
-> - 조건이 **여러 개 얽히면** MATLAB Function 이 나음 — 7주차 `Guidance` 가 그러함
-> - **상태가 있으면** Stateflow (9주차)
+> - 조건이 **여러 개 얽히면** MATLAB Function 이 나음 — 5주차 `Guidance` 가 그러함
+> - **상태가 있으면** Stateflow (7주차)
 
 ### J-2. Switch 의 판단 기준
 
@@ -1113,11 +1112,11 @@ $$
   - 조건이 참(1) → **위쪽(1번)** 입력이 나감
   - 거짓(0) → **아래쪽(3번)** 입력이 나감
 
-### J-3. Multiport Switch — 9주차 모드 전환의 원리
+### J-3. Multiport Switch — 7주차 모드 전환의 원리
 
 - 맨 위 입력이 **번호**, 나머지가 후보들
 - `Mode = 2` 면 두 번째 값이 나감 (실측 **20**)
-- 9주차 `ModeSwitch` 는 같은 일을 **MATLAB Function** 으로 함 (블록 구성은 다르고 원리는 같음)
+- 7주차 `ModeSwitch` 는 같은 일을 **MATLAB Function** 으로 함 (블록 구성은 다르고 원리는 같음)
   - `mode = 1` → LOS 유도의 `psi_ref`
   - `mode = 2` → 로이터링 벡터필드 유도의 `psi_ref`
 
@@ -1129,8 +1128,8 @@ $$
 
 - 입력이 **0 이 아니면** 시뮬레이션이 그 자리에서 끝남
 - `SB10` 은 정지 시간이 60 인데 **15초에 멈춤** (실측 종료 시각 15.00 s)
-- 8·9주차 모델은 이 블록을 쓰지 않음
-  - 임무가 끝나면(8주차: 정해진 바퀴 수 / 9주차: 마지막 웨이포인트) `gate = 0` 으로 속도 지령을 끄고, 고정 정지 시간(300 s / 700 s)까지 돎
+- 6·7주차 모델은 이 블록을 쓰지 않음
+  - 임무가 끝나면(6주차: 정해진 바퀴 수 / 7주차: 마지막 웨이포인트) `gate = 0` 으로 속도 지령을 끄고, 고정 정지 시간(300 s / 700 s)까지 돎
   - 끝나는 순간 시뮬레이션을 멈추고 싶을 때 이 블록을 씀
 
 ### J-5. 해 볼 것 (`SB10_logic_todo`)
@@ -1144,7 +1143,7 @@ $$
 
 ## K. 조건부 실행 — Enabled · Triggered Subsystem (25분)
 
-![완성본](W06_0_simulink/img/SB11_enabled_done.png)
+![완성본](A1_simulink/img/SB11_enabled_done.png)
 
 ### K-1. 항상 돌 필요는 없다
 
@@ -1167,10 +1166,10 @@ $$
 | `Triggered` | **5** | 20초 동안 올라간 순간이 5번뿐임 |
 
 > [!important] 이 차이가 ROS 와 직결된다
-> 6주차 `Subscribe` 블록의 `IsNew` 출력을 **enable 로 쓰면**
+> 4주차 `Subscribe` 블록의 `IsNew` 출력을 **enable 로 쓰면**
 > "새 메시지가 왔을 때만 계산한다" 가 그대로 구현됨
 > 안 그러면 **같은 메시지를 몇 번씩 다시 계산**함
-> 6\~9주차 모델은 아직 이 구조를 쓰지 않음. 필요해졌을 때 쓰는 방법임
+> 4\~7주차 모델은 아직 이 구조를 쓰지 않음. 필요해졌을 때 쓰는 방법임
 
 ### K-3. 꺼져 있을 때 상태는 어떻게 되나
 
@@ -1195,7 +1194,7 @@ $$
 
 ## L. 재사용 — Mask · 라이브러리 · 코드로 만들기 (30분)
 
-![완성본](W06_0_simulink/img/SB12_reuse_done.png)
+![완성본](A1_simulink/img/SB12_reuse_done.png)
 
 ### L-1. Mask — 서브시스템에 다이얼로그를 붙인다
 
@@ -1250,8 +1249,8 @@ open_system('my_usv_lib');
 ### L-4. 코드로 모델을 만든다 — 본 과목의 방식
 
 > [!important] 본 과목의 모든 모델은 **손으로 그리지 않았다**
-> `build_w06_1_models.m` 이 지금 연 모델을 전부 만들었음
-> 7\~9주차 모델도 `build_w07_models.m` 같은 스크립트가 만듦
+> `build_a1_1_models.m` 이 지금 연 모델을 전부 만들었음
+> 5\~7주차 모델도 `build_w05_models.m` 같은 스크립트가 만듦
 
 - 왜 그렇게 하는가
 
@@ -1284,12 +1283,12 @@ tidy_layout('SB9_continuous_done')
 3. 복사해서 두 개로 만들고 `tau` 를 0.1 / 1.0 로
 4. Scope 로 겹쳐 보고 63 % 도달 시간이 각각 tau 인지 확인
 5. Icon 탭에 식을 표시해 보기
-6. **`build_w06_1_models.m` 을 열어** `makeLagSubsystem` 함수를 읽음
+6. **`build_a1_1_models.m` 을 열어** `makeLagSubsystem` 함수를 읽음
    방금 손으로 한 일을 코드가 어떻게 하는지 대조할 것
 
 ## M. 상태기계 — Stateflow 첫걸음 (25분)
 
-![완성본](W06_0_simulink/img/SB13_stateflow_done.png)
+![완성본](A1_simulink/img/SB13_stateflow_done.png)
 
 ### M-1. 왜 블록이 아니라 상태기계인가
 
@@ -1306,7 +1305,7 @@ tidy_layout('SB9_continuous_done')
 
 ### M-2. 차트 읽기
 
-![Mission 차트](W06_0_simulink/img/SB13_chart.png)
+![Mission 차트](A1_simulink/img/SB13_chart.png)
 
 - **대기 3초 → 1.5 m/s 로 전진 → 30 m 에 닿으면 정지**
 - 차트 밖에는 배 대신 적분기 하나(`Dist`)가 있음. 속도 지령을 적분해 간 거리를 냄
@@ -1348,20 +1347,20 @@ fprintf('%.17g\n', d(abs(t - 23) < 1e-9))     % 29.999999999999805
 
 > [!warning] 격자 위에 정확히 걸린 문턱값은 반올림에 약하다
 > - 문턱값을 `29.99` 로 두거나, 거리 대신 "남은 거리 $\le$ 한 스텝 이동량" 처럼 **여유를 둔 조건**을 씀
-> - 9주차의 도착 판정이 "수락반경 5 m 안" 인 것도 같은 이유임
+> - 7주차의 도착 판정이 "수락반경 5 m 안" 인 것도 같은 이유임
 
-### M-4. 왜 `[arrived > 0.5]` 인가 — 9주차가 이렇게 쓰는 이유
+### M-4. 왜 `[arrived > 0.5]` 인가 — 7주차가 이렇게 쓰는 이유
 
 - `Relational Operator` 는 참·거짓(boolean)을 냄. 이 모델은 그것을 `Data Type Conversion` 으로 **0 또는 1 의 double** 로 바꿔 넣음
-- 9주차의 도착 신호도 MATLAB Function 이 계산한 **double** 로 들어옴. 그래서 `== 1` 이 아니라 `> 0.5` 로 읽음
+- 7주차의 도착 신호도 MATLAB Function 이 계산한 **double** 로 들어옴. 그래서 `== 1` 이 아니라 `> 0.5` 로 읽음
   - 실수를 `==` 로 비교하면 계산 오차로 0.9999… 가 나올 때 틀림
   - `> 0.5` 는 0 과 1 사이 어디든 한가운데를 가름 — 참·거짓을 **안전하게** 읽는 관용구
 
-> [!important] 9주차 `MissionFSM` 과 같은 구조다
-> 9주차 차트는 상태가 `WpFollow` · `Loiter` · `Finish` 셋이고, 전이 조건이
+> [!important] 7주차 `MissionFSM` 과 같은 구조다
+> 7주차 차트는 상태가 `WpFollow` · `Loiter` · `Finish` 셋이고, 전이 조건이
 > `[at_loiter > 0.5]` · `[turns >= req_turns]` · `[at_end > 0.5]`
 > 이 모델과 같은 문법(`en:`, `[x > 0.5]`)을 씀
-> 다만 9주차에는 `Loiter` → `WpFollow` 로 돌아가는 전이가 있고, `after()` 타이머는 없음
+> 다만 7주차에는 `Loiter` → `WpFollow` 로 돌아가는 전이가 있고, `after()` 타이머는 없음
 
 ### M-5. 해 볼 것 (`SB13_stateflow_todo`)
 
@@ -1404,7 +1403,7 @@ fprintf('%.17g\n', d(abs(t - 23) < 1e-9))     % 29.999999999999805
 
 ## 수업 진도 체크
 
-> [!important] 6주차 수업을 따라가기 위한 최소 조건
+> [!important] 4주차 수업을 따라가기 위한 최소 조건
 
 ### 1일차 이론 이해 (A\~F)
 
@@ -1457,10 +1456,10 @@ fprintf('%.17g\n', d(abs(t - 23) < 1e-9))     % 29.999999999999805
 
 ---
 
-## 과제 W06-0A — 1일차 여섯 모델과 측정
+## 과제 A1-A — 1일차 여섯 모델과 측정
 
-- **제출 기한**: 6주차 수업 전
-- **배점**: 없음 — **무배점 연습** (강의계획서 §4). 6주차 본편 실습의 준비 확인용
+- **제출 기한**: 4주차 수업 전
+- **배점**: 없음 — **무배점 연습** (강의계획서 §4). 4주차 본편 실습의 준비 확인용
 - **제출**: 완성한 `.slx` 6개 + 스크린샷 + 수치 + 짧은 분석
 
 ### ① 여섯 개 빈칸본 완성
@@ -1522,9 +1521,9 @@ fprintf('%.17g\n', d(abs(t - 23) < 1e-9))     % 29.999999999999805
 
 ---
 
-## 과제 W06-0B — 2일차 일곱 모델과 측정
+## 과제 A1-B — 2일차 일곱 모델과 측정
 
-- **제출 기한**: 7주차 수업 전
+- **제출 기한**: 5주차 수업 전
 - **배점**: 없음 — **무배점 연습** (강의계획서 §4)
 - **제출**: 완성한 `.slx` 7개 + 스크린샷 + 수치 + 짧은 분석
 
@@ -1614,16 +1613,16 @@ fprintf('%.17g\n', d(abs(t - 23) < 1e-9))     % 29.999999999999805
 | `From` 이 값을 못 받음 | 태그가 다름 | `Goto` 와 `From` 의 태그 철자 확인 |
 | `파라미터 ...에 대한 설정이 유효하지 않습니다` | 변수가 작업공간에 없음 | `SB_setup` 먼저 실행 |
 | `out.logsout` 이 비어 있음 | 로깅을 안 켬 | 신호선 우클릭 → Log Selected Signals |
-| 모델이 깨짐 | — | `build_w06_0_models` 다시 실행 |
+| 모델이 깨짐 | — | `build_a1_0_models` 다시 실행 |
 
 ---
 
 ## 모델을 다시 만들어야 할 때
 
 ```matlab
-cd('<배포 폴더>/W06_0_simulink')
-build_w06_0_models      % 1일차 SB1~SB6
-build_w06_1_models      % 2일차 SB7~SB13
+cd('<배포 폴더>/A1_simulink')
+build_a1_0_models      % 1일차 SB1~SB6
+build_a1_1_models      % 2일차 SB7~SB13
 ```
 
 - 해당 모델이 모두 새로 만들어짐. **`_todo` 에 하던 작업은 사라짐**
@@ -1675,46 +1674,46 @@ tidy_layout('SB9_continuous_done')
 
 ### 볼트 내 문서
 
-- [[W06_Simulink_ROS2_연동과_첫_제어기]] — 6주차 본편. 이 보충 자료의 내용 위에 ROS 2 를 얹음
+- [[W04_Simulink_PID와_첫_제어기]] — 4주차 본편. 이 보충 자료의 내용 위에 ROS 2 를 얹음
 - [[측정하지-않은-성공은-성공이-아니다]] — 과제 배점의 근거
 
 ### 배포 파일
 
 | 파일 | 내용 |
 |---|---|
-| `W06_0_simulink/SB1_first_todo.slx` · `_done.slx` | A. 첫 모델과 솔버 |
-| `W06_0_simulink/SB2_mfcn_todo.slx` · `_done.slx` | B. MATLAB Function |
-| `W06_0_simulink/SB3_subsys_todo.slx` · `_done.slx` | C. Subsystem · Goto/From |
-| `W06_0_simulink/SB4_bus_todo.slx` · `_done.slx` | D. 버스 |
-| `W06_0_simulink/SB5_pid_todo.slx` · `_done.slx` | F. PID · 포화 · 안티와인드업 |
-| `W06_0_simulink/SB6_param_todo.slx` · `_done.slx` | E. 파라미터 · 로깅 |
-| `W06_0_simulink/SB_setup.m` | 실습 E 파라미터 |
-| `W06_0_simulink/SB_plot.m` | 실습 E 결과 그래프 |
-| `W06_0_simulink/SB7_signal_todo.slx` · `_done.slx` | G. Mux · Demux · Selector |
-| `W06_0_simulink/SB8_discrete_todo.slx` · `_done.slx` | H. 샘플타임 · Unit Delay · Rate Transition |
-| `W06_0_simulink/SB9_continuous_todo.slx` · `_done.slx` | I. Integrator · Transfer Fcn · 솔버 |
-| `W06_0_simulink/SB10_logic_todo.slx` · `_done.slx` | J. Switch · Multiport Switch · Stop |
-| `W06_0_simulink/SB11_enabled_todo.slx` · `_done.slx` | K. Enabled · Triggered 서브시스템 |
-| `W06_0_simulink/SB12_reuse_todo.slx` · `_done.slx` | L. 마스크 |
-| `W06_0_simulink/SB13_stateflow_todo.slx` · `_done.slx` | M. Stateflow 첫걸음 |
-| `W06_0_simulink/build_w06_0_models.m` | 1일차 12개 모델 생성 (6쌍) |
-| `W06_0_simulink/build_w06_1_models.m` | 2일차 14개 모델 생성 |
-| `W06_0_simulink/tidy_layout.m` | 배치·색 복구 |
+| `A1_simulink/SB1_first_todo.slx` · `_done.slx` | A. 첫 모델과 솔버 |
+| `A1_simulink/SB2_mfcn_todo.slx` · `_done.slx` | B. MATLAB Function |
+| `A1_simulink/SB3_subsys_todo.slx` · `_done.slx` | C. Subsystem · Goto/From |
+| `A1_simulink/SB4_bus_todo.slx` · `_done.slx` | D. 버스 |
+| `A1_simulink/SB5_pid_todo.slx` · `_done.slx` | F. PID · 포화 · 안티와인드업 |
+| `A1_simulink/SB6_param_todo.slx` · `_done.slx` | E. 파라미터 · 로깅 |
+| `A1_simulink/SB_setup.m` | 실습 E 파라미터 |
+| `A1_simulink/SB_plot.m` | 실습 E 결과 그래프 |
+| `A1_simulink/SB7_signal_todo.slx` · `_done.slx` | G. Mux · Demux · Selector |
+| `A1_simulink/SB8_discrete_todo.slx` · `_done.slx` | H. 샘플타임 · Unit Delay · Rate Transition |
+| `A1_simulink/SB9_continuous_todo.slx` · `_done.slx` | I. Integrator · Transfer Fcn · 솔버 |
+| `A1_simulink/SB10_logic_todo.slx` · `_done.slx` | J. Switch · Multiport Switch · Stop |
+| `A1_simulink/SB11_enabled_todo.slx` · `_done.slx` | K. Enabled · Triggered 서브시스템 |
+| `A1_simulink/SB12_reuse_todo.slx` · `_done.slx` | L. 마스크 |
+| `A1_simulink/SB13_stateflow_todo.slx` · `_done.slx` | M. Stateflow 첫걸음 |
+| `A1_simulink/build_a1_0_models.m` | 1일차 12개 모델 생성 (6쌍) |
+| `A1_simulink/build_a1_1_models.m` | 2일차 14개 모델 생성 |
+| `A1_simulink/tidy_layout.m` | 배치·색 복구 |
 
 ---
 
 ## 다음 예고
 
-- **6주차 — Simulink ROS 2 연동과 첫 제어기**
+- **4주차 — Simulink PID 와 첫 제어기**
 - 이번 주차에 학습한 블록 위에 **ROS 2 블록 세 개**가 얹힘
   - `Subscribe` — 토픽을 받아 **버스**로 내보냄 → 이번 주차 D절
   - `Blank Message` + `Bus Assignment` — 메시지 채우기 → 이번 주차 D절
   - `Publish` — 토픽으로 발행
-- 2일차 G\~M 절의 내용은 7\~9주차 모델을 읽을 때 쓰임
-  - `Unit Delay` — 웨이포인트 번호 되먹임 (7·9주 `IdxDly`), 대수 루프 차단 (9주 `ModeDly`)
-  - `Integrator` — 운동모델 적분 (7\~9주 `MotionModel`)
-  - `Transfer Fcn` 의 이산판 `Discrete Transfer Fcn` — 모터 1차 지연 (7주 `Thrusters/MotorLag`)
-  - `Multiport Switch` 와 같은 원리의 MATLAB Function — 유도법칙 갈아 끼우기 (9주 `ModeSwitch`)
-  - Stateflow 차트 — 미션 상태기계 (9주 `MissionFSM`)
+- 2일차 G\~M 절의 내용은 5\~7주차 모델을 읽을 때 쓰임
+  - `Unit Delay` — 웨이포인트 번호 되먹임 (5·7주 `IdxDly`), 대수 루프 차단 (7주 `ModeDly`)
+  - `Integrator` — 운동모델 적분 (5\~7주 `MotionModel`)
+  - `Transfer Fcn` 의 이산판 `Discrete Transfer Fcn` — 모터 1차 지연 (5주 `Thrusters/MotorLag`)
+  - `Multiport Switch` 와 같은 원리의 MATLAB Function — 유도법칙 갈아 끼우기 (7주 `ModeSwitch`)
+  - Stateflow 차트 — 미션 상태기계 (7주 `MissionFSM`)
 - 준비물
-  - 두 과제(W06-0A, W06-0B)를 끝내 둘 것. 특히 **버스**·**MATLAB Function**·**Unit Delay**
+  - 두 과제(A1-A, A1-B)를 끝내 둘 것. 특히 **버스**·**MATLAB Function**·**Unit Delay**

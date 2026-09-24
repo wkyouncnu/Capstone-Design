@@ -1,14 +1,14 @@
 ---
 type: week
-week: 4
-title: 4주차 — VRX 심화, WAM-V 모델 구조와 토픽 전수조사
+week: 9
+title: 9주차 — VRX 심화, WAM-V 모델 구조와 토픽 전수조사
 date: 2026-09-03
 tags: [week, vrx, urdf, mapviz]
 status: done
 summary: WAM-V URDF·Xacro 구조, 센서 배치 수정, Mapviz 위성지도, 토픽 전수조사표 작성
 ---
 
-# 4주차 · VRX 심화 — WAM-V 모델 구조와 토픽 전수조사
+# 9주차 · VRX 심화 — WAM-V 모델 구조와 토픽 전수조사
 
 > [!important] 참조 강의 — 본 과목이 전제하는 배경
 > <span style="font-size:0.88em">아래 다섯 과목은 **본 과목 담당 교수가 직접 강의한 것**이며, 본 과목이 전제하는 배경 지식에 해당함. 학부 기초에서 대학원 과정까지 이어지므로 부족한 지점부터 시작하면 됨. 본 문서에서 쓰는 좌표계·기호·유도 과정은 아래 강의에서 상세히 다루므로, 선수 지식이 부족한 경우 먼저 보고 돌아올 것.</span>
@@ -21,7 +21,7 @@ summary: WAM-V URDF·Xacro 구조, 센서 배치 수정, Mapviz 위성지도, �
 > | 4 | **제어공학특론** — 좌표계, 6자유도 운동방정식, 회전행렬과 오일러각, 선형화와 트림 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvJmvF2ljx4KM5dj1P5jEcw0) | [드라이브](https://drive.google.com/drive/folders/1GUxbbONl916lNd0ggnFnXrNwNkd13-2-) |
 > | 5 | **센서신호처리 및 융합** — 센서 모델, 잡음, 추정, 다중센서 융합 | 대학원 | 영어 | [재생목록](https://youtube.com/playlist?list=PLFaUxNRM4BvK-aP2Gdoyp5-AWvMn7Fo8E) | [드라이브](https://drive.google.com/drive/folders/1MEVJP7TzMcm8w6TZwUjhWJtL34WeNY3u) |
 >
-> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 6주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
+> <span style="font-size:0.88em">**MATLAB·Simulink 가 처음이라면 4주차 실습 전에 아래를 끝낼 것.** 본 과목의 제어기 실습은 전부 Simulink 로 진행함. Onramp 는 무료이며 각각 몇 시간이면 끝남</span>
 >
 > | 도구 | 시작 지점 |
 > |---|---|
@@ -187,7 +187,7 @@ $$
 | `F_L = 300`, `F_R = 50` | 우선회 |
 
 - 3주차 실습에서 손으로 해 본 것이 바로 이 식
-- 6주차에 이 역변환을 제어기 안에 넣음
+- 4주차에 이 역변환을 제어기 안에 넣음
 
 > [!important] 2추진기는 **과소구동(underactuated)** 임
 > - 제어하고 싶은 것은 3자유도 (전후 · 좌우 · 선수각)
@@ -226,7 +226,7 @@ $$
 > | $y_b$ | 좌현 $+$ | 우현 $+$ | $y_{\text{FRD}} = -\,y_{\text{FLU}}$ |
 > | $z_b$ | 위 $+$ | 아래 $+$ | $z_{\text{FRD}} = -\,z_{\text{FLU}}$ |
 >
-> 그래서 1-2절 Xacro 의 좌현 추진기 $y_{\text{FLU}} = +1.027$ 은 10주차 배분 행렬에서 $y_{b,L} = -1.027$ (FRD) 이 됨
+> 그래서 1-2절 Xacro 의 좌현 추진기 $y_{\text{FLU}} = +1.027$ 은 8주차 배분 행렬에서 $y_{b,L} = -1.027$ (FRD) 이 됨
 > 3주차의 ENU → NED 변환(북·동을 바꾸고 아래를 뒤집는다)과 **같은 이유의 다른 판**임 —
 > ENU·NED 는 땅에 붙은 좌표계, FLU·FRD 는 배에 붙은 좌표계
 
@@ -570,7 +570,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 > [!warning] `ground_truth_enabled:=True` 를 런치 인자로 주면 **조용히 무시됨**
 > - `competition.launch.py` 의 인자는 `world` · `sim_mode` · `bridge_competition_topics` · `config_file` · `robot` · `headless` · `urdf` · `paused` · `competition_mode` · `extra_gz_args` 뿐임
 > - 없는 인자를 줘도 오류가 나지 않음 → `ground_truth_odometry` 토픽도 생기지 않음
-> - 참값 위치 토픽이 필요하면 **6주차 §A (ground truth odometry 켜기)** 를 따름
+> - 참값 위치 토픽이 필요하면 **4주차 §A (ground truth odometry 켜기)** 를 따름
 > - 인자 목록 확인: `ros2 launch vrx_gz competition.launch.py --show-args`
 
 ---
@@ -620,7 +620,7 @@ position_covariance:
 
 > [!warning] 위경도를 그대로 제어에 쓰지 않음
 > 위경도는 각도이고 미터가 아님. 제어에는 **지역 직교좌표(m)** 가 필요함
-> 본 과목은 6주차부터 `ground_truth_odometry` 의 미터 좌표를 씀
+> 본 과목은 4주차부터 `ground_truth_odometry` 의 미터 좌표를 씀
 
 ---
 
@@ -781,7 +781,7 @@ ros2 topic echo --once /vrx/debug/wind/direction
 
 - 기준 환경 결과: **`data: 0.0`** / **`data: 240.0`**
 - `sydney_regatta` 는 **바람이 꺼져 있음**. 풍향값은 있지만 풍속이 0이라 힘이 생기지 않음
-- 바람을 켜려면 월드를 바꿈 → 10주차 `practice_2023_wayfinding2_task`
+- 바람을 켜려면 월드를 바꿈 → 8주차 `practice_2023_wayfinding2_task`
 
 ---
 
@@ -813,12 +813,12 @@ ros2 topic hz /wamv/sensors/imu/imu/data
 > - 확인법 — Gazebo 창 오른쪽 아래의 RTF 표시를 봄
 > - 실측: 데스크톱 열은 RTF 36\~39 % 일 때의 값
 > - RTF 가 1 에 가까워도 설계값에 못 미칠 수 있음 — §2-8-1 에서는 RTF 0.99 에서 설계값의 약 3/4 가 왔음
-> - 6주차에서 Simulink 페이싱을 이 RTF 에 맞추는 이유가 여기 있음
+> - 4주차에서 Simulink 페이싱을 이 RTF 에 맞추는 이유가 여기 있음
 
 > [!tip] 데스크톱 열의 RTF 0.37 은 **카메라 3대 + LiDAR** 때문임
 > - 같은 데스크톱에서 카메라·LiDAR 를 끄고 띄우면 RTF 0.99, IMU **99.0 Hz**, GPS **19.8 Hz** 로 설계값에 붙음 (2026-09-21 실측)
 > - 끄는 법과 측정표는 3주차 2-3 "쓰지 않는 센서를 끄고 띄운다"
-> - 이 절의 전수조사는 카메라·LiDAR 토픽도 봐야 하므로 **기본 명령**으로 띄움. 6주차부터의 제어 실습은 센서 최소 구성으로 띄움
+> - 이 절의 전수조사는 카메라·LiDAR 토픽도 봐야 하므로 **기본 명령**으로 띄움. 4주차부터의 제어 실습은 센서 최소 구성으로 띄움
 
 ---
 
@@ -995,7 +995,7 @@ rviz2
 
 - RViz2는 **로봇 기준** 좌표계로 봄
 - Mapviz는 **위경도 지도 위**에 실제 항적을 그림
-- 7주차 웨이포인트 유도(·9주차 미션)에서 "실제로 해당 경로를 갔는가"를 눈으로 확인할 때 필수
+- 5주차 웨이포인트 유도(·7주차 미션)에서 "실제로 해당 경로를 갔는가"를 눈으로 확인할 때 필수
 
 ### 1단계 — 설치
 
@@ -1195,9 +1195,9 @@ gymkhana_task.sdf
 
 | 월드 | 과제 | 본 과목에서 |
 |---|---|---|
-| `stationkeeping_task` | 한 지점에 **버티기** | **10주차** 동적위치유지(DP) |
-| `wayfinding_task` | 여러 **웨이포인트** 순서대로 통과 | **7주차** LOS 유도 |
-| `follow_path_task` | 정해진 **경로 따라가기** | 7\~8주차 |
+| `stationkeeping_task` | 한 지점에 **버티기** | **8주차** 동적위치유지(DP) |
+| `wayfinding_task` | 여러 **웨이포인트** 순서대로 통과 | **5주차** LOS 유도 |
+| `follow_path_task` | 정해진 **경로 따라가기** | 5\~6주차 |
 | `navigation_task` | 부표 사이 **좁은 수로 통과** | **Term Project 1구간** |
 | `perception_task` | 물체 **인식하고 보고** | 11\~13주차 |
 | `scan_dock_deliver_task` | 표식 읽고 **도킹** | **Term Project 마지막 구간** |
@@ -1298,7 +1298,7 @@ data: 240.0
 
 - `speed` 는 순간값이라 0 이 나올 수 있음. `direction` 은 도(°) 단위
 - 이 토픽은 시뮬레이터가 내보내는 **출력**이라, 여기에 값을 써서 바람을 바꿀 수는 없음
-- 10주차에서는 오프라인 모델(`W10_setup.m`)과 world 교체로 바람을 바꿈
+- 8주차에서는 오프라인 모델(`W08_setup.m`)과 world 교체로 바람을 바꿈
 
 > [!note] `competition_mode:=True` 로 띄우면 이 디버그 토픽이 사라짐
 > 대회 상황을 흉내 내는 옵션. 수업에서는 **기본값(False)** 그대로 씀
@@ -1413,7 +1413,7 @@ ros2 topic echo /wamv/sensors/gps/gps/fix
 | `-r 2.0` | 2배속 재생 |
 | `--topics /a /b` | 일부 토픽만 재생 |
 
-> [!important] 5주차 에이전트 검증의 2겹이 이것임
+> [!important] 10주차 에이전트 검증의 2겹이 이것임
 > 노드를 고칠 때마다 시뮬레이터를 다시 띄우면 **조건이 매번 달라짐**
 > 같은 bag 을 재생하면 **입력이 완전히 같으므로**, 출력의 차이는 오직 코드 변경 때문임
 
@@ -1427,20 +1427,20 @@ ros2 topic echo /wamv/sensors/gps/gps/fix
 
 - 2-3-7 절의 발행 주기와 2주차 2-9 절의 QoS 불일치를 **Simulink 모델로 다시** 잼
 - 순서: **센서 모델로 먼저**(2-8-0, VRX 불필요) → 같은 `RateMeter` 로 VRX 토픽을 잼(2-8-1) → QoS(2-8-2)
-- 6주차부터는 제어기가 Simulink 안에서 토픽을 받음. 터미널에서 본 숫자와 **Simulink 가 받는 숫자가 같은지** 먼저 확인해 두는 절
+- 4주차부터는 제어기가 Simulink 안에서 토픽을 받음. 터미널에서 본 숫자와 **Simulink 가 받는 숫자가 같은지** 먼저 확인해 두는 절
 
 - 배포 폴더 = 받은 `1_2026-2학기_강의자료` 폴더 안 `10-주차별-강의자료` 의 Windows 경로
-- `W04_setup.m` 19행의 `ros_domain_id` 를 WSL 의 `echo $ROS_DOMAIN_ID` 값(팀 번호, 2주차)으로 고친 뒤 실행함. 아래 정상 출력의 `8` 은 기준 환경 값
+- `W09_setup.m` 19행의 `ros_domain_id` 를 WSL 의 `echo $ROS_DOMAIN_ID` 값(팀 번호, 2주차)으로 고친 뒤 실행함. 아래 정상 출력의 `8` 은 기준 환경 값
 
 ```matlab
-cd('<배포 폴더>/W04_simulink')
-W04_setup
+cd('<배포 폴더>/W09_simulink')
+W09_setup
 ```
 
 - 정상 출력
 
 ```
-W04_setup 완료 — Ts = 0.005 s (200 Hz), 측정 20초, ROS_DOMAIN_ID=8
+W09_setup 완료 — Ts = 0.005 s (200 Hz), 측정 20초, ROS_DOMAIN_ID=8
 ```
 
 | 읽는 법 | 뜻 |
@@ -1449,20 +1449,20 @@ W04_setup 완료 — Ts = 0.005 s (200 Hz), 측정 20초, ROS_DOMAIN_ID=8
 | `측정 20초` | 짧으면 주기가 흔들림. 벽시계로 20 초를 셈 (Simulation Pacing 켬) |
 | `ROS_DOMAIN_ID=8` | WSL 의 `~/.bashrc` 와 같아야 토픽이 보임. 다르면 2-8-1 은 전부 0, 2-8-2 는 Reliable · Best effort 둘 다 0 이 나옴 |
 
-### 2-8-0. 운동모델 + 센서 모델로 먼저 — `W04_0_offline` (VRX 불필요)
+### 2-8-0. 운동모델 + 센서 모델로 먼저 — `W09_0_offline` (VRX 불필요)
 
-![오프라인 센서 모델](W04_simulink/img/W04_0_offline.png)
+![오프라인 센서 모델](W09_simulink/img/W09_0_offline.png)
 
-- 2-8-1 의 `W04_1_sensor_rates` 와 **`RateMeter` 뒤가 같음**. 앞단만 다름
+- 2-8-1 의 `W09_1_sensor_rates` 와 **`RateMeter` 뒤가 같음**. 앞단만 다름
 
 | 모델 | 앞단 | 뒷단 |
 |---|---|---|
-| `W04_0_offline` | `Command` → `MotionModel` (3주차 1-8) → **`SensorModel`** (1-5) | `RateMeter` → 표시 · `Logging` |
-| `W04_1_sensor_rates` | **`SensorSubscriber`** (VRX 토픽 세 개) | `RateMeter` → 표시 · `Logging` |
+| `W09_0_offline` | `Command` → `MotionModel` (3주차 1-8) → **`SensorModel`** (1-5) | `RateMeter` → 표시 · `Logging` |
+| `W09_1_sensor_rates` | **`SensorSubscriber`** (VRX 토픽 세 개) | `RateMeter` → 표시 · `Logging` |
 
 - `SensorModel` 의 출력 여섯 개(`gps_new`, `imu_new`, `wind_new`, `lat`, `wz`, `wind`)는 `SensorSubscriber` 와 **순서 · 이름이 같음**. 바람 센서는 모델에 없어 0 을 둠
 
-![SensorModel](W04_simulink/img/W04_0_offline__SensorModel.png)
+![SensorModel](W09_simulink/img/W09_0_offline__SensorModel.png)
 
 | 블록 | 하는 일 |
 |---|---|
@@ -1470,17 +1470,17 @@ W04_setup 완료 — Ts = 0.005 s (200 Hz), 측정 20초, ROS_DOMAIN_ID=8
 | `GyroNoise` | 표준편차 `imu_gyro_std` 의 난수. `imu_seed` 가 같으면 결과도 같음 |
 | `q` | 기준점, 안테나 위치, 바이어스, 두 주기의 스텝 수 |
 
-- 추력은 `W04_setup` 5번 칸의 `thrust_left = -200`, `thrust_right = 200` — 3주차 3-4 의 제자리 좌선회와 같음
+- 추력은 `W09_setup` 5번 칸의 `thrust_left = -200`, `thrust_right = 200` — 3주차 3-4 의 제자리 좌선회와 같음
 
 ```matlab
-W04_setup
-S = W04_offline_run;
+W09_setup
+S = W09_offline_run;
 ```
 
 - 정상 출력 (2026-09-19 기준 환경 실측, 1 초 안쪽에 끝남)
 
 ```
-W04_0_offline 실행 — 좌 -200 N / 우 +200 N, 20 초 (VRX 없음)
+W09_0_offline 실행 — 좌 -200 N / 우 +200 N, 20 초 (VRX 없음)
   수신 주기   GPS 20.05 Hz, IMU 100.05 Hz   (설계 20 / 100 Hz)
   자이로 잡음 표준편차 0.0091 rad/s   (설정 0.0090)
   GPS 안테나 - 선체 원점 거리 0.850 m   (설정 |gps_x| = 0.85 m)
@@ -1505,13 +1505,13 @@ W04_0_offline 실행 — 좌 -200 N / 우 +200 N, 20 초 (VRX 없음)
 
 | 시도 | 관찰 |
 |---|---|
-| `W04_setup` 의 `gps_x` 를 0 으로 | 안테나 거리가 0 이 되는가. 3주차 3-4 의 7.85 m 가 사라지는 이유 |
-| `imu_gyro_std` 를 10 배로 | `wz` 그래프(`S.out.log_wz`)가 얼마나 흔들리는가. 6주차 헤딩 제어가 $r$ 을 쓰는데 괜찮을까 |
+| `W09_setup` 의 `gps_x` 를 0 으로 | 안테나 거리가 0 이 되는가. 3주차 3-4 의 7.85 m 가 사라지는 이유 |
+| `imu_gyro_std` 를 10 배로 | `wz` 그래프(`S.out.log_wz`)가 얼마나 흔들리는가. 4주차 헤딩 제어가 $r$ 을 쓰는데 괜찮을까 |
 | `hz_design_gps` 를 10 으로 | 수신 주기 줄이 10.05 Hz 로 바뀌는가 |
 
-### 2-8-1. 센서 세 개의 수신 주기 — `W04_1_sensor_rates` (VRX 필요)
+### 2-8-1. 센서 세 개의 수신 주기 — `W09_1_sensor_rates` (VRX 필요)
 
-![센서 수신 주기 모델](W04_simulink/img/W04_1_sensor_rates.png)
+![센서 수신 주기 모델](W09_simulink/img/W09_1_sensor_rates.png)
 
 | 서브시스템 | 하는 일 |
 |---|---|
@@ -1522,7 +1522,7 @@ W04_0_offline 실행 — 좌 -200 N / 우 +200 N, 20 초 (VRX 없음)
 - VRX 를 띄운 뒤
 
 ```matlab
-S = W04_rates_run(20);
+S = W09_rates_run(20);
 ```
 
 - 정상 출력 (2026-09-18, 이 과목 기준 PC, VRX 헤드리스 · `ogre`, RTF 0.99)
@@ -1558,13 +1558,13 @@ S = W04_rates_run(20);
 | RTF 0.99 인데 비율 0.75 | 2-3-7 절에서는 "RTF 가 주기를 주로 정한다" 고 했음. 이 PC 에서는 RTF 가 거의 1 인데도 3/4 만 옴. **RTF 말고도 병목이 있다**는 뜻 — 원인은 이 측정만으로 가를 수 없음 |
 | 바람만 0.46 | 바람만 비율이 다름. 세 비율이 같지 않으면 원인이 시뮬레이터 속도 하나가 아님 |
 
-> [!important] 6주차에서 이 숫자가 왜 중요한가
+> [!important] 4주차에서 이 숫자가 왜 중요한가
 > 제어기는 **받은 만큼만** 앎. IMU 가 100 Hz 로 설계돼 있어도 75 Hz 로 오면 제어기는 75 Hz 로 판단함
 > 제어 주기를 정하기 전에 **실제로 받는 주기**를 재는 것이 순서. 설계값을 믿지 않음
 
-### 2-8-2. QoS 불일치 — `W04_2_qos_test` (VRX 불필요)
+### 2-8-2. QoS 불일치 — `W09_2_qos_test` (VRX 불필요)
 
-![QoS 시험 모델](W04_simulink/img/W04_2_qos_test.png)
+![QoS 시험 모델](W09_simulink/img/W09_2_qos_test.png)
 
 - 같은 토픽 `/qos_topic` 을 **두 번** 구독함. 다른 것은 Reliability 하나뿐
 
@@ -1580,7 +1580,7 @@ ros2 run usv_basics qos_test_pub
 ```
 
 ```matlab
-out = sim('W04_2_qos_test');     % 20 초, 벽시계
+out = sim('W09_2_qos_test');     % 20 초, 벽시계
 ```
 
 - 정상 결과 (2026-09-18 실행)
@@ -1619,7 +1619,7 @@ out = sim('W04_2_qos_test');     % 20 초, 벽시계
 | 6 | Mapviz + mapproxy 설정 | 위성지도에 항적 표시 |
 | 7 | **과제 월드 실행** | `/vrx/task/info` 에 `state: running` |
 | 8 | **`ros2 bag` 기록·재생** | `ros2 bag info` 에 메시지 수 표시 |
-| 9 | **센서 모델로 먼저** (VRX 불필요) | `W04_offline_run` — GPS 20.05 · IMU 100.05 Hz, 안테나 거리 0.850 m |
+| 9 | **센서 모델로 먼저** (VRX 불필요) | `W09_offline_run` — GPS 20.05 · IMU 100.05 Hz, 안테나 거리 0.850 m |
 | 10 | **Simulink 로 재기** — 수신 주기 · QoS | IMU 74.90 Hz ≈ `ros2 topic hz` 76.05 Hz · Reliable 0 / Best effort 40 |
 
 ---
@@ -1649,9 +1649,9 @@ out = sim('W04_2_qos_test');     % 20 초, 벽시계
 - [ ] `config_file` 이 아니라 `urdf` 가 모델 지정 인자라는 것을 앎
 - [ ] RViz2 에서 변경 전후 점군을 비교했음
 - [ ] Mapviz + mapproxy 로 위성지도 위 항적을 확인했음
-- [ ] `W04_offline_run` 으로 센서 모델의 주기 · 자이로 잡음 · 안테나 거리를 확인했음
-- [ ] `W04_rates_run` 으로 잰 Simulink 수신 주기가 `ros2 topic hz` 와 같은지 비교했음
-- [ ] `W04_2_qos_test` 에서 Reliable 구독이 0 건인 것을 확인했음
+- [ ] `W09_offline_run` 으로 센서 모델의 주기 · 자이로 잡음 · 안테나 거리를 확인했음
+- [ ] `W09_rates_run` 으로 잰 Simulink 수신 주기가 `ros2 topic hz` 와 같은지 비교했음
+- [ ] `W09_2_qos_test` 에서 Reliable 구독이 0 건인 것을 확인했음
 
 ### 과제 월드와 기록
 
@@ -1673,13 +1673,13 @@ out = sim('W04_2_qos_test');     % 20 초, 벽시계
 
 ---
 
-## 과제 4 — 토픽 전수조사표
+## 과제 9 — 토픽 전수조사표
 
 > [!important] 이 문서는 학기 내내 쓰는 팀 공용 자산
-> 6주차 Simulink 연동, 11주차 LiDAR 처리, 14주차 미션 매니저에서 계속 열어 보게 됨.
+> 4주차 Simulink 연동, 11주차 LiDAR 처리, 14주차 미션 매니저에서 계속 열어 보게 됨.
 > 대충 만들면 그 값을 매번 다시 찾게 됨.
 
-- **제출 기한**: 5주차 수업 전
+- **제출 기한**: 10주차 수업 전
 - **제출**: 팀별 1부 (표 + 짧은 분석)
 
 ### ① 토픽 전수조사표
@@ -1732,7 +1732,7 @@ out = sim('W04_2_qos_test');     % 20 초, 벽시계
 | 센서를 바꿨는데 그대로임 | `config_file:=` 로 넘김 | 모델 지정은 **`urdf:=`** 임 |
 | xacro 처리 오류 | XML 문법 오류 | 닫는 태그와 따옴표 확인 |
 | `urdf:=` 로 띄웠더니 창은 뜨는데 토픽이 안 나옴 | LiDAR `z` 가 1.3465 m 이하 → 서버 충돌 (`Assertion '0.0 < _height' failed`) | `z` 를 1.4 이상으로 (§2-4 3단계) |
-| `ground_truth_enabled:=True` 를 줬는데 토픽이 없음 | 존재하지 않는 런치 인자라 무시됨 | 6주차 §A (ground truth odometry 켜기) |
+| `ground_truth_enabled:=True` 를 줬는데 토픽이 없음 | 존재하지 않는 런치 인자라 무시됨 | 4주차 §A (ground truth odometry 켜기) |
 | Mapviz 에 **엉뚱한 지역** 지도가 뜨고 항적이 없음 | 기본 런치의 원점이 미국 텍사스(SwRI) | `mapviz_sydney.launch.py` 로 실행 (§2-5 5단계) |
 | `docker: permission denied` | 그룹 미적용 | `sudo usermod -aG docker $USER` 후 `wsl --shutdown` |
 | `docker: Cannot connect to the Docker daemon` | 데몬 미실행 | `sudo service docker start` |
@@ -1833,7 +1833,7 @@ rm -f /dev/shm/fastrtps_* /dev/shm/sem.fastrtps_*
 
 ## 다음 주 예고
 
-- **5주차 — VSCode + Claude AI 에이전트, 첫 ROS 2 제어 노드**
+- **10주차 — VSCode + Claude AI 에이전트, 첫 ROS 2 제어 노드**
 - 할 일
   - VSCode 에서 WSL 안의 코드를 직접 편집하는 환경 구성
   - **AI 에이전트로 웨이포인트 PID 노드를 만들고, 직접 검증해서 고치기**

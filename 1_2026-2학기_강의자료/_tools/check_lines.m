@@ -1,8 +1,8 @@
 function [n, v] = check_lines(mdl, verbose)
 %CHECK_LINES  도면을 읽을 수 없게 만드는 일곱 가지를 찾아 보고한다.
 %
-%   n = check_lines('W06_P3_boat_speed')
-%   check_lines('W06_P3_boat_speed', true)      % 건건이 나열한다
+%   n = check_lines('W04_P3_boat_speed')
+%   check_lines('W04_P3_boat_speed', true)      % 건건이 나열한다
 %   [n, v] = check_lines(m)
 %       v = [겹침 블록관통 꺾임3회+ 매달림 사선 블록겹침 이름표위선]
 %
@@ -112,7 +112,7 @@ for i = 1:numel(lines)
 
     % --- (5) 사선 ----------------------------------------------------
     %  가로도 세로도 아닌 구간. 포트 높이가 몇 px 어긋나면 생긴다
-    %  (2026-09-19 W06_P2 Dcompare — Scope 포트 간격을 계산으로 맞춰 세 선이 전부 사선)
+    %  (2026-09-19 W04_P2 Dcompare — Scope 포트 간격을 계산으로 맞춰 세 선이 전부 사선)
     for k = 1:size(p,1)-1
         dd = abs(p(k+1,:) - p(k,:));
         if dd(1) > 0.5 && dd(2) > 0.5

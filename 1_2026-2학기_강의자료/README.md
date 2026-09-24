@@ -53,18 +53,18 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | 1 | [[W01_개발환경_구축과_USV_자율운항_개관]] | 3장 · PDF 19쪽 | 인지·판단·제어 · KABOAT/VRX 임무 · WSL2 · 리눅스 기본기 |
 | 2 | [[W02_ROS2_기초_노드와_토픽]] | 46장 | VS Code+WSL · 노드·토픽·**서비스·액션·파라미터** · **turtlesim** · rqt와 RViz2 · QoS · **중계 노드와 Simulink 목표 자세 제어** · **모델 3개 배포** |
 | 3 | [[W03_Gazebo_VRX_구축과_좌표계]] | 10장 | Gazebo·VRX 설치 · 6자유도 · ENU/NED · TF2 · **키보드 조종(차동 추진)** · **WAM-V 3자유도 운동모델** · **모델 5개 배포 (오프라인 버튼 조종 `W03_0_offline` 먼저)** |
-| 4 | [[W04_VRX_심화_모델구조와_토픽조사]] | 5장 | WAM-V URDF·Xacro · 센서 배치 · 토픽 전수조사 · Mapviz · **과제 월드와 채점** · **ros2 bag** · **센서 모델** · **모델 3개 배포 (오프라인 `W04_0_offline` 먼저)** |
-| 5 | [[W05_VSCode와_Claude_에이전트_첫_제어노드]] | 3장 · PDF 21쪽 | VS Code 설치 · Claude Code 연동 · 첫 제어 노드 (**`wamv_sim.py` 먼저, VRX 다음**) · **MATLAB MCP** 연동 |
-| 6 전 | [[W06_0_Simulink_기초]] | 12장 · PDF 42쪽 | **Simulink 속성 입문 (3시간 x 2회)** · 1일차 블록·솔버·MATLAB Function·Subsystem·버스·PID·로깅 · 2일차 Mux·Unit Delay·Integrator·Switch·Enabled·Mask · **모델 26개 배포 (빈칸본 13 + 완성본 13)** |
-| 6 | [[W06_Simulink_ROS2_연동과_첫_제어기]] | 10장 · PDF 41쪽 | **PID 입문 — 직접 조립·pseudo-derivative·안티와인드업** · Simulink↔ROS 2 연동 · 직진·선회·헤딩·속도 제어 · **오프라인 쌍둥이 먼저 → VRX** · **모델 10개 배포 (VRX 4 + 오프라인 3 + PID 입문 3)** |
-| 7 | [[W07_웨이포인트_유도_atan2와_LOS]] | 3장 · PDF 24쪽 | 웨이포인트 유도 atan2 vs LOS · 조류 실험 · **오프라인+VRX 모델 2개** |
-| 8 | [[W08_한점을_중심으로_도는_로이터링]] | PDF 20쪽 | 벡터필드 로이터링 · 방향·속도·반경 변경 · **오프라인+VRX 모델 2개** |
-| 9 | [[W09_Stateflow_미션_웨이포인트와_로이터링]] | PDF 18쪽 | **Stateflow 미션 FSM** · WP → 로이터 → WP · **오프라인+VRX 모델 2개** |
-| 10 | [[W10_틸팅추진기_추력배분과_동적위치유지]] | 8장 · PDF 23쪽 | **방위추진기 ±45°** · 추력 배분 · **동적위치유지(DP)** · 바람·파랑 · **모델 2개** |
+| 4 전 | [[A1_Simulink_기초]] | 12장 · PDF 42쪽 | **부록 A1 · Simulink 속성 입문 (3시간 x 2회)** · 1일차 블록·솔버·MATLAB Function·Subsystem·버스·PID·로깅 · 2일차 Mux·Unit Delay·Integrator·Switch·Enabled·Mask · **모델 26개 배포 (빈칸본 13 + 완성본 13)** |
+| 4 | [[W04_Simulink_PID와_첫_제어기]] | 10장 · PDF 41쪽 | **PID 입문 — 직접 조립·pseudo-derivative·안티와인드업** · Simulink↔ROS 2 연동 · 직진·선회·헤딩·속도 제어 · **오프라인 쌍둥이 먼저 → VRX** · **모델 10개 배포 (VRX 4 + 오프라인 3 + PID 입문 3)** |
+| 5 | [[W05_웨이포인트_유도_atan2와_LOS]] | 3장 · PDF 24쪽 | 웨이포인트 유도 atan2 vs LOS · 조류 실험 · **오프라인+VRX 모델 2개** |
+| 6 | [[W06_한점을_중심으로_도는_로이터링]] | PDF 20쪽 | 벡터필드 로이터링 · 방향·속도·반경 변경 · **오프라인+VRX 모델 2개** |
+| 7 | [[W07_Stateflow_미션_웨이포인트와_로이터링]] | PDF 18쪽 | **Stateflow 미션 FSM** · WP → 로이터 → WP · **오프라인+VRX 모델 2개** |
+| 8 | [[W08_틸팅추진기_추력배분과_동적위치유지]] | 8장 · PDF 23쪽 | **방위추진기 ±45°** · 추력 배분 · **동적위치유지(DP)** · 바람·파랑 · **모델 2개** |
+| 9 | [[W09_VRX_심화_모델구조와_토픽조사]] | 5장 | WAM-V URDF·Xacro · 센서 배치 · 토픽 전수조사 · Mapviz · **과제 월드와 채점** · **ros2 bag** · **센서 모델** · **모델 3개 배포 (오프라인 `W09_0_offline` 먼저)** |
+| 10 | [[W10_VSCode와_Claude_에이전트_첫_제어노드]] | 3장 · PDF 21쪽 | VS Code 설치 · Claude Code 연동 · 첫 제어 노드 (**`wamv_sim.py` 먼저, VRX 다음**) · **MATLAB MCP** 연동 |
 | 11 | *(예정)* | | LiDAR 신호처리 · 부표 탐지 |
 | 12 | *(예정)* | | LiDAR 기반 충돌회피 · **역할 로테이션** |
 | 13 | *(예정)* | | 영상처리 · LiDAR-카메라 융합 · 도킹 표식 |
-| 14 | *(예정)* | | 도킹 접근(10주차 DP 재사용) · 통합 검증 · 성능 정량화 |
+| 14 | *(예정)* | | 도킹 접근(8주차 DP 재사용) · 통합 검증 · 성능 정량화 |
 | 15 | *(예정)* | | 최종 발표 |
 
 > [!note] `W01_슬라이드.html`
@@ -124,11 +124,11 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | `pdf-template.html` | 인쇄용 CSS + 콜아웃 변환 로직. 서식을 바꾸려면 여기만 수정 |
 | `marked.min.js` | 마크다운 파서 로컬 사본 — 인터넷 불필요 |
 | `mathjax-tex-svg.js` | LaTeX 수식 조판 로컬 사본 (SVG 출력, 폰트 파일 불필요) |
-| `tidy_layout.m` | Simulink 모델 배치·색 정리. `tidy_layout('W07_0_offline')` |
+| `tidy_layout.m` | Simulink 모델 배치·색 정리. `tidy_layout('W05_0_offline')` |
 | `tidy_all.m` | 22개 모델 일괄 점검 — 겹침 쌍과 꺾인 선 수를 표로 보고 |
 | `tikz2svg.sh` | TikZ `.tex` → SVG(+PNG). TinyTeX 을 계정 무관하게 찾는다 |
 | `winshot.ps1` | Windows 창 캡처 + 클릭·키 입력. `-Match` 로 창 지정 |
-| `verify_w02.sh` · `verify_w03.sh` · `verify_w04.sh` | **문서대로 처음부터 실행해 검증.** FAIL 0 이 합격선 |
+| `verify_w02.sh` · `verify_w03.sh` · `verify_w09.sh` | **문서대로 처음부터 실행해 검증.** FAIL 0 이 합격선 |
 | `xshot.sh` · `xclick.sh` | **WSLg 창** 캡처·클릭. Windows 쪽에서 찍으면 안 되는 창용 |
 
 ## 🖼 그림 — `assets/`
@@ -240,10 +240,10 @@ SORT file.name ASC
 
 - [ ] MATLAB ROS Toolbox ↔ ROS 2 Humble 실통신 검증 (개강 2주 전)
 - [ ] WSL 프리빌드 이미지 `wsl --export` 로 제작·배포 → [[환경구축-실패가-가장-비싼-비용이다]]
-- [ ] **커스텀 월드 배포 패키지 제작** (10주차 전) — `sydney_regatta_ca` · `scan_dock_deliver_full` ·
+- [ ] **커스텀 월드 배포 패키지 제작** (8주차 전) — `sydney_regatta_ca` · `scan_dock_deliver_full` ·
       `competition4docking.launch.py` · `custom_docking_station` 은 upstream VRX 에 없음 → [[VRX-월드와-패키지]]
 - [ ] 학생 노트북 사양 사전조사, 미달자용 워크스테이션 준비
 - [ ] MATLAB 라이선스 동시접속 수 확인 (팀당 1석)
-- [ ] **Claude 계정 확보** (5주차 전) — 무료 플랜은 Claude Code 불가. 개인 구독 / 공용 계정 / API 키 결정
+- [ ] **Claude 계정 확보** (10주차 전) — 무료 플랜은 Claude Code 불가. 개인 구독 / 공용 계정 / API 키 결정
 - [ ] GitHub Organization 개설 및 팀 레포 템플릿
-- [ ] 10\~15주차 자료 작성 (1\~9주차 완료)
+- [ ] 11\~15주차 자료 작성 (부록 A1 · 1\~10주차 완료)

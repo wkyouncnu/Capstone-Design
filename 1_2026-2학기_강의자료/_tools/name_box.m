@@ -1,7 +1,7 @@
 function t = name_box(blk, r)
 %NAME_BOX  블록 이름표가 차지하는 자리 (어림). 이름을 숨긴 블록은 NaN.
 %
-%   t = name_box('W06_3_heading_offline/log_FL')   % 블록 — 위치·방향을 읽는다
+%   t = name_box('W04_3_heading_offline/log_FL')   % 블록 — 위치·방향을 읽는다
 %   t = name_box('Go_X', [x1 y1 x2 y2])            % 이름 + 사각형 (아직 없는 블록)
 %
 %   왜 필요한가 / why this exists

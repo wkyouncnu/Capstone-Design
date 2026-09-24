@@ -107,11 +107,11 @@ W03_offline_run
 
 ## pull 이 멈출 때 — 받은 파일을 고쳐 둔 경우
 
-- 받은 폴더 안의 파일(예: `W07_setup.m`)을 고치거나 MATLAB 에서 모델을 **저장**한 뒤 pull 하면, 같은 파일이 갱신됐을 때 멈춤
+- 받은 폴더 안의 파일(예: `W05_setup.m`)을 고치거나 MATLAB 에서 모델을 **저장**한 뒤 pull 하면, 같은 파일이 갱신됐을 때 멈춤
 
 ```
 error: Your local changes to the following files would be overwritten by merge:
-	1_2026-2학기_강의자료/10-주차별-강의자료/W07_simulink/W07_setup.m
+	1_2026-2학기_강의자료/10-주차별-강의자료/W05_simulink/W05_setup.m
 Please commit your changes or stash them before you merge.
 Aborting
 ```
@@ -128,7 +128,7 @@ Aborting
 ```
 Saved working directory and index state WIP on main: b690ad2 ...
 ...
-Auto-merging 1_2026-2학기_강의자료/10-주차별-강의자료/W07_simulink/W07_setup.m
+Auto-merging 1_2026-2학기_강의자료/10-주차별-강의자료/W05_simulink/W05_setup.m
 On branch main
 Your branch is up to date with 'origin/main'.
 ```
@@ -137,13 +137,13 @@ Your branch is up to date with 'origin/main'.
 - `git status` 로 지금 고쳐진 파일이 있는지 언제든 볼 수 있음 (` M 파일` = 고쳐짐)
 
 > [!important] 받은 폴더에서 고친 것은 pull 앞뒤로 치워 두고 되돌린다
-> - 실습은 `*_setup.m` 을 **파일에서** 고치게 되어 있음 (7주차 1-7 — 명령 창에서 바꾼 값은 `setup` 이 다시 지움). 고쳐도 됨
+> - 실습은 `*_setup.m` 을 **파일에서** 고치게 되어 있음 (5주차 1-7 — 명령 창에서 바꾼 값은 `setup` 이 다시 지움). 고쳐도 됨
 > - 다음 주에 받기 전에 `git stash` → `git pull` → `git stash pop` 세 줄이면 수정이 살아남음
-> - 모델(`.slx`)을 크게 고칠 때는 **다른 이름으로 저장** (예: `save_system('W09_0_offline','W09_my')`) — 새 파일은 pull 과 부딪히지 않음
-> - 팀 코드는 팀 저장소(5주차 D-1)에 둠. 강의자료 저장소와 섞지 않음
+> - 모델(`.slx`)을 크게 고칠 때는 **다른 이름으로 저장** (예: `save_system('W07_0_offline','W07_my')`) — 새 파일은 pull 과 부딪히지 않음
+> - 팀 코드는 팀 저장소(10주차 D-1)에 둠. 강의자료 저장소와 섞지 않음
 
 ## 연결
 
 - [[W02_ROS2_기초_노드와_토픽]] 2-7 — 처음 받는 곳
-- [[W05_VSCode와_Claude_에이전트_첫_제어노드]] — VS Code 의 WSL 창
+- [[W10_VSCode와_Claude_에이전트_첫_제어노드]] — VS Code 의 WSL 창
 - [[환경구축-실패가-가장-비싼-비용이다]]
