@@ -2628,7 +2628,7 @@ cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash measure_vrx.sh 20
 
 ## 과제 3 — 좌표 변환 노드
 
-- **제출 기한**: 9주차 수업 전
+- **제출 기한**: 4주차 수업 전
 - **제출**: 코드 + 검증 결과 + 짧은 분석
 
 ### ① `frame_converter` 노드 작성

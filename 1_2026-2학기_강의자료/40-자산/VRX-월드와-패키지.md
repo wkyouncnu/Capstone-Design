@@ -46,7 +46,7 @@ summary: Term Project 무대가 될 커스텀 월드와 재사용 가능한 Pyth
 |---|---|---|
 | `vrx_control/collision_avoidance_v2.py` | 고정 각도 회피. **나쁜 baseline 교보재** | 11주 |
 | `vrx_control/collision_avoidance_kaboat.py` | LaserScan → 슬라이딩윈도우 장애물 밀도 → 비용 기반 안전방위 선정. 장애물 임계 5.0 m, 전방 각도범위 ±30°, 최대거리 40 m | 11주 |
-| `vrx_control/wamv_pid_control_v2.py` | UTM 웨이포인트 PID, 10 Hz. 거리 게인 7.0 / 0.5, 헤딩 게인 300.0 / 0.7 | 5주 정답지 |
+| `vrx_control/wamv_pid_control_v2.py` | UTM 웨이포인트 PID, 10 Hz. 거리 게인 7.0 / 0.5, 헤딩 게인 300.0 / 0.7 | 10주 정답지 |
 | `ros2_simulink/auto_berthing_seek.py` | 복셀 0.1 m → 2D 필터 3.5 m → **RANSAC 평면분할**(임계 0.05, n=3, 1000회) → 도크 법선 → `/docking_info` | 13주 |
 | `pointcloud_to_laserscan/` | PointCloud2 → LaserScan. **16빔 LiDAR에 맞게 재튜닝 필요** | 10주 |
 

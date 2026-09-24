@@ -297,7 +297,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 |---|---|---|
 | `sydney_regatta` | 기본 해역, 조종 연습 | 3\~10주 |
 | `stationkeeping_task` | 위치유지 과제 | 13주 |
-| `wayfinding_task` | 자세 리스트 추종 | 9주 |
+| `wayfinding_task` | 자세 리스트 추종 | 7주 |
 | `perception_task` | 부표·토템 인식 | 12주 |
 | `gymkhana_task` | 컬러 게이트 항로 + 장애물 | 11주 |
 | `scan_dock_deliver_task` | 표식 판독 + 도킹 | 12주 |

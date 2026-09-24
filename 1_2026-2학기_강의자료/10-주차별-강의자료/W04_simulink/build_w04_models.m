@@ -1,5 +1,5 @@
 function build_w04_models()
-% BUILD_W04_MODELS  4주차 Simulink 예제 모델 7개를 생성한다.
+% BUILD_W04_MODELS  4주차 3~5단계 Simulink 예제 모델 8개를 생성한다.
 %
 %   이 스크립트를 실행하면 아래 모델이 이 폴더에 만들어진다.
 %     W04_1_straight.slx          직진
@@ -9,6 +9,10 @@ function build_w04_models()
 %     W04_5_offline.slx           2단계 시나리오를 운동방정식으로
 %     W04_3_heading_offline.slx   3단계와 같은 제어기, Gazebo 대신 운동방정식
 %     W04_4_inner_loop_offline.slx 4단계와 같은 제어기, Gazebo 대신 운동방정식
+%     W04_6_wrap.slx              +-180 deg 이음매. use_ssa 하나로 20 vs 340 deg
+%
+%   게인과 스위치 값은 전부 W04_setup.m 에 있다. 블록 안에 숫자가 아니라
+%   Kp_psi · head_open · port_eff 가 적혀 있는 것이 정상이다.
 %
 %   3·4단계는 오프라인 쌍둥이가 있다. 제어기 · 배분기 블록은 같은 함수로 만든다.
 %   바뀌는 것은 두 자리뿐이다.
@@ -26,6 +30,9 @@ function build_w04_models()
     addpath(fullfile(here, '..', '..', '_tools'));
     cd(here);
     load_system('ros2lib');
+    if evalin('base', '~exist(''Kp_psi'',''var'')')
+        evalin('base', 'W04_setup');
+    end
 
     build_straight();
     build_turn();
@@ -34,12 +41,13 @@ function build_w04_models()
     build_offline();
     build_heading(true);
     build_inner_loop(true);
+    build_wrap();
 
 
     % 배치와 색을 정리한다. 선은 직선 또는 직각으로만 다시 그린다.
     % dir 의 문자 클래스는 Windows 에서 먹지 않는다. 목록을 받아 이름으로 거른다
     slxList = dir('W04_*.slx');
-    slxList = slxList(~cellfun(@isempty, regexp({slxList.name}, '^W04_[1-5]_', 'once')));   % 오프라인 쌍둥이 포함
+    slxList = slxList(~cellfun(@isempty, regexp({slxList.name}, '^W04_[1-6]_', 'once')));   % 오프라인 쌍둥이 · wrap 포함
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);
         try
@@ -49,6 +57,12 @@ function build_w04_models()
             paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
 
             check_colour(mName);
+
+            %  통로를 옮길 수 없는 이름표 위 선은 블록을 비켜서 푼다
+            %  (line-routing.md §9. arrangeSystem 이 소스를 통로 밑에 놓는 일이 있다)
+            nudge_labels(mName);
+
+            check_lines(mName, true);  % 일곱 항목이 전부 0 이 합격선
 
             export_model_pngs(mName);
 
@@ -225,7 +239,17 @@ function addHeadingCtrl(m, x, y)
 %
 %   제어식 — P 는 오차에, D 는 **요각속도에 직접**
 %
-%       N = Kp * ssa(psi_ref - psi)  -  Kd * r
+%       N = Kp_psi * ssa(psi_ref - psi)  +  Ki_psi * INT(e)  +  Kd_psi * r
+%
+%   Kd_psi 는 **음수**다 (-400). 부호를 식 안에 넣지 않고 게인에 넣어 두면
+%   블록 하나만 보고도 "브레이크가 걸려 있구나" 를 알 수 있다.
+%
+%   Ki_psi 는 기본 0 이다. 한쪽 추진기가 약할 때(port_eff < 1) PD 가 남기는
+%   정상상태 오차를 없애는 자리이고, 그때만 켠다.
+%
+%   use_ssa 스위치 — HeadingErr 안의 if 한 줄
+%       1 이면 ssa 로 접은 최단 오차, 0 이면 그냥 뺀 값이다. +-180 deg
+%       이음매에서 20 deg 대신 340 deg 를 도는 것을 보이는 스위치다 (W04_6_wrap).
 %
 %   왜 오차를 미분하지 않는가
 %       e = psi_ref - psi 이므로 de/dt = d(psi_ref)/dt - r 이고, 목표가 가만히
@@ -245,45 +269,76 @@ function addHeadingCtrl(m, x, y)
     s = add_subsys(m, 'HeadingCtrl', [x y x+150 y+90], ...
                    {'psi_ref','psi','r'}, {'N'}, gnc_colour('control'));
 
+    %  use_ssa 가 0 이면 ssa 를 건너뛴다 — 같은 상자 안의 두 줄을 비교해 볼 것
+    add_block('simulink/Sources/Constant', [s '/use_ssa_c'], ...
+              'Value','use_ssa', 'Position',[60 260 160 290]);
     add_block('simulink/User-Defined Functions/MATLAB Function', [s '/HeadingErr'], ...
-              'Position',[200 60 340 130]);
+              'Position',[250 60 400 170]);
     setFcn(s, 'HeadingErr', [ ...
-        'function e = HeadingErr(psi_ref, psi)' newline ...
+        'function e = HeadingErr(psi_ref, psi, use_ssa)' newline ...
         '%#codegen' newline ...
-        '% Shortest signed angle, wrapped to [-pi, pi]' newline ...
+        '% Heading error [rad].' newline ...
         'd = psi_ref - psi;' newline ...
-        'e = atan2(sin(d), cos(d));' newline]);
+        'if use_ssa >= 0.5' newline ...
+        '    % ssa : shortest signed angle, wrapped to (-pi, pi]' newline ...
+        '    e = atan2(sin(d), cos(d));' newline ...
+        'else' newline ...
+        '    % no wrap : 170 deg -> -170 deg becomes -340 deg, not +20 deg' newline ...
+        '    e = d;' newline ...
+        'end' newline]);
 
     add_block('simulink/Math Operations/Gain', [s '/Kp_psi'], ...
-              'Gain','800', 'Position',[420 80 470 110]);
+              'Gain','Kp_psi', 'Position',[520 80 570 110]);
+    add_block('simulink/Math Operations/Gain', [s '/Ki_psi'], ...
+              'Gain','Ki_psi', 'Position',[520 170 570 200]);
+    %  **이산** 적분기를 쓴다. VRX 쌍둥이는 FixedStepDiscrete 솔버라
+    %  연속 적분기를 넣으면 "연속 상태가 포함되어 있다" 로 시뮬레이션이 막힌다.
+    %  샘플 주기 0.05 s 는 오프라인(ode4/0.05)과 VRX 양쪽의 고정 스텝과 같다.
+    add_block('simulink/Discrete/Discrete-Time Integrator', [s '/IntegN'], ...
+              'InitialCondition','0', 'SampleTime','0.05', 'LimitOutput','on', ...
+              'UpperSaturationLimit','N_max', 'LowerSaturationLimit','-N_max', ...
+              'Position',[620 170 650 200]);
     add_block('simulink/Math Operations/Gain', [s '/Kd_rate'], ...
-              'Gain','-400', 'Position',[420 220 470 250]);
+              'Gain','Kd_psi', 'Position',[520 340 570 370]);
+    add_block('simulink/Math Operations/Sum', [s '/SumPD'], ...
+              'Inputs','++', 'Position',[700 80 730 110]);
     add_block('simulink/Math Operations/Sum', [s '/SumN'], ...
-              'Inputs','++', 'Position',[550 95 580 125]);
+              'Inputs','++', 'Position',[790 80 820 110]);
     add_block('simulink/Discontinuities/Saturation', [s '/SatN'], ...
-              'UpperLimit','500', 'LowerLimit','-500', ...
-              'Position',[650 95 690 125]);
+              'UpperLimit','N_max', 'LowerLimit','-N_max', ...
+              'Position',[880 80 920 110]);
 
-    add_line(s,'psi_ref/1','HeadingErr/1','autorouting','on');
-    add_line(s,'psi/1',    'HeadingErr/2','autorouting','on');
-    add_line(s,'r/1',      'Kd_rate/1','autorouting','on');
+    add_line(s,'psi_ref/1',  'HeadingErr/1','autorouting','on');
+    add_line(s,'psi/1',      'HeadingErr/2','autorouting','on');
+    add_line(s,'use_ssa_c/1','HeadingErr/3','autorouting','on');
     add_line(s,'HeadingErr/1','Kp_psi/1','autorouting','on');
-    add_line(s,'Kp_psi/1', 'SumN/1','autorouting','on');
-    add_line(s,'Kd_rate/1','SumN/2','autorouting','on');
+    add_line(s,'HeadingErr/1','Ki_psi/1','autorouting','on');
+    add_line(s,'Ki_psi/1','IntegN/1','autorouting','on');
+    add_line(s,'r/1',      'Kd_rate/1','autorouting','on');
+    add_line(s,'Kp_psi/1', 'SumPD/1','autorouting','on');
+    add_line(s,'Kd_rate/1','SumPD/2','autorouting','on');
+    add_line(s,'SumPD/1',  'SumN/1','autorouting','on');
+    add_line(s,'IntegN/1', 'SumN/2','autorouting','on');
     add_line(s,'SumN/1',   'SatN/1','autorouting','on');
     add_line(s,'SatN/1',   'N/1','autorouting','on');
 
     note(s, sprintf(['헤딩 제어기 — P 는 오차에, D 는 요각속도에\n' ...
         '\n' ...
-        '    N = Kp * ssa(psi_ref - psi)  -  Kd * r\n' ...
+        '    N = Kp_psi * e  +  Ki_psi * INT(e)  +  Kd_psi * r\n' ...
+        '    e = ssa(psi_ref - psi)   (use_ssa = 0 이면 그냥 뺀 값)\n' ...
         '\n' ...
-        '마이너스는 브레이크다. 돌고 있는 방향의 반대로 모멘트를 낸다.\n' ...
-        '빼면 감쇠가 Nr - Kd 로 줄어 오버슈트가 커진다 (Kd = 400 에서 17 %%).\n' ...
+        'Kd_psi 가 음수(-400)인 것이 브레이크다. 돌고 있는 방향의 반대로 낸다.\n' ...
+        '부호를 빼면 감쇠가 Nr - Kd 로 줄어 오버슈트가 커진다 (17 %%).\n' ...
         '\n' ...
         '목표가 가만히 있으면 de/dt = -r 이므로 오차 미분과 값이 같다.\n' ...
         '다만 목표가 계단으로 바뀔 때 de/dt 는 튀고 r 은 튀지 않는다.\n' ...
         '\n' ...
-        'Kp = 800, Kd = 400.  근거는 4주차 1-7절 극배치.']), 200, 330);
+        'Ki_psi 는 기본 0 이다. 한쪽 추진기가 약할 때(port_eff < 1)\n' ...
+        'PD 가 남기는 정상상태 오차를 없애는 자리다.\n' ...
+        '적분기에는 +-N_max 포화가 걸려 있다 (clamping 안티와인드업).\n' ...
+        '\n' ...
+        '값은 전부 W04_setup.m — Kp_psi = 800, Kd_psi = -400.\n' ...
+        '근거는 4주차 극배치 절과 W04_pole_place.m.']), 200, 430);
 end
 
 % =====================================================================
@@ -312,7 +367,9 @@ end
 %   식과 계수는 3주차 1-8 절 · W03_0_offline 과 같다.
 %   초기 선수각은 VRX 스폰과 같게 32.7 deg (3주차 3-1 좌표 검산)
 % =====================================================================
-function addMotionModel(m, x, y)
+function addMotionModel(m, x, y, psi0)
+%   PSI0  초기 선수각을 rad 로 적은 문자열. 생략하면 VRX 스폰과 같은 32.7 deg
+    if nargin < 4 || isempty(psi0), psi0 = '32.7*pi/180'; end
     s = add_subsys(m, 'MotionModel', [x y x+150 y+110], ...
                    {'FL','FR'}, {'psi','r','u'}, gnc_colour('plant'));
     add_block('simulink/User-Defined Functions/MATLAB Function', [s '/EOM'], ...
@@ -335,7 +392,8 @@ function addMotionModel(m, x, y)
 '        u*sin(psi) + v*cos(psi);'                                      newline ...
 '        r];']);
     add_block('simulink/Continuous/Integrator', [s '/Integ'], ...
-              'Position',[400 80 440 120], 'InitialCondition','[0;0;0;0;0;32.7*pi/180]');
+              'Position',[400 80 440 120], ...
+              'InitialCondition',['[0;0;0;0;0;' psi0 ']']);
     add_block('simulink/User-Defined Functions/MATLAB Function', [s '/States'], ...
               'Position',[500 40 620 160]);
     setFcn(s, 'States', [ ...
@@ -384,30 +442,52 @@ function build_heading(offline)
     end
 
     add_block('simulink/Sources/Constant', [m '/psi_ref_deg'], ...
-              'Value','45', 'Position',[40 200 130 230]);
+              'Value','psi_ref_deg', 'Position',[40 200 130 230]);
     add_block('simulink/Math Operations/Gain', [m '/deg2rad'], ...
               'Gain','pi/180', 'Position',[160 200 200 230]);
     addHeadingCtrl(m, 300, 185);
 
-    add_block('simulink/Sources/Constant', [m '/X_const'], ...
-              'Value','300', 'Position',[430 300 510 330]);
+    %  제어기를 통째로 건너뛰는 스위치. head_open = 1 이면 계단 모멘트를 직접 준다
+    add_switch_box(m, 'OpenLoop', [500 185 640 275], {'N_ctrl','N_raw'}, 'head_open', ...
+        struct('name','N_step', 'lib','simulink/Sources/Constant', ...
+               'params',{{'Value','N_open'}}, 'fed',false, 'w',55, 'h',30), ...
+        gnc_colour('control'), sprintf([ ...
+        '제어기를 쓸 것인가, 요 모멘트를 직접 줄 것인가\n' ...
+        '\n' ...
+        '  head_open = 0   HeadingCtrl 이 낸 모멘트 (폐루프)\n' ...
+        '  head_open = 1   N_open [N m] 을 그대로 (개루프)\n' ...
+        '\n' ...
+        '개루프로 두고 Scope 를 보면 선수각이 **끝없이 올라간다.**\n' ...
+        '일정 모멘트 -> 일정 선회율 -> psi 는 멈추지 않는다.\n' ...
+        '배가 이미 적분기를 하나 갖고 있다는 뜻이다 (dpsi/dt = r).\n' ...
+        '\n' ...
+        '  >> W04_heading_compare(''open'')']));
 
-    addAllocator(m, 570, 210);
+    add_block('simulink/Sources/Constant', [m '/X_const'], ...
+              'Value','X_head', 'Position',[430 340 510 370]);
+
+    addAllocator(m, 700, 210);
     add_line(m,'X_const/1','Alloc/1','autorouting','on');
-    add_line(m,'HeadingCtrl/1','Alloc/2','autorouting','on');
+    add_line(m,'HeadingCtrl/1','OpenLoop/1','autorouting','on');
+    add_line(m,'OpenLoop/1','Alloc/2','autorouting','on');
     add_line(m,'psi_ref_deg/1','deg2rad/1','autorouting','on');
     add_line(m,'deg2rad/1', 'HeadingCtrl/1','autorouting','on');
     add_line(m,sPsi,'HeadingCtrl/2','autorouting','on');
     add_line(m,sR,  'HeadingCtrl/3','autorouting','on');
 
+    %  좌현 추진기를 약하게 만드는 자리. port_eff = 1 이면 아무 일도 안 한다
+    add_block('simulink/Math Operations/Gain', [m '/PortEff'], ...
+              'Gain','port_eff', 'Position',[880 200 930 236]);
+    add_line(m,'Alloc/1','PortEff/1','autorouting','on');
+
     if offline
-        add_line(m,'Alloc/1','MotionModel/1','autorouting','on');
-        add_line(m,'Alloc/2','MotionModel/2','autorouting','on');
+        add_line(m,'PortEff/1','MotionModel/1','autorouting','on');
+        add_line(m,'Alloc/2',  'MotionModel/2','autorouting','on');
     else
-        addThrusterPublisher(m, 'left',  'L', 780, 150);
-        addThrusterPublisher(m, 'right', 'R', 780, 320);
-        add_line(m,'Alloc/1','AsgL/2','autorouting','on');
-        add_line(m,'Alloc/2','AsgR/2','autorouting','on');
+        addThrusterPublisher(m, 'left',  'L', 1000, 150);
+        addThrusterPublisher(m, 'right', 'R', 1000, 320);
+        add_line(m,'PortEff/1','AsgL/2','autorouting','on');
+        add_line(m,'Alloc/2',  'AsgR/2','autorouting','on');
     end
 
     % 관찰용
@@ -415,17 +495,27 @@ function build_heading(offline)
     set_param([m '/Scope_psi'],'NumInputPorts','2');
     add_line(m,sPsi,'Scope_psi/1','autorouting','on');
     add_line(m,'deg2rad/1','Scope_psi/2','autorouting','on');
-    addLog(m, sPsi, 'psi', 1000, 60);
-    addLog(m, 'Alloc/1', 'FL', 1000, 110);
-    addLog(m, 'Alloc/2', 'FR', 1000, 160);
+    addLog(m, sPsi, 'psi', 1200, 60);
+    addLog(m, 'PortEff/1', 'FL', 1200, 110);
+    addLog(m, 'Alloc/2',   'FR', 1200, 160);
+    addLog(m, sR,          'r',  1200, 210);
+    addLog(m, 'OpenLoop/1','N',  1200, 260);
 
     if offline
         setSolverOffline(m);
         note(m, sprintf(['[3단계 오프라인] 헤딩 제어 — Gazebo 대신 운동방정식\n' ...
-            'W04_3_heading 과 HeadingCtrl · Alloc 이 같은 함수로 만들어졌다.\n' ...
+            'W04_3_heading 과 HeadingCtrl · OpenLoop · Alloc 이 같은 함수로 만들어졌다.\n' ...
             'OdomSub/Quat2Yaw 와 Publish 자리에 MotionModel 하나가 있다.\n' ...
             '초기 선수각 32.7 deg 는 VRX 스폰과 같다. 40 초가 1 초 안쪽에 끝난다.\n' ...
-            '비교: >> W04_step_compare(3)']), 40, 470);
+            '\n' ...
+            '스위치는 전부 W04_setup.m 에 있다.\n' ...
+            '  head_open = 0/1   폐루프 / 개루프 (OpenLoop 상자)\n' ...
+            '  use_ssa   = 0/1   ssa 끔 / 켬     (HeadingCtrl 안)\n' ...
+            '  port_eff  = 0.7   좌현 추진기를 30 %% 약하게 (PortEff 게인)\n' ...
+            '  Ki_psi    > 0     port_eff 가 남긴 오차를 I 로 지운다\n' ...
+            '\n' ...
+            '  >> W04_heading_compare(''open''|''Kp''|''Kd''|''Ki''|''wrap'')\n' ...
+            '비교: >> W04_step_compare(3)']), 40, 520);
         save_system(m); close_system(m,0);
         fprintf('  [OK] %s\n', m);
         return
@@ -436,8 +526,10 @@ function build_heading(offline)
         'Scope_psi 에 실제 헤딩과 목표 헤딩이 함께 그려진다.\n' ...
         '\n' ...
         '제어기는 HeadingCtrl 상자 하나다. 더블클릭하면 안이 보인다.\n' ...
-        '  N = Kp * ssa(psi_ref - psi)  -  Kd * r\n' ...
-        'Kp, Kd 를 조정해 오버슈트와 정정시간을 비교할 것.']), 40, 470);
+        '  N = Kp_psi * ssa(psi_ref - psi) + Ki_psi * INT(e) + Kd_psi * r\n' ...
+        '게인은 전부 W04_setup.m 에 있다. 오프라인 쌍둥이와 **같은 변수**다.\n' ...
+        'Kp_psi, Kd_psi 를 조정해 오버슈트와 정정시간을 비교할 것.\n' ...
+        '먼저 W04_3_heading_offline 으로 숫자를 적어 두고 VRX 를 켠다.']), 40, 520);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
 end
@@ -458,7 +550,7 @@ function build_inner_loop(offline)
 
     % --- 헤딩 루프 ---
     add_block('simulink/Sources/Constant', [m '/psi_ref_deg'], ...
-              'Value','45', 'Position',[40 200 130 230]);
+              'Value','psi_ref_deg', 'Position',[40 200 130 230]);
     add_block('simulink/Math Operations/Gain', [m '/deg2rad'], ...
               'Gain','pi/180', 'Position',[160 200 200 230]);
     addHeadingCtrl(m, 300, 185);
@@ -530,6 +622,70 @@ function build_inner_loop(offline)
         '제어기는 상자 두 개다 — HeadingCtrl (요 모멘트), PI_u (전진력).\n' ...
         'HeadingCtrl 의 D 항은 요각속도 r 을 직접 되먹인다 (-Kd*r).\n' ...
         'PI_u 는 안티와인드업(clamping)이 켜져 있다.']), 40, 500);
+    save_system(m); close_system(m,0);
+    fprintf('  [OK] %s\n', m);
+end
+
+% =====================================================================
+% 6단계 — +-180 deg 이음매. 스위치 하나로 두 번 Run 한다
+%
+%   170 deg 에서 -170 deg 로 가라고 시킨다. 최단 거리는 20 deg 다.
+%   그런데 그냥 빼면 -170 - 170 = -340 deg 가 나온다.
+%   배는 그 말을 곧이곧대로 듣고 **반대쪽으로 340 deg** 를 돈다.
+%
+%   시계에서 11시 -> 1시는 2시간이지 10시간이 아니다. ssa 가 그 계산이다.
+% =====================================================================
+function build_wrap()
+    m = 'W04_6_wrap'; fresh(m);
+
+    add_block('simulink/Sources/Constant', [m '/psi_ref_deg'], ...
+              'Value','psi_ref_wrap_deg', 'Position',[40 200 150 230]);
+    add_block('simulink/Math Operations/Gain', [m '/deg2rad'], ...
+              'Gain','pi/180', 'Position',[190 200 230 230]);
+    addHeadingCtrl(m, 320, 185);
+
+    %  제자리에서 돌기만 한다 — 전진 추력 0. 도는 각도만 보면 되기 때문이다
+    add_block('simulink/Sources/Constant', [m '/X_const'], ...
+              'Value','0', 'Position',[430 340 510 370]);
+
+    addAllocator(m, 560, 210);
+    addMotionModel(m, 780, 200, 'psi0_deg*pi/180');
+
+    add_line(m,'psi_ref_deg/1','deg2rad/1','autorouting','on');
+    add_line(m,'deg2rad/1','HeadingCtrl/1','autorouting','on');
+    add_line(m,'MotionModel/1','HeadingCtrl/2','autorouting','on');
+    add_line(m,'MotionModel/2','HeadingCtrl/3','autorouting','on');
+    add_line(m,'X_const/1','Alloc/1','autorouting','on');
+    add_line(m,'HeadingCtrl/1','Alloc/2','autorouting','on');
+    add_line(m,'Alloc/1','MotionModel/1','autorouting','on');
+    add_line(m,'Alloc/2','MotionModel/2','autorouting','on');
+
+    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[430 60 480 110]);
+    set_param([m '/Scope_psi'],'NumInputPorts','2');
+    add_line(m,'MotionModel/1','Scope_psi/1','autorouting','on');
+    add_line(m,'deg2rad/1',    'Scope_psi/2','autorouting','on');
+    addLog(m, 'MotionModel/1', 'psi', 1000, 60);
+    addLog(m, 'MotionModel/2', 'r',   1000, 110);
+    addLog(m, 'HeadingCtrl/1', 'N',   1000, 160);
+
+    setSolverOffline(m);
+    set_param(m, 'StopTime','30');
+    note(m, sprintf(['[6단계] +-180 deg 이음매 — 스위치 하나로 두 번 Run\n' ...
+        '\n' ...
+        '  초기 선수각 psi0_deg        = 170 deg\n' ...
+        '  목표 선수각 psi_ref_wrap_deg = -170 deg\n' ...
+        '  최단 거리는 20 deg 다.\n' ...
+        '\n' ...
+        '  >> use_ssa = 1;  sim(''W04_6_wrap'')    20 deg 만 돈다\n' ...
+        '  >> use_ssa = 0;  sim(''W04_6_wrap'')    반대쪽으로 340 deg 를 돈다\n' ...
+        '  >> W04_setup                          기본값(1)으로 되돌리기\n' ...
+        '\n' ...
+        '스위치는 HeadingCtrl 안의 HeadingErr 한 줄이다. 더블클릭해 볼 것.\n' ...
+        '  use_ssa = 1  e = atan2(sin(d), cos(d))   d 를 (-180, 180] 로 접는다\n' ...
+        '  use_ssa = 0  e = d = psi_ref - psi       -340 deg 가 그대로 들어간다\n' ...
+        '\n' ...
+        '전진 추력은 0 이다. 제자리에서 도는 각도만 본다.\n' ...
+        '  >> W04_heading_compare(''wrap'')   두 경우의 총 회전각을 재서 표로']), 40, 470);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
 end
