@@ -727,7 +727,7 @@ u_ref         = 1.5;    % 목표 속도 [m/s]
 current_speed     = 0.0;   % 조류 [m/s]   (오프라인 모델에서만)
 current_direction = 0.0;   % 조류 방향 [deg]
 
-Kp_psi = 400;  Kd_psi = 200;   % 헤딩 P-D  (wn 0.78, zeta 0.98 — 4주차 1-7절)
+Kp_psi = 400;  Kd_psi = 200;   % 헤딩 P-D  (wn 0.78, zeta 0.98 — 4주차 2-9절)
 Kp_u   = 300;  Ki_u   = 100;   % 속도 PI
 F_max  = 500;                  % 추력 포화 [N]
 d_mode = 1;                    % 1 = 요각속도 되먹임, 2 = 오차 미분

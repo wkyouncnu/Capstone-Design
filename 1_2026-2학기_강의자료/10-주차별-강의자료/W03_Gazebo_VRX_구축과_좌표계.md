@@ -2381,7 +2381,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 - 배가 가만히 있으면 `x_n`, `y_n` 이 거의 변하지 않음. 실행 중 2-6 절 키보드 노드로 밀어 봄
 
 > [!note] 모델 창에서 Run 으로 돌려도 되나, 페이싱 비율이 `1` 로 고정되어 있음
-> Gazebo RTF 가 1 보다 낮으면 모델이 시뮬레이터보다 앞서 감 (4주차 1-3)
+> Gazebo RTF 가 1 보다 낮으면 모델이 시뮬레이터보다 앞서 감 (4주차 2-14)
 > `W03_vrx_run` 은 이 값을 측정 RTF 로 바꿔 실행함
 
 ---

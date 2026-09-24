@@ -142,6 +142,8 @@ end
 plot(ax1, [0 10], [1 1], 'k--', 'DisplayName','목표값');
 finishPanel(ax1, ax2, sprintf('%s 만 바꿨을 때 (플랜트 1/(s^2+2s+2))', label), ...
             '출력 y', '제어입력 τ');
+%  갈래마다 한 장씩 저장한다. 강의노트가 P · D · I 를 각각 다른 절에서 쓴다
+saveImg(ax1, sprintf('W04_P1_%s.png', name));
 
 T = vertcat(rows{:});  disp(T);
 end
