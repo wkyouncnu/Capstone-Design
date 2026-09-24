@@ -196,7 +196,6 @@ mss_style(m);                          % save_system 직전 한 번
 | `live_dash.m` · `live_track.m` | 한 창에 궤적 + 상태 여섯을 실시간으로 | `Animate` 가 궤적만 그린다. 속도·각속도가 안 보임 | 중간 |
 | `hmi_bind.m` · `image_button.m` | Dashboard 블록 바인딩 · 그림 버튼 | → `interactive-models.md` | 중간 |
 | `recovery_time.m` · `prop_thrust.m` | 외란 후 복귀 시간 · 추진기 추력 | 과제 채점선에 쓸 수 있는 지표 | 낮음 |
-| `check_overlaps.m` 의 verbose 보고 형식 | 건건이 출력 | 이 볼트는 `check_lines` 가 더 낫다. **가져오지 않음** | — |
 
 가져오지 않는 것 — `mss_path.m` · `otter_config.m` · `otter_B.m` · `add_otter_plant.m`
 (Otter 선체와 MSS 설치 경로에 묶여 있다. 이 볼트의 선체는 WAM-V 다).

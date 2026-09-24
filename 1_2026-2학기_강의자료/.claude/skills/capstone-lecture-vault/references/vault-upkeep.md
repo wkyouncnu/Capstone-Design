@@ -109,3 +109,27 @@ bash .claude/skills/capstone-lecture-vault/scripts/vault_check.sh
 - VRX 를 띄웠으면 프로세스를 정리한다 → `vrx-runbook.md` §6
 - 작업 기록은 `~/.claude/plans/` 의 계획 파일 끝에 날짜와 함께 덧붙인다.
   **볼트 문서에 작업 일지를 쓰지 않는다** — 배포본이 지저분해진다
+
+---
+
+## 7. 대학원 볼트에서 가져올 도구 후보 (문서 쪽) — 다음 작업
+
+> [!note] 여기 적힌 것은 **아직 이 볼트에 없다.** 코드를 복사해 오지 않았다
+> 대학원 볼트 `00_GradCourse_2026/_tools/` 와 `gnc-lecture-vault/scripts/` 에 있다.
+> 이식할 때는 캡스톤 폴더 구조(`10-주차별-강의자료/` · `assets/` · `20-지식/`)와
+> 한국어 본문 기준으로 다시 쓴다.
+> 모델 쪽 후보는 `simulink-gnc-models/references/model-layout.md` §9 에 따로 있다.
+
+| 도구 | 하는 일 | 왜 이 볼트에 필요한가 | 우선 |
+|---|---|---|---|
+| `vault_runall.m` | 주차 절 스크립트를 **전부 실행**하고 로그를 남김 | 지금은 `verify_wNN.sh` 가 명령만 본다. 수치를 낸 스크립트가 실제로 도는지는 따로 확인해야 함 | 높음 |
+| `vault_number_audit.m` | 문서의 수치를 **실행 로그와 대조** | 기본값을 바꾼 뒤 옛 숫자가 표에 남는 사고(SKILL.md 규칙 9)를 기계로 잡음 | 높음 |
+| `svgzoom.sh` | SVG 를 배율·영역으로 잘라 확대 렌더 | `figures-svg.md` §9 의 "PDF 크기로 다시 보기" 를 손으로 하고 있음 | 높음 |
+| `hook_matlab_rules.sh` | PostToolUse 훅 — `.m` 의 맨 `clear` 등 금지 패턴 차단 | 기본 작업공간을 비워 다른 모델이 멈추는 사고를 **쓰는 순간** 막음 | 중간 |
+| `week_refs.sh` | 다른 주차를 가리키는 문장을 그 주차 **실제 제목과 나란히** 나열 | `vault_check.sh --refs` 가 이미 같은 일을 한다. **기능 비교 후 더 나은 쪽만 남길 것** | 낮음 |
+| `vault_shift_weeks.m` | 주차 번호 일괄 이동 | 주차 재배치 파급(§5)을 손으로 따라가고 있음. 다만 캡스톤은 파일명 규칙이 달라 다시 써야 함 | 낮음 |
+
+가져오지 않는 것 — `mss_path.m`(MSS 설치 경로), `otter_*.m`(Otter 선체),
+`md2pdf.sh` 의 영어 전용 분기. 이 볼트는 WAM-V·한국어이고 `pdf_sync.sh` 가 이미 있다.
+
+> 대학원 GradCourse 볼트와 비교해 정리 — 2026-09-24

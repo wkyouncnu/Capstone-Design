@@ -14,6 +14,20 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 형식 규칙(폴더 구조·문체·프론트매터·콜아웃)의 **원본은 `CLAUDE.md`** 다. 이 스킬은
 그것을 **어떤 순서로 실행하는가**를 담는다. 둘이 어긋나면 `CLAUDE.md` 가 이긴다.
 
+> [!important] 새 업무 방식이 생기면 **그 자리에서** 스킬에 적는다
+> 말로 지침이 오지 않아도 된다. 도구를 하나 만들었거나, 확인 절차를 하나 늘렸거나,
+> 같은 지뢰를 두 번 밟았으면 끝내기 전에 이 스킬에 넣는다. 나중에 몰아서 하지 않는다.
+> - 기계로 거를 수 있는 것은 **`vault_check.sh` 에 절로 내린다** — 말로만 두지 않는다
+> - 지침을 받으면 순서대로 ① 이 스킬 ② 해당 `references/*.md` ③ `CLAUDE.md`
+>   ④ 이미 나간 `.md` 전부 ⑤ **PDF 재생성** ⑥ `vault_check.sh` → 0 건
+>
+> 대학원 GradCourse 볼트 `standing-orders.md` §0-0·§0-1 에서 가져옴 — 2026-09-24
+
+> [!important] 학부 수업이다 — **최대한 쉽게, 내용은 빠뜨리지 않고**
+> 교수 지시다. 한 주차에 새 개념은 **셋까지**, 넘치는 것은 `20-지식/` 지식카드나
+> `30-환경/` 가이드로 뺀다. 어려움은 **내용의 깊이**에서 나와야 하고 **설명의 밀도**에서
+> 나오면 안 된다 → `references/difficulty.md`
+
 ---
 
 ## 0. 지시 → 무엇부터 하는가
@@ -23,6 +37,8 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | "N주차 자료 만들어줘" | `_templates/주차자료.md` 복사. **골격을 바꾸지 않는다** | `references/lecture-md.md` |
 | "주차 자료 보강해줘" · "다른 주차도 비슷하게" | 합격선 5항목으로 진단부터 한다 | `references/week-quality-bar.md` |
 | "이 부분 설명 보강해줘" | 대상 독자를 먼저 정한다 — 기본은 **리눅스·ROS 무경험 4학년** | `references/lecture-md.md` |
+| "너무 어려워 / 쉽게 해줘" · "양이 너무 많아" | 새 개념을 **셋으로** 줄이고, 남는 것을 지식카드·환경 가이드로 뺀다 | **`references/difficulty.md`** |
+| "주차 설계해줘" · 새 주차의 절 구성을 정할 때 | 개념마다 **왜 → 원리 → 수식 → 적용 → 결과** 다섯 칸을 세운다 | **`references/difficulty.md`** |
 | "문체 고쳐줘 / AI 같아" | `scripts/vault_check.sh --style` 로 금지 표현부터 센다 | `references/lecture-md.md` §문체 |
 | "수식 넣어줘 / 보기 좋게" | LaTeX 으로 쓴다. MathType 이미지 불필요 | `references/pdf-and-math.md` |
 | "PDF 다시 뽑아줘" | `bash _tools/pdf_sync.sh` — MD·그림·템플릿 중 하나라도 새로우면 다시 뽑는다 | `references/pdf-and-math.md` |
@@ -164,6 +180,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | 파일 | 읽을 때 |
 |---|---|
 | `references/lecture-md.md` | 주차 자료를 쓰거나 고칠 때마다. 골격·문체·과제 배점 |
+| **`references/difficulty.md`** | **주차를 설계할 때마다.** 새 개념 셋 · 무엇을 지식카드로 뺄지 · 쉽게 쓰는 법 · 줄이는 순서 |
 | `references/week-quality-bar.md` | **주차 자료의 합격선.** 다이어그램·정상출력·캡처·외부코드 인용 |
 | `references/pdf-and-math.md` | 수식을 넣을 때, PDF 가 안 나올 때 |
 | `references/figures-svg.md` | 그림을 그릴 때 |
@@ -174,8 +191,9 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | **`references/vault-wide-update.md`** | **한 주차에서 고친 것을 전 주차에 퍼뜨릴 때. 절 번호 밀기, 구조 변경 후 수치 대조** |
 
 모델 작업은 **다른 스킬**이다 — `.claude/skills/simulink-gnc-models/`
-(배치 정리 `layout.md`, 생성 관용구 `build-models.md`, MSS 규약 `gnc-conventions.md`,
-검증 `verify.md`).
+(최상위 배치 `model-layout.md`, 선 긋기 `line-routing.md`, 서브시스템 `subsystems.md`,
+생성 관용구 `build-models.md`, 대화형 모델 `interactive-models.md`,
+MSS 규약 `gnc-conventions.md`, 검증 `verify.md`).
 
 ---
 

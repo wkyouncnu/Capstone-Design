@@ -76,9 +76,17 @@ d = Stateflow.Data(ch);  d.Name = 'mode';  d.Scope = 'Output';
 | MATLAB Function 안에서 그림이 안 그려짐 | 코드 생성 대상 | `coder.extrinsic('plot', ...)` |
 | 제목의 한글이 네모로 나옴 | `'FontName','Consolas'` | FontName 을 지정하지 않는다 |
 | 실제보다 배가 느리게 감 | 페이싱 ≠ RTF | `PacingRate` 를 **실측 RTF** 와 같게 |
+| `이름이 '…/input n [rad/s]'인 새 블록은 추가할 수 없음` | **Simulink 블록 이름에 `/` 를 못 쓴다.** 경로 구분자다 | 단위를 풀어 쓴다 — `(rad per s)` |
+| `To Workspace` 로그가 `[8 1 nT]` 3차원으로 나옴 | MATLAB Function 의 `n = [nL; nR]` 는 2×1 **행렬** 신호다. Mux 입력 **하나**가 행렬이면 출력 전체가 행렬이 된다 | 그 신호에 **Reshape(`1-D array`)** 를 물린다 → `model-layout.md` §5 |
+| `유효하지 않은 표현식입니다` | `...` 줄바꿈 **다음 줄에 주석**을 넣었다 | 주석은 호출문 **위**로 뺀다 |
 
 ## 실시간 애니메이션을 모델 안에 넣기
 
 - MATLAB Function 블록 + `coder.extrinsic`, 지속 변수(`persistent`)에 figure 핸들 보관
 - 선수는 **삼각형**, 선미는 **사각형** — 방향이 한눈에 보인다
 - 제어 루프와 분리해 `en` 입력으로 켜고 끈다. 끄면 시뮬레이션이 빨라진다
+- 궤적만 그리지 말고 **선체와 선수 방향선**을 함께 그린다 — 크랩각이 그 차이다
+- 사람이 버튼·슬라이더로 조작하는 모델은 → `interactive-models.md`
+
+> 표의 마지막 세 줄(블록 이름의 `/`, Mux 행렬 입력, `...` 뒤 주석)과 실시간 애니메이션의
+> 선체 표시는 대학원 GradCourse 볼트에서 가져옴 — 2026-09-24

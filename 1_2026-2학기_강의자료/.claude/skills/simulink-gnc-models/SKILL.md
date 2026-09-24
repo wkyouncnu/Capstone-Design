@@ -1,9 +1,15 @@
 ---
 name: simulink-gnc-models
-description: 선박·USV의 GNC(유도·항법·제어) Simulink 모델을 MATLAB 코드로 생성하고, 블록 배치와 신호선을 읽기 좋게 정리한다. 사용자가 "시뮬링크 모델 만들어줘", "Simulink 모델 생성", "블록 배치 정리", "선 정리", "선이 복잡해", "겹치지 않게", "블록 색", "LOS 유도", "웨이포인트 추종", "로이터링", "Stateflow 미션", "VRX", "WAM-V", "추력 배분", "운동모델", "build_wXX_models" 를 언급하거나, 강의용 Simulink 자료를 만들거나 고칠 때 사용하라. MATLAB MCP 로 실제 실행해 검증하는 절차까지 포함한다.
+description: 선박·USV의 GNC(유도·항법·제어) Simulink 모델을 MATLAB 코드로 생성하고, 블록 배치와 신호선을 읽기 좋게 정리한다. 사용자가 "시뮬링크 모델 만들어줘", "Simulink 모델 생성", "블록 배치 정리", "선 정리", "선이 복잡해", "겹치지 않게", "블록 색", "LOS 유도", "웨이포인트 추종", "로이터링", "Stateflow 미션", "VRX", "WAM-V", "추력 배분", "운동모델", "build_wXX_models", "대시보드", "슬라이더", "버튼", "실시간", "조종기", "RC", "조이스틱", "Joystick Input", "USB" 를 언급하거나, 강의용 Simulink 자료를 만들거나 고칠 때 사용하라. MATLAB MCP 로 실제 실행해 검증하는 절차까지 포함한다.
 ---
 
 # Simulink GNC 모델 — 코드로 만들고, 코드로 정리한다
+
+> [!important] 배치가 먼저다
+> 모델을 쓰기 전에 **`references/model-layout.md`** 를 읽는다. 최상위는
+> **command → reference(유도) → controller → allocation → plant → measurement** 순이고,
+> 각 단계는 **서브시스템 하나**다. 좌표를 손으로 쓰지 않고 `_tools/gnc_chain` 을 쓴다.
+> 포트 이름 · 되먹임 개수 · **로깅 앞 여섯 열 `[u v r x_n y_n psi]`** 도 거기서 정한다.
 
 Simulink 모델을 **손으로 그리지 않는다.** `build_wXX_models.m` 하나가 모델 전체를 만든다.
 이유는 세 가지다.
@@ -132,34 +138,25 @@ check_colour(m);       % 흰색으로 남은 것을 잡는다. 합격선은 0
 **`references/build-models.md`** 에 관용구가 전부 있다 — `fresh`/`setFcn`/`C`/`F`/`G`/`note`
 헬퍼, Stateflow 프로그래밍 API, 대수 루프 끊는 법, 실시간 페이싱.
 
-절대 규칙 네 가지만 여기 적는다.
+절대 규칙 다섯 가지만 여기 적는다.
 
-1. **GNC 순서를 왼쪽에서 오른쪽으로** — 유도 → 제어 → 추진기 → 운동모델 → 로깅
+1. **GNC 순서를 왼쪽에서 오른쪽으로** — 유도 → 제어 → 추진기 → 운동모델 → 로깅.
+   설정값 Constant 를 `command` 한 열로 묶은 **여섯 단계 체인**이 원본이다 → `references/model-layout.md`
 2. **되먹임은 Goto/From 태그** — 화면을 가로지르는 선을 만들지 않는다
 3. **오프라인 모델의 계수는 시뮬레이터와 같아야 한다** — 안 그러면 게인이 옮겨가지 않는다
 4. **최상위는 역할별 서브시스템만** — 블록 20개가 넘으면 묶는다. 로깅·그림은 포트 없는 서브시스템으로.
    관용구·색 이름표·지뢰는 **`references/subsystems.md`**
 5. **제어기는 독립 모듈 하나** — 아래
 
-### 사람이 누르는 입력 — Dashboard 버튼
+### 사람이 조작하는 모델 — 버튼 · 슬라이더 · 조종기
 
-키보드 노드(`wamv_teleop_key` 등)에 대응하는 Simulink 판을 만들 때 쓴다.
-
-```matlab
-add_block('simulink_hmi_blocks/Push Button', [ss '/btn_fwd'], 'Position',[x y x+90 y+70]);
-info = Simulink.HMI.ParamSourceInfo;
-info.BlockPath = [ss '/c_fwd'];      % 묶을 블록
-info.ParamName = 'Value';            % 묶을 파라미터
-set_param([ss '/btn_fwd'], 'Binding', info, ...
-          'ButtonText','▲ 전진', 'OnValue','1', 'OffValue','0', ...
-          'ButtonType','Momentary');
-```
+키보드 노드(`wamv_teleop_key` 등)에 대응하는 Simulink 판을 만들 때는
+**`references/interactive-models.md`** 를 읽는다. 여기에는 세 줄만 적는다.
 
 - 라이브러리 이름은 **`simulink_hmi_blocks`** 다. `simulink/Dashboard` 로는 찾지 못한다
-- 버튼은 **신호가 아니라 파라미터**를 누른다. `Constant` 의 `Value` 에 묶는다
-- `Binding` 은 반드시 `Simulink.HMI.ParamSourceInfo` **객체**여야 한다. 핸들을 주면 거부된다
-- `Momentary` 는 누르는 동안만 `OnValue`. 떼면 저절로 0 이 되므로 "정지" 버튼이 필요 없다
-- **모델을 돌린 상태에서** 눌러야 반응한다
+- 버튼은 **신호가 아니라 파라미터**를 누른다. `Constant` 의 `Value` 에 `Binding` 으로 묶는다
+- Dashboard 블록은 **`mss_style` 뒤에** 넣고, 사람이 조작한 실행의 수치는
+  **확인 스크립트가 따로 재서** 문서에 싣는다 (조작은 재현되지 않는다)
 
 ### 제어기는 서브시스템 하나로 (예외 없음)
 
@@ -320,9 +317,14 @@ pkill -f "vrx_gz|vrx_ros|ros_gz_bridge|gz sim|ruby|parameter_bridge"
 
 | 파일 | 읽을 때 |
 |---|---|
+| **`references/model-layout.md`** | **새 모델을 만들 때 가장 먼저.** 여섯 단계 체인 · 이름 붙은 포트 · 로깅 계약 · MSS 블록 치수 |
 | **`references/line-routing.md`** | **선을 그을 때마다. `check_lines` 의 일곱 항목이 전부 0 이 합격선** |
 | `references/layout.md` | 배치가 마음에 안 들 때. `tidy_model` 의 도구를 고치기 전에 |
 | `references/build-models.md` | 새 모델을 만들 때마다 |
 | `references/subsystems.md` | **선이 겹치거나 최상위가 복잡할 때.** 서브시스템 관용구·색 이름표 |
+| `references/interactive-models.md` | **사람이 조작하는 모델** — 버튼·슬라이더·조종기 스틱, 실시간 화면, 실물 USB 조종기(Joystick Input), 장치 없이 검증하는 법 |
 | `references/gnc-conventions.md` | 제어기·유도법칙을 쓸 때 |
 | `references/verify.md` | 수치를 문서에 싣기 전에 |
+
+> 여섯 단계 배치 · 이름 붙은 포트 · 로깅 계약 · 대화형 모델 관용구는
+> 대학원 GradCourse 볼트에서 가져옴 — 2026-09-24

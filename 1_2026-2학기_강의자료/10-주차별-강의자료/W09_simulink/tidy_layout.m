@@ -611,9 +611,9 @@ elseif contains(n,{'thruster','f2n','n2f','motorlag'})
     col = THR;
 elseif contains(n,{'motionmodel','eom','plant','integ','states','nav'})
     if contains(n,{'odomsub','sel','isnew'}), col = ROS; else, col = PLANT; end
-elseif contains(n,{'odomsub','isnew','blank','asg','pub'}) || strcmp(n,'sel')
+elseif contains(n,{'odomsub','posesub','velsub','sensorsub','gpssub','imusub','windsub','qossub','subreliable','subbesteffort','selvel','selgps','selimu','selwind','rxlatch','ratemeter','rxcount','isnew','blank','asg','pub'}) || strcmp(n,'sel')
     col = ROS;
-elseif contains(n,{'log_','scope','display','animate','animend','clk'})
+elseif contains(n,{'log_','logging','scope','display','animate','animend','clk'})
     col = LOG;
 elseif strcmp(bt,'Constant')
     col = SET;
