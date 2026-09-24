@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.md",
+                "file": "10-주차별-강의자료/W03_Gazebo_VRX_구축과_좌표계.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "W02_ROS2_기초_노드와_토픽"
+              "title": "W03_Gazebo_VRX_구축과_좌표계"
             }
           }
         ]
@@ -83,7 +83,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 315.5
+    "width": 200
   },
   "right": {
     "id": "b04069189c77fc87",
@@ -190,28 +190,29 @@
   },
   "active": "ccf5da29ee1ae7a9",
   "lastOpenFiles": [
-    "10-주차별-강의자료/W01_개발환경_구축과_USV_자율운항_개관.md",
-    "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.pdf",
+    "10-주차별-강의자료/W03_simulink/Copy_of_W03_1_frame_check.slxc",
+    "10-주차별-강의자료/W03_simulink/slprj/sim/varcache/Copy_of_W03_1_frame_check/tmwinternal/simulink_cache.xml",
+    "10-주차별-강의자료/W03_simulink/slprj/sim/varcache/Copy_of_W03_1_frame_check/varInfo.mat",
+    "10-주차별-강의자료/W03_simulink/slprj/sim/varcache/Copy_of_W03_1_frame_check/tmwinternal",
+    "10-주차별-강의자료/W03_simulink/slprj/sim/varcache/Copy_of_W03_1_frame_check/checksumOfCache.mat",
+    "10-주차별-강의자료/W03_simulink/slprj/sim/varcache/Copy_of_W03_1_frame_check",
+    "10-주차별-강의자료/W03_simulink/Copy_of_W03_1_frame_check.slx.autosave",
+    "10-주차별-강의자료/W03_simulink/Copy_of_W03_1_frame_check.slx",
+    "무제 1.base",
+    "무제.base",
     "10-주차별-강의자료/W03_Gazebo_VRX_구축과_좌표계.md",
-    "10-주차별-강의자료/W04_simulink/W04_rates_run.m",
+    "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.md",
+    "10-주차별-강의자료/W01_개발환경_구축과_USV_자율운항_개관.pdf",
+    "10-주차별-강의자료/W01_개발환경_구축과_USV_자율운항_개관.md",
     "assets/w04-simulink-qos.png",
     "assets/w03-simulink-frame-check.png",
-    "10-주차별-강의자료/W04_simulink/+bus_conv_fcns/+ros2/+msgToBus/RefCachedMap.mat",
-    "10-주차별-강의자료/W04_simulink/+bus_conv_fcns/+ros2/+msgToBus/+std_msgs/String.m",
-    "10-주차별-강의자료/W04_simulink/+bus_conv_fcns/+ros2/+msgToBus/+std_msgs",
-    "10-주차별-강의자료/W04_simulink/+bus_conv_fcns/+ros2/+msgToBus",
-    "10-주차별-강의자료/W04_simulink/+bus_conv_fcns/+ros2",
-    "10-주차별-강의자료/W04_simulink/+bus_conv_fcns",
-    "10-주차별-강의자료/W04_simulink/W04_2_qos_test.slxc",
     "10-주차별-강의자료/W04_simulink/img/W04_2_qos_test__RxCount.png",
     "10-주차별-강의자료/W04_simulink/img/W04_1_sensor_rates.png",
-    "10-주차별-강의자료/W04_simulink/W04_2_qos_test.slx",
     "10-주차별-강의자료/W04_simulink/img/W04_2_qos_test__QosSubscribers.png",
     "10-주차별-강의자료/W04_simulink/img/W04_1_sensor_rates__RateMeter.png",
     "10-주차별-강의자료/W04_simulink/img/W04_1_sensor_rates__SensorSubscriber.png",
     "10-주차별-강의자료/W04_simulink/img/W04_2_qos_test.png",
     "10-주차별-강의자료/W03_simulink/img/W03_3_vrx_drive__Thrusters.png",
-    "10-주차별-강의자료/W03_simulink/img/W03_2_vrx_nav__Nav.png",
-    "10-주차별-강의자료/W02_ROS2_기초_노드와_토픽.md"
+    "10-주차별-강의자료/W03_simulink/img/W03_2_vrx_nav__Nav.png"
   ]
 }
