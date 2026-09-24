@@ -1,0 +1,113 @@
+% assets/w04-pseudo-derivative.svg — 유사미분의 뜻: 증폭에 천장을 둔 미분.
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-pseudo-derivative.tex assets/w04-pseudo-derivative.svg
+%
+% 4주차 1-11 의 그림. 대학원 볼트 figures/src/w03-pseudo-derivative.tex 를 캡스톤
+% 게인(K_d = 4, N_f = 5 / 20 / 200)·플랜트(wn = 1.4142)·한국어로 다시 쓴 것.
+%
+% 곡선의 좌표를 구워 넣지 않는다. TeX 이 직접 계산하므로 K_d·N_f 를 바꾸면 곡선이
+% 따라 움직인다.
+%
+%   순수 미분   |K_d jw|              = K_d w                     (끝없이 상승)
+%   유사미분    |K_d N_f jw/(jw+N_f)| = K_d N_f w / sqrt(w^2+N_f^2)
+%                                     -> K_d w    (w << N_f)      미분 그대로
+%                                     -> K_d N_f  (w >> N_f)      평탄 — 이것이 천장
+%
+% 곡선 색은 1-11 의 결과 그래프 W04_P2_derivative.png 와 맞춘다 —
+% 회색 N_f=200 · 주황 N_f=20 · 파랑 N_f=5.
+%
+% pgfmath 는 고정소수라 10^6 에서 넘친다("Dimension too large"). 로그 공간에서
+% log10(10^a + 10^b) = max(a,b) + log10(1 + 10^(-|a-b|)) 로 바꾸면 중간값이 커지지 않는다.
+% \PY 가 이미 인자를 감싸므로 매크로 본문에 바깥 중괄호를 붙이지 않는다.
+%
+% 폭 약 152 mm. 본문 폭 186 mm 안.
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\Kd{4}
+\def\XW{85}          % 가로 5 decade (0.1 .. 10000)
+\def\YH{55}          % 세로 6 decade (0.1 .. 100000)
+\def\XA{17}          % 1 decade 당 mm  (= XW/5)
+\def\YA{9.1667}      % 1 decade 당 mm  (= YH/6)
+
+% lx = log10(w), ly = log10(크기)  ->  화면 mm
+\newcommand{\PX}[1]{{\XA*((#1)+1)}}
+\newcommand{\PY}[1]{{\YA*((#1)+1)}}
+
+% ---- 격자 -----------------------------------------------------------------
+\foreach \e in {-1,0,1,2,3,4}
+  \draw[soft, line width=0.2pt] (\PX{\e},0) -- (\PX{\e},\YH);
+\foreach \e in {-1,0,1,2,3,4,5}
+  \draw[soft, line width=0.2pt] (0,\PY{\e}) -- (\XW,\PY{\e});
+
+% ---- 축 -------------------------------------------------------------------
+\draw[axis] (0,0) -- (\XW,0) -- (\XW,\YH) -- (0,\YH) -- cycle;
+\foreach \e/\lab in {-1/0.1, 0/1, 1/10, 2/100, 3/1000, 4/10000} {
+  \draw[axis] (\PX{\e},0) -- (\PX{\e},-1.2);
+  \node[tick, anchor=north] at (\PX{\e},-1.4) {\lab};
+}
+\foreach \e/\lab in {-1/0.1, 0/1, 1/10, 2/100, 3/1000, 4/10000} {
+  \draw[axis] (0,\PY{\e}) -- (-1.2,\PY{\e});
+  \node[tick, anchor=east] at (-1.6,\PY{\e}) {\lab};
+}
+\node[font=\small, anchor=north] at ({\XW/2},-6.5) {주파수 $\omega$ \ \ [rad/s]};
+\node[font=\small, anchor=south, rotate=90] at (-13,{\YH/2})
+     {그 주파수에 걸리는 이득};
+
+% ---- 순수 미분:  log10(Kd) + lx --------------------------------------------
+\draw[ink, line width=0.9pt, domain=-1:4, samples=60, smooth]
+      plot (\PX{\x}, \PY{log10(\Kd) + \x});
+
+% ---- 유사미분 — 로그 공간에서 계산한다 -------------------------------------
+%   \LPS{log10(N_f)}{lx}
+\newcommand{\LPS}[2]{log10(\Kd) + (#1) + (#2)
+   - 0.5*( max(2*(#2), 2*(#1)) + log10(1 + pow(10, -abs(2*(#2) - 2*(#1)))) )}
+
+\draw[color=soft, line width=0.8pt, domain=-1:4, samples=150, smooth]
+      plot (\PX{\x}, \PY{\LPS{2.30103}{\x}});       % N_f = 200
+\draw[color=ctrl, line width=0.9pt, domain=-1:4, samples=150, smooth]
+      plot (\PX{\x}, \PY{\LPS{1.30103}{\x}});       % N_f = 20
+\draw[color=guid, line width=0.9pt, domain=-1:4, samples=150, smooth]
+      plot (\PX{\x}, \PY{\LPS{0.69897}{\x}});       % N_f = 5
+
+% ---- 평탄부(천장) 표시 ------------------------------------------------------
+\foreach \lv/\col in {log10(800)/soft, log10(80)/ctrl, log10(20)/guid}
+  \draw[color=\col, line width=0.3pt, densely dotted]
+        (\PX{2.8}, \PY{\lv}) -- (\XW, \PY{\lv});
+
+% 라벨은 곡선 위에 얹지 않는다. 순수미분은 끝점 왼쪽 위, 나머지는 각자의 천장선 위.
+\node[font=\scriptsize, color=ink, anchor=south east] at (\PX{3.45}, \PY{log10(\Kd*2600)+0.10})
+     {순수 미분 $K_d s$};
+\node[font=\scriptsize, color=soft, anchor=south east] at ({\XW-1}, \PY{log10(800)+0.13})
+     {$N_f = 200$ \ 천장 $800$};
+\node[font=\scriptsize, color=ctrl, anchor=south east] at ({\XW-1}, \PY{log10(80)+0.13})
+     {$N_f = 20$ \ 천장 $80$};
+\node[font=\scriptsize, color=guid, anchor=south east] at ({\XW-1}, \PY{log10(20)+0.13})
+     {$N_f = 5$ \ 천장 $20$};
+
+% ---- 두 주파수 대역 --------------------------------------------------------
+\draw[ink, line width=0.5pt] (\PX{log10(1.4142)}, \YH) -- (\PX{log10(1.4142)}, \YH+2.5);
+\node[font=\scriptsize, anchor=south, align=center] at (\PX{log10(1.4142)}, \YH+2.8)
+     {루프가 일하는 곳\\[-1pt]$\omega_n = 1.41$};
+\draw[ink, line width=0.5pt] (\PX{log10(3142)}, \YH) -- (\PX{log10(3142)}, \YH+2.5);
+\node[font=\scriptsize, anchor=south, align=center] at (\PX{log10(3142)}, \YH+2.8)
+     {잡음이 닿는 곳\\[-1pt]$\pi/T_s = 3142$};
+
+% ---- 읽는 법 ----------------------------------------------------------------
+\node[font=\scriptsize, color=ink, anchor=north west, align=left, text width=44mm]
+     at ({\XW+8}, \YH) {%
+  점선이 각 곡선의 천장 $K_dN_f$ 다 —\\
+  $800$ · $80$ · $20$.\\[4pt]
+  \textbf{느린 쪽} $\omega_n = 1.41$ 에서는 넷이 거의 같다:\\
+  순수 $5.66$ 대 $N_f=20$ 의 $5.64$.\\[3pt]
+  \textbf{빠른 쪽} $\pi/T_s = 3142$ 에서는 갈린다:\\
+  순수 $12568$ 대 $N_f=20$ 의 $80$ — $157$ 배.\\[4pt]
+  그래서 유사미분은 \emph{신호를 버리지 않고} 잡음만 덜 키운다.\\[4pt]
+  1-11 실측 — 후반 제어입력 표준편차\\
+  $N_f=5$ 는 $0.0955$, $N_f=200$ 은 $1.106$};
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,102 @@
+% assets/w04-tuning-order.svg — 손으로 게인을 정하는 순서. 한 번에 하나씩.
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-tuning-order.tex assets/w04-tuning-order.svg
+%
+% 4주차 1-13 의 그림. 대학원 볼트 figures/src/w02-tuning-order.tex 를 캡스톤 절 번호·
+% 캡스톤 게인·한국어로 다시 쓴 것.
+%
+% 오른쪽 열의 수는 1-13 의 실측 표에서 그대로 옮긴 값이다 (새로 잰 것이 아니다).
+%   Kp=4  : Mp 20.2 %, e_ss 0.333       Kp=10 : Mp 14.2 %, e_ss 0.167
+%   Kd=4  : Mp 0 %,    정착 1.82 s      Ki=8  : Mp 28.7 %, 포화 12.3 %
+%   Kb=2  : Mp 0.032 %, 포화 1.1 %
+%
+% 순서의 근거는 1-13 의 「유도 — 왜 이 순서인가」 네 줄이다. 그림에 다시 적지 않고
+% 절 번호만 달아 둔다 — 그림은 구조, 본문은 근거.
+%
+% 폭 약 128 mm. 본문 폭 186 mm 안.
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+\usetikzlibrary{shapes.geometric}
+\tikzset{
+  tstep/.style = {draw=ink, line width=0.55pt, fill=white, rounded corners=1mm,
+                  text width=62mm, minimum height=9mm, inner sep=2.2mm,
+                  font=\small, align=left},
+  side/.style  = {draw=ink, line width=0.55pt, fill=white, rounded corners=1mm,
+                  text width=30mm, minimum height=9mm, inner sep=2.2mm,
+                  font=\small, align=left},
+  ask/.style   = {draw=accent, line width=0.6pt, fill=white, diamond, aspect=2.8,
+                  inner sep=0.6mm, font=\small, align=center, text=accent},
+  num/.style   = {font=\scriptsize, color=soft, text width=42mm, align=left, anchor=west},
+  ylbl/.style  = {font=\scriptsize, color=accent, inner sep=1pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[font=\small\bfseries, anchor=south west] at (-38,13)
+     {손으로 PID 게인을 정하는 순서 — 한 번에 하나씩, 앞 단계의 측정에서 다음 값을 고른다};
+
+% ---- 0 ---------------------------------------------------------------------
+\node[tstep] (s0) at (0,0) {\textbf{0\quad 게인을 만지기 전.} 무엇이 ``좋은 응답''인지 먼저 적는다
+  — 오버슈트·정착시간·쓸 수 있는 힘. 플랜트가 얌전한지도 본다 (안정·거의 선형·지연 작음).};
+
+% ---- 1 ---------------------------------------------------------------------
+\node[tstep, below=6mm of s0] (s1) {\textbf{1\quad P 만.} $K_i = K_d = 0$.
+  $K_p$ 의 크기는 단위에서 잡는다 — 플랜트가 이미 가진 강성의 몇 배 \hfill {\scriptsize(1-7)}};
+\node[num] at ([xshift=6mm]s1.east) {$k = 2$ N/m 이므로 $K_p = 5k = 10$};
+
+% ---- 2 ---------------------------------------------------------------------
+\node[tstep, below=6mm of s1] (s2) {\textbf{2\quad P 응답을 읽는다.} 오버슈트 $M_p$ 에서 감쇠비를 거꾸로 읽는다:
+  \\[1mm] \hspace*{6mm}$\zeta = -\ln M_p \big/ \sqrt{\pi^2 + \ln^2 M_p}$ \hfill {\scriptsize(1-5)}};
+\node[num] at ([xshift=6mm]s2.east) {$K_p = 10$ 에서 $M_p = 14.2\,\%$, 남는 오차 $e_{ss} = 0.167$};
+
+\node[ask, below=6mm of s2] (q2) {출렁이는가?};
+\draw[sig] (s0) -- (s1);  \draw[sig] (s1) -- (s2);  \draw[sig] (s2) -- (q2);
+
+% 아니오: Kp 를 올려 다시
+\node[side, anchor=east] (up) at ([xshift=-12mm]q2.west)
+     {\textbf{아니오}: 느리고 매끈하다. $K_p$ 를 올려 다시 읽는다};
+\draw[asig] (q2.west) -- node[ylbl, above] {아니오} (up.east);
+\draw[asig] (up.north) |- ([yshift=-2mm]s1.west);
+
+% ---- 3 ---------------------------------------------------------------------
+\node[tstep, below=6mm of q2] (s3) {\textbf{3\quad D 를 더한다.} 오버슈트가 줄어드는 동안 $K_d$ 를 한 칸씩 올린다.
+  더 안 줄면 멈춘다. 제어입력이 떨리기 시작하면 $N_f$ 를 낮춘다 \hfill {\scriptsize(1-8 · 1-11)}};
+\draw[asig] (q2) -- node[ylbl, right] {예} (s3);
+\node[num] at ([xshift=6mm]s3.east) {$K_d = 4$ 에서 $M_p$ $14.2 \to 0\,\%$, 정착 $3.70 \to 1.82$ s};
+
+\node[ask, below=6mm of s3] (q3) {남는 오차가 있는가?};
+\draw[sig] (s3) -- (q3);
+
+% ---- 4 ---------------------------------------------------------------------
+\node[tstep, below=6mm of q3] (s4) {\textbf{4\quad I 를 더한다.} 남는 오차가 있을 때만.
+  정해진 시간 안에 띠 안으로 들어올 때까지 $K_i$ 를 올린다. 많이 넣으면 오버슈트가 돌아온다 \hfill {\scriptsize(1-9)}};
+\draw[asig] (q3) -- node[ylbl, right] {예} (s4);
+\node[num] at ([xshift=6mm]s4.east) {$e_{ss}$ $0.167 \to \approx 0$. 대신 $M_p$ 가 $28.7\,\%$ 로 돌아온다};
+\node[side, anchor=east] (noI) at ([xshift=-12mm]q3.west)
+     {\textbf{아니오}: $K_i = 0$ 으로 둔다. 필요 없는 적분은 비용만 든다};
+\draw[asig] (q3.west) -- node[ylbl, above] {아니오} (noI.east);
+
+% ---- 5 ---------------------------------------------------------------------
+\node[ask, below=6mm of s4] (q5) {제어입력이 한계 안인가?};
+\draw[sig] (s4) -- (q5);
+%  I 가 필요 없으면 4 를 건너 4 와 5 사이의 연결선으로 들어간다.
+\coordinate (jfive) at ($(s4.south)!0.5!(q5.north)$);
+\draw[asig] (noI.south) |- (jfive);
+
+\node[tstep, below=6mm of q5] (s5) {\textbf{5\quad 응답만 보지 말고 제어입력을 본다.}
+  목표값을 부드럽게 해 미분 킥을 없애고, 되감기 $K_b$ 를 켠다. 그래도 넘치면 게인을 낮춘다
+  \hfill {\scriptsize(1-11 · 1-12)}};
+\draw[asig] (q5) -- node[ylbl, right] {아니오} (s5);
+\node[num] at ([xshift=6mm]s5.east) {$K_b = 2$ 에서 포화 시간 $12.3 \to 1.1\,\%$, $M_p$ $28.7 \to 0.03\,\%$};
+
+% ---- 6 ---------------------------------------------------------------------
+\node[tstep, below=6mm of s5] (s6) {\textbf{6\quad 마무리는 손으로.} PID Tuner 나 정해진 규칙은
+  \emph{출발점}이지 답이 아니다. 무엇을 바꾸든 5 를 다시 확인한다 \hfill {\scriptsize(1-13)}};
+\draw[sig] (s5) -- (s6);
+%  한계 안이면 5 를 건너 6 으로
+\coordinate (byp) at ([xshift=-6mm]s5.west |- q5.west);
+\draw[asig] (q5.west) -- node[ylbl, above] {예} (byp) |- (s6.west);
+
+\end{tikzpicture}
+\end{document}

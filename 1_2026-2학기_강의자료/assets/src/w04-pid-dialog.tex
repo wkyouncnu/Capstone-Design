@@ -1,0 +1,118 @@
+% assets/w04-pid-dialog.svg — 라이브러리 PID 블록에서 포화와 되감기를 고르는 자리.
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-pid-dialog.tex assets/w04-pid-dialog.svg
+%
+% 4주차 1-10 의 그림. 대학원 볼트 figures/src/w03-pid-dialog.tex 를 캡스톤 변수 이름·
+% 한국어로 다시 쓴 것.
+%
+% 이것은 스크린샷이 아니라 개략도다. 창의 픽셀 배치를 흉내 내지 않았다 —
+% 학생이 찾아야 하는 것은 픽셀이 아니라 **탭 이름과 칸 이름**이다.
+% 칸 이름과 선택지 문자열은 R2024b 의 PID Controller 블록에서 그대로 옮겼고,
+% 칸에 넣는 값은 본 과목 W04_setup.m 의 변수 이름(u_max · Kb)으로 적었다.
+%
+% (a) back-calculation 을 골랐을 때   (b) clamping 을 골랐을 때.
+% 둘의 차이는 Kb 칸이 나타나는가 하나뿐이고 그것이 이 그림의 요점이다.
+%
+% 폭 약 182 mm. 본문 폭 186 mm 안.
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+% 체크박스와 드롭다운 화살촉에 amssymb 가 필요하다. 공용 스타일에는 넣지 않는다.
+\usepackage{amssymb}
+
+\tikzset{
+  win/.style   = {draw=ink, line width=0.6pt, fill=white, rounded corners=0.6mm},
+  bar/.style   = {draw=ink, line width=0.5pt, fill=black!6},
+  fld/.style   = {draw=soft, line width=0.4pt, fill=white,
+                  minimum height=4.4mm, inner xsep=1.2mm, font=\scriptsize, anchor=west},
+  afld/.style  = {draw=accent, line width=0.7pt, fill=accent!6,
+                  minimum height=4.4mm, inner xsep=1.2mm, font=\scriptsize,
+                  anchor=west, text=accent},
+  flbl/.style  = {font=\scriptsize, color=ink, anchor=east},
+  tab/.style   = {font=\scriptsize, color=ink, anchor=west},
+  atab/.style  = {font=\scriptsize\bfseries, color=accent, anchor=west},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[font=\small\bfseries, anchor=north west] at (0,11)
+     {라이브러리 PID 블록에서 두 방식을 고르는 자리};
+\node[anchor=north west, align=left, text width=180mm, font=\scriptsize, color=soft] at (0,5) {%
+  창 모양을 흉내 낸 개략도이지 화면 캡처가 아니다. 두 방식은 같은 탭의 같은 메뉴에 있고,
+  \emph{back-calculation} 을 고르는 것이 $K_b$ 칸을 나타나게 한다. 나머지 칸은 전부 같다.
+  직접 조립한 \textsf{PID\_byhand} 의 \textsf{Sat} 과 \textsf{Kb\_gain} 이 이 두 칸에 해당한다.};
+
+% =====================================================================
+\def\WW{88}      % 창 너비
+\def\HH{52}      % 창 높이
+
+% ---------- (a) back-calculation — 본 과목이 쓰는 것 ------------------
+\begin{scope}[shift={(0,-13)}]
+  \node[font=\scriptsize\bfseries, anchor=west, color=ink] at (0,2)
+       {(a) \ \ Anti-windup method = back-calculation \ \ (본 과목)};
+
+  \draw[win] (0,0) rectangle (\WW,-\HH);
+  \draw[bar] (0,0) rectangle (\WW,-6);
+  \node[tab, font=\scriptsize\bfseries] at (2,-3) {Block Parameters: PID Controller};
+
+  % 탭 줄
+  \draw[soft, line width=0.4pt] (0,-11) -- (\WW,-11);
+  \node[tab]  at (2,-8.5)  {Main};
+  \node[atab] at (18,-8.5) {PID Advanced};
+  \node[tab]  at (47,-8.5) {Data Types};
+  \draw[accent, line width=1.0pt] (17,-11) -- (44,-11);
+
+  \node[flbl] at (41,-16) {Output saturation:};
+  \node[fld, minimum width=41mm] at (43,-16) {Limit output \quad $\boxtimes$};
+
+  \node[flbl] at (41,-22) {Upper limit:};
+  \node[fld, minimum width=41mm] at (43,-22) {\texttt{u\_max}};
+
+  \node[flbl] at (41,-28) {Lower limit:};
+  \node[fld, minimum width=41mm] at (43,-28) {\texttt{-u\_max}};
+
+  \node[flbl] at (41,-35) {Anti-windup method:};
+  \node[afld, minimum width=41mm] at (43,-35) {back-calculation \hfill $\blacktriangledown$};
+
+  \node[flbl] at (41,-41) {Back-calc. coefficient (Kb):};
+  \node[afld, minimum width=41mm] at (43,-41) {\texttt{Kb}};
+
+  \node[anote, anchor=north west, text width=42mm, align=left] at (43,-44.4)
+       {이 칸은 back-calculation 일 때만 나타난다 — 1-12 결과식의 $K_b$};
+\end{scope}
+
+% ---------- (b) clamping ---------------------------------------------
+\begin{scope}[shift={(96,-13)}]
+  \node[font=\scriptsize\bfseries, anchor=west, color=ink] at (0,2)
+       {(b) \ \ Anti-windup method = clamping};
+
+  \draw[win] (0,0) rectangle (\WW,-\HH);
+  \draw[bar] (0,0) rectangle (\WW,-6);
+  \node[tab, font=\scriptsize\bfseries] at (2,-3) {Block Parameters: PID Controller};
+
+  \draw[soft, line width=0.4pt] (0,-11) -- (\WW,-11);
+  \node[tab]  at (2,-8.5)  {Main};
+  \node[atab] at (18,-8.5) {PID Advanced};
+  \node[tab]  at (47,-8.5) {Data Types};
+  \draw[accent, line width=1.0pt] (17,-11) -- (44,-11);
+
+  \node[flbl] at (41,-16) {Output saturation:};
+  \node[fld, minimum width=41mm] at (43,-16) {Limit output \quad $\boxtimes$};
+
+  \node[flbl] at (41,-22) {Upper limit:};
+  \node[fld, minimum width=41mm] at (43,-22) {\texttt{u\_max}};
+
+  \node[flbl] at (41,-28) {Lower limit:};
+  \node[fld, minimum width=41mm] at (43,-28) {\texttt{-u\_max}};
+
+  \node[flbl] at (41,-35) {Anti-windup method:};
+  \node[afld, minimum width=41mm] at (43,-35) {clamping \hfill $\blacktriangledown$};
+
+  %  (a) 에서 Kb 칸이 있던 자리. 비어 있다는 것 자체가 이 판의 요점이다.
+  \draw[soft, line width=0.4pt, densely dashed] (43,-41) rectangle (84,-38.8);
+  \node[note, anchor=north west, text width=42mm, align=left] at (43,-44.4)
+       {칸이 아예 없다 — 잠그기는 조정할 값이 없는 방식이다};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

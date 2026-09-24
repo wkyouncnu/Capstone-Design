@@ -12,11 +12,14 @@
 %
 % (b) 의 수치 근거 — 1-12 유도 5번: 계단 직후 e = 1, P = K_p e = 10, tau_max = 2.5.
 % 즉 P 항 하나만으로도 요구가 한계의 4 배다. (D 항까지 더한 실측 첨두 89.7 은
-% 1-11-2 표에 있으나 여기서는 축이 너무 길어져 P 항만 표시한다.)
+% 1-11-2 표에 있으나 여기서는 가로축이 너무 길어져 P 항만 표시한다.)
+%
+% 배치 주의 — 설명 글은 그림 위에 얹지 않는다. (a) 는 아래 한 줄, (b) 는 오른쪽 한 칸에
+% 모아 둔다. 처음에는 라벨을 그림 안에 넣었다가 배선·축과 전부 겹쳤다.
 %
 % TeX 제어어 이름에는 숫자를 못 쓴다. \def\Yz 처럼 글자만 쓴다.
 %
-% 폭 약 150 mm. 본문 폭 186 mm 안.
+% 폭 약 148 mm. 본문 폭 186 mm 안.
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
 \tikzset{
@@ -30,7 +33,7 @@
 
 % ===================== (a) 루프가 끊기는 자리 ===============================
 \begin{scope}
-  \node[font=\small\bfseries, anchor=west] at (-14, 18) {(a) \ \ 포화하는 동안 루프가 끊긴다};
+  \node[font=\small\bfseries, anchor=west] at (-14, 20) {(a) \ \ 포화하는 동안 루프가 끊긴다};
 
   \node[sum]                                (sa)  at (0,0) {};
   \node[cblk, right=9mm of sa, yshift=9mm, minimum width=14mm]  (kp)  {$K_p$};
@@ -75,85 +78,91 @@
 
   % 되먹임
   \node[dot] at (out) {};
-  \draw[wire] (out) |- (0,-24);
-  \draw[sig]  (0,-24) -- (sa);
+  \draw[wire] (out) |- (0,-26);
+  \draw[sig]  (0,-26) -- (sa);
 
-  % 루프가 끊기는 자리
+  % 루프가 끊기는 자리 — 표시는 선 위에, 글은 위쪽 빈 곳에
   \coordinate (cut) at ($(sat.east)!0.80!(pl.west)$);
   \draw[warn, line width=0.8pt] ($(cut)+(-1.6mm,-1.6mm)$) -- ($(cut)+(1.6mm,1.6mm)$);
   \draw[warn, line width=0.8pt] ($(cut)+(-1.6mm, 1.6mm)$) -- ($(cut)+(1.6mm,-1.6mm)$);
-  \node[wnote, anchor=north, align=center, text width=44mm] at ($(cut)+(0,-3.0mm)$)
-       {여기서 끊긴다\\ 게인을 더 올려도 나가는 값이 늘지 않는다};
+  \node[wnote, anchor=south, align=center, text width=46mm] at ($(cut)+(0,6.4mm)$)
+       {포화 중에는 여기가 끊긴다 —\\ 게인을 더 올려도 나가는 값이 늘지 않는다};
 
   % 되감기 — SumAW 와 Kb_gain 이 이 자리다
   \coordinate (tc) at ($(sb)!0.42!(sat.west)$);
   \coordinate (ts) at ($(sat.east)!0.26!(pl.west)$);
   \node[dot] at (tc) {};  \node[dot] at (ts) {};
-  \node[asum] (aw) at ($(tc)!0.5!(ts) + (0,-14mm)$) {};
+  \node[asum] (aw) at ($(tc)!0.5!(ts) + (0,-15mm)$) {};
   \draw[awire] (tc) |- ($(aw.west)+(-4.5mm,0)$);
   \draw[asig]  ($(aw.west)+(-4.5mm,0)$) -- (aw);
   \draw[awire] (ts) |- ($(aw.east)+(4.5mm,0)$);
   \draw[asig]  ($(aw.east)+(4.5mm,0)$) -- (aw);
-  \node[font=\scriptsize, accent] at ($(aw)+(-3.0mm,3.2mm)$) {$-$};
-  \node[font=\scriptsize, accent] at ($(aw)+( 3.0mm,3.2mm)$) {$+$};
+  \node[font=\scriptsize, accent] at ($(aw)+(-3.2mm,3.2mm)$) {$-$};
+  \node[font=\scriptsize, accent] at ($(aw)+( 3.2mm,3.2mm)$) {$+$};
+  \node[anote, anchor=south] at ($(aw)+(0,5.4mm)$) {$\tau_{\text{sat}} - \tau_{\text{raw}}$};
   \draw[awire] (aw) -- ++(0,-5mm) -| ($(ki.south)+(0,-5mm)$);
   \draw[asig]  ($(ki.south)+(0,-5mm)$) -- (ki.south);
-  \node[anote, anchor=west, align=left, text width=34mm] at ($(aw)+(4mm,-7mm)$)
-       {$\tau_{\text{sat}} - \tau_{\text{raw}}$\\ 되감기(\textsf{SumAW}·\textsf{Kb\_gain})가\\ 메우는 것이 이 차이다};
+
+  \node[anote, anchor=north west, align=left, text width=150mm] at (-14,-30)
+       {보라색이 되감기 —\ \textsf{PID\_byhand} 안의 \textsf{SumAW} 가 이 뺄셈이고
+        \textsf{Kb\_gain} 이 그 차이에 $K_b$ 를 곱해 적분기 입력으로 되돌린다.
+        포화가 풀리면 두 값이 같아져 이 갈래가 저절로 0 이 된다};
 \end{scope}
 
 % ===================== (b) 한계 밖으로 얼마나 나갔는가 ======================
-\begin{scope}[shift={(4,-74)}]
-  \node[font=\small\bfseries, anchor=west] at (-18, 34)
+\begin{scope}[shift={(6,-86)}]
+  \node[font=\small\bfseries, anchor=west] at (-18, 32)
        {(b) \ \ 요구가 한계 밖으로 얼마나 나갔는가 \ \ (1-12 의 조건, 계단 직후)};
 
-  % 자료 -> mm.  x: -2..12 -> 0..70 mm ,  y: -4..4 -> 0..26 mm
+  % 자료 -> mm.  x: tau_raw 1 단위 = 5 mm ,  y: tau_sat 1 단위 = 3.25 mm
   \def\Xs{5.0}
   \def\Ys{3.25}
-  \def\Xz{10.0}          % tau_raw = 0 의 가로 위치 = 2 * Xs
-  \def\Yz{13.0}          % tau_sat = 0 의 세로 위치 = 4 * Ys
+  \def\Xz{10.0}          % tau_raw = 0 의 가로 위치
+  \def\Yz{13.0}          % tau_sat = 0 의 세로 위치
 
-  \draw[axis] (-1,\Yz) -- (72,\Yz);
-  \draw[axis] (\Xz,-1) -- (\Xz,27);
+  \draw[axis] (-1,\Yz) -- (70,\Yz);
+  \draw[axis] (\Xz,-1) -- (\Xz,26);
 
-  % 포화 특성:  -2.5 에서 꺾이고 2.5 에서 다시 꺾인다
+  % 포화 특성 — -2.5 에서 꺾이고 2.5 에서 다시 꺾인다
   \draw[ink, line width=0.9pt]
         (-1, {\Yz - 2.5*\Ys}) -- ({\Xz - 2.5*\Xs}, {\Yz - 2.5*\Ys})
-     -- ({\Xz + 2.5*\Xs}, {\Yz + 2.5*\Ys}) -- (70, {\Yz + 2.5*\Ys});
+     -- ({\Xz + 2.5*\Xs}, {\Yz + 2.5*\Ys}) -- (68, {\Yz + 2.5*\Ys});
   \draw[soft, line width=0.35pt, densely dotted]
-        (\Xz, {\Yz + 2.5*\Ys}) -- (70, {\Yz + 2.5*\Ys});
-  \node[note, anchor=west] at (30, {\Yz + 2.5*\Ys + 3.6})
-       {$\tau_{\text{sat}} \le 2.5$ \ \ (평평한 부분 = 포화 구간)};
-
-  % 45 도 구간
-  \node[note, anchor=north west] at ({\Xz + 2.6*\Xs}, {\Yz - 1.0})
-       {가운데 기울기 1 구간에서만 $\tau_{\text{sat}} = \tau_{\text{raw}}$};
+        (\Xz, {\Yz + 2.5*\Ys}) -- (68, {\Yz + 2.5*\Ys});
 
   % 요구값 10 — 1-12 유도 5번의 P 항
   \draw[accent, line width=0.5pt, densely dashed]
         ({\Xz + 10*\Xs}, \Yz) -- ({\Xz + 10*\Xs}, {\Yz + 2.5*\Ys});
   \fill[accent] ({\Xz + 10*\Xs}, {\Yz + 2.5*\Ys}) circle (0.8mm);
-  \node[anote, anchor=east, align=right] at ({\Xz + 10*\Xs - 2}, {\Yz + 2.5*\Ys - 3.6})
-       {요구 $\tau_{\text{raw}} = 10$ \ ($K_p e = 10 \times 1$)\\
-        실제 $\tau_{\text{sat}} = 2.5$ \ — 나머지 $7.5$ 는 버려진다};
+  % 버려지는 양을 가로 화살표로
+  \draw[accent, line width=0.5pt, {Stealth[length=3.5pt,width=2.6pt]}-{Stealth[length=3.5pt,width=2.6pt]}]
+        ({\Xz + 2.5*\Xs}, {\Yz + 2.5*\Ys + 3.0}) -- ({\Xz + 10*\Xs}, {\Yz + 2.5*\Ys + 3.0});
+  \node[anote, anchor=south] at ({\Xz + 6.25*\Xs}, {\Yz + 2.5*\Ys + 3.4}) {버려지는 $7.5$};
 
   % 가로 눈금
-  \foreach \v in {-2, 0, 2.5, 5, 10} {
+  \foreach \v in {-2, 0, 2.5} {
     \draw[axis] ({\Xz + \v*\Xs}, \Yz) -- ({\Xz + \v*\Xs}, \Yz-1.2);
     \node[tick, below=0.3mm] at ({\Xz + \v*\Xs}, \Yz-1.2) {\v};
   }
-  \node[font=\small, anchor=north] at (40, \Yz-7) {$\tau_{\text{raw}}$ \ \ 제어기가 원한 값};
+  \draw[accent, line width=0.5pt] ({\Xz + 10*\Xs}, \Yz) -- ({\Xz + 10*\Xs}, \Yz-1.2);
+  \node[anote, below=0.3mm] at ({\Xz + 10*\Xs}, \Yz-1.2) {$10$};
+  \node[font=\small, anchor=north] at (35, \Yz-7) {$\tau_{\text{raw}}$ \ \ 제어기가 원한 값};
   % 세로 눈금 — 한계 두 개만
   \foreach \v in {2.5, -2.5} {
     \draw[axis] (\Xz, {\Yz + \v*\Ys}) -- (\Xz-1.3, {\Yz + \v*\Ys});
     \node[tick, anchor=east] at (\Xz-1.8, {\Yz + \v*\Ys}) {\v};
   }
-  \node[font=\small, anchor=south, rotate=90] at (-4, 13) {$\tau_{\text{sat}}$ \ \ 실제로 나간 값};
+  \node[font=\small, anchor=south, rotate=90] at (-6, \Yz) {$\tau_{\text{sat}}$ \ \ 실제로 나간 값};
 
-  \node[wnote, anchor=north west, align=left, text width=74mm] at (-18,-8)
-       {이 그림에는 적분기가 없다. 그런데도 요구와 실제가 다르다 —
-        와인드업은 적분기가 만드는 것이 아니라 \textbf{이 간격이 있는 동안}
-        적분기가 그것을 모르고 계속 쌓기 때문에 생긴다};
+  % 오른쪽 설명 칸 — 그림 위에 글을 얹지 않는다
+  \node[note, anchor=north west, align=left, text width=54mm] at (74, 29)
+       {가운데 기울기 $1$ 인 구간에서만 $\tau_{\text{sat}} = \tau_{\text{raw}}$ 다.
+        평평한 두 구간이 포화다.\\[2mm]
+        계단 직후 $e = 1$ 이므로 $P$ 항 하나만으로 $\tau_{\text{raw}} = K_p e = 10$ —
+        한계 $2.5$ 의 네 배다 (1-12 유도 5번).\\[2mm]
+        \textbf{이 그림에는 적분기가 없다.} 그런데도 요구와 실제가 다르다.
+        와인드업은 적분기가 만드는 것이 아니라, 이 간격이 벌어져 있는 동안
+        적분기가 그것을 모른 채 계속 쌓아서 생긴다};
 
 \end{scope}
 

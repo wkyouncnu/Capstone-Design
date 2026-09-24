@@ -1,0 +1,99 @@
+% assets/w04-ssa.svg — 각의 뺄셈은 각이 아니다. ssa 가 무엇을 고치는가.
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-ssa.tex assets/w04-ssa.svg
+%
+% 4주차 2-11 의 그림. 대학원 볼트 figures/src/w04-ssa.tex 를 캡스톤 기호(psi_ref)·
+% 한국어로 다시 쓴 것. 각·호·톱니 구간의 수치는 원본이 계산해 둔 값을 그대로 옮겼다.
+%
+% 회전 방향의 근거 (figures-svg.md 3 「호가 어디서 시작하는가」):
+%   화면각 = 90 - 나침반각 이므로 나침반각이 커지면 화면각이 작아진다.
+%   따라서 psi 가 커지는 것(우현)은 화면에서 시계방향이다.
+%     psi     = +170  ->  화면 -80
+%     psi_ref = -170  ->  화면 260
+%     그대로 뺀 값 -340 은 좌현이므로 화면 반시계, ssa = +20 은 우현이므로 화면 시계.
+%
+% 주의 — 도 기호는 반드시 ^\circ 로 쓴다. 글자 ° 를 수식 안에 두면 kotex 가 조용히
+% 버려서 "20 떨어진 두 선수각" 처럼 단위가 사라진 그림이 나온다 (2026-09-24 에 실제로 그랬다).
+%
+% 폭 약 168 mm. 본문 폭 186 mm 안.
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[font=\small\bfseries, anchor=north west] at (-42,56)
+     {$20^\circ$ 떨어진 두 선수각, 그런데 그대로 빼면 $-340^\circ$};
+\node[anchor=north west, align=left, text width=160mm, font=\scriptsize, color=soft] at (-42,50) {%
+  각에서 각을 빼는 것은 산수이지 기하가 아니다. 수로는 맞고 오차로는 틀린 답이 나오며,
+  배는 먼 길로 돈다.};
+
+% ================= 왼쪽 — 나침반 =================
+% 두 방위 사이의 쐐기. 화면 -80 에서 -100 까지 (시계방향 20 deg)
+\fill[accent, opacity=0.13] (0,0) -- (-80.00:26.00) arc (-80.00:-100.00:26.00) -- cycle;
+\draw[soft, line width=0.4pt] (0,0) circle (26.00);
+\draw[axis, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,32.00);
+\node[font=\scriptsize, anchor=south] at (0,32.40) {$x_n$ (북)};
+\draw[soft, line width=0.4pt] (0.00,26.00) -- (0.00,27.80);
+\node[tick, anchor=west] at (28.40,0.00) {$y_n$ (동)};
+\draw[soft, line width=0.4pt] (26.00,0.00) -- (27.80,0.00);
+\draw[soft, line width=0.4pt] (0.00,-26.00) -- (0.00,-27.80);
+\node[tick, anchor=east] at (-28.40,-0.00) {서};
+\draw[soft, line width=0.4pt] (-26.00,-0.00) -- (-27.80,-0.00);
+
+% 긴 호: 화면 -80 -> +260, 반시계 (좌현 340 deg)
+\draw[soft, line width=1.5pt, -{Stealth[length=5pt,width=3.8pt]}]
+      (-80.00:16.12) arc (-80.00:260.00:16.12);
+% 라벨은 원 밖에 두고 지시선으로 잇는다 — 원 안에 두면 호와 겹친다
+\draw[soft, line width=0.35pt] (150.00:16.12) -- (-32.00,22.00);
+\node[note, anchor=east, align=right] at (-32.50,22.00)
+     {그대로 뺀 값\\$\psi_{\text{ref}}-\psi = -340^\circ$\\먼 길};
+
+% 짧은 호: 화면 -80 -> -100, 시계 (우현 20 deg)
+\draw[accent, line width=1.6pt, -{Stealth[length=5pt,width=3.8pt]}]
+      (-80.00:23.40) arc (-80.00:-100.00:23.40);
+
+% 두 방위
+\draw[ink, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}]
+      (0,0) -- (-80.00:26.00);
+\node[color=ink, font=\scriptsize, anchor=west] at (-80.00:29.00)
+     {$\psi = +170^\circ$ \ 지금};
+\draw[ink, line width=1.0pt, densely dashed, -{Stealth[length=5pt,width=3.6pt]}]
+      (0,0) -- (260.00:26.00);
+\node[color=ink, font=\scriptsize, anchor=east] at (260.00:29.00)
+     {목표 \ $\psi_{\text{ref}} = -170^\circ$};
+\node[anote, anchor=north, align=center, text width=66mm] at (0,-35.50)
+     {$\operatorname{ssa}(-340^\circ) = +20^\circ$ — 짧은 쪽,\\ 색칠한 쐐기가 그 $20^\circ$ 의 실제 크기};
+
+% ================= 오른쪽 — ssa 는 톱니다 =================
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (55.30,0) -- (122.70,0);
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (88.00,-19.30) -- (88.00,20.30);
+\node[font=\scriptsize, anchor=west]  at (123.70,0) {$e$ \ [deg]};
+\node[font=\scriptsize, anchor=south] at (88.00,20.80) {$\operatorname{ssa}(e)$ \ [deg]};
+\draw[soft, line width=0.4pt] (68.20,-1.2) -- (68.20,1.2);
+\node[tick, anchor=north] at (68.20,-1.6) {$-360$};
+\draw[soft, line width=0.4pt] (78.10,-1.2) -- (78.10,1.2);
+\node[tick, anchor=north] at (78.10,-1.6) {$-180$};
+\draw[soft, line width=0.4pt] (97.90,-1.2) -- (97.90,1.2);
+\node[tick, anchor=north] at (97.90,-1.6) {$180$};
+\draw[soft, line width=0.4pt] (107.80,-1.2) -- (107.80,1.2);
+\node[tick, anchor=north] at (107.80,-1.6) {$360$};
+\draw[soft, line width=0.4pt] (86.80,-15.30) -- (89.20,-15.30);
+\node[tick, anchor=east] at (86.20,-15.30) {$-180$};
+\draw[soft, line width=0.4pt] (86.80,15.30) -- (89.20,15.30);
+\node[tick, anchor=east] at (86.20,15.30) {$180$};
+\draw[ink, line width=0.9pt] (58.30,-15.30) -- (78.10,15.30);
+\draw[ink, line width=0.9pt] (78.10,-15.30) -- (97.90,15.30);
+\draw[ink, line width=0.9pt] (97.90,-15.30) -- (117.70,15.30);
+
+% 예제:  e = -340  ->  +20
+\draw[accent, line width=0.5pt, densely dashed] (69.30,0.00) -- (69.30,1.70) -- (88.00,1.70);
+\fill[accent] (69.30,1.70) circle (0.9);
+\node[anote, anchor=south west] at (70.50,2.30) {$-340 \mapsto +20$};
+\node[note, anchor=north, text width=58mm, align=center] at (88.00,-21.30)
+     {어떤 값이든 $(-180^\circ,\ 180^\circ]$ 안으로 접힌다. 가운데 토막에서는
+      $\operatorname{ssa}(e) = e$ 라 아무 일도 하지 않는다. 뛰는 자리는 $\pm180^\circ$ 이며,
+      그래서 접는 것은 선수각이 아니라 언제나 \textbf{오차}다};
+
+\end{tikzpicture}
+\end{document}

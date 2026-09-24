@@ -1,0 +1,150 @@
+% assets/w04-antiwindup-two.svg — 되감기 두 방식은 적분기 입력에서만 갈라진다.
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-antiwindup-two.tex assets/w04-antiwindup-two.svg
+%
+% 4주차 1-12 의 그림. 대학원 볼트 figures/src/w03-antiwindup-two.tex 를 캡스톤 기호·
+% 한국어로 다시 쓴 것.
+%
+% 두 방식은 루프의 나머지가 전부 같다. 다른 것은 적분기 바로 앞에서 무엇이 일어나는가
+% 하나뿐이므로 그 자리만 나란히 놓고 나머지는 같은 모양으로 그린다. 포화 뒤가 왜
+% 끊기는가(전체 루프)는 w04-windup.svg 가 이미 그렸다 — 여기서 플랜트와 바깥
+% 되먹임을 다시 그리지 않는 이유다.
+%
+% 부호는 1-12 결과식과 같다 —  Idot = K_i e + K_b (tau_sat - tau_raw).
+% 따라서 eps = tau_sat - tau_raw 이고 상한 포화 중에는 eps < 0 이다.
+% 본 과목 모델 PID_byhand 는 (b) 되감기(back-calculation) 를 쓴다.
+%
+% 폭 약 176 mm. 본문 폭 186 mm 안.
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+\tikzset{
+  % 두 판을 나란히 놓아야 하므로 기본 18mm 블록은 넓다
+  sblk/.style  = {draw=ink, line width=0.55pt, fill=white,
+                  minimum width=11mm, minimum height=7.5mm, inner sep=1.5pt, font=\small},
+  ablk/.style  = {draw=accent, line width=0.7pt, fill=white,
+                  minimum width=13mm, minimum height=8.5mm, inner sep=1.5pt,
+                  font=\small, text=accent},
+  asum/.style  = {draw=accent, line width=0.55pt, fill=white, circle,
+                  inner sep=0pt, minimum size=4.6mm, font=\scriptsize},
+  awire/.style = {accent, line width=0.5pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\node[font=\small\bfseries, anchor=north west] at (-12,36)
+     {되감기 두 방식 — 갈라지는 자리는 적분기 입력 한 곳뿐이다};
+\node[anchor=north west, align=left, text width=176mm, font=\scriptsize, color=soft] at (-12,31) {%
+  보라색 블록 바깥은 두 방식이 완전히 같다. 두 방식이 재는 넘친 양
+  $\varepsilon = \tau_{\text{sat}} - \tau_{\text{raw}}$ 까지 같다 (상한 포화 중에는 음수).
+  갈라지는 것은 그것을 적분기 입력에서 어떻게 쓰는가 하나뿐이다.};
+
+% =======================================================================
+% (a) 잠그기 (clamping)
+% =======================================================================
+\begin{scope}[shift={(0,0)}]
+  \node[font=\small\bfseries, anchor=west] at (-10,15) {(a) \ \ 잠그기 (clamping)};
+  \node[note, anchor=west, text width=78mm] at (-10,11)
+       {더 쌓이기만 할 상황이면 적분기를 아예 \emph{끈다}};
+
+  \node[sblk] (kp)  at (8,4)    {$K_p$};
+  \node[sblk] (ki)  at (8,-8)   {$K_i$};
+  \node[ablk] (gate) at (26,-8) {};
+  \node[sblk] (int) at (44,-8)  {$1/s$};
+  \node[sum]  (sb)  at (58,0)   {};
+  \node[sblk] (sat) at (70,0)   {};
+
+  % 스위치 글리프 — 열린 접점
+  \draw[accent, line width=0.6pt] ([shift={(-4mm,0)}]gate.center) -- ([shift={(-1.6mm,0)}]gate.center);
+  \draw[accent, line width=0.6pt] ([shift={( 1.6mm,0)}]gate.center) -- ([shift={( 4mm,0)}]gate.center);
+  \draw[accent, line width=0.7pt] ([shift={(-1.6mm,0)}]gate.center) -- ([shift={( 1.3mm,2.3mm)}]gate.center);
+  \fill[accent] ([shift={(-1.6mm,0)}]gate.center) circle (0.42);
+  \fill[accent] ([shift={( 1.6mm,0)}]gate.center) circle (0.42);
+
+  % 포화 글리프
+  \draw[wire] ([shift={(-4.5mm,-2.1mm)}]sat.center) -- ([shift={(-1.7mm,-2.1mm)}]sat.center)
+              -- ([shift={( 1.7mm, 2.1mm)}]sat.center) -- ([shift={( 4.5mm, 2.1mm)}]sat.center);
+
+  % 배선
+  \coordinate (br) at (-2,-2);
+  \draw[sig] (-10,-2) -- node[sname, above, pos=0.15] {$e$} (br);
+  \node[dot] at (br) {};
+  \draw[wire] (br) |- (kp.west);   \draw[wire] (br) |- (ki.west);
+  \draw[sig]  (ki) -- (gate);
+  \draw[sig]  (gate) -- (int);
+  \draw[wire] (kp) -| (sb);
+  \draw[wire] (int) -| (sb);
+  \draw[sig]  (sb) -- (sat);
+  \draw[sig]  (sat) -- (81,0);
+  \node[sname, anchor=west] at (81,0) {$\tau_{\text{sat}}$};
+  \node[sname, anchor=east] at (65.2,-11) {$\tau_{\text{raw}}$};
+
+  % eps 를 재는 자리
+  \coordinate (ta) at (66,0);   \coordinate (tb) at (78,0);
+  \node[dot] at (ta) {};  \node[dot] at (tb) {};
+  \node[asum] (ep) at (72,-20) {};
+  \node[anote, anchor=north] at (72,-23.5) {$\varepsilon$};
+  \draw[awire] (ta) |- (ep);
+  \draw[awire] (tb) |- (ep);
+  \node[anote, anchor=east] at (69.4,-17.4) {$-$};
+  \node[anote, anchor=west] at (74.6,-17.4) {$+$};
+
+  % 게이트로 가는 논리
+  \draw[asig] (ep) -| (26,-14.5);
+  \node[anote, anchor=north, align=center, text width=60mm] at (30,-27)
+       {$\varepsilon \neq 0$ 이고 오차가 같은 쪽을 더 밀고 있으면 연다 \\
+        $\Rightarrow\ \dot I = 0$ — 기억을 얼린다};
+\end{scope}
+
+% =======================================================================
+% (b) 되감기 (back-calculation) — 본 과목이 쓰는 방식
+% =======================================================================
+\begin{scope}[shift={(104,0)}]
+  \node[font=\small\bfseries, anchor=west] at (-10,15) {(b) \ \ 되감기 (back-calculation)};
+  \node[note, anchor=west, text width=78mm] at (-10,11)
+       {넘친 양을 \emph{되돌려} 적분기를 끌어낸다 — 본 과목 \textsf{PID\_byhand} 가 이것};
+
+  \node[sblk] (kp)  at (8,4)    {$K_p$};
+  \node[sblk] (ki)  at (8,-8)   {$K_i$};
+  \node[asum] (bs)  at (26,-8)  {};
+  \node[sblk] (int) at (44,-8)  {$1/s$};
+  \node[sum]  (sb)  at (58,0)   {};
+  \node[sblk] (sat) at (70,0)   {};
+  \node[ablk] (kaw) at (26,-20) {$K_b$};
+
+  \draw[wire] ([shift={(-4.5mm,-2.1mm)}]sat.center) -- ([shift={(-1.7mm,-2.1mm)}]sat.center)
+              -- ([shift={( 1.7mm, 2.1mm)}]sat.center) -- ([shift={( 4.5mm, 2.1mm)}]sat.center);
+
+  \coordinate (br) at (-2,-2);
+  \draw[sig] (-10,-2) -- node[sname, above, pos=0.15] {$e$} (br);
+  \node[dot] at (br) {};
+  \draw[wire] (br) |- (kp.west);   \draw[wire] (br) |- (ki.west);
+  \draw[sig]  (ki) -- (bs);
+  \draw[sig]  (bs) -- (int);
+  \draw[wire] (kp) -| (sb);
+  \draw[wire] (int) -| (sb);
+  \draw[sig]  (sb) -- (sat);
+  \draw[sig]  (sat) -- (81,0);
+  \node[sname, anchor=west] at (81,0) {$\tau_{\text{sat}}$};
+  \node[sname, anchor=east] at (65.2,-11) {$\tau_{\text{raw}}$};
+
+  \coordinate (ta) at (66,0);   \coordinate (tb) at (78,0);
+  \node[dot] at (ta) {};  \node[dot] at (tb) {};
+  \node[asum] (ep) at (72,-20) {};
+  \node[anote, anchor=north] at (72,-23.5) {$\varepsilon$};
+  \draw[awire] (ta) |- (ep);
+  \draw[awire] (tb) |- (ep);
+  \node[anote, anchor=east] at (69.4,-17.4) {$-$};
+  \node[anote, anchor=west] at (74.6,-17.4) {$+$};
+
+  % eps -> Kb -> 적분기 입력에 더한다
+  \draw[asig] (ep) -- (kaw);
+  \draw[asig] (kaw) -- (bs);
+  \node[anote, anchor=east] at (24.4,-11.5) {$+$};
+  \node[anote, anchor=north, align=center, text width=60mm] at (30,-27)
+       {$\dot I = K_i e + K_b\,\varepsilon$ — 끊임없이 끌어당긴다 \\
+        멈추는 자리는 0 이 아니라 $\varepsilon = -(K_i/K_b)\,e$};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}
