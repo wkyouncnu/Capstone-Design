@@ -23,6 +23,21 @@ else
     mOff = 'W04_4_inner_loop_offline';  mVrx = 'W04_4_inner_loop';
 end
 
+% ---------------------------------------------------------------------
+%  ROS 2 도메인 맞추기 — Simulink 블록은 'ROS 네트워크 프로필'의 Domain ID 를
+%  쓰고, MATLAB 의 ros2* 함수는 환경변수 ROS_DOMAIN_ID 를 쓴다 (2-14-5).
+%  둘이 다르면 아래 토픽 확인이 조용히 실패해 오프라인만 돈다. 프로필 값으로 맞춘다.
+% ---------------------------------------------------------------------
+try
+    prof = getpref('ROS_Toolbox','ROS_NetworkAddress_Profiles');
+    if ~isempty(prof) && isfield(prof{1},'DomainID')
+        setenv('ROS_DOMAIN_ID', num2str(double(prof{1}.DomainID)));
+    end
+catch
+end
+if isempty(getenv('ROS_DOMAIN_ID')), setenv('ROS_DOMAIN_ID','0'); end
+fprintf('0) ROS_DOMAIN_ID = %s\n', getenv('ROS_DOMAIN_ID'));
+
 fprintf('1) 오프라인 쌍둥이 %s (%g 초)\n', mOff, T_end);
 load_system(mOff);
 oOff = sim(mOff, 'StopTime', num2str(T_end));
@@ -38,6 +53,8 @@ catch
 end
 if ~any(strcmp(tl, TOP))
     fprintf('\n2) VRX 토픽(%s)이 보이지 않아 오프라인만 돌렸다.\n', TOP);
+    fprintf('   VRX 를 띄웠는데도 이 줄이 나오면 WSL 의 echo $ROS_DOMAIN_ID 가 %s 인지 확인할 것 (2-14-5)\n', ...
+            getenv('ROS_DOMAIN_ID'));
     plotBoth(oOff, [], stage, R);
     return
 end

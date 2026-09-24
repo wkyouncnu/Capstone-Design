@@ -288,7 +288,7 @@ for k = 1:2
     in  = in.setVariable('ref_smooth', k-1);
     in  = in.setVariable('noise_var', 0);      % 잡음은 끄고 계단 모서리만 본다
     %  포화 한계를 풀어 둔다. u_max = 2.5 로는 킥이 잘려 보이지 않는다
-    %  (킥의 크기가 Kd*Nf*계단 = 80 이라 한계에 그대로 붙어 버린다)
+    %  (킥의 크기가 Kd*Nf*계단 + Kp*계단 = 90 이라 한계에 그대로 붙어 버린다)
     in  = in.setVariable('u_max', 100);
     out = sim(in);
     t = out.log_y_hand.Time;
@@ -300,12 +300,13 @@ for k = 1:2
     %  계단은 t = 1 s 에 들어간다. 그 직후 0.5 초 안의 최대 제어입력이 킥이다
     seg  = t >= 1 & t <= 1.5;
     kick = max(u(seg));
-    Kd2 = evalin('base','Kd2'); Nf2 = evalin('base','Nf2'); rs = evalin('base','r_step');
-    rows{k} = table(string(name{k}), kick, Kd2*Nf2*rs, max(u), ...
+    %  손계산 = D 항의 천장 Kd*Nf*계단 + 같은 순간의 P 항 Kp*계단 (4주차 1-11-2 4번)
+    Kp2 = evalin('base','Kp2'); Kd2 = evalin('base','Kd2'); Nf2 = evalin('base','Nf2'); rs = evalin('base','r_step');
+    rows{k} = table(string(name{k}), kick, Kd2*Nf2*rs + Kp2*rs, max(u), ...
                     mean(u(t > t(end)-2)), ...
         'VariableNames', {'cond','tau_kick','tau_kick_hand','tau_max','tau_ss'});
 end
-finishPanel(ax1, ax2, '계단 모서리에서 D 항이 한 번 크게 튄다 (Kd*Nf*계단 = 킥)', ...
+finishPanel(ax1, ax2, '계단 모서리에서 D 항이 한 번 크게 튄다 (Kd*Nf*계단 + Kp*계단 = 킥)', ...
             '출력 y', '제어입력 τ  (포화 한계를 100 으로 풀어 둠)');
 saveImg(ax1, 'W04_P2_kick.png');
 

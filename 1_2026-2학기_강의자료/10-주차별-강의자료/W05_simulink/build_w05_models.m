@@ -540,11 +540,38 @@ end
 %   MATLAB Function 블록은 원래 그림을 못 그린다.
 %   coder.extrinsic 으로 선언하면 컴파일하지 않고 MATLAB 함수를 그대로 부른다.
 %   실제 그리기는 W05_animate.m 이 한다.
+%
+%   두 모델이 같은 함수(W05_animate.m)를 쓴다 — 스킬 규칙 20·26.
+%   바뀌는 것은 신호를 어디서 뽑았는지뿐이다 (운동방정식 vs ground truth odometry).
+%
+%   >>> 태그 순서가 곧 W05_animate 의 인자 순서다 <<<
+%
+%       x_n  y_n  psi  psi_ref  y_e  u  gate  FL  FR  wp_idx   +  t  +  en
+%
+%   From 을 더하거나 빼면 W05_animate 의 인자 순서도 같이 바뀐다. 아래 tags
+%   한 줄이 그 계약이고, add_animate_box 가 그 순서대로 포트를 만든다.
+%
+%   태그가 어디서 나오는가 — **전부 이미 있던 태그다. 새로 뽑은 신호가 없다**
+%     x_n·y_n·psi·u       MotionModel (오프라인) / PoseSubscriber (VRX) 의 Goto
+%     psi_ref·y_e·gate    wireFront 가 Guidance 출력에 건 Goto
+%     FL·FR               wireThrusterGotos
+%     wp_idx              Guidance 안 drop_tag (TagVisibility = global)
+%
+%   속도 지령을 왜 gate 로 받는가
+%     내부루프가 쓰는 지령은 u_ref × gate 다 (InnerLoop 의 Gate 블록). 그 곱을
+%     태그로 빼려면 Gate 출력에 가지를 쳐야 하는데, 그러면 Simulink 가 본선
+%     Gate -> SurgeErr 를 5 px 사선으로 다시 그어 배선 검사가 걸린다
+%     (2026-09-24 실제로 밟았다). gate 는 이미 태그가 있고 u_ref 는 설정값이므로
+%     그리는 함수가 둘을 곱한다. 모델에는 선이 한 줄도 늘지 않는다.
+%
+%   실시간 화면은 제어 신호를 **구경만** 한다. 이미 있는 태그를 읽을 뿐,
+%   블록 하나 게인 하나 건드리지 않는다.
 % =====================================================================
 function addAnimate(m, x, y)
 % 실시간 그림 — 포트 없는 서브시스템 하나로 묶는다.
 % 공용 도구 _tools/add_animate_box.m 이 안을 채운다.
-    add_animate_box(m, {'x_n','y_n','psi'}, 'W05_animate', '', [x y], 'Ts_ctrl');
+    tags = {'x_n','y_n','psi','psi_ref','y_e','u','gate','FL','FR','wp_idx'};
+    add_animate_box(m, tags, 'W05_animate', '', [x y], 'Ts_ctrl');
 end
 
 % =====================================================================

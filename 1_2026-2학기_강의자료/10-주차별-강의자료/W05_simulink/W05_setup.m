@@ -166,6 +166,16 @@ skip_run = getappdata(0, 'W05_skip_run');
 if isempty(skip_run), skip_run = false; end
 setappdata(0, 'W05_skip_run', false);
 
+
+%% ====================================================================
+%  ROS 2 도메인 — WSL 의 ~/.bashrc 와 같아야 토픽이 보인다 (스킬 규칙 27)
+%    WSL 터미널에서  echo $ROS_DOMAIN_ID
+%    본 과목은 전 주차 7. 자기 팀 번호로 바꿀 때는 WSL 쪽도 같이 바꾼다
+% =====================================================================
+ros_domain_id = '7';
+setenv('ROS_DOMAIN_ID', ros_domain_id);
+fprintf('  ROS_DOMAIN_ID = %s  (WSL 의 echo $ROS_DOMAIN_ID 와 같아야 함)\n', ros_domain_id);
+
 if auto_run && ~skip_run
     fprintf('\n오프라인 모델 실행 중  (auto_run = 0 으로 두면 실행하지 않는다)\n');
     if animate
