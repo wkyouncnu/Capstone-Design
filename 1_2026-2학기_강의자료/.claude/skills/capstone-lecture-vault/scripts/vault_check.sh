@@ -216,17 +216,23 @@ check_struct() {
   # 학생이 어느 문서를 열어도 첫 페이지에서 저장소 주소와 git pull 절차를 보아야 한다.
   # 원본은 _templates/강의자료저장소블록.md — 문서마다 고쳐 쓰지 않는다.
   local miss=0 g
-  for g in 10-주차별-강의자료/W*.md 00-운영/강의계획서.md 00-운영/평가와-팀운영.md \
-           00-운영/AI에이전트-활용-정책.md; do
+  for g in 10-주차별-강의자료/W*.md 10-주차별-강의자료/A1_*.md 00-운영/강의계획서.md \
+           00-운영/평가와-팀운영.md 00-운영/AI에이전트-활용-정책.md; do
     [ -f "$g" ] || continue
     if ! grep -q '강의자료 저장소 — 처음 한 번만' "$g"; then
       echo "     [블록 없음] $g"; miss=$((miss+1))
-    elif [ "$(grep -n 'github.com/wkyouncnu/Capstone-Design>' "$g" | head -1 | cut -d: -f1)" -gt 60 ]; then
+    elif [ "$(grep -n 'github.com/wkyouncnu/Capstone-Design>' "$g" | head -1 | cut -d: -f1)" -gt 70 ]; then
       echo "     [첫 페이지 아님] $g"; miss=$((miss+1))
     fi
+    #  이번 학기 녹화 강의 재생목록 — H1 바로 뒤, 참조 강의 블록보다 위
+    if ! grep -q 'list=PLK_f1-krzJG8' "$g"; then
+      echo "     [녹화 강의 블록 없음] $g"; miss=$((miss+1))
+    elif [ "$(grep -n 'list=PLK_f1-krzJG8' "$g" | head -1 | cut -d: -f1)" -gt 20 ]; then
+      echo "     [녹화 강의 블록이 첫 페이지 맨 위가 아님] $g"; miss=$((miss+1))
+    fi
   done
-  note "저장소 블록 누락" "$miss"
-  [ $miss -gt 0 ] && echo "     -> _templates/강의자료저장소블록.md 를 참조 강의 블록 뒤에 넣는다"
+  note "첫 페이지 블록 누락" "$miss"
+  [ $miss -gt 0 ] && echo "     -> _templates/녹화강의블록.md · 강의자료저장소블록.md 를 H1 뒤에 넣는다"
   FAIL=$((FAIL+miss))
 }
 

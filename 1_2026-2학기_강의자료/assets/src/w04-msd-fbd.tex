@@ -1,0 +1,85 @@
+% assets/w04-msd-fbd.svg — 질량-스프링-댐퍼 장치와 그 자유물체도.
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-msd-fbd.tex assets/w04-msd-fbd.svg
+%
+% 4주차 1-3 의 그림. 대학원 볼트 figures/src/w02-msd-fbd.tex 를 캡스톤 기호·한국어로
+% 다시 쓴 것. 1-3 의 네 단계(장치 -> 자유물체도 -> 미분방정식 -> 전달함수) 가운데
+% 앞의 둘을 한 장에 두고, 아래에 1-3 유도 3·4번 줄을 그대로 적는다.
+%
+% 기호는 1-3 본문과 같다 — 미는 힘 f, 변위 y, 질량 m, 감쇠 b, 강성 k.
+% 제어입력 tau 를 쓰지 않는 이유: 1-3 은 아직 제어기가 없는 절이고 본문이 f 를 쓴다.
+%
+% 부호 약속: 오른쪽이 +. 스프링 힘과 댐퍼 힘은 y, y' 이 양일 때 왼쪽을 향하므로
+% 식에서 - 가 붙는다. 그림의 화살표 방향이 곧 그 부호다.
+%
+% 폭 약 165 mm. 본문 폭 186 mm 안.
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ======================== 왼쪽: 장치 ========================================
+\node[font=\small\bfseries, anchor=west] at (-2,22) {① 장치};
+
+% 벽
+\draw[ink, line width=0.8pt] (0,-10) -- (0,10);
+\foreach \yy in {-9,-6,...,9} \draw[ink, line width=0.35pt] (0,\yy) -- (-2.5,\yy-2.5);
+% 바닥 (마찰 없음)
+\draw[ink, line width=0.5pt] (0,-10) -- (66,-10);
+% 스프링 k
+\draw[ink, line width=0.5pt] (0,4) -- (4,4);
+\draw[ink, line width=0.5pt, decorate,
+      decoration={zigzag, segment length=2.4mm, amplitude=1.6mm}] (4,4) -- (24,4);
+\draw[ink, line width=0.5pt] (24,4) -- (30,4);
+\node[sname, above] at (14,5.6) {$k$};
+% 댐퍼 b
+\draw[ink, line width=0.5pt] (0,-4) -- (8,-4);
+\draw[ink, line width=0.5pt] (18,-1.2) -- (8,-1.2) -- (8,-6.8) -- (18,-6.8);
+\draw[ink, line width=0.8pt] (14,-2.2) -- (14,-5.8);
+\draw[ink, line width=0.5pt] (14,-4) -- (30,-4);
+\node[sname, below] at (13,-7.2) {$b$};
+% 질량
+\draw[ink, line width=0.55pt, fill=black!6] (30,-9) rectangle (46,9);
+\node[font=\small] at (38,0) {$m$};
+% 미는 힘
+\draw[accent, line width=0.7pt, -{Stealth[length=4pt, width=3pt]}] (46,0) -- (60,0);
+\node[sname, accent, above] at (54,0.3) {$f$};
+% 위치와 부호
+\draw[soft, densely dashed, line width=0.4pt] (30,10) -- (30,17);
+\draw[sig] (30,15) -- (42,15);
+\node[sname, above] at (36,15) {$y$};
+\node[note, anchor=west] at (43,15) {오른쪽이 $+$ · 스프링이 늘지 않은 자리가 $y=0$};
+\node[note, anchor=north, align=center] at (33,-11.5) {질량 하나 · 스프링 하나 · 댐퍼 하나 · 미는 힘 하나};
+
+% 가운데 화살표
+\draw[soft, line width=0.5pt, -{Stealth[length=4pt, width=3pt]}] (70,0) -- (84,0);
+\node[note, align=center, anchor=south] at (77,0.8) {질량만 떼어 낸다};
+
+% ======================== 오른쪽: 자유물체도 ================================
+\node[font=\small\bfseries, anchor=west] at (100,22) {② 자유물체도};
+
+\draw[ink, line width=0.55pt, fill=black!6] (118,-9) rectangle (134,9);
+\node[font=\small] at (126,0) {$m$};
+\draw[accent, line width=0.7pt, -{Stealth[length=4pt, width=3pt]}] (134,0) -- (150,0);
+\node[sname, accent, above] at (142,0.3) {$f$};
+\node[note, accent, below] at (142,-0.3) {민다};
+\draw[ink, line width=0.7pt, -{Stealth[length=4pt, width=3pt]}] (118,4) -- (100,4);
+\node[sname, above] at (109,4.3) {$k\,y$};
+\node[note, anchor=south] at (109,9.8) {스프링이 되민다};
+\draw[ink, line width=0.7pt, -{Stealth[length=4pt, width=3pt]}] (118,-4) -- (100,-4);
+\node[sname, below] at (109,-4.3) {$b\,\dot y$};
+\node[note, anchor=north] at (109,-9.4) {댐퍼가 속도를 막는다};
+\node[note, anchor=north, align=center] at (126,-13.5) {질량 하나에 걸리는 힘을 빠짐없이 그린 것};
+
+% ======================== 아래: 식 ===========================================
+\node[font=\small, anchor=north] at (79,-22)
+  {$\displaystyle \sum F = m\,\ddot y
+     \quad\Longrightarrow\quad
+     f - k\,y - b\,\dot y = m\,\ddot y
+     \quad\Longrightarrow\quad
+     m\,\ddot y + b\,\dot y + k\,y = f$};
+\node[note, anchor=north] at (79,-30) {1-3 유도 2번 \quad 3번 (화살표 방향이 곧 부호) \quad 4번};
+
+\end{tikzpicture}
+\end{document}

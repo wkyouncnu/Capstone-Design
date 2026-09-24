@@ -1,0 +1,82 @@
+% assets/w04-pid-loop.svg — 되먹임 루프 하나와, 오차 하나를 세 가지로 읽는 PID.
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-pid-loop.tex assets/w04-pid-loop.svg
+%
+% 4주차 1-6 의 그림. 대학원 볼트 figures/src/w02-pid-loop.tex 를 캡스톤 기호·한국어로
+% 다시 쓴 것. 루프의 이름(목표·오차·제어입력·플랜트·출력·측정값)과 PID 세 갈래
+% (지금·과거·앞으로)를 한 장에 둔다. 갈래 이름은 1-6 결과식의 underbrace 와 같다.
+%
+% 기호는 1-6 본문과 같다 — 목표 y_d, 오차 e, 제어입력 tau, 출력 y, 측정값 y_m.
+% r 과 u 는 이 과목에서 요각속도와 전후속도이므로 쓰지 않는다 (1-6 의 경고 상자).
+%
+% 폭 약 172 mm. 본문 폭 186 mm 안.
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+\tikzset{
+  tri/.style   = {draw=ctrl, line width=0.55pt, fill=white, minimum width=26mm,
+                  minimum height=8.5mm, inner sep=2pt, font=\small},
+  plt/.style   = {draw=plant, line width=0.55pt, fill=white, minimum width=26mm,
+                  minimum height=11mm, inner sep=2pt, font=\small, align=center},
+  sen/.style   = {draw=nav, line width=0.55pt, fill=white, minimum width=20mm,
+                  minimum height=8.5mm, inner sep=2pt, font=\small},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ---- 목표와 오차 ----------------------------------------------------------
+\node[sname, anchor=east] (yd) at (0,0) {$y_d$};
+\node[sum] (e) at (12,0) {};
+\node[font=\scriptsize] at ([shift={(-2.6mm,1.9mm)}]e.center) {$+$};
+\node[font=\scriptsize] at ([shift={(1.6mm,-2.9mm)}]e.center) {$-$};
+\draw[sig] (yd.east) -- (e.west);
+\node[note, anchor=south] at (yd.north) {목표값};
+
+% ---- 세 갈래 ---------------------------------------------------------------
+\node[dot] (br) at (22,0) {};
+\draw[wire] (e.east) -- node[sname, above, pos=0.55] {$e$} (br);
+
+\node[tri] (P) at (50, 15) {$K_p\, e$};
+\node[tri] (I) at (50,  0) {$K_i \displaystyle\int_0^t e\,\mathrm{d}\sigma$};
+\node[tri] (D) at (50,-15) {$K_d\, \dfrac{\mathrm{d}e}{\mathrm{d}t}$};
+\draw[sig] (br) |- (P.west);
+\draw[sig] (br) -- (I.west);
+\draw[sig] (br) |- (D.west);
+
+\node[anote, anchor=south] at (P.north) {지금 — 얼마나 틀렸는가};
+\node[anote, anchor=south] at ([yshift=0.4mm]I.north) {과거 — 얼마나 오래 틀렸는가};
+\node[anote, anchor=north] at (D.south) {앞으로 — 얼마나 빨리 좁혀지는가};
+
+\node[sum] (s) at (78,0) {};
+\node[font=\scriptsize] at ([shift={(-2.6mm,2.4mm)}]s.center) {$+$};
+\node[font=\scriptsize] at ([shift={(-3.1mm,-0.1mm)}]s.center) {$+$};
+\node[font=\scriptsize] at ([shift={(-2.6mm,-2.6mm)}]s.center) {$+$};
+\draw[sig] (P.east) -| (s.north);
+\draw[sig] (I.east) -- (s.west);
+\draw[sig] (D.east) -| (s.south);
+
+% 제어기 테두리
+\begin{scope}[on background layer]
+  \node[grp, draw=ctrl, fit=(P)(D)(br)(s), inner xsep=3mm, inner ysep=7.5mm] (ctl) {};
+\end{scope}
+\node[note, text=ctrl, anchor=north west] at (ctl.north west) {제어기 (PID)};
+
+% ---- 플랜트 ----------------------------------------------------------------
+\node[plt] (G) at (112,0) {플랜트 $G(s)$\\[-0.6mm]\scriptsize 밀리는 쪽};
+\draw[sig] (s.east) -- node[sname, above] {$\tau$} node[note, below] {제어입력} (G.west);
+
+\node[dot] (ob) at (136,0) {};
+\draw[wire] (G.east) -- (ob);
+\node[sname, anchor=west] (yout) at (146,0) {$y$};
+\draw[sig] (ob) -- (yout.west);
+\node[note, anchor=north] at (143,-1.2) {출력};
+
+% ---- 센서와 되먹임 ---------------------------------------------------------
+\node[sen] (S) at (112,-28) {센서};
+\draw[sig] (ob) |- (S.east);
+\draw[sig] (S.west) -| node[sname, pos=0.3, below] {$y_m$\ \ {\scriptsize\color{soft}측정값}} (e.south);
+
+\node[note, anchor=north east, align=right] at (9,-3.5) {오차\\$e = y_d - y_m$};
+
+\end{tikzpicture}
+\end{document}
