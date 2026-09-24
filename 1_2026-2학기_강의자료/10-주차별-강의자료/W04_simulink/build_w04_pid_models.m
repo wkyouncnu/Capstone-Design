@@ -56,6 +56,25 @@ function build_w04_pid_models()
     %  F-3 절이 싣는 Dcompare 안쪽 도면. 강의노트는 W04_Dcompare.png 이름을 쓴다
     f = export_diagram('W04_P2_pid_byhand', '', 'Dcompare');
     movefile(f, fullfile(here, 'img', 'W04_Dcompare.png'), 'f');
+
+    %  1-10 이 싣는 PID_byhand 안쪽 도면. 강의노트는 W04_PID_byhand.png 이름을 쓴다
+    f = export_diagram('W04_P2_pid_byhand', '', 'PID_byhand');
+    movefile(f, fullfile(here, 'img', 'W04_PID_byhand.png'), 'f');
+    %
+    %  1-12 가 싣는 되감기 회로 도면 W04_PID_byhand__AW.png 은 위 그림에서 파생된다.
+    %  블록 배치가 바뀌면 아래를 다시 돌린다 (2026-09-24 에 이렇게 만들었다).
+    %  좌표는 블록 위치에서 계산한 것이고, 자르는 줄은 잉크가 끊기는 가장 긴 구간이다.
+    %
+    %    I  = imread('img/W04_PID_byhand.png');
+    %    s  = 2.0745; X0 = 45; Y0 = 82;          % 픽셀/Simulink단위, 캔버스 왼쪽 위
+    %    px = @(X) round((X-X0)*s + 4);  py = @(Y) round((Y-Y0)*s + 4);
+    %    col = uint8([124 58 237]);              % capstone-style.tex 의 accent
+    %    boxes = [675 73 727 135; 736 416 784 470; 521 528 599 598];  % Sat·SumAW·Kb_gain
+    %    ... 테두리 네 변을 col 로 칠한 뒤
+    %    imwrite(I(1:1110,:,:), 'img/W04_PID_byhand__AW.png');   % 주석 덩어리를 잘라 냄
+    %
+    %  W04_P3_boat_speed__PID_u.png (2-2 가 싣는 속도 제어기 안쪽) 은 파일이 이미
+    %  있으므로 위 export_model_pngs 가 알아서 갱신한다.
 end
 
 % =====================================================================
