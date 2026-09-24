@@ -119,6 +119,67 @@ function fresh(m)
 end
 
 % =====================================================================
+% 실시간 화면 — 일곱 모델이 같은 함수(W04_animate.m)를 쓴다
+%
+%   교수 지시 2026-09-24. 3주차에는 실시간 화면이 있는데 4주차 모델에는 없었다.
+%   4주차는 **제어**를 하므로 화면이 답해야 할 질문이 하나 늘었다 —
+%   시킨 대로 따라갔는가. 그래서 궤적 옆에 지령 대비 응답 두 칸이 더 있다.
+%
+%   붙은 모델
+%     오프라인  W04_3_heading_offline · W04_4_inner_loop_offline · W04_5_offline
+%     VRX       W04_1_straight · W04_2_turn · W04_3_heading · W04_4_inner_loop
+%
+%   >>> 태그 순서가 곧 W04_animate 의 인자 순서다 <<<
+%
+%       x_n  y_n  psi  u  v  r  FL  FR  [u_ref]  [psi_ref]   +  t  +  en
+%
+%   From 을 더하거나 빼면 AnimateFcn 의 인자 순서도 같이 바뀐다. 아래 tags
+%   한 줄이 그 계약이고, add_animate_box 가 그 순서대로 포트를 만든다.
+%
+%   지령이 없는 모델은 그 태그를 **아예 만들지 않고** AnimateFcn 이 NaN 을 넣어
+%   부른다. W04_animate 는 NaN 을 보면 그 칸에 "지령 없음 (개루프)" 라고 적는다.
+%   빈 칸으로 두면 학생은 그림이 고장난 줄 안다.
+% =====================================================================
+function addW04Animate(m, x, y, hasURef, hasPsiRef)
+    tags = {'x_n','y_n','psi','u','v','r','FL','FR'};
+    if hasURef,   tags{end+1} = 'u_ref';   end
+    if hasPsiRef, tags{end+1} = 'psi_ref'; end
+
+    if hasURef,   aU = 'u_ref';   else, aU = 'NaN'; end
+    if hasPsiRef, aP = 'psi_ref'; else, aP = 'NaN'; end
+
+    code = [ ...
+    sprintf('function ok = AnimateFcn(%s, t, en)', strjoin(tags, ', '))           newline ...
+    '%#codegen'                                                                   newline ...
+    '% 실시간 그림. MATLAB Function 블록은 그림을 그리지 못하므로 그리는 함수를'    newline ...
+    '% extrinsic 으로 선언한다 — 코드를 만들지 않고 평범한 MATLAB 을 부른다.'       newline ...
+    '% en = base workspace 의 animate (0 이면 그리지 않는다).'                      newline ...
+    'coder.extrinsic(''W04_animate'');'                                           newline ...
+    'ok = 1;'                                                                     newline ...
+    'if en > 0.5'                                                                 newline ...
+    sprintf('    W04_animate(x_n, y_n, psi, u, v, r, FL, FR, %s, %s, t);', aU, aP) newline ...
+    'end'];
+
+    add_animate_box(m, tags, 'W04_animate', code, [x y], '0.05');
+end
+
+% ---- 출력 포트 높이에 맞춰 Goto 태그를 한 줄로 세운다 -> 선이 전부 수평 직선 ----
+%   실시간 화면은 제어 신호를 **구경만** 한다. 본선에 가지를 쳐서 태그에 걸 뿐,
+%   블록 하나 게인 하나 건드리지 않는다.
+function tapGotos(sys, src, names, x)
+%   NAMES 의 k 번째가 빈 문자열이면 그 출력 포트는 건너뛴다 — 두 출력 중
+%   하나만 태그로 뺄 때 쓴다 (예: Alloc 의 FR 만. FL 은 PortEff 를 지난 값이다)
+    for k = 1:numel(names)
+        if isempty(names{k}), continue, end
+        q = port_xy(sys, src, 'Outport', k);
+        add_block('simulink/Signal Routing/Goto', [sys '/Go_' names{k}], ...
+                  'Position', [x q(2)-11 x+70 q(2)+11], ...
+                  'GotoTag', names{k}, 'TagVisibility','global');
+        add_line(sys, sprintf('%s/%d', src, k), ['Go_' names{k} '/1']);
+    end
+end
+
+% =====================================================================
 % 1단계 — 직진
 % =====================================================================
 function build_straight()
@@ -135,10 +196,20 @@ function build_straight()
     add_line(m,'FL/1','AsgL/2','autorouting','on');
     add_line(m,'FR/1','AsgR/2','autorouting','on');
 
+    %  실시간 화면 — 내보낸 추력과, 그 결과로 배가 어디까지 갔는지를 함께 본다.
+    %  이 모델은 제어를 하지 않으므로 지령 칸 둘은 "지령 없음" 이 된다.
+    addOdomReader(m, false, true);
+    tapGotos(m, 'FL', {'FL'}, 130);
+    tapGotos(m, 'FR', {'FR'}, 130);
+    addW04Animate(m, 40, 560, false, false);
+
     setSolver(m);
     note(m, sprintf(['[1단계] 직진\n' ...
         '좌우 추력을 같은 값(200 N)으로 발행한다.\n' ...
-        'FL 과 FR 값을 바꿔 보고 배가 어떻게 반응하는지 관찰할 것.']), 40, 400);
+        'FL 과 FR 값을 바꿔 보고 배가 어떻게 반응하는지 관찰할 것.\n' ...
+        '\n' ...
+        'Animate 상자가 도는 동안 항적과 상태를 그린다 (W04_animate.m).\n' ...
+        '끄려면 W04_setup.m 의 animate = 0.']), 40, 400);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
 end
@@ -174,11 +245,19 @@ function build_turn()
     add_line(m,'Scenario/1','AsgL/2','autorouting','on');
     add_line(m,'Scenario/2','AsgR/2','autorouting','on');
 
+    %  실시간 화면 — 시나리오가 추력을 바꾸는 순간과 항적이 휘는 순간을 나란히 본다
+    addOdomReader(m, false, true);
+    tapGotos(m, 'Scenario', {'FL','FR'}, 310);
+    addW04Animate(m, 40, 560, false, false);
+
     setSolver(m);
     set_param(m,'StopTime','80');
     note(m, sprintf(['[2단계] 직진 -> 우선회 -> 좌선회\n' ...
         '0~20s 직진 / 20~40s 우선회 / 40~60s 좌선회 / 60s~ 정지\n' ...
-        '좌현 추력이 크면 뱃머리가 오른쪽으로 돈다.']), 40, 400);
+        '좌현 추력이 크면 뱃머리가 오른쪽으로 돈다.\n' ...
+        '\n' ...
+        'Animate 상자가 도는 동안 추력과 항적을 함께 그린다 (W04_animate.m).\n' ...
+        '추력이 바뀌는 20 · 40 · 60 초에 항적이 어떻게 휘는지 볼 것.']), 40, 400);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
 end
@@ -186,7 +265,10 @@ end
 % =====================================================================
 % 상태 읽기 블록 (3·4단계 공통)
 % =====================================================================
-function addOdomReader(m, withSpeed)
+function addOdomReader(m, withSpeed, anim)
+%   ANIM  true 이면 실시간 화면이 쓸 신호(위치·속도)를 **더 뽑아** 태그로 건다.
+%         제어에는 쓰이지 않는다. 뽑는 자리가 늘 뿐 제어 경로는 그대로다.
+    if nargin < 3, anim = false; end
     add_block('ros2lib/Subscribe', [m '/OdomSub'], 'Position',[40 40 160 100]);
     set_param([m '/OdomSub'], 'topicSource','Specify your own', ...
               'topic','/wamv/sensors/position/ground_truth_odometry', ...
@@ -201,6 +283,18 @@ function addOdomReader(m, withSpeed)
     %  맨 뒤에 붙이므로 앞의 포트 번호는 그대로다.
     sig = [sig ',twist.twist.angular.z'];
     iWz = 5 + double(withSpeed);
+
+    %  실시간 화면용 신호도 **맨 뒤에** 붙인다. 그래야 위 포트 번호가 그대로다
+    if anim
+        sig  = [sig ',pose.pose.position.x,pose.pose.position.y,twist.twist.linear.y'];
+        iPx  = iWz + 1;  iPy = iWz + 2;  iVy = iWz + 3;
+        if withSpeed
+            iVx = 5;                       % 이미 뽑아 둔 것을 나눠 쓴다
+        else
+            sig = [sig ',twist.twist.linear.x'];
+            iVx = iWz + 4;
+        end
+    end
 
     add_block('simulink/Signal Routing/Bus Selector', [m '/Sel'], ...
               'Position',[210 40 220 140]);
@@ -224,6 +318,32 @@ function addOdomReader(m, withSpeed)
         add_line(m, sprintf('Sel/%d',k), sprintf('Quat2Yaw/%d',k), 'autorouting','on');
     end
     add_line(m, sprintf('Sel/%d',iWz), 'Quat2Yaw/5', 'autorouting','on');
+
+    if ~anim, return, end
+
+    %  ---- 실시간 화면이 쓸 신호를 NED 로 바꿔 태그에 건다 -----------------
+    %  ENU (ROS · Gazebo) -> NED (선박) 는 3주차 1-5 절의 그 규약이다.
+    %  위치  x_n(북) = p_y(ENU),  y_n(동) = p_x(ENU)
+    %  속도  선체 고정축은 ROS 가 FLU (앞-왼쪽-위), NED 는 앞-오른쪽-아래다.
+    %        전진 u 는 같고, 옆으로 미는 v 는 **부호가 뒤집힌다.**
+    add_block('simulink/User-Defined Functions/MATLAB Function', [m '/OdomTap'], ...
+              'Position',[280 200 420 420]);
+    setFcn(m, 'OdomTap', [ ...
+        'function [x_n, y_n, u, v] = OdomTap(px, py, vx, vy)' newline ...
+        '%#codegen' newline ...
+        '% Ground truth odometry -> the numbers the live plot draws.' newline ...
+        '% Display only: nothing here feeds the controller.' newline ...
+        'x_n = py;      % ENU y is north' newline ...
+        'y_n = px;      % ENU x is east' newline ...
+        'u   =  vx;     % surge is the same in FLU and NED body axes' newline ...
+        'v   = -vy;     % FLU +y is port, NED +y is starboard' newline]);
+    set_param([m '/OdomTap'], 'Position',[280 200 420 420]);
+    add_line(m, sprintf('Sel/%d',iPx), 'OdomTap/1', 'autorouting','on');
+    add_line(m, sprintf('Sel/%d',iPy), 'OdomTap/2', 'autorouting','on');
+    add_line(m, sprintf('Sel/%d',iVx), 'OdomTap/3', 'autorouting','on');
+    add_line(m, sprintf('Sel/%d',iVy), 'OdomTap/4', 'autorouting','on');
+    tapGotos(m, 'OdomTap',  {'x_n','y_n','u','v'}, 500);
+    tapGotos(m, 'Quat2Yaw', {'psi','r'},           500);
 end
 
 % =====================================================================
@@ -367,9 +487,12 @@ end
 %   식과 계수는 3주차 1-8 절 · W03_0_offline 과 같다.
 %   초기 선수각은 VRX 스폰과 같게 32.7 deg (3주차 3-1 좌표 검산)
 % =====================================================================
-function addMotionModel(m, x, y, psi0)
+function addMotionModel(m, x, y, psi0, anim)
 %   PSI0  초기 선수각을 rad 로 적은 문자열. 생략하면 VRX 스폰과 같은 32.7 deg
+%   ANIM  true 이면 실시간 화면이 쓸 여덟 신호를 상자 **안에서** 태그로 건다.
+%         밖에서 보이는 포트(psi · r · u)는 그대로다 — 제어 배선이 바뀌지 않는다.
     if nargin < 4 || isempty(psi0), psi0 = '32.7*pi/180'; end
+    if nargin < 5, anim = false; end
     s = add_subsys(m, 'MotionModel', [x y x+150 y+110], ...
                    {'FL','FR'}, {'psi','r','u'}, gnc_colour('plant'));
     add_block('simulink/User-Defined Functions/MATLAB Function', [s '/EOM'], ...
@@ -411,6 +534,32 @@ function addMotionModel(m, x, y, psi0)
     add_line(s,'States/1','psi/1','autorouting','on');
     add_line(s,'States/2','r/1','autorouting','on');
     add_line(s,'States/3','u/1','autorouting','on');
+
+    if ~anim, return, end
+
+    %  ---- 실시간 화면이 쓸 여덟 신호 -----------------------------------
+    %  States 는 제어가 쓰는 셋(psi · r · u)만 낸다. 화면은 항적과 추력까지
+    %  보여야 하므로 상태벡터 s 와 들어온 추력을 한 번 더 들여다본다.
+    %  **구경만 한다.** 여기서 나간 값은 태그로만 가고 되돌아오지 않는다.
+    add_block('simulink/User-Defined Functions/MATLAB Function', [s '/AnimTap'], ...
+              'Position',[420 300 570 760]);
+    setFcn(s, 'AnimTap', [ ...
+'function [x_n, y_n, psi, u, v, r, fl, fr] = AnimTap(sv, FL, FR)'       newline ...
+'%#codegen'                                                             newline ...
+'% Display-only tap. sv = [u v r x_n y_n psi]'''                        newline ...
+'x_n = sv(4);'                                                          newline ...
+'y_n = sv(5);'                                                          newline ...
+'psi = atan2(sin(sv(6)), cos(sv(6)));   % wrap to [-pi, pi]'            newline ...
+'u   = sv(1);'                                                          newline ...
+'v   = sv(2);'                                                          newline ...
+'r   = sv(3);'                                                          newline ...
+'fl  = FL;'                                                             newline ...
+'fr  = FR;']);
+    set_param([s '/AnimTap'], 'Position',[420 300 570 760]);
+    add_line(s,'Integ/1','AnimTap/1','autorouting','on');
+    add_line(s,'FL/1',   'AnimTap/2','autorouting','on');
+    add_line(s,'FR/1',   'AnimTap/3','autorouting','on');
+    tapGotos(s, 'AnimTap', {'x_n','y_n','psi','u','v','r','FL','FR'}, 650);
 end
 
 function setSolverOffline(m)
@@ -433,11 +582,11 @@ end
 function build_heading(offline)
     if offline
         m = 'W04_3_heading_offline'; fresh(m);
-        addMotionModel(m, 780, 200);
+        addMotionModel(m, 780, 200, '', true);     % true = 실시간 화면용 태그까지
         sPsi = 'MotionModel/1';  sR = 'MotionModel/2';
     else
         m = 'W04_3_heading'; fresh(m);
-        addOdomReader(m, false);
+        addOdomReader(m, false, true);
         sPsi = 'Quat2Yaw/1';  sR = 'Quat2Yaw/2';
     end
 
@@ -501,6 +650,18 @@ function build_heading(offline)
     addLog(m, sR,          'r',  1200, 210);
     addLog(m, 'OpenLoop/1','N',  1200, 260);
 
+    %  ---- 실시간 화면 ----------------------------------------------------
+    %  헤딩 지령은 deg2rad 를 지난 rad 값을 그대로 쓴다 — 제어기가 보는 그 값이다.
+    %  속도 지령은 **없다.** 이 모델은 헤딩만 돌린다 (전진 추력은 X_head 상수).
+    %  그래서 속도 칸은 응답 u 만 그리고 "지령 없음" 이라고 적힌다.
+    tapGotos(m, 'deg2rad', {'psi_ref'}, 230);
+    if ~offline
+        %  VRX 에서는 배로 실제 나가는 추력을 잡는다 — 좌현은 PortEff 를 지난 값
+        tapGotos(m, 'PortEff', {'FL'},    960);
+        tapGotos(m, 'Alloc',   {'', 'FR'}, 1090);
+    end
+    addW04Animate(m, 40, 700, false, true);
+
     if offline
         setSolverOffline(m);
         note(m, sprintf(['[3단계 오프라인] 헤딩 제어 — Gazebo 대신 운동방정식\n' ...
@@ -540,11 +701,11 @@ end
 function build_inner_loop(offline)
     if offline
         m = 'W04_4_inner_loop_offline'; fresh(m);
-        addMotionModel(m, 780, 230);
+        addMotionModel(m, 780, 230, '', true);     % true = 실시간 화면용 태그까지
         sPsi = 'MotionModel/1';  sR = 'MotionModel/2';  sU = 'MotionModel/3';
     else
         m = 'W04_4_inner_loop'; fresh(m);
-        addOdomReader(m, true);          % twist.twist.linear.x 까지 뽑음
+        addOdomReader(m, true, true);    % twist.twist.linear.x 까지 뽑음
         sPsi = 'Quat2Yaw/1';  sR = 'Quat2Yaw/2';  sU = 'Sel/5';
     end
 
@@ -602,6 +763,16 @@ function build_inner_loop(offline)
     addLog(m, sU,   'u',   1000, 110);
     addLog(m, 'Alloc/1', 'FL', 1000, 160);
     addLog(m, 'Alloc/2', 'FR', 1000, 210);
+
+    %  ---- 실시간 화면 ----------------------------------------------------
+    %  이 모델만 **지령이 둘 다 있다.** 속도 칸과 헤딩 칸에 지령선이 함께 그려지므로
+    %  두 루프가 서로를 어떻게 방해하는지가 한 화면에서 보인다 (선회하면 u 가 준다).
+    tapGotos(m, 'deg2rad', {'psi_ref'}, 230);
+    tapGotos(m, 'u_ref',   {'u_ref'},   160);
+    if ~offline
+        tapGotos(m, 'Alloc', {'FL','FR'}, 760);
+    end
+    addW04Animate(m, 40, 680, true, true);
 
     if offline
         setSolverOffline(m);
@@ -817,6 +988,31 @@ function build_offline()
         add_line(m, sprintf('States/%d',k), ['log_' nm{k} '/1'], 'autorouting','on');
     end
 
+    % --- 5단 · 실시간 화면 ----------------------------------------------
+    %  States 는 Scope 가 쓰기 좋은 단위(deg)로 낸다. 화면 함수는 rad 를 받고
+    %  스웨이 v 와 추력 둘을 더 쓰므로, 상태벡터와 추력을 한 번 더 들여다본다.
+    %  이 모델은 추력을 직접 주는 개루프라 지령 칸 둘은 "지령 없음" 이 된다.
+    add_block('simulink/User-Defined Functions/MATLAB Function', [m '/AnimTap'], ...
+              'Position',[930 320 1080 780]);
+    setFcn(m, 'AnimTap', [ ...
+'function [x_n, y_n, psi, u, v, r, fl, fr] = AnimTap(s, F)'             newline ...
+'%#codegen'                                                             newline ...
+'% Display-only tap. s = [u v r x_n y_n psi]'', F = [FL; FR] after the' newline ...
+'% motor lag, i.e. the thrust the hull actually feels.'                 newline ...
+'x_n = s(4);'                                                           newline ...
+'y_n = s(5);'                                                           newline ...
+'psi = atan2(sin(s(6)), cos(s(6)));   % wrap to [-pi, pi]'              newline ...
+'u   = s(1);'                                                           newline ...
+'v   = s(2);'                                                           newline ...
+'r   = s(3);'                                                           newline ...
+'fl  = F(1);'                                                           newline ...
+'fr  = F(2);']);
+    set_param([m '/AnimTap'], 'Position',[930 320 1080 780]);
+    add_line(m, 'Integ/1',    'AnimTap/1', 'autorouting','on');
+    add_line(m, 'MotorLag/1', 'AnimTap/2', 'autorouting','on');
+    tapGotos(m, 'AnimTap', {'x_n','y_n','psi','u','v','r','FL','FR'}, 1130);
+    addW04Animate(m, 40, 780, false, false);
+
     set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
                  'FixedStep','0.05', 'StopTime','80', 'SimulationMode','normal');
     note(m, sprintf(['[5단계] 오프라인 WAM-V — Gazebo 없이 같은 실험\n' ...
@@ -824,7 +1020,10 @@ function build_offline()
         '뒤에 Publish 대신 WAM-V 운동방정식이 붙어 있다.\n' ...
         '0~20s 직진 / 20~40s 우선회 / 40~60s 좌선회 / 60s~ 정지\n' ...
         '계수는 전부 Gazebo VRX 플러그인에서 가져온 값이다.\n' ...
-        '실행 뒤 >> W04_offline_plot 으로 그림을 본다.']), 40, 660);
+        '실행 뒤 >> W04_offline_plot 으로 그림을 본다.\n' ...
+        '\n' ...
+        '도는 동안에는 Animate 상자가 항적과 상태를 실시간으로 그린다.\n' ...
+        '끄려면 W04_setup.m 의 animate = 0 (끄면 훨씬 빨리 끝난다).']), 40, 660);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
 end

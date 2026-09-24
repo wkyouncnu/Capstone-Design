@@ -47,7 +47,7 @@ function f = W04_animate(x_n, y_n, psi, u, v, r, FL, FR, u_ref, psi_ref, t)
 
 persistent fig axXY axU axP axM ...
            hTrail hHull hHead hDot hInfo ...
-           hU hUref hP hPref hV hR hFL hFR hNoU hNoP ...
+           hU hUref hP hPref hV hR hFL hFR ...
            trX trY tv Du Dp Dm x0 y0 haveOrigin tLast tPrev
 
 %% ---- 인자 없이 부르면 창 핸들만 돌려준다 (캡처용) ----------------------
@@ -87,11 +87,6 @@ if newRun
     hUref = plot(axU, nan, nan, '--', 'Color',[0.60 0.60 0.60], 'LineWidth',1.6);
     hU    = plot(axU, nan, nan, '-',  'Color',[0.00 0.45 0.74], 'LineWidth',1.6);
     ylabel(axU,'u [m/s]');
-    title(axU,'속도 — 지령 대비 응답', 'FontWeight','normal');
-    legend(axU, [hUref hU], {'u_{ref} (지령)','u (응답)'}, ...
-           'Location','southeast', 'Orientation','horizontal', 'AutoUpdate','off');
-    hNoU = text(axU, 0.03, 0.90, '', 'Units','normalized', ...
-                'Color',[0.75 0.35 0.00], 'FontSize',10);
 
     % ---- 오른쪽 (2) : 헤딩 지령 대비 응답 ----
     axP = subplot(3,2,4, 'Parent', fig);
@@ -99,11 +94,6 @@ if newRun
     hPref = plot(axP, nan, nan, '--', 'Color',[0.60 0.60 0.60], 'LineWidth',1.6);
     hP    = plot(axP, nan, nan, '-',  'Color',[0.85 0.33 0.10], 'LineWidth',1.6);
     ylabel(axP,'\psi [deg]');
-    title(axP,'선수각 — 지령 대비 응답  (ssa 로 접은 값)', 'FontWeight','normal');
-    legend(axP, [hPref hP], {'\psi_{ref} (지령)','\psi (응답)'}, ...
-           'Location','southeast', 'Orientation','horizontal', 'AutoUpdate','off');
-    hNoP = text(axP, 0.03, 0.90, '', 'Units','normalized', ...
-                'Color',[0.75 0.35 0.00], 'FontSize',10);
 
     % ---- 오른쪽 (3) : 나머지 상태와 추력 ----
     %   v · r 은 m/s · deg/s, 추력은 N 이라 자릿수가 다르다. 한 축에 겹쳐 놓으면
@@ -126,6 +116,11 @@ if newRun
     axM.YAxis(1).Color = [0.15 0.15 0.15];
     axM.YAxis(2).Color = [0.15 0.15 0.15];
 
+    %  오른쪽 세 칸의 y 이름표가 창 오른쪽 테두리에 잘리지 않게 폭을 조금 줄인다
+    for a = [axU axP axM]
+        p = get(a,'Position');  set(a, 'Position', [p(1) p(2) p(3)*0.90 p(4)]);
+    end
+
     tv = [];  Du = zeros(0,2);  Dp = zeros(0,2);  Dm = zeros(0,4);
     x0 = 0;  y0 = 0;  haveOrigin = false;
     tLast = -inf;
@@ -133,9 +128,13 @@ end
 tPrev = t;
 
 %% ---- 출발점 잡기 — 0 으로 채운 첫 버스를 버린다 -------------------------
+%  첫 쓸모 있는 샘플에서 제목과 범례를 정한다. 지령이 있는지 없는지는 한 실행
+%  안에서 바뀌지 않으므로 (NaN 은 빌더가 고정으로 넣는다) 한 번만 정하면 된다.
 if ~haveOrigin
     if x_n ~= 0 || y_n ~= 0
         x0 = x_n;  y0 = y_n;  haveOrigin = true;
+        label_panel(axU, hUref, hU, isnan(u_ref),   '속도',  'u');
+        label_panel(axP, hPref, hP, isnan(psi_ref), '선수각 (ssa 로 접은 값)', '\psi');
     else
         return                    % 아직 첫 메시지가 오지 않았다. 그리지 않는다
     end
@@ -143,11 +142,11 @@ end
 
 %% ---- 값 모으기 (그리기는 animate_every 마다) ---------------------------
 dx = x_n - x0;   dy = y_n - y0;
-trX(end+1) = dx;  trY(end+1) = dy;                                       %#ok<AGROW>
-tv(end+1)  = t;                                                          %#ok<AGROW>
-Du(end+1,:) = [u_ref, u];                                                %#ok<AGROW>
-Dp(end+1,:) = [ssa_deg(psi_ref), ssa_deg(psi)];                          %#ok<AGROW>
-Dm(end+1,:) = [v, r*180/pi, FL, FR];                                     %#ok<AGROW>
+trX(end+1) = dx;  trY(end+1) = dy;
+tv(end+1)  = t;
+Du(end+1,:) = [u_ref, u];
+Dp(end+1,:) = [ssa_deg(psi_ref), ssa_deg(psi)];
+Dm(end+1,:) = [v, r*180/pi, FL, FR];
 if numel(tv) > NMAX
     k = numel(tv) - NMAX + 1;
     trX(1:k) = [];  trY(1:k) = [];  tv(1:k) = [];
@@ -156,7 +155,7 @@ end
 
 every = 0.25;
 try, every = evalin('base','animate_every'); catch, end
-if t - tLast < every, return, end
+if t - tLast < every, return; end
 tLast = t;
 
 %% ---- 왼쪽 : 궤적과 선체 ------------------------------------------------
@@ -179,8 +178,9 @@ set(hR,    'XData', tv, 'YData', Dm(:,2));
 set(hFL,   'XData', tv, 'YData', Dm(:,3));
 set(hFR,   'XData', tv, 'YData', Dm(:,4));
 
-set(hNoU, 'String', pick(all(isnan(Du(:,1))), '지령 없음 (개루프) — 응답만 그린다', ''));
-set(hNoP, 'String', pick(all(isnan(Dp(:,1))), '지령 없음 (개루프) — 응답만 그린다', ''));
+%  지령선이 그림의 맨 위 테두리에 딱 붙으면 읽기 어렵다. 위아래로 조금 띄운다
+pad_y(axU, Du);
+pad_y(axP, Dp);
 
 drawnow limitrate
 if nargout > 0, f = fig; end
@@ -210,6 +210,31 @@ function d = ssa_deg(a)
 d = atan2(sin(a), cos(a)) * 180/pi;
 end
 
-function s = pick(c, a, b)
-if c, s = a; else, s = b; end
+% =====================================================================
+% 지령 칸의 제목과 범례 — 지령이 있는 모델인지 첫 샘플에서 한 번만 정한다
+%
+%   "지령 없음" 을 그림 안에 글자로 얹으면 응답선과 겹친다 (응답선은 대개
+%   왼쪽 위를 지난다). 그래서 제목에 적고, 없는 신호는 범례에서도 뺀다.
+%   그리지도 않는 선을 범례에 남겨 두면 학생은 그 선을 찾아 헤맨다.
+% =====================================================================
+function label_panel(ax, hRef, hRes, none, what, sym)
+if none
+    title(ax, sprintf('%s — 지령 없음 (개루프). 응답만 그린다', what), 'FontWeight','normal');
+    legend(ax, hRes, {sprintf('%s (응답)', sym)}, ...
+           'Location','southeast', 'AutoUpdate','off');
+else
+    title(ax, sprintf('%s — 지령 대비 응답', what), 'FontWeight','normal');
+    legend(ax, [hRef hRes], {sprintf('%s_{ref} (지령)', sym), sprintf('%s (응답)', sym)}, ...
+           'Location','southeast', 'Orientation','horizontal', 'AutoUpdate','off');
+end
+end
+
+% ---- y 범위에 5 % 여백. 지령선이 테두리에 붙으면 읽히지 않는다 -----------
+function pad_y(ax, D)
+lo = min(D(:), [], 'omitnan');  hi = max(D(:), [], 'omitnan');
+if isempty(lo) || ~isfinite(lo) || ~isfinite(hi), return, end
+%  t = 0 에서는 값이 전부 같다 (lo == hi). 그때 여백을 비율로만 잡으면 위아래
+%  한계가 같은 수가 되어 ylim 이 거부한다. 바닥값을 둔다.
+d = max((hi - lo)*0.08, max(abs([lo hi]))*0.05 + 1e-3);
+ylim(ax, [lo-d, hi+d]);
 end
