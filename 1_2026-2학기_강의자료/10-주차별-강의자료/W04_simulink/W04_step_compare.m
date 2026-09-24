@@ -121,7 +121,11 @@ t0 = double(m0.header.stamp.sec) + double(m0.header.stamp.nanosec)*1e-9;
 pause(secs);
 m1 = receive(s, 15);  dw = toc(w);
 t1 = double(m1.header.stamp.sec) + double(m1.header.stamp.nanosec)*1e-9;
-RTF = min(max((t1 - t0)/dw, 0.05), 1.0);
+raw = (t1 - t0)/dw;
+RTF = min(max(raw, 0.05), 1.0);
+%  잰 값을 먼저 알린다. 경량 모델은 RTF 가 1 에 붙어 있어, 자른 값만 찍으면
+%  측정이 실제로 됐는지 알 수 없다 (2026-09-24)
+fprintf('   측정 RTF = %.3f  ->  페이싱 %.3f\n', raw, RTF);
 clear s n
 end
 

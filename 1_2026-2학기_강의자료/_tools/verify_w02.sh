@@ -81,7 +81,9 @@ echo
 
 # ---------- §2-4 turtlesim ----------
 echo "[§2-4] turtlesim — 토픽·서비스·액션·파라미터"
-if [ -n "${DISPLAY:-}" ] && xdotool getdisplaygeometry >/dev/null 2>&1; then
+#  화면 유무만 본다. xdotool 로 게이트하면 그 도구가 없는 PC 에서 통째로 건너뛴다
+#  (2026-09-24 — 창은 뜨는데 SKIP 으로 찍혔고 사유도 "화면 없음" 으로 틀리게 나왔다)
+if [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
   ros2 run turtlesim turtlesim_node > /tmp/v_turtle.log 2>&1 &
   sleep 9
   expect "turtlesim 노드"     "/turtlesim"            bash -c 'timeout 10 ros2 node list'
@@ -167,7 +169,7 @@ if timeout 90 git clone -q https://github.com/wkyouncnu/usv_basics.git "$WS/src/
   echo "[§2-10] turtle_pose_relay"
   expect "중계 노드 실행파일 등록" "turtle_pose_relay" bash -c 'timeout 10 ros2 pkg executables usv_basics'
   expect "turtlesim/msg/Pose 필드" "angular_velocity" bash -c 'ros2 interface show turtlesim/msg/Pose'
-  if [ -n "${DISPLAY:-}" ] && xdotool getdisplaygeometry >/dev/null 2>&1; then
+  if [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
     ros2 run turtlesim turtlesim_node        > /tmp/v_turtle2.log 2>&1 &
     sleep 6
     ros2 run usv_basics turtle_pose_relay    > /tmp/v_relay.log   2>&1 &

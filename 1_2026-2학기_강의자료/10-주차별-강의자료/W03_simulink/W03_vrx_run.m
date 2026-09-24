@@ -86,5 +86,10 @@ m1 = receive(s, 15);  dw = toc(w);
 t1 = double(m1.header.stamp.sec) + double(m1.header.stamp.nanosec)*1e-9;
 RTF = (t1 - t0) / dw;
 clear s n
-RTF = min(max(RTF, 0.05), 1.0);      % 페이싱에 넣을 값이므로 범위를 자른다
+%  페이싱에 넣을 값이므로 범위를 자른다. 다만 **잰 값을 먼저 알린다** —
+%  경량 모델은 RTF 가 1 에 붙어 있어, 자른 값만 찍으면 측정이 된 것인지 알 수 없다
+%  (2026-09-24 — 화면에 늘 1.000 만 찍혀 오해를 샀다)
+fprintf('   측정 RTF = %.3f', RTF);
+RTF = min(max(RTF, 0.05), 1.0);
+fprintf('  ->  페이싱 %.3f\n', RTF);
 end

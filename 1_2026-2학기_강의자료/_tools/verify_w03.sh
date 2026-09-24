@@ -46,7 +46,9 @@ echo
 # ---------- §2-2 VRX ----------
 echo "[§2-2] VRX"
 if [ -d "$HOME/vrx_ws/src/vrx" ]; then
-  expect "브랜치 humble"  "humble"  bash -c 'cd ~/vrx_ws/src/vrx && git branch --show-current'
+  #  브랜치 **이름**으로 판정하지 않는다. 연구실 개조본은 이름이 다르거나 detached 다
+  #  (2026-09-24 — 내용은 humble 판인데 이름만 달라 FAIL 로 찍혔다). 계열은 패키지 구성으로 본다
+  expect "humble 판 VRX"  "vrx_gz"  bash -c 'ls ~/vrx_ws/src/vrx'
   expect "기본은 jazzy"   "jazzy"   bash -c "cd ~/vrx_ws/src/vrx && git branch -r | grep 'origin/HEAD'"
   expect "빌드 산출물"    ".so"     bash -c 'ls ~/vrx_ws/install/lib/ | grep "\.so" | head -1'
   expect "패키지 5개"     "vrx_gz"  bash -c 'ls ~/vrx_ws/install/share'

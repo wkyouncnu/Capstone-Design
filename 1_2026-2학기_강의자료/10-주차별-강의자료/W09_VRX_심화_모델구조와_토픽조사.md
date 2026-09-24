@@ -1440,14 +1440,14 @@ W09_setup
 - 정상 출력
 
 ```
-W09_setup 완료 — Ts = 0.005 s (200 Hz), 측정 20초, ROS_DOMAIN_ID=8
+W09_setup 완료 — Ts = 0.005 s (200 Hz), 측정 20초, ROS_DOMAIN_ID=7
 ```
 
 | 읽는 법 | 뜻 |
 |---|---|
 | `Ts = 0.005 s (200 Hz)` | IMU 100 Hz 를 세려면 모델이 그보다 빨라야 함 |
 | `측정 20초` | 짧으면 주기가 흔들림. 벽시계로 20 초를 셈 (Simulation Pacing 켬) |
-| `ROS_DOMAIN_ID=8` | WSL 의 `~/.bashrc` 와 같아야 토픽이 보임. 다르면 2-8-1 은 전부 0, 2-8-2 는 Reliable · Best effort 둘 다 0 이 나옴 |
+| `ROS_DOMAIN_ID=7` | WSL 의 `~/.bashrc` 와 같아야 토픽이 보임. 다르면 2-8-1 은 전부 0, 2-8-2 는 Reliable · Best effort 둘 다 0 이 나옴 |
 
 ### 2-8-0. 운동모델 + 센서 모델로 먼저 — `W09_0_offline` (VRX 불필요)
 

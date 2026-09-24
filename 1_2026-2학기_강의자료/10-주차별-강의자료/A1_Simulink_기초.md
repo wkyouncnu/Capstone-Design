@@ -648,6 +648,11 @@ sig = out.logsout.getElement('y');
 plot(sig.Values.Time, sig.Values.Data)
 ```
 
+> [!warning] `out.logsout` 이 비어 있으면 **E-2 의 로깅 켜기를 건너뛴 것**임
+> - 배포본 `SB6_param_todo` 는 신호 로깅이 **꺼진 채로** 들어 있음 (학생이 직접 켜는 것이 E-2 의 과제임)
+> - 그 상태로 이 코드를 돌리면 `logsout` 이 빈 객체라 `getElement` 에서 오류가 남 (2026-09-24 실행 확인)
+> - 조치: E-2 로 돌아가 `Gain` 출력 선을 우클릭 → **선택한 신호 기록** 을 켜고 신호 이름을 `y` 로 준 뒤 다시 실행함
+
 - 또는 준비된 스크립트로
 
 ```matlab
@@ -1266,9 +1271,14 @@ open_system('my_usv_lib');
 new_system('MyModel');
 add_block('simulink/Math Operations/Gain', 'MyModel/G', ...
           'Gain','2', 'Position',[100 100 140 130]);
+add_block('simulink/Sinks/Scope', 'MyModel/Scope', ...
+          'Position',[200 100 230 130]);
 add_line('MyModel','G/1','Scope/1','autorouting','on');
 set_param('MyModel','StopTime','10');
 ```
+
+- `add_line` 은 **양쪽 블록이 이미 있어야** 이어 줌. 받는 블록을 먼저 만들지 않으면
+  `유효하지 않은 Simulink 객체 이름임: 'Scope/1'` 이 남 (2026-09-24 실행 확인)
 
 - 배치가 흐트러졌으면
 

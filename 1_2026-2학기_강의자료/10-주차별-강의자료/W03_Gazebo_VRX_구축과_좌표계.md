@@ -1284,7 +1284,7 @@ cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash run_vrx.sh
 - 정상 출력 (첫 네 줄. 그 뒤로 Gazebo 로그가 이어짐)
 
 ```
-ROS_DOMAIN_ID=8  (MATLAB W0X_setup 의 값과 같아야 함)
+ROS_DOMAIN_ID=7  (MATLAB W0X_setup 의 값과 같아야 함)
 실행 명령:
   ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "urdf:=/home/wkyoun/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite/wamv_lite.urdf" "extra_gz_args:=--render-engine-gui ogre"
 끝낼 때는 이 터미널에서 Ctrl+C
@@ -1616,6 +1616,13 @@ u_ss =
 > - CPU 를 많이 쓰는 프로그램을 함께 돌린 실행에서 60 초 이동 **119.8 m**, 평균 **2.016 m/s** 가 나옴 (기준 노트북 실측, 정상은 77.5 m)
 > - 이때 VRX 의 RTF 는 0.98 로 정상이었음 → **RTF 만 보고는 알 수 없음.** `u_ss` 로 확인함
 > - 조치: 다른 프로그램을 끄고, **VRX 를 새로 띄워** 다시 실행
+
+> [!caution] `u_ss` 가 1.42 m/s 근처면 **페이싱이 꺼진 것**임
+> - 2026-09-24 실측 — 모델은 1.4251 · 1.4250 m/s 인데 같은 순간 VRX 의 `twist.linear.x` 는 **1.332** 였음
+> - 즉 배는 정상이고 **모델이 시뮬레이터보다 빨리 돎.** VRX 를 새로 띄워도 그대로임
+> - 확인: 모델 툴스트립 **시뮬레이션 → 시뮬레이션 페이싱** 이 켜져 있고 비율이 측정한 RTF 인지 봄
+>   (경량 모델은 RTF 가 거의 1 이므로 `set_param(모델,'EnablePacing','on','PacingRate','0.99')`)
+> - 그래도 1.42 가 나오면 VRX 쪽 값(`ros2 topic echo --once /wamv/sensors/position/ground_truth_odometry --field twist.twist.linear`)을 기준으로 판정함
 
 - 3 · 4 의 결과가 둘 다 정상이면 4\~8주차 VRX 실습을 이 노트북에서 그대로 진행할 수 있음
 
