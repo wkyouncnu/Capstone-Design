@@ -785,7 +785,7 @@ Blank Message ──► Bus Assignment ──► Publish
 - 고치는 법 — 툴스트립 **Run** 옆 화살표 → **Simulation Pacing** → *Enable pacing to slow down simulation* 체크, 비율은 **실측 RTF**
 
 ```matlab
-rtf = 0.85;   % gz topic -e -t /stats 로 잰 값
+rtf = 0.99;   % gz topic -e -t /stats 로 잰 값 (경량 모델 실측)
 set_param('W04_1_straight','EnablePacing','on','PacingRate',num2str(rtf));
 ```
 
@@ -797,8 +797,13 @@ set_param('W04_1_straight','EnablePacing','on','PacingRate',num2str(rtf));
 > gz topic -e -t /stats -n 1 | grep real_time_factor
 > ```
 
-> [!warning] RTF 는 고정값이 아님
-> 기준 환경에서 같은 월드를 5초 간격으로 재면 **0.46 \~ 0.91** 까지 흔들렸음 (2026-09-15 실측)
+> [!note] 경량 모델은 RTF 가 거의 1 이라 페이싱 비율도 거의 1
+> `/clock` 을 1초 구간으로 30 초 잰 값 — 평균 **0.990**, 최소 0.987, 최대 0.992, 표준편차 **0.002** (2026-09-24 실측)
+> 그래도 **비율을 1 로 고정하지 말 것.** 재서 넣는 습관이 무거운 월드·`full` 모드에서 그대로 쓰임
+> `W04_step_compare` 의 자동 측정은 비율을 1.0 에서 자름 → 경량 모델에서는 화면에 `RTF = 1.000` 으로 찍힘
+
+> [!warning] RTF 는 컴퓨터·모델에 따라 달라짐
+> 센서를 다 켠 `full` 모드나 무거운 월드에서는 1 보다 한참 낮게, 그리고 **재는 때마다 다르게** 나옴
 > 다른 프로그램·화면 녹화·브라우저가 돌고 있으면 더 심해짐. **비교 실험은 같은 조건에서 연속으로** 돌릴 것
 
 ### VRX 는 경량 모드로 띄운다
@@ -1485,14 +1490,14 @@ ros2 topic echo /wamv/sensors/position/ground_truth_odometry --once
 ```
 
 - 정상 출력: `/wamv/sensors/position/ground_truth_odometry` 가 보이고, `twist:` 아래 `linear:` 의 `x` 값이 나옴 (정지 상태면 0 근처)
-- 기준 환경 실측값 (2026-09-15, RTF 0.98)
+- 실측값 — **경량 모델**(`W03_vrx_lite/wamv_lite.urdf`), RTF **0.990**, 2026-09-24
 
 | 항목 | 값 | 읽는 법 |
 |---|---|---|
 | `frame_id` · `child_frame_id` | `map` · `wamv/base_link` | 지구 고정 좌표계 · 선체 |
-| 발행 주기 | **9.07 Hz** (재측정 7.54 · 6.36 Hz) | 설계 10 Hz. 벽시계로 재므로 낮게 나옴. **판정은 주기가 아니라 `twist` 값이 오는지로** |
+| 발행 주기 | **9.90 Hz** (`ros2 topic hz`, 표본 231, 주기 0.099\~0.104 s) | 설계 10 Hz. 경량 모델은 RTF 가 0.99 라 설계값에 거의 붙음. **판정은 주기가 아니라 `twist` 값이 오는지로** |
 | QoS | `RELIABLE`, 발행자 1 | |
-| 스폰 위치 | `pose.position.x = -532.0`, `y = 162.0` | **ENU** 성분. NED 로 $(x, y) = (162,\ -532)$ — 북쪽 $x$ 가 ENU 의 `y` |
+| 스폰 위치 | `pose.position.x = -532.0`, `y = 200.0` | **ENU** 성분. NED 로 $(x, y) = (200,\ -532)$ — 북쪽 $x$ 가 ENU 의 `y` |
 
 > [!caution] 스폰 좌표는 설치마다 다름
 > 같은 VRX 2.4.0-2 인데 ENU $y$ 가 **162** 인 설치와 **200** 인 설치가 있었음 (2026-09-18 확인)
