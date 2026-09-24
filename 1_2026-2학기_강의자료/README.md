@@ -174,7 +174,15 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | 4 | `w06-openloop-vs-feedback.svg` | 개루프와 피드백 |
 | 4 | `w06-step-response-terms.svg` | 스텝응답에서 재는 다섯 숫자 |
 | 4 | `w06-control-loop.svg` | 속도 루프 · 헤딩 루프 · 차동 배분 |
-| 4 | `W04_simulink/img/*.png` (50장) | 예제마다의 결과 그래프 — `assets/` 가 아니라 모델 폴더에 있다 |
+| 4 | `w04-msd-fbd.svg` | 질량-스프링-댐퍼 장치와 자유물체도 (1-3) |
+| 4 | `w04-pid-loop.svg` | 피드백 루프와 PID 세 갈래 (1-6) |
+| 4 | `w04-pid-dialog.svg` | 라이브러리 PID 블록의 포화·되감기 칸 (1-10) |
+| 4 | `w04-pseudo-derivative.svg` | 유사미분 — 증폭의 천장 (1-11) |
+| 4 | `w04-windup.svg` | 와인드업이 생기는 자리 (1-12) |
+| 4 | `w04-antiwindup-two.svg` | 되감기 두 방식 (1-12) |
+| 4 | `w04-tuning-order.svg` | 손으로 게인을 정하는 순서 (1-13) |
+| 4 | `w04-ssa.svg` | $\pm180°$ 이음매와 `ssa` (2-11) |
+| 4 | `W04_simulink/img/*.png` (52장) | 예제마다의 블록도와 결과 그래프 — `assets/` 가 아니라 모델 폴더에 있다 |
 | 5 | `w05-course-crab.svg` | 선수각 · 침로각 · 크랩각과 조류 |
 | 5 | `w05-track-error.svg` | 경로가 만드는 좌표계와 두 오차 |
 | 5 | `w05-los-geometry.svg` | LOS 기하 — π_p, y_e, Δ, R |
