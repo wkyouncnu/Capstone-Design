@@ -106,7 +106,14 @@ end
 figure(f); drawnow;
 
 file = fullfile(img, ['W08_anim_' which '.png']);
-exportgraphics(f, file, 'Resolution', 150);   % 1240 px * 150/96 = 1938 px (2000 이하)
+%  exportgraphics 가 아니라 print 를 쓴다.
+%    exportgraphics 는 내용에 딱 맞춰 잘라 내는데, 그 경계 계산이 **회전된
+%    한글 축 이름표**를 짧게 잡는다. 오른쪽 ③ 칸의 '방위각 \delta_i [deg]'
+%    (yyaxis 오른쪽 이름표) 가 세로로 반쯤 잘려 나갔다 (2026-09-25 실측).
+%    print 는 창 전체를 그대로 찍으므로 잘리지 않는다.
+%    1240 px x 150/96 = 1938 px (가로) — 2000 px 이하 규약을 지킨다.
+set(f, 'PaperPositionMode', 'auto');
+print(f, file, '-dpng', '-r150');
 
 %  화면에 무엇이 남았는지 — 마지막 20 s 의 오차가 정착값이다
 te  = out.log_eta.Time(:);

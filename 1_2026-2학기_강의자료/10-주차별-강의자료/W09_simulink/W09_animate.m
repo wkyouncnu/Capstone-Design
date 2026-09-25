@@ -90,13 +90,17 @@ if newRun
     axXY = subplot(3,2,[1 3 5], 'Parent', fig);
     hold(axXY,'on'); grid(axXY,'on'); axis(axXY,'equal');
     xlabel(axXY,'y (동쪽) [m]');  ylabel(axXY,'x (북쪽) [m]');
-    hTrue = plot(axXY, nan, nan, '-', 'Color',[0.00 0.45 0.74], 'LineWidth',1.8);
-    hGps  = plot(axXY, nan, nan, '.', 'Color',[0.85 0.33 0.10], 'MarkerSize',9);
+    %  선체를 **맨 아래에, 비치게** 깐다. 이 주차의 기본 시나리오는 제자리
+    %  선회라 항적이 선체보다 작다 — 불투명하게 그리면 GPS 점이 가려진다
     hHull = patch('Parent',axXY, 'XData',nan, 'YData',nan, ...
-                  'FaceColor',[0.13 0.55 0.13], 'FaceAlpha',0.85, ...
-                  'EdgeColor',[0.05 0.30 0.05], 'LineWidth',1.4);
-    hHead = plot(axXY, nan, nan, '-', 'Color','k', 'LineWidth',2);
-    hDot  = plot(axXY, nan, nan, 'k.', 'MarkerSize',12);
+                  'FaceColor',[0.13 0.55 0.13], 'FaceAlpha',0.25, ...
+                  'EdgeColor',[0.13 0.45 0.13], 'LineWidth',1.0);
+    hHead = plot(axXY, nan, nan, '-', 'Color',[0.35 0.35 0.35], 'LineWidth',1.6);
+    hTrue = plot(axXY, nan, nan, '-', 'Color',[0.00 0.45 0.74], 'LineWidth',1.8, ...
+                 'Marker','o', 'MarkerSize',5, 'MarkerIndices',1, ...
+                 'MarkerFaceColor',[0.00 0.45 0.74]);
+    hGps  = plot(axXY, nan, nan, '.', 'Color',[0.85 0.33 0.10], 'MarkerSize',9);
+    hDot  = plot(axXY, nan, nan, 'k.', 'MarkerSize',14);
     hInfo = title(axXY, '', 'FontWeight','normal', 'Interpreter','tex');
 
     % ---- 오른쪽 (1) : 수신 주기 ----
@@ -117,7 +121,7 @@ if newRun
     % ---- 오른쪽 (2) : 센서 대 참값 ----
     axR = subplot(3,2,4, 'Parent', fig);
     hold(axR,'on'); grid(axR,'on');
-    hRt = plot(axR, nan, nan, '-', 'Color',[0.55 0.55 0.55], 'LineWidth',2.4);
+    hRt = plot(axR, nan, nan, '-', 'Color',[0.45 0.45 0.45], 'LineWidth',3.2);
     hRm = plot(axR, nan, nan, '-', 'Color',[0.49 0.18 0.56], 'LineWidth',1.1);
     ylabel(axR,'r [deg/s]');
 
@@ -129,10 +133,14 @@ if newRun
     hD3 = plot(axD, nan, nan, '-', 'Color',[0.15 0.15 0.15], 'LineWidth',1.8);
     xlabel(axD,'시간 [s]');
 
-    %  오른쪽 세 칸의 y 이름표가 창 테두리에 잘리지 않게 폭을 조금 줄인다
-    for ax = [axHz axR axD]
-        p = get(ax,'Position');  set(ax, 'Position', [p(1) p(2) p(3)*0.90 p(4)]);
+    %  오른쪽 세 칸 — y 이름표가 창 테두리에 잘리지 않게 폭을 줄이고,
+    %  범례를 칸 **아래**에 두므로 위 두 칸은 높이도 줄여 자리를 비운다.
+    %  줄이지 않으면 범례가 아래 칸의 제목 위에 얹힌다 (2026-09-25 첫 캡처)
+    for ax = [axHz axR]
+        p = get(ax,'Position');
+        set(ax, 'Position', [p(1) p(2)+0.26*p(4) p(3)*0.90 p(4)*0.74]);
     end
+    p = get(axD,'Position');  set(axD, 'Position', [p(1) p(2) p(3)*0.90 p(4)]);
 
     tX = [];  tY = [];  gX = [];  gY = [];  tv = [];
     Dhz = zeros(0,2);  Dr = zeros(0,2);  Dd = zeros(0,3);
