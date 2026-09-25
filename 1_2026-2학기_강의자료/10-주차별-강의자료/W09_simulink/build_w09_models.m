@@ -99,6 +99,59 @@ function L(sys, src, dst)
     add_line(sys, src, dst, 'autorouting','on');
 end
 
+% =====================================================================
+% 실시간 화면 — 0단계와 1단계가 같은 함수(W09_animate.m)를 쓴다
+%
+%   스킬 규칙 26. 9주차는 제어 주차가 아니므로 "지령 대비 응답" 대신
+%   **센서가 제대로 오고 있는가**를 네 칸에 그린다 (W09_animate 머리말).
+%
+%   >>> 태그 순서가 곧 W09_animate 의 인자 순서다 <<<
+%
+%       lat  lon  qz  qw  wz  hz_gps  hz_imu  [x_n_true  y_n_true  r_true]  + t + en
+%
+%   From 을 더하거나 빼면 AnimateFcn 의 인자 순서도 같이 바뀐다. 아래 tags
+%   한 줄이 그 계약이고, add_animate_box 가 그 순서대로 포트를 만든다.
+%
+%   **새 신호를 만들지 않았다.** 전부 빌더가 이미 걸어 둔 Goto 태그다 —
+%   `lat`·`wz` 는 최상위, `lon`·`qz`·`qw` 는 센서 상자 안(전역 태그),
+%   `*_true` 는 `MotionModel` 안. VRX 모델에는 참값 태그가 아예 없으므로
+%   AnimateFcn 이 NaN 을 넣어 부르고, W09_animate 가 그 칸을 바꿔 그린다.
+%
+%   왜 Ts 인가 (add_animate_box 의 기본 0.05 를 쓰지 않는 이유)
+%     Animate 상자를 0.05 s 로 두면 모델에 이산 주기가 둘 생긴다. 1단계는
+%     고정스텝 이산 솔버라 그 순간 multitasking 이 되고 Rate Transition
+%     블록을 요구하며 컴파일이 멈춘다. 0단계는 반대로 상속이 연속이 되어
+%     마이너 스텝마다 불린다. 두 모델 모두 Ts 하나로 못박는다 —
+%     그리는 횟수는 animate_every 가 줄인다.
+% =====================================================================
+function addW09Animate(m, x, y, hasTruth)
+    tags = {'lat','lon','qz','qw','wz','hz_gps','hz_imu'};
+    if hasTruth
+        tags = [tags, {'x_n_true','y_n_true','r_true'}];
+        aT = 'x_n_true, y_n_true, r_true';
+    else
+        aT = 'NaN, NaN, NaN';
+    end
+
+    code = [ ...
+    sprintf('function ok = AnimateFcn(%s, t, en)', strjoin(tags, ', '))           newline ...
+    '%#codegen'                                                                   newline ...
+    '% 실시간 그림. MATLAB Function 블록은 그림을 그리지 못하므로 그리는 함수를'    newline ...
+    '% extrinsic 으로 선언한다 — 코드를 만들지 않고 평범한 MATLAB 을 부른다.'       newline ...
+    '% en = base workspace 의 animate (0 이면 그리지 않는다).'                      newline ...
+    'coder.extrinsic(''W09_animate'');'                                           newline ...
+    'ok = 1;'                                                                     newline ...
+    'if en > 0.5'                                                                 newline ...
+    sprintf('    W09_animate(lat, lon, qz, qw, wz, hz_gps, hz_imu, %s, t);', aT)  newline ...
+    'end'];
+
+    s = add_animate_box(m, tags, 'W09_animate', code, [x y], 'Ts');
+
+    ch = sfroot().find('-isa','Stateflow.EMChart','Path',[s '/AnimateFcn']);
+    ch.ChartUpdate = 'DISCRETE';
+    ch.SampleTime  = 'Ts';
+end
+
 function ss = newSub(m, name, pos)
     ss = [m '/' name];
     add_block('simulink/Ports & Subsystems/Subsystem', ss, 'Position', pos);
@@ -278,10 +331,12 @@ function build_offline()
     addRateMeter(m, 'SensorModel');
     addLogging(m, [650 500 820 600], {'hz_gps','hz_imu','hz_wind','lat','wz','wind', ...
                                       'lon','qz','qw','x_n_true','y_n_true','psi_true','r_true'});
+    addW09Animate(m, 40, 700, true);          % 참값이 있는 모델 — 네 칸 전부 그린다
 
     note(m,'n1', ['W09 0단계  —  운동모델에 GPS · IMU 를 붙여 수신 주기를 먼저 잰다 (VRX 불필요)' newline ...
         'Command -> MotionModel -> SensorModel -> RateMeter.  RateMeter 뒤는 1단계와 같다' newline ...
         'SensorModel 은 VRX 파일의 update_rate (GPS 20 Hz, IMU 100 Hz) 와 안테나 위치를 쓴다' newline ...
+        'Animate 상자가 도는 동안 GPS 점 · 참값 항적 · 수신 주기 · 자이로를 그린다 (W09_animate.m)' newline ...
         '실행: W09_setup -> W09_offline_run'], 250, -60);
 
     save_system(m); close_system(m);
@@ -366,10 +421,13 @@ function build_sensor_rates()
     addSubscriber(ss, 'ImuSub',  '/wamv/sensors/imu/imu/data', 'sensor_msgs/Imu',       50, 240);
     addSubscriber(ss, 'WindSub', '/vrx/debug/wind/speed',      'std_msgs/Float32',      50, 420);
 
+    %  실시간 화면이 쓸 값도 같은 버스에서 함께 뽑는다 — 0단계 SensorModel 이
+    %  lon · qz · qw 를 전역 Goto 로 내려 둔 것과 **같은 자리, 같은 이름**이다.
+    %  출력 포트는 늘리지 않는다 (늘리면 RateMeter 쪽 포트 번호가 전부 밀린다)
     add_block('simulink/Signal Routing/Bus Selector', [ss '/SelGps'], 'Position',[250 60 300 120]);
-    set_param([ss '/SelGps'], 'OutputSignals', 'latitude');
+    set_param([ss '/SelGps'], 'OutputSignals', 'latitude,longitude');
     add_block('simulink/Signal Routing/Bus Selector', [ss '/SelImu'], 'Position',[250 240 300 300]);
-    set_param([ss '/SelImu'], 'OutputSignals', 'angular_velocity.z');
+    set_param([ss '/SelImu'], 'OutputSignals', 'angular_velocity.z,orientation.z,orientation.w');
     add_block('simulink/Signal Routing/Bus Selector', [ss '/SelWind'], 'Position',[250 420 300 480]);
     set_param([ss '/SelWind'], 'OutputSignals', 'data');
 
@@ -379,13 +437,18 @@ function build_sensor_rates()
     L(ss,'GpsSub/2','SelGps/1');   L(ss,'SelGps/1','lat/1');
     L(ss,'ImuSub/2','SelImu/1');   L(ss,'SelImu/1','wz/1');
     L(ss,'WindSub/2','SelWind/1'); L(ss,'SelWind/1','wind/1');
+    G(ss, 'lon', 700, 60);   L(ss, 'SelGps/2', 'Go_lon/1');
+    G(ss, 'qz',  700, 240);  L(ss, 'SelImu/2', 'Go_qz/1');
+    G(ss, 'qw',  700, 300);  L(ss, 'SelImu/3', 'Go_qw/1');
 
     addRateMeter(m, 'SensorSubscriber');
     addLogging(m, [650 500 820 600], {'hz_gps','hz_imu','hz_wind','lat','wz','wind'});
+    addW09Animate(m, 40, 700, false);        % VRX — 참값이 없다. NaN 으로 부른다
 
     note(m,'n1', ['W09 1단계  —  센서 세 개의 수신 주기를 Simulink 로 잰다 (VRX 필요)' newline ...
         'SensorSubscriber -> RateMeter -> 화면 표시.  IsNew 를 세어 경과시간으로 나눈 값이다' newline ...
         '같은 시간에 터미널에서 ros2 topic hz 를 돌려 두 값을 비교한다' newline ...
+        'Animate 상자는 GPS 점과 자이로를 그린다. **주기를 잴 때는 animate = 0 으로 둔다**' newline ...
         '실행 전: (1) VRX 기동  (2) W09_setup'], 250, -60);
 
     save_system(m); close_system(m);

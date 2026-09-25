@@ -25,7 +25,15 @@ for k = 1:numel(want)
 end
 
 %% 2. 실행 ------------------------------------------------------------
-fprintf('%s 실행 (%g초, 벽시계)\n', m, T_end);
+%  실시간 화면을 끄고 잰다. 이 모델은 **벽시계**로 세므로 그림 그리는 일이
+%  그대로 실측 Hz 를 깎는다 (interactive-models.md §5). 끝나면 되돌린다.
+%  화면을 보고 싶으면 이 함수 대신 모델을 직접 Run 한다 (2-8-3 절).
+anim0 = 1;
+try, anim0 = evalin('base','animate'); catch, end
+assignin('base','animate', 0);
+c = onCleanup(@() assignin('base','animate', anim0));
+
+fprintf('%s 실행 (%g초, 벽시계, 실시간 화면 끔)\n', m, T_end);
 load_system(m);
 set_param(m, 'StopTime', num2str(T_end));
 out = sim(m);
