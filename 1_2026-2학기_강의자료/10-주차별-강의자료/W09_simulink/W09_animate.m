@@ -22,8 +22,9 @@ function f = W09_animate(lat, lon, qz, qw, wz, hz_gps, hz_imu, x_true, y_true, r
 %                  가로축 y (동쪽), 세로축 x (북쪽)
 %     오른쪽 (1)   수신 주기 — hz_gps · hz_imu 와 설계값 20 · 100 Hz (점선)
 %     오른쪽 (2)   센서 대 참값 — 자이로가 준 r 과 참값 r 을 겹쳐서
-%     오른쪽 (3)   GPS 안테나 레버암 — GPS 점과 참값 원점의 차이 (참값이 있을 때)
-%                  참값이 없으면(VRX) **설계값 대비 못 받은 건수**를 그린다
+%     오른쪽 (3)   GPS 점이 있어야 할 자리에서 얼마나 벗어나는가
+%                  참값이 있으면(오프라인) **안테나 레버암** — GPS 점과 참값의 차이
+%                  참값이 없으면(VRX)      **흩어짐** — 지금까지 평균에서의 차이
 %
 %   왜 이 네 칸인가
 %     9주차는 제어 주차가 아니다. 화면이 답해야 하는 질문은 "시킨 대로 갔는가"
@@ -32,12 +33,18 @@ function f = W09_animate(lat, lon, qz, qw, wz, hz_gps, hz_imu, x_true, y_true, r
 %     자리 때문에 얼마나 어긋나는가 — 1-5 절과 2-8-0 절이 재는 바로 그 세 가지를
 %     칸에 그대로 앉혔다.
 %
-%   왜 오른쪽 ③ 이 모델마다 다른가
+%   왜 오른쪽 ③ 의 기준이 모델마다 다른가
 %     VRX 에는 참값이 없다. `W09_1_sensor_rates` 는 센서 토픽 세 개만 구독하고
 %     ground truth 는 구독하지 않는다 — 그것이 이 모델의 목적이기 때문이다.
-%     참값이 없으면 레버암 차이를 잴 수 없으므로 그 칸은 이 주차의 또 다른
-%     측정값인 **설계값 대비 못 받은 건수**(누적)로 바뀐다. 2-8-1 의 비율
-%     0.75 가 몇 건인지를 눈으로 보는 칸이다.
+%     칸의 뜻은 양쪽이 같다 ("GPS 점이 있어야 할 자리에서 얼마나 벗어나는가").
+%     기준만 참값 -> 지금까지의 평균으로 바뀐다. 배가 서 있으면 GPS 잡음의
+%     흩어짐이, 움직이면 GPS 로 본 이동이 그대로 나온다.
+%
+%     수신 건수로 하지 않은 이유 — 화면을 켜면 그리는 일이 벽시계를 먹어
+%     페이싱이 밀린다. 그 순간 "설계 건수 대비 몇 건"은 화면을 켰다는 사실만
+%     재게 된다 (2026-09-25 첫 VRX 캡처에서 GPS 가 22.8 Hz 로 **올라갔다**).
+%     화면에는 벽시계와 무관한 양만 그린다. 건수는 W09_rates_run 이 화면을
+%     끄고 잰다.
 %
 %   선체를 어디에 그리는가
 %     GPS 점은 **안테나 자리**다. 선체 원점이 아니다 (1-3 절). 그래서 IMU 선수각으로
@@ -158,7 +165,7 @@ if ~haveOrigin
         haveOrigin = true;
         hasTruth   = ~isnan(x_true) && ~isnan(r_true);
         label_panels(axXY, axR, axD, hTrue, hGps, hRt, hRm, hD1, hD2, hD3, ...
-                     hasTruth, hypot(bx_, by_), hzDg, hzDi);
+                     hasTruth, hypot(bx_, by_));
     else
         return                    % 아직 첫 메시지가 오지 않았다. 그리지 않는다
     end
@@ -178,8 +185,8 @@ if hasTruth
     tX(end+1) = xt;     tY(end+1) = yt;
     Dd(end+1,:) = [xg - xt, yg - yt, hypot(xg - xt, yg - yt)];
 else
-    %  참값이 없다 -> 설계값 대비 못 받은 건수. RateMeter 의 정의상 n = hz * t 다
-    Dd(end+1,:) = [hzDg*t - hz_gps*t, hzDi*t - hz_imu*t, NaN];
+    %  참값이 없다 -> 기준을 **지금까지의 평균**으로 바꾼다. 그릴 때 다시 잰다
+    Dd(end+1,:) = [NaN, NaN, NaN];
 end
 if numel(tv) > NMAX
     k = numel(tv) - NMAX + 1;
@@ -215,6 +222,12 @@ set(hDesG, 'XData', [tv(1) tv(end)], 'YData', [hzDg hzDg]);
 set(hDesI, 'XData', [tv(1) tv(end)], 'YData', [hzDi hzDi]);
 set(hRm,   'XData', tv, 'YData', Dr(:,1));
 set(hRt,   'XData', tv, 'YData', Dr(:,2));
+if ~hasTruth
+    %  참값이 없으면 **지금까지의 평균**이 기준이다. 배가 서 있으면 GPS 잡음의
+    %  흩어짐이, 움직이면 GPS 로 본 이동이 그대로 보인다. 벽시계와 무관하다
+    mx = mean(gX);  my = mean(gY);
+    Dd = [gX(:) - mx, gY(:) - my, hypot(gX(:) - mx, gY(:) - my)];
+end
 set(hD1,   'XData', tv, 'YData', Dd(:,1));
 set(hD2,   'XData', tv, 'YData', Dd(:,2));
 set(hD3,   'XData', tv, 'YData', Dd(:,3));
@@ -271,7 +284,7 @@ end
 %   안다 (4주차 W04_animate 와 같은 이유). 무엇이 없는지 제목에 적는다.
 % =====================================================================
 function label_panels(axXY, axR, axD, hTrue, hGps, hRt, hRm, hD1, hD2, hD3, ...
-                      hasTruth, dDesign, hzDg, hzDi)
+                      hasTruth, dDesign)
 if hasTruth
     legend(axXY, [hTrue hGps], {'참값 항적','GPS 위치 점'}, ...
            'Location','best', 'AutoUpdate','off');
@@ -287,11 +300,11 @@ else
            'Location','best', 'AutoUpdate','off');
     title(axR, '센서 값 — 자이로가 준 r (참값 없음 — VRX)', 'FontWeight','normal');
     legend(axR, hRm, {'r 자이로'}, 'Location','southoutside', 'AutoUpdate','off');
-    title(axD, sprintf('못 받은 건수 — 설계 %g · %g Hz 로 왔어야 할 수와의 차', hzDg, hzDi), ...
+    title(axD, 'GPS 흩어짐 — 지금까지 평균에서의 차 (참값 없음 — VRX)', ...
           'FontWeight','normal');
-    ylabel(axD, '못 받은 건수 (누적)');
-    legend(axD, [hD1 hD2], {'GPS','IMU'}, ...
-           'Location','southoutside', 'NumColumns',2, 'AutoUpdate','off');
+    ylabel(axD, 'GPS - 평균 [m]');
+    legend(axD, [hD1 hD2 hD3], {'북쪽 차이','동쪽 차이','거리'}, ...
+           'Location','southoutside', 'NumColumns',3, 'AutoUpdate','off');
 end
 end
 
