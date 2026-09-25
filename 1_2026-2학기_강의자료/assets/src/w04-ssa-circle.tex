@@ -1,0 +1,117 @@
+% assets/w04-ssa-circle.svg — 360도 원 하나 위에서 짧은 길과 먼 길을 나란히 본다.
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-ssa-circle.tex assets/w04-ssa-circle.svg
+%
+% 4주차 2-11 의 그림. 대학원 볼트 figures/src/w04-ssa-circle.tex 를 캡스톤 기호
+% (psi_ref)·한국어·학부 수준으로 다시 쓴 것. w04-ssa.svg 가 "ssa 라는 함수"를
+% 보이는 그림이라면, 이 그림은 "한 각도 예시가 이득에 무엇을 요구하는가"를 본다.
+%
+% 상황: psi = 170 도를 유지하는 배에 psi_ref = -170 도를 명령한다.
+%   그대로 빼면   e = -170 - 170 = -340 도   -> 좌현으로 340 도
+%   ssa 를 거치면 ssa(e) = +20 도            -> 우현으로 20 도
+%
+% 각 계산 (NED: 북에서 시계방향). 화면각 = 90 - 나침반각 (figures-svg.md 3).
+%   psi     = 170  -> 화면 -80
+%   psi_ref = 190  -> 화면 -100 (= 260)
+% 짧은 호: 화면 -80 -> -100  (감소 = TikZ 시계방향 = 우현 20 도)  OK
+% 먼   호: 화면 -80 -> 260   (증가 = TikZ 반시계   = 좌현 340 도) OK
+%
+% 상자의 수치 (W04_setup.m): Kp_psi = 800 N m/rad, N_max = 500 N m, Ki_psi = 50 (2-10)
+%   20  도 = 0.3491 rad -> 800 * 0.3491 =  279.3 N m
+%   340 도 = 5.9341 rad -> 800 * 5.9341 = 4747.3 N m = 한계의 9.49 배
+%   적분 1 초: 50 * 0.3491 = 17.5 N m  대  50 * 5.9341 = 296.7 N m
+%
+% 주의 — 도 기호는 반드시 ^\circ 로 쓴다. 글자 도 기호를 수식 안에 두면 kotex 가
+% 조용히 버려서 단위가 사라진 그림이 나온다 (2026-09-24 에 실제로 그랬다).
+%
+% 폭 약 174 mm. 본문 폭 186 mm 안.
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\R{26}          % 나침반 반지름
+\def\PS{-80}        % psi     = 170 도
+\def\PD{-100}       % psi_ref = 190 도 = -170 도
+
+% ---- 제목 ------------------------------------------------------------------
+\node[font=\small\bfseries, anchor=north west] at (-52,46)
+     {같은 명령, 짧은 길 $20^\circ$ 와 먼 길 $340^\circ$};
+\node[anchor=north west, align=left, text width=170mm, font=\scriptsize, color=soft]
+      at (-52,40.5) {%
+  배는 $\psi = 170^\circ$ 를 유지하고 있고 $\psi_{\text{ref}} = -170^\circ$ 를 받는다.
+  두 방위는 $\pm180^\circ$ 이음매를 사이에 두고 $20^\circ$ 밖에 떨어져 있지 않다.};
+
+% ================= 왼쪽 — 나침반 원 =================
+% 짧은 쪽 쐐기 — 20 도의 실제 크기
+\fill[accent, opacity=0.13]
+      (0,0) -- (\PS:\R) arc[start angle=\PS, end angle=\PD, radius=\R] -- cycle;
+
+\draw[soft, line width=0.4pt] (0,0) circle (\R);
+\foreach \c in {0,30,...,330} {
+  \draw[soft, line width=0.35pt] ({90-\c}:\R) -- ({90-\c}:{\R-1.7});
+}
+\node[font=\scriptsize, color=soft, anchor=south] at (90:{\R+2.6})  {북 \ $0^\circ$};
+\node[font=\scriptsize, color=soft, anchor=west]  at (0:{\R+2.0})   {동 \ $90^\circ$};
+\node[font=\scriptsize, color=soft, anchor=east]  at (180:{\R+2.0}) {서 \ $270^\circ$};
+
+% ---- 이음매 (남쪽) ---------------------------------------------------------
+\draw[warn, line width=0.45pt, densely dotted] (0,0) -- (-90:{\R+12});
+\node[wnote, anchor=north east, align=right] at (-11.5,{-\R-13.0})
+     {남 --- 이음매\\$+180^\circ$ 와 $-180^\circ$ 가 같은 방향};
+
+% ---- 먼 길: 원 안쪽, 반시계 340 도 ----------------------------------------
+\draw[warn, line width=1.4pt, -{Stealth[length=5pt,width=3.8pt]}]
+      (\PS:{\R*0.45}) arc[start angle=\PS, end angle=260, radius={\R*0.45}];
+\node[wnote, anchor=north, align=center, text width=36mm] at (0,22.5)
+     {\texttt{ssa} 없이 그냥 빼면\\좌현으로 $-340^\circ$};
+
+% ---- 짧은 길: 원 바깥, 시계 20 도 -----------------------------------------
+\draw[accent, line width=1.6pt, -{Stealth[length=5pt,width=3.8pt]}]
+      (\PS:{\R+7}) arc[start angle=\PS, end angle=\PD, radius={\R+7}];
+\draw[accent, line width=0.35pt] ({-84}:{\R+7}) -- (12,{-\R-13.0});
+\node[anote, anchor=north west, align=left] at (11.5,{-\R-13.0})
+     {\texttt{ssa} 를 거치면\\우현으로 $+20^\circ$};
+
+% ---- 두 방위 ---------------------------------------------------------------
+\draw[ink, line width=1.0pt, -{Stealth[length=5pt,width=3.6pt]}] (0,0) -- (\PS:\R);
+\draw[soft, line width=0.3pt] (\PS:\R) -- (29,-19);
+\node[font=\scriptsize, color=ink, anchor=west, align=left] at (29.5,-19)
+     {$\psi = 170^\circ$\\지금};
+
+\draw[accent, line width=1.0pt, densely dashed, -{Stealth[length=5pt,width=3.6pt]}]
+      (0,0) -- (\PD:\R);
+\draw[soft, line width=0.3pt] (\PD:\R) -- (-29,-19);
+\node[font=\scriptsize, color=accent, anchor=east, align=right] at (-29.5,-19)
+     {목표\\$\psi_{\text{ref}} = -170^\circ$};
+
+% ================= 오른쪽 — 숫자 =================
+% 상자 1 — 산수
+\node[draw=soft, line width=0.4pt, fill=white, anchor=north west, align=left,
+      font=\scriptsize, inner sep=3pt, text width=62mm] at (56,34) {%
+  \textbf{그냥 빼면}\\[2pt]
+  $e = \psi_{\text{ref}} - \psi = -170^\circ - 170^\circ = -340^\circ$\\[4pt]
+  \textbf{한 번 접으면}\\[2pt]
+  $\operatorname{ssa}(e) = \operatorname{atan2}(\sin e,\ \cos e) = +20^\circ$\\[4pt]
+  두 값은 \textbf{같은 도착 방위}를 가리킨다. 다른 것은
+  그곳까지 가는 길뿐이다.};
+
+% 상자 2 — 이득이 받는 값
+\node[draw=warn, line width=0.4pt, fill=white, anchor=north west, align=left,
+      font=\scriptsize, inner sep=3pt, text width=62mm] at (56,3) {%
+  \textbf{이 수가 그대로 이득으로 간다}\\[1pt]
+  ($K_{p,\psi} = 800$ N$\cdot$m/rad, 포화 $500$ N$\cdot$m)\\[3pt]
+  접고: $\ 800 \times 0.349 = 279$ N$\cdot$m --- 한계 안\\[1pt]
+  안 접고: $800 \times 5.934 = 4747$ N$\cdot$m --- 한계의 $9.5$ 배\\[3pt]
+  적분기도 같은 수를 받는다. $K_{i,\psi} = 50$ 이면 1 초에
+  $17.5$ 대 $297$ N$\cdot$m 가 쌓인다.};
+
+% 상자 3 — 실측
+\node[anchor=north west, align=left, text width=62mm, font=\scriptsize, color=soft]
+      at (56,-28) {%
+  실험 2-11 실측 --- 같은 명령에 배는 \texttt{ssa} 를 켜면 $20.0^\circ$,
+  끄면 $340.0^\circ$ 를 돈다. 열일곱 배 멀고, 정착은 $4.1$ s 대 $14.8$ s 다.};
+
+\end{tikzpicture}
+\end{document}
