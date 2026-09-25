@@ -204,8 +204,9 @@ end
 
 function finishPanel(ax1, ax2, ttl, y1, y2)
 title(ax1, ttl, 'FontWeight','normal');
-ylabel(ax1, y1); legend(ax1,'Location','southeast');
-ylabel(ax2, y2); xlabel(ax2,'시간 [s]'); legend(ax2,'Location','northeast');
+% Interpreter none — use_ssa, Kp_psi 같은 이름의 밑줄이 아래첨자로 깨지는 것을 막는다
+ylabel(ax1, y1); legend(ax1,'Location','southeast','Interpreter','none');
+ylabel(ax2, y2); xlabel(ax2,'시간 [s]'); legend(ax2,'Location','northeast','Interpreter','none');
 end
 
 function saveImg(ax, fname)
