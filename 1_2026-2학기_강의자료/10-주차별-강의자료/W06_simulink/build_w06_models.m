@@ -528,7 +528,26 @@ end
 % =====================================================================
 function addAnimate(m, x, y)
 % 실시간 그림 — 포트 없는 서브시스템 하나로 묶는다.
-    add_animate_box(m, {'x_n','y_n','psi','turns'}, 'W06_animate', '', [x y], 'Ts_ctrl');
+% 공용 도구 _tools/add_animate_box.m 이 안을 채운다.
+%
+%   아래 태그 순서가 곧 W06_animate 의 인자 순서다 (뒤에 t · en 이 붙는다).
+%   한 줄이 그 계약이고, add_animate_box 가 그 순서대로 포트를 만든다.
+%   **4 · 5주차와 같은 네 칸 화면**이며, 오프라인과 VRX 가 함수 하나를 같이 쓴다.
+%
+%   태그가 어디서 나오는가 — **전부 이미 있던 태그다. 새로 뽑은 신호가 없다**
+%     x_n·y_n·psi·u       MotionModel (오프라인) / PoseSubscriber (VRX) 의 Goto
+%     psi_ref·r_dist      Guidance 안 LoiterVF 출력에 건 Goto
+%     turns·gate          Guidance 안 TurnCount 출력에 건 Goto
+%     u_cmd               Guidance 안 Schedule 출력에 건 Goto
+%     FL·FR               build_offline / build_vrx 의 Goto
+%
+%   목표 반경 r_d 는 왜 없는가
+%     Schedule 의 3번 출력이지만 태그가 없다. 거기에 가지를 치면 Simulink 가
+%     본선을 몇 px 사선으로 다시 그어 배선 검사가 걸린다 (5주차 Gate 에서 실제로
+%     밟았다). Schedule 은 시각만 보는 순수 함수이므로 W06_animate 안의
+%     sched_rd 가 같은 규칙으로 다시 계산한다 — 모델은 한 줄도 늘지 않는다.
+    tags = {'x_n','y_n','psi','psi_ref','r_dist','turns','u','u_cmd','gate','FL','FR'};
+    add_animate_box(m, tags, 'W06_animate', '', [x y], 'Ts_ctrl');
 end
 
 % =====================================================================
