@@ -686,10 +686,18 @@ function addAnimate(m, x, y)
 % 실시간 그림 — 포트 없는 서브시스템 하나로 묶는다.
 %
 %   태그 순서가 곧 W07_animate 의 인자 순서다 (뒤에 t, en 이 붙는다).
-%   turns 를 빠뜨리면 t 자리에 turns 가 들어가고 t 는 비어, 모델을 돌리는 순간
-%   "입력 인수가 부족합니다" 로 멈춘다 (2026-09-17 확인).
-    add_animate_box(m, {'x_n','y_n','psi','mode','turns'}, 'W07_animate', '', ...
-                    [x y], 'Ts_ctrl');
+%   하나라도 빠뜨리면 그 자리부터 인자가 한 칸씩 밀려 t 가 비고, 모델을 돌리는
+%   순간 "입력 인수가 부족합니다" 로 멈춘다 (2026-09-17 확인).
+%
+%   열한 개가 전부 **이미 있던 전역 태그**다. 새로 가지를 치지 않는다 —
+%   Gate 출력에 가지를 치면 Simulink 가 본선을 사선으로 다시 그어 check_lines
+%   가 걸린다 (5주차 2026-09-24). 속도 지령 u_ref × gate 의 곱은 그리는 함수가
+%   한다. 태그가 어디서 오는지는 다음과 같다.
+%     x_n y_n psi u   MotionModel (VRX 는 PoseSubscriber)
+%     mode psi_ref gate  Mission          turns idx  Guidance      FL FR  Thrusters
+    add_animate_box(m, {'x_n','y_n','psi','mode','turns', ...
+                        'psi_ref','u','gate','FL','FR','idx'}, ...
+                    'W07_animate', '', [x y], 'Ts_ctrl');
 end
 
 % =====================================================================

@@ -125,8 +125,9 @@ if newRun
     hR  = plot(axR, nan, nan, '-',  'Color',[0.00 0.45 0.74], 'LineWidth',1.6);
     ylabel(axR,'반경 [m]');
     title(axR, '중심까지의 거리 — r 이 r_d 에 붙으면 로이터 성공', 'FontWeight','normal');
+    %  r 은 바깥에서 내려와 r_d 위에 눕는다. 범례를 아래에 두면 그 위에 겹친다
     legend(axR, [hRd hR], {'r_d (목표 반경)','r (실제 거리)'}, ...
-           'Location','southeast', 'Orientation','horizontal', 'AutoUpdate','off');
+           'Location','northeast', 'Orientation','horizontal', 'AutoUpdate','off');
 
     % ---- 오른쪽 (2) : 헤딩 지령 대비 응답 ----
     axP = subplot(3,2,4, 'Parent', fig);
