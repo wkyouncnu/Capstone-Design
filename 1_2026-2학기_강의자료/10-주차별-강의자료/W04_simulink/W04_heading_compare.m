@@ -6,6 +6,8 @@ function T = W04_heading_compare(kind)
 %   W04_heading_compare('Kd')     D 게인 스윕 (음수가 브레이크다)
 %   W04_heading_compare('Ki')     한쪽 추진기가 약할 때(port_eff) I 가 오차를 지운다
 %   W04_heading_compare('wrap')   +-180 deg 이음매 — ssa 를 켜고 끈다 (W04_6_wrap)
+%                                 지령은 계단 두 번. 지표는 둘째 계단 뒤만 잰다.
+%                                 돈 각만 표로 보려면 W04_wrap_run 이 더 짧다
 %
 %   반환값 T 는 측정값 표다. 강의노트와 과제에 그대로 옮겨 적으면 된다.
 %   base workspace 의 변수는 건드리지 않는다
@@ -132,10 +134,14 @@ end
 
 % =====================================================================
 % +-180 deg 이음매 — ssa 를 켜고 끈다
+%   계단이 두 번이다. 첫 계단(0 -> 170 deg)은 이음매를 넘지 않아 두 경우가
+%   같다. 지표는 전부 **둘째 계단 뒤**(t >= t_wrap2)만 잰다
 % =====================================================================
 function T = sweepWrap()
 mdl = 'W04_6_wrap'; load_system(mdl);
 name = {'use_ssa = 1  (최단 방향)','use_ssa = 0  (그냥 빼기)'};
+t2   = evalin('base','t_wrap2');
+Nmax = evalin('base','N_max');
 
 [ax1, ax2] = twoPanel('W04 헤딩 - +-180 deg 이음매');
 rows = cell(2,1);
@@ -152,17 +158,21 @@ for k = 1:2
     plot(ax1, t, psi, 'LineWidth',1.6, 'DisplayName',name{k});
     plot(ax2, t, N,   'LineWidth',1.6, 'DisplayName',name{k});
 
-    travel = psi(end) - psi(1);
-    tgt    = psi(1) + travel;                   % 어느 쪽으로 갔든 도착점
+    seg    = t >= t2;                           % 둘째 계단 뒤만 본다
+    p2     = interp1(t, psi, t2);               % 지령이 바뀌는 순간의 선수각
+    travel = psi(end) - p2;
     band   = 0.02*abs(travel);
-    idx    = find(abs(psi - tgt) > band, 1, 'last');
-    if isempty(idx), ts = 0; else, ts = t(min(idx+1, numel(t))); end
+    idx    = find(seg & abs(psi - psi(end)) > band, 1, 'last');
+    if isempty(idx), ts = 0; else, ts = t(min(idx+1, numel(t))) - t2; end
+    dt     = t(2) - t(1);
+    tsat   = dt * sum(seg & abs(N) >= 0.999*Nmax);
 
-    rows{k} = table(string(name{k}), psi(1), psi(end), travel, ts, max(abs(r)), ...
-        'VariableNames', {'cond','psi0_deg','psi_end_deg','travel_deg', ...
-                          'Ts2pct_s','r_max_degps'});
+    rows{k} = table(string(name{k}), p2, psi(end), travel, ts, ...
+                    max(abs(r(seg))), max(abs(N(seg))), tsat, ...
+        'VariableNames', {'cond','psi_at_t2_deg','psi_end_deg','travel_deg', ...
+                          'Ts2pct_s','r_max_degps','N_max_Nm','t_sat_s'});
 end
-finishPanel(ax1, ax2, '170 deg 에서 -170 deg 로 — 최단 거리는 20 deg 다', ...
+finishPanel(ax1, ax2, '5 s 에 170 deg, 20 s 에 -170 deg — 둘째 계단의 최단 거리는 20 deg 다', ...
             '선수각 psi [deg] (unwrap)', '요 모멘트 N [N·m]');
 saveImg(ax1, 'W04_heading_wrap.png');
 
