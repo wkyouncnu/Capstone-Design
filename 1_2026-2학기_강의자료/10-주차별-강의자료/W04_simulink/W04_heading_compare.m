@@ -3,7 +3,7 @@ function T = W04_heading_compare(kind)
 %
 %   W04_heading_compare('open')   개루프 — 계단 모멘트 -> 일정 선회율, 선수각은 안 멈춘다
 %   W04_heading_compare('Kp')     P 게인 스윕
-%   W04_heading_compare('Kd')     D 게인 스윕 (음수가 브레이크다)
+%   W04_heading_compare('Kd')     D 게인 스윕 (게인은 양수, 빼는 것은 SumPD 가 한다)
 %   W04_heading_compare('Ki')     한쪽 추진기가 약할 때(port_eff) I 가 오차를 지운다
 %   W04_heading_compare('wrap')   +-180 deg 이음매 — ssa 를 켜고 끈다 (W04_6_wrap)
 %                                 지령은 계단 두 번. 지표는 둘째 계단 뒤만 잰다.
@@ -18,8 +18,9 @@ evalin('base', 'W04_setup');            % 기본값을 base 에 확보한다. si
 
 switch lower(kind)
     case 'open',  T = sweepOpen();
-    case 'kp',    T = sweepGain('Kp_psi', [200 800 2000], struct('Kd_psi',-400), 'Kp_psi');
-    case 'kd',    T = sweepGain('Kd_psi', [0 -400 -1000], struct('Kp_psi',800),  'Kd_psi');
+    %  Kd_psi 는 **양수**다. 빼는 일은 HeadingCtrl 의 SumPD 가 한다 (2026-10-01)
+    case 'kp',    T = sweepGain('Kp_psi', [200 800 2000], struct('Kd_psi',400), 'Kp_psi');
+    case 'kd',    T = sweepGain('Kd_psi', [0 400 1000],   struct('Kp_psi',800), 'Kd_psi');
     case 'ki',    T = sweepKi();
     case 'wrap',  T = sweepWrap();
     otherwise, error('kind 는 open, Kp, Kd, Ki, wrap 중 하나여야 한다.');
@@ -45,9 +46,9 @@ for k = 1:numel(Ns)
     in = in.setVariable('port_eff', 1);
     out = sim(in);
 
-    t   = out.log_r.Time;
-    r   = squeeze(out.log_r.Data);
-    psi = rad2deg(unwrap(squeeze(out.log_psi.Data)));
+    t   = out.log.r.Time;
+    r   = squeeze(out.log.r.Data);
+    psi = rad2deg(unwrap(squeeze(out.log.psi.Data)));
     rss = mean(r(t > t(end)-5));
     i63 = find(abs(r) >= 0.632*abs(rss), 1);
     if isempty(i63), Tr = NaN; else, Tr = t(i63); end
@@ -150,10 +151,10 @@ for k = 1:2
     in  = in.setVariable('use_ssa', 2-k);
     out = sim(in);
 
-    t   = out.log_psi.Time;
-    psi = rad2deg(unwrap(squeeze(out.log_psi.Data)));
-    N   = squeeze(out.log_N.Data);
-    r   = rad2deg(squeeze(out.log_r.Data));
+    t   = out.log.psi.Time;
+    psi = rad2deg(unwrap(squeeze(out.log.psi.Data)));
+    N   = squeeze(out.log.N.Data);
+    r   = rad2deg(squeeze(out.log.r.Data));
 
     plot(ax1, t, psi, 'LineWidth',1.6, 'DisplayName',name{k});
     plot(ax2, t, N,   'LineWidth',1.6, 'DisplayName',name{k});
@@ -184,9 +185,9 @@ end
 % 공통
 % =====================================================================
 function T = headingMetrics(out, tag, ax1, ax2)
-t   = out.log_psi.Time;
-psi = rad2deg(unwrap(squeeze(out.log_psi.Data)));
-N   = squeeze(out.log_N.Data);
+t   = out.log.psi.Time;
+psi = rad2deg(unwrap(squeeze(out.log.psi.Data)));
+N   = squeeze(out.log.N.Data);
 ref = evalin('base','psi_ref_deg');
 
 plot(ax1, t, psi, 'LineWidth',1.6, 'DisplayName',tag);

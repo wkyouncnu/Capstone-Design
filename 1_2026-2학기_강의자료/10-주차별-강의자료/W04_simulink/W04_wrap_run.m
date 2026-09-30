@@ -36,8 +36,8 @@ for k = 1:2
     in  = in.setVariable('use_ssa', us);
     out = sim(in);
 
-    t    = out.log_psi.Time;
-    psi  = rad2deg(unwrap(squeeze(out.log_psi.Data)));   % 접지 않은 선수각
+    t    = out.log.psi.Time;
+    psi  = rad2deg(unwrap(squeeze(out.log.psi.Data)));   % 접지 않은 선수각
     p20  = interp1(t, psi, t2);
     turn = abs(psi(end) - p20);
     fprintf('    %-7g%20.1f%20.1f%22.1f\n', us, p20, psi(end), turn);

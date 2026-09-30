@@ -82,17 +82,17 @@ end
 
 % ---------------------------------------------------------------------
 function M = metrics(o, stage)
-t   = o.log_psi.Time;
-psi = unwrap(squeeze(o.log_psi.Data));
+t   = o.log.psi.Time;
+psi = unwrap(squeeze(o.log.psi.Data));
 % VRX 는 첫 odom 이 오기 전 쿼터니언이 0 이다. Quat2Yaw 가 그것을 정확히 90 deg 로 바꾼다
 k0  = find(abs(psi - pi/2) > 1e-9 & abs(psi) > 1e-9, 1);
 if isempty(k0), k0 = 1; end
 % VRX 모델은 첫 메시지 1 초 뒤까지 추력을 0 으로 묶는다 (Quat2Yaw 의 ok · GateL/R).
 % 계단은 추력이 실제로 나가기 시작한 그 순간부터 잰다 — 오프라인은 처음부터 나가므로 k0 그대로
 if any(strcmp(o.who, 'log_FL'))
-    F  = abs(squeeze(o.log_FL.Data)) + abs(squeeze(o.log_FR.Data));
+    F  = abs(squeeze(o.log.FL.Data)) + abs(squeeze(o.log.FR.Data));
     kF = find(F > 0, 1);
-    if ~isempty(kF), k0 = max(k0, find(t >= o.log_FL.Time(kF), 1)); end
+    if ~isempty(kF), k0 = max(k0, find(t >= o.log.FL.Time(kF), 1)); end
 end
 M.psi0 = rad2deg(psi(k0));
 ref = 45;
@@ -106,7 +106,7 @@ if isempty(out), M.t_settle = 0; else, M.t_settle = tt(min(out+1, numel(tt))); e
 M.psi_end = mean(pd(tt > tt(end) - 5));
 M.t = tt;  M.psi = pd;
 if stage == 4
-    u = squeeze(o.log_u.Data);  u = u(k0:end);
+    u = squeeze(o.log.u.Data);  u = u(k0:end);
     M.u_end = mean(u(tt > tt(end) - 5));
     i63 = find(u >= 0.632*1.5, 1);
     if isempty(i63), M.t_u63 = NaN; else, M.t_u63 = tt(i63); end

@@ -49,6 +49,8 @@ function build_w04_pid_models()
         check_lines(names{k}, true);
         paint_roles(names{k});        % 역할표는 _tools/gnc_roles.m 하나뿐이다
         check_colour(names{k});
+        check_tags(names{k});         % 태그 이름 · To Workspace 개수. 0 이 합격선
+        check_gains(names{k});        % 0 인 게인 · 음수 게인. **읽고 판단**한다
         %  최상위 도면 + **이미 파일이 있는** 서브시스템 도면까지 갱신한다.
         %  PlantODE · RefShape · OpenLoop 그림이 모델과 따로 놀지 않게
         export_model_pngs(names{k});
@@ -305,8 +307,13 @@ function build_p2(ROW)
         '  >> W04_pid_compare(''kick'')   튀는 크기를 숫자로 잰다']);
 
     % 센서 잡음은 한 곳에서 만들어 태그로 두 줄에 똑같이 넣는다.
-    % 그래야 두 제어기가 글자 그대로 같은 조건에서 비교된다
-    blk(m, 'simulink/Sources/Random Number', 'SensorNoise', x(1), ROW-150, 50, 30, ...
+    % 그래야 두 제어기가 글자 그대로 같은 조건에서 비교된다.
+    %
+    % 자리는 **플랜트 뒤 · 측정 합산점(SumY_*) 옆**이다. 잡음은 지령이 아니라
+    % 측정을 더럽히는 것이므로 사슬의 그 자리에서 들어온다. 맨 왼쪽(x(1))에
+    % 두었더니 뒷 단계 블록들이 전부 그보다 오른쪽이 되어 흐름 검사에 5건이
+    % 잡혔다 (2026-10-01. check_flow 는 env 를 plant 뒤 단계로 센다)
+    blk(m, 'simulink/Sources/Random Number', 'SensorNoise', x(7), ROW-150, 50, 30, ...
         {'Mean','0', 'Variance','noise_var', 'Seed','12345', 'SampleTime','noise_ts'});
     drop_tag(m, 'SensorNoise', 1, 'noise', 0);
 
@@ -351,8 +358,11 @@ function build_p2(ROW)
     drop_tag(m, 'Plant_hand', 1, 'y_hand', 170);
     drop_tag(m, 'PID_byhand', 1, 'tau_hand', 170);
 
-    addLogging(m, {'y_lib','tau_lib','y_hand','tau_hand'}, [x(8)+80 ROW2+200]);
     addDcompare(m, [x(1) ROW2+200]);
+    %  Dcompare 의 세 신호는 Scope 에는 안 그리고 **저장만** 한다 (그쪽 상자에
+    %  이미 Scope_D 가 있다). 저장은 모델에 하나뿐인 To Workspace 가 맡는다
+    addLogging(m, {'y_lib','tau_lib','y_hand','tau_hand'}, [x(8)+80 ROW2+200], ...
+               {'dpure','dpseudo','dtrue'});
     paint(m, {'Ref','command'; 'SensorNoise','env'; ...
               'SumE_lib','control'; 'PID_lib','control'; 'Plant_lib','plant'; ...
               'SumY_lib','env'; ...
@@ -673,15 +683,18 @@ function addDcompare(mdl, xy)
     lane_line(s, 'SumS', 1, 'Dpure',   1, sxy(1));
     lane_line(s, 'SumS', 1, 'Dpseudo', 1, sxy(1));
 
+    %  저장은 여기서 하지 않는다. **모델에 To Workspace 는 한 개**이므로
+    %  세 신호를 태그로 내보내고 Logging 상자의 버스가 받는다 (2026-10-01).
+    %  그래서 out.log.dpure · out.log.dpseudo · out.log.dtrue 로 꺼낸다
     logs = {'dpure','Dpure'; 'dpseudo','Dpseudo'; 'dtrue','Dtrue'};
     for k = 1:3
         add_line(s, [logs{k,2} '/1'], sprintf('Scope_D/%d', k));   % 직선
-        %  분기선은 출발 포트에서 수직으로 내려가 로깅 블록 입력으로 수평 진입 — 꺾임 1회.
-        %  로깅 블록은 출발 포트보다 오른쪽에 둔다 (왼쪽 테두리 = a(1)+20)
+        %  분기선은 출발 포트에서 수직으로 내려가 태그 입력으로 수평 진입 — 꺾임 1회.
+        %  태그는 출발 포트보다 오른쪽에 둔다 (왼쪽 테두리 = a(1)+20)
         a = port_xy(s, logs{k,2}, 'Outport', 1);
-        blk(s, 'simulink/Sinks/To Workspace', ['log_' logs{k,1}], a(1)+50, a(2)+45, ...
-            60, 30, {'VariableName',['log_' logs{k,1}], 'SaveFormat','Timeseries'});
-        b = port_xy(s, ['log_' logs{k,1}], 'Inport', 1);
+        blk(s, 'simulink/Signal Routing/Goto', ['Go_' logs{k,1}], a(1)+50, a(2)+45, ...
+            60, 22, {'GotoTag', logs{k,1}, 'TagVisibility','global'});
+        b = port_xy(s, ['Go_' logs{k,1}], 'Inport', 1);
         add_line(s, [a(1)+10 a(2); a(1)+10 b(2); b]);   % 본선 위 한 점에서 갈라짐
     end
 
@@ -695,18 +708,34 @@ end
 % =====================================================================
 % 로깅 — 포트 없는 서브시스템. 안에서 From 태그로 받는다
 % =====================================================================
-function addLogging(mdl, tags, xy)
+function addLogging(mdl, tags, xy, extra)
+%  TAGS   Scope 에 그리고 저장도 하는 태그들
+%  EXTRA  Scope 에는 안 그리고 **저장만** 하는 태그들 (Dcompare 의 세 신호)
+%
+%  교수 지시 2026-10-01 — "신호마다 To Workspace 가 하나씩 붙어 블록이 너무
+%  많다. 묶어서 하나로. 저장되는 신호의 개수·이름·값은 그대로."
+%
+%  그래서 To Workspace 는 **모델당 한 개**다. Bus Creator 가 신호를 묶고,
+%  SaveFormat 이 Timeseries 이므로 결과는 **필드 이름이 살아 있는 구조체**다.
+%
+%      out = sim('W04_P1_pid_step');   out.log.y   out.log.tau
+%
+%  필드 이름은 버스로 들어가는 **선의 이름**에서 온다. 태그 이름을 그대로 쓴다.
+%  Scope 로 가는 From 과 버스로 가는 From 은 **같은 태그를 받는 두 From** 이다
+%  (한 신호에 태그 하나, 그 태그를 여러 From 이 받는다).
+%
 %  Scope 의 입력 포트 높이를 **읽어서** 그 높이에 From 을 놓는다.
-%  그러면 From -> Scope 가 전부 직선이 되고, To Workspace 는 그 선에서
-%  한 번만 꺾어 내려 받는다. 통로를 지어내면 반드시 겹치거나 두 번 꺾인다.
+%  그러면 From -> Scope 가 전부 직선이 된다. 통로를 지어내면 반드시 겹친다.
 %
 %  줄 간격은 **80 px**. Scope 의 입력 포트는 위아래 28 px 을 비우고 고르게
 %  놓이므로 키를 56 + 80*(n-1) 로 주면 간격이 정확히 80 이 된다. 예전처럼
-%  55 px 로 좁히면 To Workspace 의 이름표(블록 아래 14 px)가 다음 줄의
-%  From -> Scope 직선에 걸려 이름 위로 선이 지나간다 (2026-09-21 W04_P2·P3 —
-%  check_lines 의 (7) 이름표 위 선). 한 줄이 쓰는 자리는
-%  블록 30 + 이름표 14 + 여백 = 약 65 px 이다.
-    n = numel(tags);
+%  55 px 로 좁히면 블록 이름표(블록 아래 14 px)가 다음 줄의 직선에 걸린다
+%  (2026-09-21 W04_P2·P3 — check_lines 의 (7) 이름표 위 선).
+    if nargin < 4 || isempty(extra), extra = {}; end
+    n   = numel(tags);
+    all = [tags(:); extra(:)];
+    na  = numel(all);
+
     s = add_subsys(mdl, 'Logging', [xy(1) xy(2) xy(1)+130 xy(2)+60], {}, {}, ...
                    gnc_colour('measurement'));
 
@@ -718,15 +747,24 @@ function addLogging(mdl, tags, xy)
         blk(s, 'simulink/Signal Routing/From', ['Fr_' tags{k}], 140, q(2), 60, 22, ...
             {'GotoTag', tags{k}});
         add_line(s, ['Fr_' tags{k} '/1'], sprintf('Scope_all/%d', k));   % 직선
-
-        %  본선 위 한 점(a(1)+10)에서 수직으로 내려가 To Workspace 입력으로 수평 진입.
-        %  꺾임 1회. 포트는 테두리 밖에 있어 x 를 맞추려 들면 몇 px 사선이 된다
-        a = port_xy(s, ['Fr_' tags{k}], 'Outport', 1);
-        blk(s, 'simulink/Sinks/To Workspace', ['log_' tags{k}], a(1)+50, q(2)+34, ...
-            60, 30, {'VariableName', ['log_' tags{k}], 'SaveFormat','Timeseries'});
-        b = port_xy(s, ['log_' tags{k}], 'Inport', 1);
-        add_line(s, [a(1)+10 a(2); a(1)+10 b(2); b]);
     end
+
+    %  ---- 저장 — Bus Creator 하나, To Workspace 하나 ---------------------
+    %  Scope 줄 아래에 따로 한 칸을 연다. Scope 로 가는 직선을 건드리지 않는다
+    yB = 116 + 80*(n-1) + 140;
+    blk(s, 'simulink/Signal Routing/Bus Creator', 'LogBus', 300, yB + 32*(na-1), ...
+        5, 65*na, {'Inputs', num2str(na)});
+    for k = 1:na
+        q = port_xy(s, 'LogBus', 'Inport', k);
+        blk(s, 'simulink/Signal Routing/From', ['FrB_' all{k}], 140, q(2), 60, 22, ...
+            {'GotoTag', all{k}});
+        h = add_line(s, ['FrB_' all{k} '/1'], sprintf('LogBus/%d', k));   % 직선
+        set_param(h, 'Name', all{k});   % 이 이름이 곧 out.log 의 필드 이름이다
+    end
+    q = port_xy(s, 'LogBus', 'Outport', 1);
+    blk(s, 'simulink/Sinks/To Workspace', 'log', 460, q(2), 100, 30, ...
+        {'VariableName','log', 'SaveFormat','Timeseries'});
+    add_line(s, 'LogBus/1', 'log/1');
 end
 
 % =====================================================================

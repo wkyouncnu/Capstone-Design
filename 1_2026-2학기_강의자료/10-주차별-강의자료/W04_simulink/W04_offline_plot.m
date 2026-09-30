@@ -19,9 +19,9 @@ function S = W04_offline_plot(out, V)
 if nargin < 1, out = evalin('base','out'); end
 if nargin < 2, V = []; end
 
-t   = out.log_x_n.Time;
-x_n  = out.log_x_n.Data;   y_n  = out.log_y_n.Data;
-psi = out.log_psi.Data;  u   = out.log_u.Data;   r = out.log_r.Data;
+t   = out.log.x_n.Time;
+x_n  = out.log.x_n.Data;   y_n  = out.log.y_n.Data;
+psi = out.log.psi.Data;  u   = out.log.u.Data;   r = out.log.r.Data;
 
 % 각 구간의 마지막 5초를 정상상태로 본다
 seg = @(a,b) t >= b-5 & t <= b;

@@ -66,9 +66,9 @@ function T = comparePlant()
 mdl = 'W04_P0_plant'; load_system(mdl);
 out = sim(Simulink.SimulationInput(mdl));
 
-t  = out.log_y_ode.Time;
-yo = squeeze(out.log_y_ode.Data);
-yt = squeeze(out.log_y_tf.Data);
+t  = out.log.y_ode.Time;
+yo = squeeze(out.log.y_ode.Data);
+yt = squeeze(out.log.y_tf.Data);
 
 [ax1, ax2] = twoPanel('W04 플랜트 - 미분방정식 vs 전달함수');
 plot(ax1, t, yo, 'LineWidth',2.4, 'DisplayName','PlantODE (적분기 조립)');
@@ -97,10 +97,10 @@ for k = 1:numel(values)
     in  = Simulink.SimulationInput(mdl);
     in  = in.setVariable(name, values(k));
     out = sim(in);
-    t = out.log_y2.Time;  y = squeeze(out.log_y2.Data);
+    t = out.log.y2.Time;  y = squeeze(out.log.y2.Data);
     tag = sprintf('%s = %.4g', name, values(k));
     plot(ax1, t, y, 'LineWidth',1.6, 'DisplayName',tag);
-    plot(ax2, t, squeeze(out.log_ref2.Data), 'LineWidth',1.0, 'DisplayName',tag);
+    plot(ax2, t, squeeze(out.log.ref2.Data), 'LineWidth',1.0, 'DisplayName',tag);
 
     mk = metrics(t, y, 1, tag);
     %  손계산 — Mp = exp(-pi*zeta/sqrt(1-zeta^2)) [%], ts = 4/(zeta*wn)
@@ -133,7 +133,7 @@ for k = 1:numel(values)
     in = in.setVariable(name, values(k));
     out = sim(in);
 
-    t = out.log_y.Time;  y = squeeze(out.log_y.Data);  u = squeeze(out.log_tau.Data);
+    t = out.log.y.Time;  y = squeeze(out.log.y.Data);  u = squeeze(out.log.tau.Data);
     tag = sprintf('%s = %g', name, values(k));
     plot(ax1, t, y, 'LineWidth',1.6, 'DisplayName',tag);
     plot(ax2, t, u, 'LineWidth',1.6, 'DisplayName',tag);
@@ -155,9 +155,9 @@ function T = compareHand()
 mdl = 'W04_P2_pid_byhand'; load_system(mdl);
 out = sim(Simulink.SimulationInput(mdl));
 
-t  = out.log_y_lib.Time;
-yl = squeeze(out.log_y_lib.Data);   ul = squeeze(out.log_tau_lib.Data);
-yh = squeeze(out.log_y_hand.Data);  uh = squeeze(out.log_tau_hand.Data);
+t  = out.log.y_lib.Time;
+yl = squeeze(out.log.y_lib.Data);   ul = squeeze(out.log.tau_lib.Data);
+yh = squeeze(out.log.y_hand.Data);  uh = squeeze(out.log.tau_hand.Data);
 
 [ax1, ax2] = twoPanel('W04 PID - 직접 만든 것 vs 라이브러리');
 plot(ax1, t, yl, 'LineWidth',2.4, 'DisplayName','라이브러리 PID 블록');
@@ -186,8 +186,8 @@ for k = 1:numel(Nlist)
     in  = Simulink.SimulationInput(mdl);
     in  = in.setVariable('Nf2', Nlist(k));
     out = sim(in);
-    t = out.log_y_hand.Time;
-    y = squeeze(out.log_y_hand.Data);  u = squeeze(out.log_tau_hand.Data);
+    t = out.log.y_hand.Time;
+    y = squeeze(out.log.y_hand.Data);  u = squeeze(out.log.tau_hand.Data);
 
     tag = sprintf('Nf = %g', Nlist(k));
     plot(ax1, t, y, 'Color',col(k,:), 'LineWidth',1.4, 'DisplayName',tag);
@@ -220,8 +220,8 @@ for k = 1:numel(Kbs)
     in  = in.setVariable('Kb', Kbs(k));
     in  = in.setVariable('noise_var', 0);       % 잡음은 끄고 적분기만 본다
     out = sim(in);
-    t = out.log_y_hand.Time;
-    y = squeeze(out.log_y_hand.Data);  u = squeeze(out.log_tau_hand.Data);
+    t = out.log.y_hand.Time;
+    y = squeeze(out.log.y_hand.Data);  u = squeeze(out.log.tau_hand.Data);
 
     plot(ax1, t, y, 'LineWidth',1.6, 'DisplayName',name{k});
     plot(ax2, t, u, 'LineWidth',1.6, 'DisplayName',name{k});
@@ -251,9 +251,9 @@ for k = 1:numel(Kbs)
     in  = in.setVariable('Kb_u', Kbs(k));
     out = sim(in);
 
-    t = out.log_u.Time;
-    u = squeeze(out.log_u.Data);
-    X = squeeze(out.log_X.Data);
+    t = out.log.u.Time;
+    u = squeeze(out.log.u.Data);
+    X = squeeze(out.log.X.Data);
 
     plot(ax1, t, u, 'Color',col(k,:), 'LineWidth',1.6, 'DisplayName',name{k});
     plot(ax2, t, X, 'Color',col(k,:), 'LineWidth',1.6, 'DisplayName',name{k});
@@ -291,8 +291,8 @@ for k = 1:2
     %  (킥의 크기가 Kd*Nf*계단 + Kp*계단 = 90 이라 한계에 그대로 붙어 버린다)
     in  = in.setVariable('u_max', 100);
     out = sim(in);
-    t = out.log_y_hand.Time;
-    y = squeeze(out.log_y_hand.Data);  u = squeeze(out.log_tau_hand.Data);
+    t = out.log.y_hand.Time;
+    y = squeeze(out.log.y_hand.Data);  u = squeeze(out.log.tau_hand.Data);
 
     plot(ax1, t, y, 'LineWidth',1.6, 'DisplayName',name{k});
     plot(ax2, t, u, 'LineWidth',1.6, 'DisplayName',name{k});
@@ -336,8 +336,8 @@ for k = 1:size(steps,1)
     in  = in.setVariable('Kb',  steps{k,4});
     in  = in.setVariable('noise_var', 0);
     out = sim(in);
-    t = out.log_y_hand.Time;
-    y = squeeze(out.log_y_hand.Data);  u = squeeze(out.log_tau_hand.Data);
+    t = out.log.y_hand.Time;
+    y = squeeze(out.log.y_hand.Data);  u = squeeze(out.log.tau_hand.Data);
 
     plot(ax1, t, y, 'LineWidth',1.4, 'DisplayName',steps{k,5});
     plot(ax2, t, u, 'LineWidth',1.0, 'DisplayName',steps{k,5});
@@ -371,7 +371,7 @@ for k = 1:numel(Xs)
     in  = in.setVariable('X_open',    Xs(k));
     out = sim(in);
 
-    t = out.log_u.Time;  u = squeeze(out.log_u.Data);  X = squeeze(out.log_X.Data);
+    t = out.log.u.Time;  u = squeeze(out.log.u.Data);  X = squeeze(out.log.X.Data);
     uss = mean(u(t > t(end)-5));
     i63 = find(u >= 0.632*uss, 1);
     if isempty(i63), Tu = NaN; else, Tu = t(i63); end
@@ -409,7 +409,7 @@ for k = 1:numel(values)
     in = in.setVariable(name, values(k));
     out = sim(in);
 
-    t = out.log_u.Time;  u = squeeze(out.log_u.Data);  X = squeeze(out.log_X.Data);
+    t = out.log.u.Time;  u = squeeze(out.log.u.Data);  X = squeeze(out.log.X.Data);
     tag = sprintf('%s = %g', name, values(k));
     plot(ax1, t, u, 'LineWidth',1.6, 'DisplayName',tag);
     plot(ax2, t, X, 'LineWidth',1.6, 'DisplayName',tag);
@@ -453,10 +453,10 @@ function T = sweepLowpass()
 mdl = 'W04_P4_lowpass'; load_system(mdl);
 out = sim(Simulink.SimulationInput(mdl));
 
-t  = out.log_sig.Time;
-s  = squeeze(out.log_sig.Data);
-yr = squeeze(out.log_y_raw.Data);
-yl = squeeze(out.log_y_lp.Data);
+t  = out.log.sig.Time;
+s  = squeeze(out.log.sig.Data);
+yr = squeeze(out.log.y_raw.Data);
+yl = squeeze(out.log.y_lp.Data);
 
 [ax1, ax2] = twoPanel('W04 저역통과 필터');
 plot(ax1, t, yr, 'Color',[.75 .75 .75], 'LineWidth',1.0, 'DisplayName','필터 전 (신호+잡음)');

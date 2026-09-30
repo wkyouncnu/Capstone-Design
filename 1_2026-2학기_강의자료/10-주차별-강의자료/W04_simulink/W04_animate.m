@@ -8,6 +8,18 @@ function f = W04_animate(x_n, y_n, psi, u, v, r, FL, FR, u_ref, psi_ref, t)
 %   f = W04_animate()        인자 없이 부르면 지금 열려 있는 창의 핸들을 돌려준다.
 %                            캡처할 때 쓴다 — gcf 를 쓰면 안 된다 (창이 여럿이다)
 %
+%   >>> 묶는 순서 계약 — 빌더의 animBundle 과 **같은 표** <<<
+%
+%     모델 안에서는 앞의 여덟 개가 Mux 하나로 묶여 태그 `anim` 으로 온다.
+%     태그를 여덟 개 두지 않으려고 묶은 것이고, Animate 상자가 다시 푼다.
+%
+%       anim(1) x_n   anim(2) y_n   anim(3) psi   anim(4) u
+%       anim(5) v     anim(6) r     anim(7) FL    anim(8) FR
+%
+%     순서를 고칠 일이 생기면 **이 표 · build_w04_models.m 의 animBundle ·
+%     addW04Animate 의 호출 줄** 세 곳을 함께 고친다. 셋이 어긋나면 그림이
+%     오류 없이 조용히 틀린다 (속도 칸에 요각속도가 그려지는 식이다).
+%
 %   입력
 %     x_n, y_n : 북쪽 x · 동쪽 y [m]   (출발점 기준. 아래 "출발점" 참고)
 %     psi      : 선수각 [rad]          (북 기준 시계방향 +, NED)

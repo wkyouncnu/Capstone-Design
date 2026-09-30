@@ -27,9 +27,10 @@ GNC = {'Guidance','guidance'; 'Mission','mission'; 'InnerLoop','control'; ...
        'Thrusters','thruster'; 'MotionModel','plant'; ...
        'CmdPublisher','ros'; 'PoseSubscriber','ros'; ...
        'Animate','measurement'; 'Logging','measurement'; ...
-       'LogBus','measurement'; 'log','measurement'};
-%   LogBus · log — 로깅 신호를 버스 하나로 묶어 To Workspace 한 개로 보내는 자리다.
-%   계산하지 않고 내보내기만 하므로 Scope·Goto 와 같은 회색이다 (2026-10-01)
+       'LogBus','measurement'; 'log','measurement'; 'MuxAnim','measurement'};
+%   LogBus · log  로깅 신호를 버스 하나로 묶어 To Workspace **한 개**로 보내는 자리
+%   MuxAnim       실시간 화면용 여덟 신호를 묶어 태그 `anim` 하나로 보내는 자리
+%   셋 다 계산하지 않고 내보내기만 하므로 Scope·Goto 와 같은 회색이다 (2026-10-01)
 
 switch m
 % ---- 2주차 · turtlesim -------------------------------------------------

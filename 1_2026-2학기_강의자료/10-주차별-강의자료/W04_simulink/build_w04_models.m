@@ -82,6 +82,10 @@ function build_w04_models(only)
 
             check_flow(mName, true);   % 최상위가 왼쪽에서 오른쪽으로 읽히는가. 0 이 합격선
 
+            check_tags(mName);         % 태그 이름이 신호 이름인가 · To Workspace 개수. 0 이 합격선
+
+            check_gains(mName);        % 0 인 게인 · 음수 게인. 합격선은 없고 **읽고 판단**한다
+
             export_model_pngs(mName);
 
         catch e, warning(e.message); end
@@ -118,17 +122,34 @@ function addFirstMsgGate(m, src, tag, x, y)
 %   또 Simulink 는 시작 직후 몇 스텝을 벽시계로 수 초씩 멈추는데, 그동안 Gazebo 는 첫 추력을 계속 준다.
 %   막지 않으면 계단이 시작되기도 전에 배가 돌아, 헤딩 오버슈트가 실행마다 3 · 54 · 347 % 로
 %   달리 찍혔다 (2026-09-24 노트북 실측). 1 초 예열 뒤 정지한 배에서 계단을 시작한다.
-    add_block('simulink/Signal Routing/From', [m '/From_ok' tag], ...
-              'GotoTag','odom_ok', 'Position',[x y+45 x+70 y+67]);
+    %  Gate 의 출력을 Asg 의 2번 입력 **높이에 맞춰** 놓는다. 어긋나 있으면
+    %  Gate -> Asg 가 꺾이고, 꺾임이 세 번이 되면 tidy_model 이 그것을 Goto/From
+    %  으로 바꿔 버린다 — 바로 옆 단계로 가는 본선이 태그가 되는 것은 잘못이다
+    %  (2026-10-01 W04_4_inner_loop 의 Fr_FR_1). 높이를 맞추면 직선 한 토막이다
+    qa  = port_xy(m, ['Asg' tag], 'Inport', 2);
+    yG  = qa(2) - 30;                      % Product 30 px 높이의 가운데가 그 포트에
     add_block('simulink/Math Operations/Product', [m '/Gate' tag], ...
-              'Position',[x+100 y x+130 y+60]);
+              'Position',[x+100 yG x+130 yG+60]);
+    qg = port_xy(m, ['Gate' tag], 'Inport', 2);
+    add_block('simulink/Signal Routing/From', [m '/From_ok' tag], ...
+              'GotoTag','odom_ok', 'Position',[x qg(2)-11 x+70 qg(2)+11]);
     add_line(m, src,                  ['Gate' tag '/1'], 'autorouting','on');
     add_line(m, ['From_ok' tag '/1'], ['Gate' tag '/2'], 'autorouting','on');
     add_line(m, ['Gate' tag '/1'],    ['Asg' tag '/2'],  'autorouting','on');
 end
 
 function setSolver(m)
-    set_param(m, 'SolverType','Fixed-step', 'SolverName','FixedStepDiscrete', ...
+%  VRX 모델도 **고정스텝 연속 솔버 ode4** 를 쓴다 (교수 지시 2026-10-01).
+%
+%  전에는 FixedStepDiscrete 였다. 그 때문에 제어기의 적분기를 이산으로 둘
+%  수밖에 없었는데, 재검토해 보니 **솔버 선택의 문제이지 VRX 의 제약이
+%  아니었다.** ode4 로 바꾸면 연속 적분기가 그대로 돈다 (2026-10-01 실측:
+%  FixedStepDiscrete + 연속 적분기는 "연속 상태가 포함되어 있다" 로 실패,
+%  ode4 는 통과).
+%
+%  스텝은 0.05 s 그대로다. ROS Subscribe/Publish 는 이산 블록이라 major step
+%  에서만 돌므로 토픽 주기도 페이싱도 달라지지 않는다.
+    set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
                  'FixedStep','0.05', 'StopTime','inf', 'SimulationMode','normal');
 end
 
@@ -189,19 +210,25 @@ end
 %     오프라인  W04_3_heading_offline · W04_4_inner_loop_offline · W04_5_offline
 %     VRX       W04_1_straight · W04_2_turn · W04_3_heading · W04_4_inner_loop
 %
-%   >>> 태그 순서가 곧 W04_animate 의 인자 순서다 <<<
+%   >>> 묶는 순서 계약 — 여기와 W04_animate.m 에 **같은 표**가 있다 <<<
 %
-%       x_n  y_n  psi  u  v  r  FL  FR  [u_ref]  [psi_ref]   +  t  +  en
+%     anim 벡터   1 x_n   2 y_n   3 psi   4 u   5 v   6 r   7 FL   8 FR
+%     그 뒤       [u_ref]  [psi_ref]   +  t  +  en
 %
-%   From 을 더하거나 빼면 AnimateFcn 의 인자 순서도 같이 바뀐다. 아래 tags
-%   한 줄이 그 계약이고, add_animate_box 가 그 순서대로 포트를 만든다.
+%   교수 지시 2026-10-01. "화면·로깅이 태그를 늘리는 주범이면 묶어서 보낸다."
+%   전에는 여덟 신호를 **태그 여덟 개**로 따로 보냈다. 지금은 Mux 하나로 묶어
+%   태그 **하나**(`anim`)로 보내고, 받는 쪽에서 `a(k)` 로 풀어 쓴다.
+%   숫자는 한 자리도 달라지지 않고 도면의 태그만 줄어든다.
+%
+%   순서를 고칠 일이 생기면 **animBundle 의 주석표 · 아래 코드 · W04_animate.m
+%   머리말** 세 곳을 함께 고친다. 셋이 어긋나면 그림이 조용히 틀린다.
 %
 %   지령이 없는 모델은 그 태그를 **아예 만들지 않고** AnimateFcn 이 NaN 을 넣어
 %   부른다. W04_animate 는 NaN 을 보면 그 칸에 "지령 없음 (개루프)" 라고 적는다.
 %   빈 칸으로 두면 학생은 그림이 고장난 줄 안다.
 % =====================================================================
 function addW04Animate(m, x, y, hasURef, hasPsiRef)
-    tags = {'x_n','y_n','psi','u','v','r','FL','FR'};
+    tags = {'anim'};
     if hasURef,   tags{end+1} = 'u_ref';   end
     if hasPsiRef, tags{end+1} = 'psi_ref'; end
 
@@ -214,13 +241,74 @@ function addW04Animate(m, x, y, hasURef, hasPsiRef)
     '% 실시간 그림. MATLAB Function 블록은 그림을 그리지 못하므로 그리는 함수를'    newline ...
     '% extrinsic 으로 선언한다 — 코드를 만들지 않고 평범한 MATLAB 을 부른다.'       newline ...
     '% en = base workspace 의 animate (0 이면 그리지 않는다).'                      newline ...
+    '%'                                                                           newline ...
+    '% anim 은 Mux 로 묶어 온 여덟 신호다 (빌더의 animBundle 과 같은 순서).'        newline ...
+    '%   1 x_n   2 y_n   3 psi   4 u   5 v   6 r   7 FL   8 FR'                    newline ...
     'coder.extrinsic(''W04_animate'');'                                           newline ...
     'ok = 1;'                                                                     newline ...
     'if en > 0.5'                                                                 newline ...
-    sprintf('    W04_animate(x_n, y_n, psi, u, v, r, FL, FR, %s, %s, t);', aU, aP) newline ...
+    sprintf(['    W04_animate(anim(1), anim(2), anim(3), anim(4), anim(5), ' ...
+             'anim(6), anim(7), anim(8), %s, %s, t);'], aU, aP)                   newline ...
     'end'];
 
     add_animate_box(m, tags, 'W04_animate', code, [x y], '0.05');
+end
+
+% ---- 화면용 여덟 신호를 Mux 하나로 묶어 태그 하나로 보낸다 --------------
+%
+%   >>> 순서 계약 (addW04Animate · W04_animate.m 과 같은 표) <<<
+%
+%     1 x_n   2 y_n   3 psi   4 u   5 v   6 r   7 FL   8 FR
+%
+%   SRCS 는 그 순서대로 적은 출발 포트 여덟 개다 ('OdomTap/1' 꼴).
+%   실시간 화면은 이 값들을 **구경만** 한다. 제어 경로는 건드리지 않는다.
+%   H 는 Mux 의 높이다. 신호 여덟 개가 **한 블록**에서 나올 때는 그 블록과 같은
+%   높이로 두어야 입력 포트가 줄줄이 마주 보며 선이 전부 수평 직선이 된다.
+%   SRCS{k} 가 '#psi' 처럼 '#' 로 시작하면 그 자리에 **From 하나를 만들어** 꽂는다.
+%   아직 만들어지지 않은 블록(추력 발행단)의 값을 받을 때 쓴다. From 은 Mux 입력
+%   포트 높이를 **읽어서** 놓으므로 선이 수평 직선이고 서로 겹치지 않는다.
+function animBundle(sys, srcs, x, y, h)
+    if nargin < 5 || isempty(h), h = 240; end
+    add_block('simulink/Signal Routing/Mux', [sys '/MuxAnim'], ...
+              'Inputs','8', 'Position',[x y x+5 y+h]);
+    for k = 1:8
+        src = srcs{k};
+        if src(1) == '#'
+            tag = src(2:end);
+            q   = port_xy(sys, 'MuxAnim', 'Inport', k);
+            add_block('simulink/Signal Routing/From', [sys '/Fr_anim_' tag], ...
+                      'GotoTag', tag, 'Position',[x-150 q(2)-11 x-80 q(2)+11]);
+            src = ['Fr_anim_' tag '/1'];
+        end
+        add_line(sys, src, sprintf('MuxAnim/%d',k), 'autorouting','on');
+    end
+    q = port_xy(sys, 'MuxAnim', 'Outport', 1);
+    add_block('simulink/Signal Routing/Goto', [sys '/Go_anim'], ...
+              'GotoTag','anim', 'TagVisibility','global', ...
+              'Position',[x+90 q(2)-11 x+160 q(2)+11]);
+    add_line(sys, 'MuxAnim/1', 'Go_anim/1');
+end
+
+% ---- From 하나를 놓고 잇는다. 제어기·Scope 가 태그에서 값을 받는 자리 ----
+%
+%   자리는 손으로 잡지 않고 `feed_from` 에게 맡긴다. 그 함수가 도착 포트에서
+%   DY 만큼 떨어진 **빈자리**를 찾아 꺾임 1회로 이어 준다. 손으로 x·y 를 주면
+%   그 자리가 이미 차 있을 때 세 번 꺾이는 선이 생기고, 배치 도구가 그것을
+%   끝내 풀지 못한다 (2026-10-01 W04_6_wrap 에서 재현).
+function fromTo(sys, tag, dst, dp, dy)
+    if nargin < 5 || isempty(dy), dy = 90; end
+    f = feed_from(sys, tag, dst, dp, dy, dst);   % 블록 이름은 Fr_<태그>_<도착블록>
+    set_param(f, 'BackgroundColor', gnc_colour('measurement'));
+end
+
+% ---- 출발 포트 **아래**에 Goto 를 놓는다 (앞으로 가는 선을 막지 않는다) ----
+%   tapGotos 는 태그를 포트와 **같은 높이**에 세운다. 그 자리가 다음 단계로 가는
+%   본선 위이면 선이 태그를 관통한 것처럼 보인다 (2026-10-01 W04_4_inner_loop 의
+%   deg2rad -> HeadingCtrl 이 Go_psi_ref 를 가로질렀다). 지령 열처럼 본선이
+%   가로로 길게 지나가는 자리에서는 태그를 아래로 내린다.
+function dropTag(sys, src, sp, name, dy)
+    g = drop_tag(sys, src, sp, name, dy);
+    set_param(g, 'TagVisibility','global', 'BackgroundColor', gnc_colour('measurement'));
 end
 
 % ---- 출력 포트 높이에 맞춰 Goto 태그를 한 줄로 세운다 -> 선이 전부 수평 직선 ----
@@ -262,9 +350,11 @@ function build_straight()
 
     %  실시간 화면 — 내보낸 추력과, 그 결과로 배가 어디까지 갔는지를 함께 본다.
     %  이 모델은 제어를 하지 않으므로 지령 칸 둘은 "지령 없음" 이 된다.
-    addOdomReader(m, false, true, false, [xP 430]);
+    %  FL·FR 은 맨 왼쪽 지령 열에 있고 화면은 맨 오른쪽이다. 선으로 이으면
+    %  도면을 가로지르므로 태그로 보낸다 — 이름은 신호 이름 그대로 (2026-10-01)
     tapGotos(m, 'FL', {'FL'}, xC+90);
     tapGotos(m, 'FR', {'FR'}, xC+90);
+    addOdomReader(m, false, true, false, [xP 430]);
     addW04Animate(m, xM, 1020, false, false);
 
     setSolver(m);
@@ -314,8 +404,8 @@ function build_turn()
     add_line(m,'Scenario/2','AsgR/2','autorouting','on');
 
     %  실시간 화면 — 시나리오가 추력을 바꾸는 순간과 항적이 휘는 순간을 나란히 본다
-    addOdomReader(m, false, true, false, [xP 430]);
     tapGotos(m, 'Scenario', {'FL','FR'}, xR+160);
+    addOdomReader(m, false, true, false, [xP 430]);
     addW04Animate(m, xM, 1020, false, false);
 
     setSolver(m);
@@ -422,8 +512,21 @@ function addOdomReader(m, withSpeed, anim, gate, org)
         add_line(m, sprintf('Sel/%d',k), sprintf('Quat2Yaw/%d',k), 'autorouting','on');
     end
     add_line(m, sprintf('Sel/%d',iWz), 'Quat2Yaw/5', 'autorouting','on');
+
+    %  상태는 **신호 이름 그대로** 태그로 낸다 — psi · r. 제어기·Scope·로깅이
+    %  전부 이 태그 하나씩을 From 으로 받는다 (한 신호에 태그 하나, 2026-10-01)
+    %  제어기가 없는 모델(1·2단계)에서는 psi·r 을 **아무도 받지 않는다.** 받는
+    %  From 이 없는 Goto 는 도면만 늘린다 — 화면용은 anim 묶음으로 따로 간다
     if gate
-        tapGotos(m, 'Quat2Yaw', {'', '', 'odom_ok'}, xTag);
+        tapGotos(m, 'Quat2Yaw', {'psi','r','odom_ok'}, xTag);
+    end
+    if withSpeed
+        %  속도 u 는 버스에서 바로 나온다 (twist.twist.linear.x). 태그 이름도 u
+        q = port_xy(m, 'Sel', 'Outport', 5);
+        add_block('simulink/Signal Routing/Goto', [m '/Go_u'], ...
+                  'Position',[xTag q(2)-11 xTag+70 q(2)+11], ...
+                  'GotoTag','u', 'TagVisibility','global');
+        add_line(m, 'Sel/5', 'Go_u/1');
     end
 
     if ~anim, return, end
@@ -449,8 +552,13 @@ function addOdomReader(m, withSpeed, anim, gate, org)
     add_line(m, sprintf('Sel/%d',iPy), 'OdomTap/2', 'autorouting','on');
     add_line(m, sprintf('Sel/%d',iVx), 'OdomTap/3', 'autorouting','on');
     add_line(m, sprintf('Sel/%d',iVy), 'OdomTap/4', 'autorouting','on');
-    tapGotos(m, 'OdomTap',  {'x_n','y_n','u','v'}, xTag);
-    tapGotos(m, 'Quat2Yaw', {'psi','r'},           xTag);
+
+    %  화면용 여덟 신호는 **Mux 하나**로 묶어 태그 `anim` 하나로 보낸다.
+    %  FL·FR 은 이 자리에서 아직 만들어지지 않았으므로(추력 발행단이 뒤에 선다)
+    %  '#FL' · '#FR' 로 적어 두면 animBundle 이 From 을 만들어 꽂는다
+    animBundle(m, {'OdomTap/1','OdomTap/2','Quat2Yaw/1','OdomTap/3', ...
+                   'OdomTap/4','Quat2Yaw/2','#FL','#FR'}, ...
+               x0+620, y0+300, 340);
 end
 
 % =====================================================================
@@ -489,10 +597,12 @@ function addHeadingCtrl(m, x, y)
 %
 %   제어식 — P 는 오차에, D 는 **요각속도에 직접**
 %
-%       N = Kp_psi * ssa(psi_ref - psi)  +  Ki_psi * INT(e)  +  Kd_psi * r
+%       N = Kp_psi * ssa(psi_ref - psi)  +  Ki_psi * INT(e)  -  Kd_psi * r
 %
-%   Kd_psi 는 **음수**다 (-400). 부호를 식 안에 넣지 않고 게인에 넣어 두면
-%   블록 하나만 보고도 "브레이크가 걸려 있구나" 를 알 수 있다.
+%   부호 규약 — **되먹임 게인은 양수, 빼는 일은 합산점이 한다** (교수 지시 2026-10-01).
+%   Kd_psi 는 +400 이고 SumPD 가 '+-' 로 받는다. 게인에 마이너스를 숨겨 두면
+%   도면만 보고는 덧셈인지 뺄셈인지 알 수 없다 — 부호는 **보이는 자리**에 둔다.
+%   값의 뜻은 그대로다. -400 을 더하는 것과 +400 을 빼는 것은 같은 계산이다.
 %
 %   Ki_psi 는 기본 0 이다. 한쪽 추진기가 약할 때(port_eff < 1) PD 가 남기는
 %   정상상태 오차를 없애는 자리이고, 그때만 켠다.
@@ -507,11 +617,11 @@ function addHeadingCtrl(m, x, y)
 %       다만 목표가 계단으로 바뀌는 순간 de/dt 는 크게 튀고(미분 킥), r 은 배의
 %       실제 회전이라 튀지 않는다. 같은 값을 더 얌전한 신호로 얻는 셈이다.
 %
-%   왜 마이너스인가
+%   왜 빼는가
 %       D 항은 **브레이크**다. 배가 왼쪽으로 돌고 있으면(r < 0) 그 회전을 멈추는
-%       방향으로 모멘트를 내야 하므로 부호가 반대여야 한다. 마이너스를 빼면
-%       감쇠가 Nr + Kd 에서 Nr - Kd 로 줄어 오버슈트가 커진다 (Kd = 400 에서 17 %,
-%       4주차 1-7절·W04_heading_sign). 2차 항력 Nrr 이 버텨 발산까지는 가지 않는다.
+%       방향으로 모멘트를 내야 하므로 r 에 반대로 작용해야 한다. 빼기를 더하기로
+%       바꾸면 감쇠가 Nr + Kd 에서 Nr - Kd 로 줄어 오버슈트가 커진다 (Kd = 400 에서
+%       17 %, 4주차 2-8절·W04_heading_sign). 2차 항력 Nrr 이 버텨 발산까지는 가지 않는다.
 %
 %   MSS 툴박스의 demoOtterUSVHeadingControl 도 같은 구조다 (Fossen). 그쪽 D 항은
 %   Kp*Td*(r_d - r) 인데, 목표 각속도 r_d = 0 이면 -Kp*Td*r 이다.
@@ -533,17 +643,20 @@ function addHeadingCtrl(m, x, y)
               'Gain','Kp_psi', 'Position',[520 80 570 110]);
     add_block('simulink/Math Operations/Gain', [s '/Ki_psi'], ...
               'Gain','Ki_psi', 'Position',[520 170 570 200]);
-    %  **이산** 적분기를 쓴다. VRX 쌍둥이는 FixedStepDiscrete 솔버라
-    %  연속 적분기를 넣으면 "연속 상태가 포함되어 있다" 로 시뮬레이션이 막힌다.
-    %  샘플 주기 0.05 s 는 오프라인(ode4/0.05)과 VRX 양쪽의 고정 스텝과 같다.
-    add_block('simulink/Discrete/Discrete-Time Integrator', [s '/IntegN'], ...
-              'InitialCondition','0', 'SampleTime','0.05', 'LimitOutput','on', ...
+    %  **연속** 적분기다. 제어기는 연속으로 적는다 (교수 지시 2026-10-01).
+    %  전에 이산으로 둔 이유는 VRX 쌍둥이의 솔버가 FixedStepDiscrete 여서
+    %  "연속 상태가 포함되어 있다" 로 막혔기 때문인데, 그것은 **솔버 선택의
+    %  문제이지 VRX 의 제약이 아니었다.** 고정스텝 연속 솔버 ode4 로 바꾸면
+    %  같은 0.05 s 스텝으로 그대로 돈다 (2026-10-01 실측). setSolver 참조.
+    add_block('simulink/Continuous/Integrator', [s '/IntegN'], ...
+              'InitialCondition','0', 'LimitOutput','on', ...
               'UpperSaturationLimit','N_max', 'LowerSaturationLimit','-N_max', ...
               'Position',[620 170 650 200]);
     add_block('simulink/Math Operations/Gain', [s '/Kd_rate'], ...
               'Gain','Kd_psi', 'Position',[520 340 570 370]);
+    %  '+-' — D 항을 **뺀다**. 게인 Kd_psi 는 양수이고 부호는 여기서 준다
     add_block('simulink/Math Operations/Sum', [s '/SumPD'], ...
-              'Inputs','++', 'Position',[700 80 730 110]);
+              'Inputs','+-', 'Position',[700 80 730 110]);
     add_block('simulink/Math Operations/Sum', [s '/SumN'], ...
               'Inputs','++', 'Position',[790 80 820 110]);
     add_block('simulink/Discontinuities/Saturation', [s '/SatN'], ...
@@ -566,20 +679,28 @@ function addHeadingCtrl(m, x, y)
 
     note(s, sprintf(['헤딩 제어기 — P 는 오차에, D 는 요각속도에\n' ...
         '\n' ...
-        '    N = Kp_psi * e  +  Ki_psi * INT(e)  +  Kd_psi * r\n' ...
+        '    N = Kp_psi * e  +  Ki_psi * INT(e)  -  Kd_psi * r\n' ...
         '    e = ssa(psi_ref - psi)   (use_ssa = 0 이면 그냥 뺀 값)\n' ...
         '\n' ...
-        'Kd_psi 가 음수(-400)인 것이 브레이크다. 돌고 있는 방향의 반대로 낸다.\n' ...
-        '부호를 빼면 감쇠가 Nr - Kd 로 줄어 오버슈트가 커진다 (17 %%).\n' ...
+        '부호 규약 — 되먹임 게인은 **양수**로 두고 빼는 일은 합산점이 한다.\n' ...
+        'Kd_psi = +400 이고 SumPD 가 "+-" 로 받는다. 브레이크인 것은 게인\n' ...
+        '숫자가 아니라 **도면의 이 부호**가 말한다.\n' ...
+        '더하기로 바꾸면 감쇠가 Nr - Kd 로 줄어 오버슈트가 커진다 (17 %%).\n' ...
         '\n' ...
         '목표가 가만히 있으면 de/dt = -r 이므로 오차 미분과 값이 같다.\n' ...
         '다만 목표가 계단으로 바뀔 때 de/dt 는 튀고 r 은 튀지 않는다.\n' ...
         '\n' ...
         'Ki_psi 는 기본 0 이다. 한쪽 추진기가 약할 때(port_eff < 1)\n' ...
-        'PD 가 남기는 정상상태 오차를 없애는 자리다.\n' ...
-        '적분기에는 +-N_max 포화가 걸려 있다 (clamping 안티와인드업).\n' ...
+        'PD 가 남기는 정상상태 오차를 없애는 자리다 (2-10 절 실습에서 켠다).\n' ...
+        'IntegN 은 **연속** 적분기이고 +-N_max 포화가 걸려 있다\n' ...
+        '(clamping 안티와인드업). 모델 솔버는 고정스텝 ode4 다.\n' ...
         '\n' ...
-        '값은 전부 W04_setup.m — Kp_psi = 800, Kd_psi = -400.\n' ...
+        'SatN 의 +-N_max = 500 N m 는 임의의 수가 아니다. 추진기만으로 낼 수\n' ...
+        '있는 물리 한계가 2*b_half*F_max = 2*1.027135*250 = 513.57 N m 이고,\n' ...
+        '500 은 그 97.4 %% 다. 전진 추력 X 를 함께 쓰면 2*b_half*(F_max - X/2)\n' ...
+        '로 줄어, X_head = 300 N 에서는 205.4 N m 가 진짜 한계다 (2-5 절 유도 5).\n' ...
+        '\n' ...
+        '값은 전부 W04_setup.m — Kp_psi = 800, Kd_psi = +400.\n' ...
         '근거는 4주차 극배치 절과 W04_pole_place.m.']), 200, 430);
 end
 
@@ -650,8 +771,13 @@ function addMotionModel(m, x, y, psi0, anim)
 'u = s(1);']);
     add_line(s,'FL/1','EOM/2','autorouting','on');
     add_line(s,'FR/1','EOM/3','autorouting','on');
-    add_line(s,'EOM/1','Integ/1','autorouting','on');
-    add_line(s,'Integ/1','EOM/1','autorouting','on');
+    hDot = add_line(s,'EOM/1','Integ/1','autorouting','on');
+    set_param(hDot, 'Name', 'xdot');     % 태그가 되더라도 이름이 신호 이름이 되게
+    %  상태벡터가 EOM 으로 되돌아가는 선이다. 세 번 꺾이므로 tidy_model 이 태그로
+    %  바꾸는데, **선에 이름을 주어 두면 그 이름이 곧 태그 이름이 된다.**
+    %  이름을 안 주면 블록 이름에서 딴 Integ_1 이 된다 (2026-10-01 교수 지시)
+    hState = add_line(s,'Integ/1','EOM/1','autorouting','on');
+    set_param(hState, 'Name', 'state');
     add_line(s,'Integ/1','States/1','autorouting','on');
     add_line(s,'States/1','psi/1','autorouting','on');
     add_line(s,'States/2','r/1','autorouting','on');
@@ -681,7 +807,10 @@ function addMotionModel(m, x, y, psi0, anim)
     add_line(s,'Integ/1','AnimTap/1','autorouting','on');
     add_line(s,'FL/1',   'AnimTap/2','autorouting','on');
     add_line(s,'FR/1',   'AnimTap/3','autorouting','on');
-    tapGotos(s, 'AnimTap', {'x_n','y_n','psi','u','v','r','FL','FR'}, 650);
+    %  여덟 출력을 태그 여덟 개로 내보내던 것을 Mux 하나로 묶었다 (2026-10-01).
+    %  나가는 태그는 `anim` 하나뿐이고, 순서는 animBundle 의 표가 정한다
+    animBundle(s, {'AnimTap/1','AnimTap/2','AnimTap/3','AnimTap/4', ...
+                   'AnimTap/5','AnimTap/6','AnimTap/7','AnimTap/8'}, 680, 300, 460);
 end
 
 function setSolverOffline(m)
@@ -723,13 +852,36 @@ function addLogBus(m, entries, x, y)
     add_line(m, 'LogBus/1', 'log/1', 'autorouting','on');
 end
 
-function addLog(m, src, name, x, y)
-    % To Workspace — W04_step_compare 가 VRX 와 오프라인을 같은 이름으로 꺼낸다
-    b = [m '/log_' name];
-    add_block('simulink/Sinks/To Workspace', b, 'Position',[x y x+90 y+26]);
-    set_param(b, 'VariableName',['log_' name], 'SaveFormat','Timeseries', 'SampleTime','0.05');
-    add_line(m, src, ['log_' name '/1'], 'autorouting','on');
+% ---- 태그에서 받아 한 자리에 모아 저장한다 (배 모델의 표준 로깅) --------
+%
+%   NAMES 의 각 이름은 **신호 이름이자 태그 이름이자 필드 이름**이다.
+%   신호마다 From 하나를 Bus Creator 바로 왼쪽에 세우므로 선은 수평 직선이고,
+%   로깅 블록이 사슬 한가운데로 끌려 들어가지 않는다.
+%
+%     out = sim('W04_3_heading_offline');   out.log.psi   out.log.N   ...
+function addLogFromTags(m, names, x, y)
+    n  = numel(names);
+    bc = [m '/LogBus'];
+    %  From 은 측정 열의 **맨 왼쪽**(x), Bus Creator 는 그 오른쪽에 둔다.
+    %  전에는 From 을 x-180 에 두었다가 운동모델 위에 올라앉았다 (2026-10-01)
+    add_block('simulink/Signal Routing/Bus Creator', bc, ...
+              'Inputs', num2str(n), 'Position',[x+200 y x+205 y+65*n]);
+    for k = 1:n
+        q = port_xy(m, 'LogBus', 'Inport', k);
+        %  Bus Creator 입력 포트 높이를 **읽어서** 놓는다. 계산으로 맞추면 사선이 된다
+        add_block('simulink/Signal Routing/From', [m '/Fr_log_' names{k}], ...
+                  'GotoTag', names{k}, 'Position',[x q(2)-11 x+70 q(2)+11]);
+        h = add_line(m, ['Fr_log_' names{k} '/1'], sprintf('LogBus/%d',k));
+        set_param(h, 'Name', names{k});   % 이 이름이 곧 out.log 의 필드 이름이다
+    end
+    q = port_xy(m, 'LogBus', 'Outport', 1);
+    tw = [m '/log'];
+    add_block('simulink/Sinks/To Workspace', tw, ...
+              'Position',[x+320 q(2)-15 x+420 q(2)+15]);
+    set_param(tw, 'VariableName','log', 'SaveFormat','Timeseries', 'SampleTime','0.05');
+    add_line(m, 'LogBus/1', 'log/1');
 end
+
 
 % =====================================================================
 % 3단계 — 헤딩 제어  (offline = true 이면 오프라인 쌍둥이)
@@ -754,11 +906,11 @@ function build_heading(offline)
     %  로깅 열을 그보다 또 아래로 밀어, 도면 한가운데가 텅 비고 세로선만 길어진다
     if offline
         addMotionModel(m, xP, 190, '', true);      % true = 실시간 화면용 태그까지
-        sPsi = 'MotionModel/1';  sR = 'MotionModel/2';  yAnim = 560;
+        yAnim = 560;
     else
         %  마지막 true = 첫 메시지 전 추력 차단
         addOdomReader(m, false, true, true, [xP 430]);
-        sPsi = 'Quat2Yaw/1';  sR = 'Quat2Yaw/2';     yAnim = 1020;
+        yAnim = 1020;
     end
 
     add_block('simulink/Sources/Constant', [m '/psi_ref_deg'], ...
@@ -784,8 +936,10 @@ function build_heading(offline)
         '\n' ...
         '  >> W04_heading_compare(''open'')']));
 
+    %  제어기 상자(185~335)의 **이름표 아래**로 충분히 내린다. 340 에 두면
+    %  Alloc 으로 가는 선이 HeadingCtrl 의 이름 글자 위를 지난다 (2026-10-01)
     add_block('simulink/Sources/Constant', [m '/X_const'], ...
-              'Value','X_head', 'Position',[xC 340 xC+80 370]);
+              'Value','X_head', 'Position',[xC 400 xC+80 430]);
 
     addAllocator(m, xA, 200);
     add_line(m,'X_const/1','Alloc/1','autorouting','on');
@@ -793,8 +947,16 @@ function build_heading(offline)
     add_line(m,'OpenLoop/1','Alloc/2','autorouting','on');
     add_line(m,'psi_ref_deg/1','deg2rad/1','autorouting','on');
     add_line(m,'deg2rad/1', 'HeadingCtrl/1','autorouting','on');
-    add_line(m,sPsi,'HeadingCtrl/2','autorouting','on');
-    add_line(m,sR,  'HeadingCtrl/3','autorouting','on');
+
+    %  ---- 신호마다 태그 하나 (2026-10-01 교수 지시) -----------------------
+    %  psi_ref 는 지령 열에서 나와 Scope·화면·제어기로 간다. 제어기는 바로
+    %  옆이라 **선**이고, 멀리 있는 Scope·화면·로깅만 From 으로 받는다
+    dropTag(m, 'deg2rad', 1, 'psi_ref', 120);
+
+    %  되먹임 psi·r 은 운동모델에서 제어기로 **되돌아가는** 신호다. 선으로
+    %  이으면 화면을 가로지르므로 태그로 남긴다 — 이름은 신호 이름 그대로
+    fromTo(m, 'psi', 'HeadingCtrl', 2, 110);
+    fromTo(m, 'r',   'HeadingCtrl', 3, 190);
 
     %  좌현 추진기를 약하게 만드는 자리. port_eff = 1 이면 아무 일도 안 한다
     %  배분 바로 뒤 — 추력이 실제로 줄어드는 그 자리에 둔다
@@ -802,43 +964,42 @@ function build_heading(offline)
               'Gain','port_eff', 'Position',[xA+200 200 xA+250 236]);
     add_line(m,'Alloc/1','PortEff/1','autorouting','on');
 
+    %  N 은 제어기 열에서 나와 배분(바로 옆, 선)과 로깅(멀리, 태그)으로 간다
+    tapGotos(m, 'OpenLoop', {'N'}, xK+390);
+
     if offline
         add_line(m,'PortEff/1','MotionModel/1','autorouting','on');
         add_line(m,'Alloc/2',  'MotionModel/2','autorouting','on');
+        %  배로 실제 들어가는 추력 — 오프라인은 PortEff 를 지난 값이 그것이다
+        tapGotos(m, 'PortEff', {'FL'}, xA+280);
+        tapGotos(m, 'Alloc',   {'', 'FR'}, xA+280);
+        %  운동모델이 내는 상태 — 신호 이름 그대로 태그 하나씩
+        tapGotos(m, 'MotionModel', {'psi','r'}, xP+180);
     else
         addThrusterPublisher(m, 'left',  'L', xP+170, 90);
         addThrusterPublisher(m, 'right', 'R', xP+170, 270);
         addFirstMsgGate(m, 'PortEff/1', 'L', xP,     60);
         addFirstMsgGate(m, 'Alloc/2',   'R', xP,    240);
+        %  VRX 는 게이트를 지난 값 — 배로 실제 나간 추력. 지표의 시작 시각을 여기서 읽는다
+        dropTag(m, 'GateL', 1, 'FL', 120);   % 게이트 **바로 아래** — 가지가 길어지지 않는 자리
+        dropTag(m, 'GateR', 1, 'FR', 120);
+        %  psi · r 태그는 addOdomReader 가 이미 걸어 두었다
     end
 
-    % 관찰용 — 사슬 오른쪽 끝 한 열. 태그가 끼어들 자리를 두고 넉넉히 벌린다
+    % 관찰용 — 사슬 오른쪽 끝 한 열. 전부 태그에서 받으므로 선이 짧다
     add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[xM 60 xM+50 110]);
     set_param([m '/Scope_psi'],'NumInputPorts','2');
-    add_line(m,sPsi,'Scope_psi/1','autorouting','on');
-    add_line(m,'deg2rad/1','Scope_psi/2','autorouting','on');
-    addLog(m, sPsi, 'psi', xM, 200);
-    if offline
-        addLog(m, 'PortEff/1', 'FL', xM, 270);
-        addLog(m, 'Alloc/2',   'FR', xM, 340);
-    else
-        %  VRX 는 게이트를 지난 값 — 배로 실제 나간 추력. 지표의 시작 시각을 여기서 읽는다
-        addLog(m, 'GateL/1', 'FL', xM, 270);
-        addLog(m, 'GateR/1', 'FR', xM, 340);
-    end
-    addLog(m, sR,          'r',  xM, 410);
-    addLog(m, 'OpenLoop/1','N',  xM, 480);
+    fromTo(m, 'psi',     'Scope_psi', 1, 110);
+    fromTo(m, 'psi_ref', 'Scope_psi', 2, 190);
+
+    %  로깅은 To Workspace **한 개**다. Bus Creator 가 다섯 신호를 묶고,
+    %  꺼낼 때는 이름이 그대로 살아 있다 — out.log.psi · out.log.FL · ...
+    addLogFromTags(m, {'psi','r','FL','FR','N'}, xM, 200);
 
     %  ---- 실시간 화면 ----------------------------------------------------
     %  헤딩 지령은 deg2rad 를 지난 rad 값을 그대로 쓴다 — 제어기가 보는 그 값이다.
     %  속도 지령은 **없다.** 이 모델은 헤딩만 돌린다 (전진 추력은 X_head 상수).
     %  그래서 속도 칸은 응답 u 만 그리고 "지령 없음" 이라고 적힌다.
-    tapGotos(m, 'deg2rad', {'psi_ref'}, xC+200);
-    if ~offline
-        %  VRX 에서는 배로 실제 나가는 추력을 잡는다 — 첫 메시지 게이트를 지난 값
-        tapGotos(m, 'GateL', {'FL'}, xM+180);
-        tapGotos(m, 'GateR', {'FR'}, xM+180);
-    end
     addW04Animate(m, xM, yAnim, false, true);
 
     if offline
@@ -894,12 +1055,10 @@ function build_inner_loop(offline)
     %  실시간 화면 상자는 사슬 바로 아래 (build_heading 의 같은 주석 참조)
     if offline
         addMotionModel(m, xP, 220, '', true);      % true = 실시간 화면용 태그까지
-        sPsi = 'MotionModel/1';  sR = 'MotionModel/2';  sU = 'MotionModel/3';
         yAnim = 700;
     else
         %  twist.twist.linear.x 까지 뽑음 · 첫 메시지 전 추력 차단
-        addOdomReader(m, true, true, true, [xP 430]);
-        sPsi = 'Quat2Yaw/1';  sR = 'Quat2Yaw/2';  sU = 'Sel/5';
+        addOdomReader(m, true, true, true, [xP 600]);   % 발행단(60~385)과 넉넉히 떨어뜨린다
         yAnim = 1020;
     end
 
@@ -926,10 +1085,16 @@ function build_inner_loop(offline)
     addAllocator(m, xA, 250);
     add_line(m,'psi_ref_deg/1','deg2rad/1','autorouting','on');
     add_line(m,'deg2rad/1', 'HeadingCtrl/1','autorouting','on');
-    add_line(m,sPsi,'HeadingCtrl/2','autorouting','on');
-    add_line(m,sR,  'HeadingCtrl/3','autorouting','on');
     add_line(m,'u_ref/1','SumU/1','autorouting','on');
-    add_line(m,sU,'SumU/2','autorouting','on');
+
+    %  ---- 신호마다 태그 하나 (2026-10-01 교수 지시) -----------------------
+    dropTag(m, 'deg2rad', 1, 'psi_ref', 120);
+    dropTag(m, 'u_ref',   1, 'u_ref',   120);
+
+    %  되먹임 psi · r · u 는 운동모델에서 제어기로 되돌아간다 — 태그로 남긴다
+    fromTo(m, 'psi', 'HeadingCtrl', 2, 110);
+    fromTo(m, 'r',   'HeadingCtrl', 3, 190);
+    fromTo(m, 'u',   'SumU',        2, 110);
     if offline
         add_line(m,'SumU/1','PI_u/1','autorouting','on');
     else
@@ -950,43 +1115,36 @@ function build_inner_loop(offline)
     if offline
         add_line(m,'Alloc/1','MotionModel/1','autorouting','on');
         add_line(m,'Alloc/2','MotionModel/2','autorouting','on');
+        tapGotos(m, 'Alloc', {'FL','FR'}, xA+180);
+        tapGotos(m, 'MotionModel', {'psi','r','u'}, xP+180);
     else
         addThrusterPublisher(m, 'left',  'L', xP+170,  90);
         addThrusterPublisher(m, 'right', 'R', xP+170, 270);
         addFirstMsgGate(m, 'Alloc/1', 'L', xP,      60);
         addFirstMsgGate(m, 'Alloc/2', 'R', xP,     240);
-    end
-
-    % 관찰용 — 사슬 오른쪽 끝 한 열. 태그가 끼어들 자리를 두고 넉넉히 벌린다
-    add_block('simulink/Sinks/Scope', [m '/Scope_u'], 'Position',[xM 60 xM+50 110]);
-    set_param([m '/Scope_u'],'NumInputPorts','2');
-    add_line(m,sU,'Scope_u/1','autorouting','on');
-    add_line(m,'u_ref/1','Scope_u/2','autorouting','on');
-
-    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[xM 200 xM+50 250]);
-    set_param([m '/Scope_psi'],'NumInputPorts','2');
-    add_line(m,sPsi,'Scope_psi/1','autorouting','on');
-    add_line(m,'deg2rad/1','Scope_psi/2','autorouting','on');
-    addLog(m, sPsi, 'psi', xM, 340);
-    addLog(m, sU,   'u',   xM, 410);
-    if offline
-        addLog(m, 'Alloc/1', 'FL', xM, 480);
-        addLog(m, 'Alloc/2', 'FR', xM, 550);
-    else
         %  VRX 는 게이트를 지난 값 — 배로 실제 나간 추력. 지표의 시작 시각을 여기서 읽는다
-        addLog(m, 'GateL/1', 'FL', xM, 480);
-        addLog(m, 'GateR/1', 'FR', xM, 550);
+        tapGotos(m, 'GateL', {'FL'}, xP+600);
+        tapGotos(m, 'GateR', {'FR'}, xP+600);
+        %  psi · r · u 태그는 addOdomReader 가 이미 걸어 두었다
     end
+
+    % 관찰용 — 사슬 오른쪽 끝 한 열. 전부 태그에서 받으므로 선이 짧다
+    add_block('simulink/Sinks/Scope', [m '/Scope_u'], 'Position',[xM+150 60 xM+200 110]);
+    set_param([m '/Scope_u'],'NumInputPorts','2');
+    fromTo(m, 'u',     'Scope_u', 1, 110);
+    fromTo(m, 'u_ref', 'Scope_u', 2, 190);
+
+    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[xM+150 200 xM+200 250]);
+    set_param([m '/Scope_psi'],'NumInputPorts','2');
+    fromTo(m, 'psi',     'Scope_psi', 1, 110);
+    fromTo(m, 'psi_ref', 'Scope_psi', 2, 270);
+
+    %  로깅은 To Workspace **한 개**다 — out.log.psi · out.log.u · ...
+    addLogFromTags(m, {'psi','u','FL','FR'}, xM, 340);
 
     %  ---- 실시간 화면 ----------------------------------------------------
     %  이 모델만 **지령이 둘 다 있다.** 속도 칸과 헤딩 칸에 지령선이 함께 그려지므로
     %  두 루프가 서로를 어떻게 방해하는지가 한 화면에서 보인다 (선회하면 u 가 준다).
-    tapGotos(m, 'deg2rad', {'psi_ref'}, xC+200);
-    tapGotos(m, 'u_ref',   {'u_ref'},   xC+200);
-    if ~offline
-        tapGotos(m, 'GateL', {'FL'}, xM+180);
-        tapGotos(m, 'GateR', {'FR'}, xM+180);
-    end
     addW04Animate(m, xM, yAnim, true, true);
 
     if offline
@@ -1056,24 +1214,34 @@ function build_wrap()
     addAllocator(m, xA, 200);
     addMotionModel(m, xP, 190, 'psi0_deg*pi/180');
 
-    add_line(m,'psi_step1/1','SumRef/1','autorouting','on');
-    add_line(m,'psi_step2/1','SumRef/2','autorouting','on');
+    %  선에 이름을 준다. 배치 도구가 태그로 바꾸더라도 태그 이름이 **신호 이름**이
+    %  되게 하려는 것이다 — 이름을 안 주면 블록 이름에서 딴 psi_step1_1 이 된다
+    h1 = add_line(m,'psi_step1/1','SumRef/1','autorouting','on');
+    h2 = add_line(m,'psi_step2/1','SumRef/2','autorouting','on');
+    set_param(h1, 'Name', 'step1_deg');
+    set_param(h2, 'Name', 'step2_deg');
     add_line(m,'SumRef/1','deg2rad/1','autorouting','on');
     add_line(m,'deg2rad/1','HeadingCtrl/1','autorouting','on');
-    add_line(m,'MotionModel/1','HeadingCtrl/2','autorouting','on');
-    add_line(m,'MotionModel/2','HeadingCtrl/3','autorouting','on');
     add_line(m,'X_const/1','Alloc/1','autorouting','on');
     add_line(m,'HeadingCtrl/1','Alloc/2','autorouting','on');
     add_line(m,'Alloc/1','MotionModel/1','autorouting','on');
     add_line(m,'Alloc/2','MotionModel/2','autorouting','on');
 
+    %  ---- 신호마다 태그 하나 (2026-10-01 교수 지시) -----------------------
+    dropTag(m, 'deg2rad', 1, 'psi_ref', 120);
+    tapGotos(m, 'HeadingCtrl', {'N'},         xK+190);
+    tapGotos(m, 'MotionModel', {'psi','r'},   xP+180);
+    %  되먹임 — 운동모델에서 제어기로 되돌아간다
+    fromTo(m, 'psi', 'HeadingCtrl', 2, 110);
+    fromTo(m, 'r',   'HeadingCtrl', 3, 190);
+
     add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[xM 60 xM+50 110]);
     set_param([m '/Scope_psi'],'NumInputPorts','2');
-    add_line(m,'MotionModel/1','Scope_psi/1','autorouting','on');
-    add_line(m,'deg2rad/1',    'Scope_psi/2','autorouting','on');
-    addLog(m, 'MotionModel/1', 'psi', xM, 150);
-    addLog(m, 'MotionModel/2', 'r',   xM, 200);
-    addLog(m, 'HeadingCtrl/1', 'N',   xM, 250);
+    fromTo(m, 'psi',     'Scope_psi', 1, 110);
+    fromTo(m, 'psi_ref', 'Scope_psi', 2, 190);
+
+    %  로깅은 To Workspace **한 개** — out.log.psi · out.log.r · out.log.N
+    addLogFromTags(m, {'psi','r','N'}, xM, 220);
 
     setSolverOffline(m);
     set_param(m, 'StopTime','60');
@@ -1370,31 +1538,32 @@ function build_offline()
     add_block('simulink/Sinks/XY Graph', [m '/Track'],  'Position',[xM 270 xM+60 330]);
     set_param([m '/Track'],'xmin','-20','xmax','120','ymin','-40','ymax','60');
 
-    nm = {'x_n','y_n','psi','u','r'};
-    for k = 1:numel(nm)
-        b = [m '/log_' nm{k}];
-        add_block('simulink/Sinks/To Workspace', b, ...
-                  'Position',[xM 380+(k-1)*50 xM+100 410+(k-1)*50]);
-        set_param(b,'VariableName',['log_' nm{k}], ...
-                    'SaveFormat','Timeseries','SampleTime','0.05');
-    end
-
     % --- 배선 -----------------------------------------------------------
     add_line(m, 'Clock/1', 'Scenario/1', 'autorouting','on');
     add_line(m, 'Scenario/1', 'MuxF/1', 'autorouting','on');
     add_line(m, 'Scenario/2', 'MuxF/2', 'autorouting','on');
     add_line(m, 'MuxF/1', 'MotorLag/1', 'autorouting','on');
     add_line(m, 'MotorLag/1', 'EOM/2', 'autorouting','on');
-    add_line(m, 'EOM/1', 'Integ/1', 'autorouting','on');
-    add_line(m, 'Integ/1', 'EOM/1', 'autorouting','on');
+    hDot = add_line(m, 'EOM/1', 'Integ/1', 'autorouting','on');
+    set_param(hDot, 'Name', 'xdot');
+    %  상태벡터가 EOM 으로 되돌아가는 선 — 이름을 주어 태그 이름이 state 가 되게
+    hState = add_line(m, 'Integ/1', 'EOM/1', 'autorouting','on');
+    set_param(hState, 'Name', 'state');
     add_line(m, 'Integ/1', 'States/1', 'autorouting','on');
     add_line(m, 'States/4', 'Scope_u/1', 'autorouting','on');
     add_line(m, 'States/3', 'Scope_psi/1', 'autorouting','on');
     add_line(m, 'States/2', 'Track/1', 'autorouting','on');     % y (동쪽) 를 가로축으로
     add_line(m, 'States/1', 'Track/2', 'autorouting','on');     % x (북쪽) 를 세로축으로
-    for k = 1:numel(nm)
-        add_line(m, sprintf('States/%d',k), ['log_' nm{k} '/1'], 'autorouting','on');
-    end
+
+    %  로깅은 To Workspace **한 개**다 — out.log.x_n · out.log.y_n · out.log.psi ·
+    %  out.log.u · out.log.r. psi 와 r 은 States 가 Scope 용으로 내는 **deg** 값이다.
+    %
+    %  이 모델만 로깅을 **태그로** 받는다. 측정 열에 이미 Scope 둘 · XY Graph ·
+    %  화면용 AnimTap(여덟 출력)이 서 있어서, States 에서 다섯 줄을 더 끌면 그
+    %  상자들을 가로지른다 (2026-10-01 실측: 블록관통 2 · 겹침 1). 다른 모델처럼
+    %  옆 단계가 아니라 **꽉 찬 열을 건너가는** 신호라 태그가 맞다
+    tapGotos(m, 'States', {'x_n','y_n','psi','u','r'}, xP+540);
+    addLogFromTags(m, {'x_n','y_n','psi','u','r'}, xM+450, 100);
 
     % --- 5단 · 실시간 화면 ----------------------------------------------
     %  States 는 Scope 가 쓰기 좋은 단위(deg)로 낸다. 화면 함수는 rad 를 받고
@@ -1418,7 +1587,9 @@ function build_offline()
     set_param([m '/AnimTap'], 'Position',[xM 420 xM+150 880]);
     add_line(m, 'Integ/1',    'AnimTap/1', 'autorouting','on');
     add_line(m, 'MotorLag/1', 'AnimTap/2', 'autorouting','on');
-    tapGotos(m, 'AnimTap', {'x_n','y_n','psi','u','v','r','FL','FR'}, xM+190);
+    %  여덟 신호를 Mux 하나로 묶어 태그 `anim` 하나로 보낸다 (2026-10-01)
+    animBundle(m, {'AnimTap/1','AnimTap/2','AnimTap/3','AnimTap/4', ...
+                   'AnimTap/5','AnimTap/6','AnimTap/7','AnimTap/8'}, xM+200, 420, 460);
     addW04Animate(m, xM, 960, false, false);
 
     set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
