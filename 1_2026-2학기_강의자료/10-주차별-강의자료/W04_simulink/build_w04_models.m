@@ -10,6 +10,7 @@ function build_w04_models()
 %     W04_3_heading_offline.slx   3단계와 같은 제어기, Gazebo 대신 운동방정식
 %     W04_4_inner_loop_offline.slx 4단계와 같은 제어기, Gazebo 대신 운동방정식
 %     W04_6_wrap.slx              +-180 deg 이음매. 계단 두 번, use_ssa 하나로 20 vs 340 deg
+%     W04_7_ssa_test.slx          ssa 함수 하나만. 배도 제어기도 없다 (6단계 앞에 본다)
 %
 %   게인과 스위치 값은 전부 W04_setup.m 에 있다. 블록 안에 숫자가 아니라
 %   Kp_psi · head_open · port_eff 가 적혀 있는 것이 정상이다.
@@ -42,12 +43,13 @@ function build_w04_models()
     build_heading(true);
     build_inner_loop(true);
     build_wrap();
+    build_ssa_test();
 
 
     % 배치와 색을 정리한다. 선은 직선 또는 직각으로만 다시 그린다.
     % dir 의 문자 클래스는 Windows 에서 먹지 않는다. 목록을 받아 이름으로 거른다
     slxList = dir('W04_*.slx');
-    slxList = slxList(~cellfun(@isempty, regexp({slxList.name}, '^W04_[1-6]_', 'once')));   % 오프라인 쌍둥이 · wrap 포함
+    slxList = slxList(~cellfun(@isempty, regexp({slxList.name}, '^W04_[1-7]_', 'once')));   % 오프라인 쌍둥이 · wrap · ssa 시험 포함
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);
         try
@@ -1055,6 +1057,154 @@ function build_wrap()
         '  >> W04_heading_compare(''wrap'')   같은 두 실행의 자세한 지표']), xC, 700);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
+end
+
+% =====================================================================
+% 7단계 — `ssa` 함수 하나만 시험한다 (배도 제어기도 없다)
+%
+%   W04_6_wrap 은 **배가 도는 것**을 본다. 그 전에 이 모델로 **함수가 무엇을
+%   하는지**를 먼저 본다. 루프가 없으므로 게인도 관성도 끼어들지 않는다 —
+%   각도를 넣으면 오차가 나오고, 그것이 전부다.
+%
+%   보는 것 두 가지
+%     ① 쓸어보기  d 를 -540 deg 에서 +540 deg 까지 훑는다.
+%                 ssa 를 거친 값은 **톱니**(+-180 deg 마다 접힘),
+%                 그대로 뺀 값은 **직선**. 이 한 장이 ssa 의 전부다.
+%     ② 한 점     psi = 170 deg, psi_ref = -170 deg 에서
+%                 ssa 켜면 +20 deg, 끄면 -340 deg. Display 두 개에 숫자로 뜬다
+%
+%   d 를 시간으로 훑는다 — Ramp 기울기 1 deg/s, 시작 -540 deg.
+%   그래서 **t [s] 와 d [deg] 가 540 만큼 어긋난 같은 수**다 (d = t - 540).
+%   고정 스텝 0.05 s 는 다른 모델과 같으므로 d 의 해상도는 0.05 deg 다.
+% =====================================================================
+function build_ssa_test()
+    m = 'W04_7_ssa_test'; fresh(m);
+
+    %  [각도 지령] -> [오차 함수 두 벌] -> [로깅·표시]
+    P  = w04cols('command',300, 'controller',320, 'measurement',300);
+    xC = P.command(1);  xK = P.controller(1);  xM = P.measurement(1);
+
+    % ---- ① 쓸어보기 지령 — psi 는 0 에 두고 psi_ref 만 훑는다 -----------
+    %    d = psi_ref - psi 이므로 psi = 0 이면 psi_ref 가 곧 d 다
+    add_block('simulink/Sources/Ramp', [m '/d_deg'], ...
+              'slope','1', 'start','0', 'InitialOutput','-540', ...
+              'Position',[xC 100 xC+50 150]);
+    add_block('simulink/Math Operations/Gain', [m '/deg2rad_sweep'], ...
+              'Gain','pi/180', 'Position',[xC+120 110 xC+180 140]);
+    add_block('simulink/Sources/Constant', [m '/psi_zero'], ...
+              'Value','0', 'Position',[xC+120 200 xC+180 230]);
+
+    % ---- ② 한 점 확인 — 170 deg 에 있는 배에 -170 deg 를 시킨다 ---------
+    add_block('simulink/Sources/Constant', [m '/psi_ref_pt'], ...
+              'Value','-170', 'Position',[xC 320 xC+90 350]);
+    add_block('simulink/Sources/Constant', [m '/psi_pt'], ...
+              'Value','170', 'Position',[xC 410 xC+90 440]);
+    add_block('simulink/Math Operations/Gain', [m '/deg2rad_ref'], ...
+              'Gain','pi/180', 'Position',[xC+140 320 xC+200 350]);
+    add_block('simulink/Math Operations/Gain', [m '/deg2rad_psi'], ...
+              'Gain','pi/180', 'Position',[xC+140 410 xC+200 440]);
+
+    % ---- 시험 대상 — 같은 상자 두 벌. 안에서 use_ssa 만 1 과 0 이다 ------
+    addSsaBox(m, 'Sweep', xK,  90);
+    addSsaBox(m, 'Point',  xK, 320);
+
+    add_line(m,'d_deg/1','deg2rad_sweep/1','autorouting','on');
+    add_line(m,'deg2rad_sweep/1','Sweep/1','autorouting','on');
+    add_line(m,'psi_zero/1',     'Sweep/2','autorouting','on');
+    add_line(m,'psi_ref_pt/1','deg2rad_ref/1','autorouting','on');
+    add_line(m,'psi_pt/1',    'deg2rad_psi/1','autorouting','on');
+    add_line(m,'deg2rad_ref/1','Point/1','autorouting','on');
+    add_line(m,'deg2rad_psi/1','Point/2','autorouting','on');
+
+    % ---- 보기 -----------------------------------------------------------
+    add_block('simulink/Sinks/Scope', [m '/Scope_e'], 'Position',[xM 90 xM+50 140]);
+    set_param([m '/Scope_e'],'NumInputPorts','2');
+    add_line(m,'Sweep/1','Scope_e/1','autorouting','on');
+    add_line(m,'Sweep/2','Scope_e/2','autorouting','on');
+
+    add_block('simulink/Sinks/Display', [m '/e_ssa_deg'], ...
+              'Position',[xM 320 xM+90 350]);
+    add_block('simulink/Sinks/Display', [m '/e_raw_deg'], ...
+              'Position',[xM 410 xM+90 440]);
+    add_line(m,'Point/1','e_ssa_deg/1','autorouting','on');
+    add_line(m,'Point/2','e_raw_deg/1','autorouting','on');
+
+    %  로깅 — 신호 이름 그대로. d 는 Ramp 의 값(deg)을 그대로 적는다
+    addLog(m, 'd_deg/1',  'd',     xM, 500);
+    addLog(m, 'Sweep/1',  'e_ssa', xM, 570);
+    addLog(m, 'Sweep/2',  'e_raw', xM, 640);
+
+    set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
+                 'FixedStep','0.05', 'StopTime','1080', 'SimulationMode','normal');
+    note(m, sprintf(['[7단계] ssa 함수만 시험한다 — 배도 제어기도 없다\n' ...
+        '\n' ...
+        '위 줄 (쓸어보기)  psi = 0 에 두고 psi_ref 를 -540 -> +540 deg 로 훑는다.\n' ...
+        '  Ramp 기울기가 1 deg/s 라 t [s] 와 d [deg] 는 540 만큼 어긋난 같은 수다.\n' ...
+        '  Scope_e 위 곡선(ssa)  +-180 deg 마다 접히는 **톱니**\n' ...
+        '  Scope_e 아래 곡선(그대로) 접히지 않는 **직선**\n' ...
+        '\n' ...
+        '아래 줄 (한 점)  psi = 170 deg 인 배에 psi_ref = -170 deg 를 시킨다.\n' ...
+        '  e_ssa_deg 에 **+20**,  e_raw_deg 에 **-340** 이 뜬다.\n' ...
+        '  20 deg 를 오른쪽으로 돌면 될 일을 340 deg 왼쪽으로 돌게 만드는 수다.\n' ...
+        '\n' ...
+        'Sweep 과 Point 는 **같은 상자**다 (use_ssa 를 1 과 0 으로 고정한 HeadingErr 두 벌).\n' ...
+        '그 HeadingErr 은 W04_3_heading_offline 의 HeadingCtrl 이 쓰는 것과 **같은 코드**다\n' ...
+        '(빌더의 headingErrCode 한 곳에서 나온다).\n' ...
+        '\n' ...
+        '  >> W04_ssa_test                  그림과 표를 한 번에\n' ...
+        '배가 실제로 도는 것은 >> W04_wrap_run  (W04_6_wrap)']), xC, 760);
+    save_system(m); close_system(m,0);
+    fprintf('  [OK] %s\n', m);
+end
+
+% ---- 오차 함수 두 벌을 담은 상자 (ssa 켬 / 끔) ------------------------
+%   입력  psi_ref [rad], psi [rad]
+%   출력  e_ssa [deg], e_raw [deg]   — 학생이 읽는 단위는 도(deg)다
+function addSsaBox(m, name, x, y)
+    s = add_subsys(m, name, [x y x+160 y+120], ...
+                   {'psi_ref','psi'}, {'e_ssa','e_raw'}, gnc_colour('control'));
+
+    add_block('simulink/Sources/Constant', [s '/ssa_on'], ...
+              'Value','1', 'Position',[60 210 140 240]);
+    add_block('simulink/Sources/Constant', [s '/ssa_off'], ...
+              'Value','0', 'Position',[60 470 140 500]);
+
+    for k = {'On','Off'}
+        b = ['HeadingErr' k{1}];
+        add_block('simulink/User-Defined Functions/MATLAB Function', [s '/' b], ...
+                  'Position',[260 60 410 170]);
+        setFcn(s, b, headingErrCode());     % 제어기와 **같은 코드**다
+    end
+    set_param([s '/HeadingErrOn'],  'Position',[260  60 410 170]);
+    set_param([s '/HeadingErrOff'], 'Position',[260 320 410 430]);
+
+    add_block('simulink/Math Operations/Gain', [s '/rad2deg_ssa'], ...
+              'Gain','180/pi', 'Position',[500 100 570 130]);
+    add_block('simulink/Math Operations/Gain', [s '/rad2deg_raw'], ...
+              'Gain','180/pi', 'Position',[500 360 570 390]);
+
+    add_line(s,'psi_ref/1','HeadingErrOn/1', 'autorouting','on');
+    add_line(s,'psi/1',    'HeadingErrOn/2', 'autorouting','on');
+    add_line(s,'ssa_on/1', 'HeadingErrOn/3', 'autorouting','on');
+    add_line(s,'psi_ref/1','HeadingErrOff/1','autorouting','on');
+    add_line(s,'psi/1',    'HeadingErrOff/2','autorouting','on');
+    add_line(s,'ssa_off/1','HeadingErrOff/3','autorouting','on');
+    add_line(s,'HeadingErrOn/1', 'rad2deg_ssa/1','autorouting','on');
+    add_line(s,'HeadingErrOff/1','rad2deg_raw/1','autorouting','on');
+    add_line(s,'rad2deg_ssa/1','e_ssa/1','autorouting','on');
+    add_line(s,'rad2deg_raw/1','e_raw/1','autorouting','on');
+
+    note(s, sprintf(['같은 함수를 두 벌 놓고 use_ssa 만 1 과 0 으로 고정했다.\n' ...
+        '한 번 실행으로 두 곡선이 같이 나온다 — 따로 두 번 돌릴 일이 없다.\n' ...
+        '\n' ...
+        '  위  use_ssa = 1   e = atan2(sin(d), cos(d))   (-180, 180] 로 접는다\n' ...
+        '  아래 use_ssa = 0   e = d = psi_ref - psi       접지 않는다\n' ...
+        '\n' ...
+        '나가는 값의 단위는 **도(deg)** 다. 안쪽 계산은 라디안이고,\n' ...
+        '경계인 rad2deg 게인에서 도로 바꾼다.\n' ...
+        '\n' ...
+        'HeadingErr 코드는 W04_3_heading_offline 의 HeadingCtrl 과 같다.\n' ...
+        '빌더의 headingErrCode 한 곳에서 두 모델로 나간다.']), 60, 560);
 end
 
 % =====================================================================
