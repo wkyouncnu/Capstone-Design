@@ -690,15 +690,37 @@ function setSolverOffline(m)
                  'FixedStep','0.05', 'StopTime','40', 'SimulationMode','normal');
 end
 
-function addLogVar(m, src, var, x, y)
-% 로그 변수 이름 = **신호 이름**. 블록 이름만 log_<var> 로 두어 도면에서 구분한다.
-%   SRC 가 비어 있으면 선을 잇지 않는다 (부르는 쪽이 From 으로 채운다)
-    b = [m '/log_' var];
-    add_block('simulink/Sinks/To Workspace', b, 'Position',[x y x+90 y+26]);
-    set_param(b, 'VariableName', var, 'SaveFormat','Timeseries', 'SampleTime','0.05');
-    if ~isempty(src)
-        add_line(m, src, ['log_' var '/1'], 'autorouting','on');
+% =====================================================================
+% 로깅 — 모델 하나에 To Workspace **한 개**
+%
+%   교수 지시 2026-10-01. "신호마다 To Workspace 가 하나씩 붙어 블록이 너무 많다.
+%   묶어서 하나로. 저장되는 신호의 개수·이름·값은 그대로."
+%
+%   Bus Creator 가 신호를 묶고, To Workspace 하나가 그 버스를 받는다.
+%   SaveFormat 이 Timeseries 이므로 결과는 **필드 이름이 살아 있는 구조체**다.
+%
+%       out.log.psi   out.log.r   out.log.FL  ...
+%
+%   이름은 버스로 들어가는 **선의 이름**에서 온다. 그래서 아래에서 선마다
+%   set_param(line,'Name', ...) 을 한다 — 이름을 안 주면 signal1, signal2 가 된다.
+%   덤으로 도면에도 신호 이름이 찍힌다.
+%
+%   ENTRIES  {'Sweep/1','e_ssa'; 'Fr_d_1/1','d'; ...}  {출발포트, 신호이름}
+% =====================================================================
+function addLogBus(m, entries, x, y)
+    n = size(entries,1);
+    bc = [m '/LogBus'];
+    add_block('simulink/Signal Routing/Bus Creator', bc, ...
+              'Inputs', num2str(n), 'Position',[x y x+5 y+40*n]);
+    for k = 1:n
+        h = add_line(m, entries{k,1}, sprintf('LogBus/%d',k), 'autorouting','on');
+        set_param(h, 'Name', entries{k,2});   % 이 이름이 곧 out.log 의 필드 이름이다
     end
+    tw = [m '/log'];
+    add_block('simulink/Sinks/To Workspace', tw, ...
+              'Position',[x+120 y+20*n-15 x+220 y+20*n+15]);
+    set_param(tw, 'VariableName','log', 'SaveFormat','Timeseries', 'SampleTime','0.05');
+    add_line(m, 'LogBus/1', 'log/1', 'autorouting','on');
 end
 
 function addLog(m, src, name, x, y)
@@ -1159,11 +1181,10 @@ function build_ssa_test()
     %  e_ssa · e_raw 는 바로 왼쪽 Sweep 에서 오므로 **선으로** 잇는다.
     %  d 만 태그다 — 맨 왼쪽 command 열에서 오는 신호라 선으로 이으면 Sweep 상자를
     %  가로질러 관통한다 (2026-10-01). 태그 이름은 접미사 없이 신호 이름 'd' 하나다
-    addLogVar(m, 'Sweep/1', 'e_ssa', xM, 500);
-    addLogVar(m, 'Sweep/2', 'e_raw', xM, 570);
     tapGotos(m, 'd_deg', {'d'}, xC+350);
-    addLogVar(m, '', 'd', xM, 640);
-    feed_from(m, 'd', 'log_d', 1, 70);
+    add_block('simulink/Signal Routing/From', [m '/Fr_d'], ...
+              'GotoTag','d', 'Position',[xM-160 500 xM-90 522]);
+    addLogBus(m, {'Fr_d/1','d'; 'Sweep/1','e_ssa'; 'Sweep/2','e_raw'}, xM, 500);
 
     set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
                  'FixedStep','0.05', 'StopTime','1080', 'SimulationMode','normal');
@@ -1181,6 +1202,10 @@ function build_ssa_test()
         'Sweep 과 Point 는 **같은 상자**다 (use_ssa 를 1 과 0 으로 고정한 HeadingErr 두 벌).\n' ...
         '그 HeadingErr 은 W04_3_heading_offline 의 HeadingCtrl 이 쓰는 것과 **같은 코드**다\n' ...
         '(빌더의 headingErrCode 한 곳에서 나온다).\n' ...
+        '\n' ...
+        '로깅은 To Workspace **한 개**다. Bus Creator 가 세 신호를 묶어 보내고,\n' ...
+        '꺼낼 때는 이름이 그대로 살아 있다.\n' ...
+        '  >> out = sim(''W04_7_ssa_test'');  out.log.d  out.log.e_ssa  out.log.e_raw\n' ...
         '\n' ...
         '  >> W04_ssa_test                  그림과 표를 한 번에\n' ...
         '배가 실제로 도는 것은 >> W04_wrap_run  (W04_6_wrap)']), xC, 760);

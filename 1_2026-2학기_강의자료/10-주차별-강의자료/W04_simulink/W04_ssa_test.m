@@ -25,9 +25,11 @@ evalin('base', 'W04_setup');
 load_system(mdl);
 out = sim(mdl);
 
-d  = squeeze(out.log_d.Data);        % 차이 [deg]
-es = squeeze(out.log_e_ssa.Data);    % ssa 를 거친 오차 [deg]
-er = squeeze(out.log_e_raw.Data);    % 그대로 뺀 오차 [deg]
+%   로깅은 To Workspace **한 개**다. Bus Creator 가 묶어 보내므로
+%   out.log 은 신호 이름이 살아 있는 구조체다 (out.log.d · out.log.e_ssa · ...)
+d  = squeeze(out.log.d.Data);        % 차이 [deg]
+es = squeeze(out.log.e_ssa.Data);    % ssa 를 거친 오차 [deg]
+er = squeeze(out.log.e_raw.Data);    % 그대로 뺀 오차 [deg]
 
 % =====================================================================
 % 그림 — 위는 전체, 아래는 +-180 deg 부근 확대
