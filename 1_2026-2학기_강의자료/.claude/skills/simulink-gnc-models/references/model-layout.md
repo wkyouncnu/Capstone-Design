@@ -1,5 +1,25 @@
 # 최상위 배치 — 여섯 단계 체인
 
+> [!caution] 규칙 0 — 최상위는 **왼쪽에서 오른쪽으로 흐름이 한눈에 보여야 한다**
+> 이 문서의 다른 모든 규칙보다 앞선다. **선이 깨끗한 것보다도 앞선다.**
+>
+> ```
+> [지령] -> [제어기] -> [배분] -> [운동모델] -> [로깅·화면]
+> ```
+>
+> 교수 지시 2026-09-30 — *"이 시뮬링크 파일은 너무 가독성이 낮다. 선들도 정신없다.
+> 가장 왼쪽에 명령이 나오고, 그다음 제어기, 마지막 오른쪽에 운동 모델이 나오는
+> 형태로 해서 왼쪽에서 오른쪽으로 흐름을 볼 수 있게 할 것."*
+>
+> 지키는 법은 세 줄이다.
+> 1. 빌더에서 **`gnc_chain`** 으로 단계 열을 받아 그 x 를 블록 생성 함수에 넘긴다
+> 2. **`tidy_model(m, 'KeepRoot', true)`** 로 정리한다 — 최상위 블록은 건드리지 않는다
+> 3. **`check_flow(m, true)`** 로 센다. **0 이 합격선**이다
+>
+> 어긴 실제 사례는 §8 에 있다. 규칙만 적어 두는 것으로는 모자랐다 — §8 의 경고가
+> 2026-09-24 부터 이 문서에 있었는데도 엿새 뒤 교수에게 지적을 받았다.
+> **세는 도구가 없는 규칙은 지켜지지 않는다.**
+
 > [!important] 새 모델을 만들 때 **가장 먼저** 읽는다
 > 최상위는 MSS 데모와 같은 순서 —
 > **command → reference(유도) → controller → allocation → plant → measurement** — 이고,
@@ -28,6 +48,11 @@ command  -->  reference  -->  controller  -->  allocation  -->  plant  -->  meas
 | plant | 배가 어떻게 반응하는가 | `MotionModel` (오프라인) · `CmdPublisher`+`PoseSubscriber` (VRX) | 초록 `plant` · 연보라 `ros` |
 | measurement | 무엇을 기록하고 보여주는가 | `Logging`, `Animate` | 회색 `measurement` |
 
+- **로깅·`Animate` 는 포트 없는 서브시스템으로 맨 오른쪽 끝, 또는 사슬 바로 아래에
+  나란히 둔다.** `lay_sinks` 가 To Workspace·Scope·Goto 를 아래 한 줄로 내리므로
+  `check_flow` 는 **사슬보다 아래로 내려간 종착 블록의 x 는 따지지 않는다**.
+  다만 **사슬 바로 아래**여야 한다 — 멀리 내리면 그 아래로 종착 구역이 또 내려가
+  도면 한가운데가 텅 비고 세로선만 길어진다 (2026-09-30 W04 에서 측정)
 - **없는 단계는 그냥 빼고 나머지가 당겨진다.** 순서가 계약이지 좌표가 계약이 아니다
   - 구독만 하는 입문 모델은 plant·measurement 둘뿐이다
   - 모드 판단(Stateflow)이 있으면 `Mission` (보라 `mission`) 을 reference **앞**에 둔다
@@ -46,6 +71,7 @@ command  -->  reference  -->  controller  -->  allocation  -->  plant  -->  meas
 | 함수 | 하는 일 |
 |---|---|
 | `gnc_chain(stages, ...)` | 단계 목록 → 표준 좌표 struct. 없는 단계는 알아서 당긴다 |
+| `check_flow(m, true)` | 최상위가 좌 → 우 순서인가. **0 이 합격선** |
 | `add_subsys(m, name, pos, ins, outs, colour)` | **이름 붙은 포트**를 가진 빈 서브시스템 |
 | `gnc_colour(stage)` | 단계별 색. 색은 의미이지 장식이 아니다 |
 | `add_sum(sys, name, signs, centre)` | MSS 규격 **20×20 둥근 Sum** |
@@ -55,13 +81,28 @@ command  -->  reference  -->  controller  -->  allocation  -->  plant  -->  meas
 
 ```matlab
 P = gnc_chain({'command','guidance','control','thruster','plant','measurement'}, ...
-              'Height', struct('control',130), 'Y', 120);
+              'Height', struct('controller',130), 'Y', 120);
 
-g = add_subsys(m, 'Guidance', P.guidance, {'x_n','y_n','psi'}, {'psi_ref','y_e'}, ...
+g = add_subsys(m, 'Guidance', P.reference, {'x_n','y_n','psi'}, {'psi_ref','y_e'}, ...
                gnc_colour('guidance'));
 ```
 
-- 체인 전체가 x ≈ 950 에서 끝나므로 내보낸 블록도 PNG 가 **2000 px** 안에 들어온다
+- `guidance`·`mission` 은 `reference`, `control` 은 `controller`, `thruster` 는
+  `allocation` 으로 받아 준다. `gnc_roles` 의 낱말을 그대로 써도 되지만,
+  **돌아오는 struct 의 필드 이름은 언제나 여섯 정식 이름**이다
+- 단계마다 상자 수가 다르면 **`'Width'` 에 그 단계가 쓸 폭**을 적는다. `'Pitch'` 를
+  주지 않으면 열 간격이 `폭 + Gap`(기본 60)으로 잡힌다 — 제어기 하나뿐인 주차와
+  그 옆에 개루프 스위치까지 선 주차를 같은 간격으로 놓으면 한쪽은 비고 한쪽은 겹친다
+
+  ```matlab
+  P = gnc_chain({'command','controller','allocation','plant','measurement'}, ...
+                'Width', struct('command',300,'controller',350,'allocation',250, ...
+                                'plant',160,'measurement',260), 'Y', 140, 'Gap', 50);
+  xC = P.command(1);  xK = P.controller(1);  ...      % 열의 왼쪽 모서리만 쓴다
+  ```
+
+- 체인이 x ≈ 1600 안에서 끝나야 PNG 가 **2000 px** 안에 들어온다. 넘치면
+  `export_diagram` 이 dpi 를 낮추는데, 낮출수록 글씨를 읽을 수 없다
 - `lay_chain` 으로 배치를 잡아 둔 모델에는 `tidy_model` 을 쓰지 않는다 → SKILL.md §4 `settle_links`
 
 ---
@@ -164,6 +205,8 @@ mss_style(m);                          % save_system 직전 한 번
 
 - [ ] 최상위 블록이 **여섯 개 이하**인가 (로깅·Animate 제외)
 - [ ] 왼쪽에서 오른쪽으로 command → … → measurement 순인가
+      — **눈으로 보지 말고 `check_flow(m, true)` 로 센다. 0 이 합격선**
+- [ ] `tidy_model` 을 **`'KeepRoot', true`** 로 부르고 있는가
 - [ ] **모든 포트에 이름**이 있는가
 - [ ] 되먹임 신호가 둘 이하이고, 각각 이유가 있는가
 - [ ] 로그 앞 여섯 열이 `[u v r x_n y_n psi]` 인가
@@ -172,10 +215,33 @@ mss_style(m);                          % save_system 직전 한 번
 - [ ] 블록도 PNG 폭이 2000 px 이하인가
 - [ ] 서브시스템까지 PNG 로 뽑아 **눈으로** 봤는가
 
-> [!warning] `Simulink.BlockDiagram.arrangeSystem` 을 여섯 단계 최상위에 걸지 않는다
+> [!caution] `Simulink.BlockDiagram.arrangeSystem` 을 여섯 단계 최상위에 걸지 않는다
 > 더 조밀하게 싸 주기는 하는데 **블록 순서를 바꾼다.** 출력 포트를 입력 포트보다
 > 왼쪽에 놓은 사례가 있다. 조밀함이 목적이 아니라 **왼쪽에서 오른쪽으로 읽히는 것**이
 > 목적이다. `lay_chain` 으로 손수 열을 잡은 모델은 `settle_links` 로만 손본다.
+>
+> **실제로 이렇게 되었다 — 2026-09-30, `W04_3_heading_offline`.**
+> 빌더는 지령을 x = 40, 제어기를 300, 배분을 700, 운동모델을 780 에 놓았는데,
+> `tidy_model` 안의 `arrangeSystem` 이 최상위를 다시 놓아 이렇게 만들었다.
+>
+> | 블록 | 단계 | 그때 x | 지금 x |
+> |---|---|---|---|
+> | `psi_ref_deg` | 지령 | 685 | **60** |
+> | `deg2rad` | 지령 | 850 | **165** |
+> | `HeadingCtrl` | 제어기 | 1030 | **390** |
+> | `OpenLoop` | 제어기(개루프 스위치) | 410 | **600** |
+> | `Alloc` | 배분 | 600 | **790** |
+> | `PortEff` | 추진기 | 640 | **990** |
+> | `MotionModel` | 운동모델 | 800 | **1090** |
+> | `Animate` | 화면 | 126 | **1300** |
+>
+> `check_lines` 일곱 항목은 **전부 0** 이었다. 선은 깨끗한데 도면은 오른쪽에서
+> 왼쪽으로 읽혔고, 되먹임 선이 화면을 여러 줄 가로질렀다. 교수가 캡처를 들고
+> "가독성이 낮다" 고 한 것이 이 그림이다.
+>
+> 고친 방법 — 빌더에서 `gnc_chain` 으로 열을 받고, `tidy_model(m, 'KeepRoot', true)`
+> 로 최상위 블록을 그대로 둔 채 선만 손질했다. **연결·게인·계수·신호 이름은 하나도
+> 바꾸지 않았고**, `sim()` 결과 지문 20행이 한 자리도 달라지지 않았다.
 
 ---
 

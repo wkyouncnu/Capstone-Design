@@ -73,8 +73,11 @@ for k = 1:numel(job)
         continue
     end
 
-    g = drop_tag(sys, c.src, c.sp, tag, o.Dy + 40*(k-1));
-    f = feed_from(sys, tag, c.dst, c.dp, o.Dy + 40*(k-1));
+    %  태그마다 60 px 씩 층을 내린다. 40 px 이면 위 태그의 **이름표**(상자 아래
+    %  14 px)가 아래 태그 상자에 1 px 걸쳐 check_lines 의 여섯째 항목에 잡힌다
+    %  (2026-09-30 W04_4_inner_loop 의 Fr_deg2rad_1_1 / Fr_Quat2Yaw_1_1_1)
+    g = drop_tag(sys, c.src, c.sp, tag, o.Dy + 60*(k-1));
+    f = feed_from(sys, tag, c.dst, c.dp, o.Dy + 60*(k-1));
     set_param(g, 'TagVisibility', 'local');
     set_param(g, 'BackgroundColor', gnc_colour('measurement'));
     set_param(f, 'BackgroundColor', gnc_colour('measurement'));

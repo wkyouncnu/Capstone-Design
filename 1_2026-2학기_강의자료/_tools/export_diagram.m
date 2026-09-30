@@ -51,13 +51,17 @@ MAXPX = 2000;
 opened = false;
 if ~bdIsLoaded(mdl), load_system(mdl); opened = true; end
 
+%  세 번으로 모자란 도면이 있다. 한 번 줄여도 목표에 정확히 맞지는 않아서,
+%  세 번째 인쇄가 여전히 넘친 채로 파일에 남는다 (2026-09-30 W04_4_inner_loop
+%  이 1214x2376 으로 저장됨). 다섯 번까지 줄이고, 목표를 3 % 낮춰 잡아
+%  마지막 한 번이 경계에 걸치지 않게 한다.
 r = 150;
-for t = 1:3
+for t = 1:5
     print(['-s' tgt], '-dpng', sprintf('-r%d', round(r)), f);
     i = imfinfo(f);
     big = max(i.Width, i.Height);
     if big <= MAXPX, break, end
-    r = max(40, floor(r * MAXPX / big));
+    r = max(40, floor(r * 0.97 * MAXPX / big));
 end
 
 if opened, close_system(mdl, 0); end

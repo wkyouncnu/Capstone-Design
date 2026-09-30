@@ -121,9 +121,15 @@ for q = find(stay)'
 end
 %  남은 선들보다도 아래여야 한다. lay_feedback 이 되먹임을 블록 아래 통로로
 %  돌려 놓았다면, 종착 구역이 그 통로 위에 앉아 선을 관통한다.
+%  다만 **지금 다시 그을 선**은 세지 않는다. 지난번에 내려 둔 종착 구역으로
+%  내려가는 선이 거기 있고, 그것을 기준으로 삼으면 구역이 한 바퀴 돌 때마다
+%  한 칸씩 더 내려간다. tidy_model 은 한 모델에 네 바퀴까지 돈다 — 2026-09-30
+%  W04_4_inner_loop 에서 종착 구역이 y = 1190 에 있어야 할 것이 2834 까지
+%  밀려 도면 높이가 4131 이 되었고, PNG 가 2000 px 을 넘겼다.
+redraw = [conn(mv).h];
 yLine = -inf;
 for i = 1:numel(L)
-    if ~ishandle(L(i)), continue, end
+    if ~ishandle(L(i)) || any(redraw == L(i)), continue, end
     try, q = get_param(L(i), 'Points'); catch, continue, end
     yLine = max(yLine, max(q(:,2)));
 end

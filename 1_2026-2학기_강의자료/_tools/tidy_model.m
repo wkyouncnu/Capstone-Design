@@ -57,8 +57,16 @@ keepRoot = logical(p.Results.KeepRoot);
 %  표시는 선과 함께 지워지므로 그대로 두면 결과 파일에서 신호가 조용히 빠진다.
 sig = keep_signals(m);
 
+%  KeepRoot 이면 한 바퀴만 돈다. arrangeSystem 이 최상위를 매번 처음부터 다시
+%  놓아 주던 것이 없으므로, 두 바퀴째부터는 **앞 바퀴가 내려 둔 것 아래로** 또
+%  내려간다 — drop_tag 는 빈자리를 아래로 찾고 lay_sinks 는 그 아래에 종착 구역을
+%  연다. 2026-09-30 W04_4_inner_loop 에서 도면 높이가 한 바퀴마다 1600 px 씩
+%  늘어 5770 까지 갔다 (PNG 가 2000 px 을 넘겼다). 한 바퀴로 0 이 되지 않으면
+%  그것은 배치를 고쳐야 한다는 뜻이지 더 돌아야 한다는 뜻이 아니다.
 n = inf;
-for round = 1:4
+rounds = 4;
+if keepRoot, rounds = 1; end
+for round = 1:rounds
     prev = n;
     n = one_round(m, keepRoot);
     if n == 0 || n >= prev, break, end

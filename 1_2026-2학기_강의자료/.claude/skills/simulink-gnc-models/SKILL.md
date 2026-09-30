@@ -5,6 +5,38 @@ description: 선박·USV의 GNC(유도·항법·제어) Simulink 모델을 MATLA
 
 # Simulink GNC 모델 — 코드로 만들고, 코드로 정리한다
 
+> [!caution] 최상위는 **왼쪽에서 오른쪽으로 흐름이 한눈에 보여야 한다**
+> 이 스킬의 첫째 규칙이다. **선이 깨끗한 것보다 앞선다.**
+>
+> ```
+> [지령] -> [제어기] -> [배분] -> [운동모델] -> [로깅·화면]
+> ```
+>
+> 교수 지시 2026-09-30 — *"이 시뮬링크 파일은 너무 가독성이 낮다. 선들도 정신없다.
+> 가장 왼쪽에 명령이 나오고, 그다음 제어기, 마지막 오른쪽에 운동 모델이 나오는
+> 형태로 해서 왼쪽에서 오른쪽으로 흐름을 볼 수 있게 할 것."*
+>
+> 지적받은 `W04_3_heading_offline` 은 그때 이랬다 — 배선 검사 일곱 항목이
+> **전부 0 인 채로**:
+>
+> | 블록 | 단계 | 그때 x | 있어야 할 자리 |
+> |---|---|---|---|
+> | `psi_ref_deg` · `deg2rad` | 지령 | 685 · 850 | 맨 왼쪽 |
+> | `HeadingCtrl` | 제어기 | 1030 | 지령 오른쪽, 배분 왼쪽 |
+> | `Alloc` | 배분 | 600 | 제어기 오른쪽 |
+> | `MotionModel` | 운동모델 | 800 | 배분 오른쪽 |
+> | `Animate` | 화면 | 126 | 맨 오른쪽 또는 그 아래 |
+>
+> 선은 깨끗했고 색도 맞았다. **읽을 수가 없었을 뿐이다.** 선 검사만으로는 이것을
+> 잡지 못한다. 그래서 검사를 하나 더 둔다 — `check_flow(모델, true)`, **0 이 합격선**
+> (§4 「흐름 검사」). 고친 뒤 여덟 모델 전부 0 이 되었다 (어긋남 189건 → 0건).
+>
+> 범인은 `tidy_model` 안의 `Simulink.BlockDiagram.arrangeSystem` 이었다. 선 길이는
+> 줄이지만 **단계 순서를 모른다.** `model-layout.md` §8 이 이미 경고하고 있었는데,
+> 경고만으로는 아무도 어긋난 것을 알아차리지 못했다. 그래서 **세는 도구**를 만든다.
+> 최상위를 `gnc_chain` 으로 잡아 둔 모델은 **`tidy_model(m, 'KeepRoot', true)`** 로
+> 부른다 — 최상위 블록은 그대로 두고 선만 손질한다는 뜻이다.
+
 > [!important] 배치가 먼저다
 > 모델을 쓰기 전에 **`references/model-layout.md`** 를 읽는다. 최상위는
 > **command → reference(유도) → controller → allocation → plant → measurement** 순이고,
@@ -22,12 +54,14 @@ Simulink 모델을 **손으로 그리지 않는다.** `build_wXX_models.m` 하�
 
 ## 0. 작업 순서
 
-1. **생성** — `build_wXX_models.m` 작성 → MATLAB MCP 로 실행
-2. **정리** — 스크립트 끝에서 `tidy_model(모델)` 호출. 한 번이면 된다
+1. **생성** — `build_wXX_models.m` 작성 → MATLAB MCP 로 실행.
+   최상위 x 는 `gnc_chain` 이 준다. 손으로 쓰지 않는다
+2. **정리** — 스크립트 끝에서 `tidy_model(모델, 'KeepRoot', true)` 호출. 한 번이면 된다
 3. **색** — 이어서 `paint_roles(모델)` · `check_colour(모델)`. 흰색 0 이 합격선
-4. **그림** — 같은 자리에서 `export_model_pngs(모델)` 호출
-5. **검증** — 컴파일 · 미연결 포트 0 · 실제 시뮬레이션 실행
-6. **문서** — MD 에 그림과 **실측 수치**를 싣고 PDF 재생성
+4. **검사** — `check_lines(모델, true)` 일곱 항목 0, `check_flow(모델, true)` **0**
+5. **그림** — 같은 자리에서 `export_model_pngs(모델)` 호출
+6. **검증** — 컴파일 · 미연결 포트 0 · 실제 시뮬레이션 실행
+7. **문서** — MD 에 그림과 **실측 수치**를 싣고 PDF 재생성
 
 ```matlab
     slxList = dir('W04_*.slx');
@@ -35,9 +69,12 @@ Simulink 모델을 **손으로 그리지 않는다.** `build_wXX_models.m` 하�
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);
         try
-            tidy_model(mName);
+            tidy_model(mName, 'KeepRoot', true);   % 최상위 열은 빌더가 잡았다
             paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
             check_colour(mName);       % 흰색으로 남은 블록 0 이 합격선
+            nudge_labels(mName);
+            check_lines(mName, true);  % 일곱 항목 0 이 합격선
+            check_flow(mName, true);   % 좌 -> 우 단계 순서. 0 이 합격선
             export_model_pngs(mName);
         catch e, warning(e.message); end
     end
@@ -60,11 +97,27 @@ Simulink 모델을 **손으로 그리지 않는다.** `build_wXX_models.m` 하�
 | 순서 | 도구 | 하는 일 |
 |---|---|---|
 | 1 | `mss_style` | 블록 크기를 **먼저** 정한다. 나중에 키우면 배치가 어긋난다 |
-| 2 | `arrangeSystem` | Simulink 의 층 배치. 앞뒤 순서를 잡는 데는 이만한 것이 없다 |
+| 2 | `arrangeSystem` | Simulink 의 층 배치. **`KeepRoot` 면 최상위에는 걸지 않는다** |
 | 3 | `lay_feedback` | 되돌아가는 선을 블록 **아래 통로**로 돌린다 |
 | 4 | `tag_feedback` | 그래도 세 번 꺾이면 Goto/From 한 쌍으로 바꾼다 |
 | 5 | `lay_sinks` | 갈라져 나온 종착 블록(Display·Goto·Scope)을 아래 한 열로 내린다 |
 | 6 | `lay_links` | 남은 지저분한 선만 통로 하나로 다시 긋는다 |
+
+> [!caution] `gnc_chain` 으로 열을 잡은 모델은 **`'KeepRoot', true`** 로 부른다
+> ```matlab
+> tidy_model(m, 'KeepRoot', true);
+> ```
+> `arrangeSystem` 은 선 길이만 본다. 단계 순서를 모르므로 지령을 제어기 오른쪽에,
+> 운동모델을 제어기 왼쪽에 놓고도 아무 말을 하지 않는다 (2026-09-30
+> `W04_3_heading_offline`). `KeepRoot` 는 최상위 **블록**을 건드리지 않고
+> 선만(`lay_feedback` · `tag_feedback` · `lay_sinks` · `lay_links`) 손질한다.
+> 안쪽 서브시스템에는 지켜야 할 단계 순서가 없으므로 그대로 `arrangeSystem` 을 쓴다.
+>
+> `KeepRoot` 일 때는 **한 바퀴만 돈다.** 최상위를 매번 처음부터 놓아 주던 것이
+> 없으므로 두 바퀴째부터는 앞 바퀴가 내려 둔 것 **아래로** 또 내려간다 —
+> `drop_tag` 는 빈자리를 아래로 찾고 `lay_sinks` 는 그 아래에 종착 구역을 연다.
+> W04_4_inner_loop 이 한 바퀴마다 1600 px 씩 길어져 도면이 5770 px 이 되었다.
+> **한 바퀴로 0 이 안 되면 더 돌 일이 아니라 배치를 고칠 일이다.**
 
 `tidy_model` 은 **절대 나빠지지 않는다.** 손대기 전 성적과 파일 사본을 챙겨 두고,
 정리 결과가 더 나쁘면 되돌린다. 그래서 몇 번을 다시 돌려도 손해가 없다.
@@ -240,7 +293,43 @@ check_lines(모델, true)   % 겹침·블록관통·꺾임3회+·매달림·사�
     (블록 하나를 옮겨 두 포트 높이를 맞춤), `square_lines` (블록 크기가 바뀐 뒤 기운 끝
     토막을 직각으로 — `mss_style`·`tidy_model`·`settle_links` 끝에서 자동 호출)
 - 하나라도 남으면 `references/line-routing.md` 를 읽고 **배치로** 푼다. 배선으로 풀지 않는다
+- **선이 깨끗한 것과 도면이 읽히는 것은 다른 문제다.** 일곱 항목이 전부 0 인 채로
+  오른쪽에서 왼쪽으로 읽히는 도면이 나온 적이 있다 → 바로 아래 「흐름 검사」
 
+### 흐름 검사 — 왼쪽에서 오른쪽으로 읽히는가
+
+```matlab
+check_flow(모델, true)    % 최상위 단계 순서. 어긋난 짝을 나열한다
+```
+
+- **0 이 합격선.** `check_lines`·`check_colour` 와 **같은 자리**에서 부른다
+- 최상위 블록을 GNC 여섯 단계로 나누고, **뒷 단계 블록이 앞 단계 블록보다 왼쪽에
+  놓인 짝**을 센다
+
+  ```
+  command  <  reference  <  controller  <  allocation  <  plant  <  measurement
+     1           2             3              4            5           6
+  ```
+
+- 단계는 **색을 정하는 그 표** `_tools/gnc_roles.m` 에서 읽는다. 표를 두 벌 두지
+  않는다 — 색과 순서는 같은 뜻을 나른다. 표에 없는 블록은 종류로 짐작하고
+  (Constant·Step 은 지령, Scope·To Workspace 는 로깅), 그래도 모르면 세지 않고
+  "단계를 모르는 블록" 으로 따로 알린다 → **그때 `gnc_roles.m` 에 한 줄 적는다**
+  (색이 흰색이어서 칠할 것이 없는 `deg2rad`·`SumRef` 도 적어 둔다)
+- 빠지는 것 — `Goto`·`From` (되먹임을 푸는 도구다. 사슬 밖에 있는 것이 목적),
+  그리고 **사슬보다 아래로 내려간 종착 블록**(To Workspace·Scope·ROS Publish·
+  `Logging`·`Animate`). `lay_sinks` 가 종착을 아래 한 줄로 내리는 것이 이 볼트의
+  배치 규칙이므로 어김으로 세지 않는다 → `model-layout.md` §1
+- 걸리면 **빌더에서 `gnc_chain` 으로 열을 다시 잡는다.** 좌표를 손으로 고치지 않고,
+  `tidy_model` 을 `'KeepRoot', true` 로 부르고 있는지부터 확인한다
+
+> [!note] 2026-09-30 현황 — 이 검사를 처음 돌렸을 때
+> 강의 모델 60개 중 **22개**가 걸렸다. 4주차 여덟 모델(189건)은 이번에 0 으로
+> 고쳤고, 나머지는 현황만 적어 둔다: W03_1_frame_check 13, W09_0_offline 11,
+> W08_1_vrx 18, W07_0_offline 8, W07_1_vrx 5, W09_1_sensor_rates 5,
+> W04_P2_pid_byhand 5, W05_1_vrx·W06_1_vrx 4, W02_2·W02_3 3, W02_1·W03_3·
+> W05_0·W06_0·W08_0 2, W03_2·W03_4·W09_2·SB4_bus_todo·SB13 1.
+> 그 주차를 다시 손볼 때 같이 고친다.
 
 ### 색 검사 — 배선 검사와 같은 자리에서
 
@@ -318,7 +407,7 @@ pkill -f "vrx_gz|vrx_ros|ros_gz_bridge|gz sim|ruby|parameter_bridge"
 
 | 파일 | 읽을 때 |
 |---|---|
-| **`references/model-layout.md`** | **새 모델을 만들 때 가장 먼저.** 여섯 단계 체인 · 이름 붙은 포트 · 로깅 계약 · MSS 블록 치수 |
+| **`references/model-layout.md`** | **새 모델을 만들 때 가장 먼저.** 좌 → 우 흐름 규칙 · 여섯 단계 체인 · 이름 붙은 포트 · 로깅 계약 · MSS 블록 치수 |
 | **`references/line-routing.md`** | **선을 그을 때마다. `check_lines` 의 일곱 항목이 전부 0 이 합격선** |
 | `references/layout.md` | 배치가 마음에 안 들 때. `tidy_model` 의 도구를 고치기 전에 |
 | `references/build-models.md` | 새 모델을 만들 때마다 |
@@ -329,3 +418,5 @@ pkill -f "vrx_gz|vrx_ros|ros_gz_bridge|gz sim|ruby|parameter_bridge"
 
 > 여섯 단계 배치 · 이름 붙은 포트 · 로깅 계약 · 대화형 모델 관용구는
 > 대학원 GradCourse 볼트에서 가져옴 — 2026-09-24
+>
+> 좌 → 우 흐름 규칙과 `check_flow` · `tidy_model('KeepRoot')` 는 교수 지적으로 추가 — 2026-09-30

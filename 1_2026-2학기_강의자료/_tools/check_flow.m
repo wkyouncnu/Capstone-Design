@@ -39,9 +39,13 @@ function [n, rows] = check_flow(mdl, verbose)
 %   무엇을 빼는가 / what is left out
 %       Goto · From    되먹임을 푸는 도구다. 이것들이 사슬 밖에 있는 것이
 %                      곧 목적이므로 자리를 따지지 않는다
-%       로깅·화면      맨 오른쪽 **또는 사슬 아래**면 통과다. 사슬 전체보다
-%                      아래에 있는 로깅 블록은 x 를 따지지 않는다
-%                      (model-layout.md §1 — "오른쪽 끝 또는 그 아래에 나란히")
+%       종착 블록      출력 포트가 없는 블록(To Workspace · Scope · ROS Publish)과
+%                      로깅·화면 상자는 맨 오른쪽 **또는 사슬 아래**면 통과다.
+%                      사슬 전체보다 아래로 내려간 것은 x 를 따지지 않는다
+%                      (model-layout.md §1 — "오른쪽 끝 또는 그 아래에 나란히").
+%                      `lay_sinks` 가 종착 블록을 아래 한 줄로 내리는 것이
+%                      이 볼트의 배치 규칙이므로, 그것을 어김으로 세지 않는다.
+%                      사슬 **안에** 남아 있는 종착 블록은 그대로 자리를 따진다
 %       주석(Note)     블록이 아니다
 %
 %   어떻게 고치는가 / how to fix
@@ -113,12 +117,23 @@ for i = 1:N
     rk(i) = rankOfStage(stg{i});
 end
 
-%  --- 사슬 아래로 내려간 로깅은 x 를 따지지 않는다 ----------------------
-chain = rk >= 1 & rk <= 5;
+%  --- 사슬 아래로 내려간 종착 블록은 x 를 따지지 않는다 ------------------
+%  종착 = 출력 포트가 없는 블록, 또는 로깅 단계로 적힌 블록.
+%  사슬의 맨 아래보다 더 아래에 있으면 "그 아래에 나란히" 놓인 것으로 본다.
+term = false(N,1);
+for i = 1:N
+    if rk(i) == 6, term(i) = true; continue, end
+    try
+        ph = get_param(b{i}, 'PortHandles');
+        term(i) = isempty(ph.Outport) && ~isempty(ph.Inport);
+    catch
+    end
+end
+chain  = rk >= 1 & rk <= 6 & ~term;
 exempt = false(N,1);
 if any(chain)
     chainBottom = max(pos(chain,4));
-    exempt = (rk == 6) & (pos(:,2) >= chainBottom);
+    exempt = term & (pos(:,2) >= chainBottom);
 end
 
 %  --- 어긋난 짝 세기 -----------------------------------------------------

@@ -40,12 +40,19 @@ for pass = 1:3
     moved = false;
 
     for h = 1:numel(hits)
-        blk  = hits{h};
+        blk = hits{h};
+        %  settle_links 도 check_lines 도 모델을 **닫고** 나간다. 다시 열지 않으면
+        %  다음 set_param 이 "유효하지 않은 Simulink 객체 이름" 으로 죽는다
+        %  (2026-09-30, W04 여덟 모델 중 다섯에서 재현)
+        load_system(mdl);
+        if getSimulinkBlockHandle(blk) < 0, continue, end
         p0   = get_param(blk, 'Position');
         best = n;
         for s = 1:numel(STEPS)
             d = STEPS{s};
+            load_system(mdl);
             set_param(blk, 'Position', p0 + [d d]);
+            save_system(mdl);
             settle_links(mdl);
             nn = check_lines(mdl);
             if nn < best
@@ -56,7 +63,9 @@ for pass = 1:3
                 end
                 break
             end
+            load_system(mdl);
             set_param(blk, 'Position', p0);          % 나빠졌다. 되돌린다
+            save_system(mdl);
         end
         if best < n, n = best; end
         if n == 0, break, end
@@ -67,6 +76,7 @@ for pass = 1:3
 end
 
 n = check_lines(mdl);
+load_system(mdl);
 save_system(mdl);
 if opened, close_system(mdl, 0); end
 end
