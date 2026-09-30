@@ -1,0 +1,83 @@
+% assets/w04-alloc-geometry.svg — 추력 배분의 기하: 두 추력이 X 와 N 을 어떻게 만드는가
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-alloc-geometry.tex assets/w04-alloc-geometry.svg
+%
+% 요점
+%   1) 두 추력은 모두 +x_b 방향이므로 전진력은 그대로 더해진다 — X = F_L + F_R
+%   2) 요 모멘트는 "힘 x 팔" 이고, 그 팔이 중심선에서 작용선까지의 수직거리 b 다
+%   3) 왼쪽 추진기의 팔과 오른쪽 추진기의 팔은 길이가 같고 도는 방향이 반대다
+%      -> N = b F_L - b F_R
+%   4) 추진기의 전후 위치 x_b 는 X 에도 N 에도 들어가지 않는다 (추력이 x_b 축과 나란함)
+%
+% 화면 규약 : 3주차 w03-wamv-model 과 같다. 선체 x_b(선수)는 오른쪽, y_b(우현)는 아래쪽.
+%             따라서 TikZ 의 y 는 -y_b 다. 왼쪽(좌현) 추진기가 위, 오른쪽(우현)이 아래.
+% 값 출처   : W04_setup.m 의 b_half = 1.027135 m, 추진기 x_b = -2.3738 m (8주차 1-2 절 표)
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\S{18}                  % 1 m = 18 mm
+\def\BY{18.49}              % b * S  = 1.027135 * 18
+\def\TX{-42.73}             % 추진기 x = -2.373776 * S
+
+% ---- 작용선 (추력을 양쪽으로 연장한 선) ------------------------------------
+\draw[soft, line width=0.35pt, densely dashed] (\TX-6,  \BY) -- (34, \BY);
+\draw[soft, line width=0.35pt, densely dashed] (\TX-6, -\BY) -- (34,-\BY);
+\node[note, anchor=west] at (34.5,  \BY) {작용선};
+\node[note, anchor=west] at (34.5, -\BY) {작용선};
+
+% ---- 선체 두 개 ------------------------------------------------------------
+\draw[soft, line width=0.7pt, rounded corners=2mm] (\TX-6,  \BY-3.4) rectangle (28,  \BY+3.4);
+\draw[soft, line width=0.7pt, rounded corners=2mm] (\TX-6, -\BY-3.4) rectangle (28, -\BY+3.4);
+\node[note, soft, anchor=south] at (10,  \BY+4) {좌현 선체};
+\node[note, soft, anchor=north] at (10, -\BY-4) {우현 선체};
+
+% ---- 선체 축 ---------------------------------------------------------------
+\fill[ink] (0,0) circle (1.1);
+\node[note, anchor=north east] at (-1.2,-1.2) {$o_b$};
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (30,0);
+\node[note, anchor=south] at (26,1.2) {$x_b$ 선수};
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,-11);
+\node[note, anchor=west] at (1.2,-9.5) {$y_b$ 우현};
+
+% ---- 모멘트 팔 : 중심선에서 작용선까지 내린 수선 ---------------------------
+\draw[accent, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0, \BY);
+\draw[accent, line width=0.9pt, -{Stealth[length=4.5pt,width=3.4pt]}] (0,0) -- (0,-\BY);
+\draw[accent, line width=0.4pt] (2.6, \BY) -- (2.6, \BY-2.6) -- (0, \BY-2.6);
+\draw[accent, line width=0.4pt] (2.6,-\BY) -- (2.6,-\BY+2.6) -- (0,-\BY+2.6);
+\node[anote, anchor=east] at (-1.2,  \BY/2) {팔 $b = 1.027$ m};
+\node[anote, anchor=east] at (-1.2, -\BY/2) {팔 $b = 1.027$ m};
+
+% ---- 추진기와 추력 ---------------------------------------------------------
+\draw[guid, line width=0.7pt, fill=white] (\TX-3.6,  \BY-2.9) rectangle (\TX+3.6,  \BY+2.9);
+\draw[ctrl, line width=0.7pt, fill=white] (\TX-3.6, -\BY-2.9) rectangle (\TX+3.6, -\BY+2.9);
+\draw[sig, guid, line width=1.2pt] (\TX+3.6,  \BY) -- (\TX+24,  \BY);
+\draw[sig, ctrl, line width=1.2pt] (\TX+3.6, -\BY) -- (\TX+24, -\BY);
+\node[font=\small, guid, anchor=south] at (\TX+14,  \BY+1.0) {$F_L$};
+\node[font=\small, ctrl, anchor=north] at (\TX+14, -\BY-1.0) {$F_R$};
+% ---- 각 추진기가 내는 것 ---------------------------------------------------
+\node[font=\scriptsize, guid, anchor=south west] at (\TX-6, \BY+9.5)
+     {왼쪽 추진기 — $X$ 에 $+F_L$, \ $N$ 에 $+b\,F_L$ \ (우선회 쪽)};
+\node[font=\scriptsize, ctrl, anchor=north west] at (\TX-6, -\BY-9.5)
+     {오른쪽 추진기 — $X$ 에 $+F_R$, \ $N$ 에 $-b\,F_R$ \ (좌선회 쪽)};
+
+% ---- 선회 방향 -------------------------------------------------------------
+\draw[sig, warn, line width=1.0pt] (46,9) arc (65:-65:10);
+\node[wnote, anchor=west] at (53.5,1.6) {$N>0$};
+\node[wnote, anchor=west] at (53.5,-2.2) {우선회};
+
+% ---- 아래 설명 -------------------------------------------------------------
+\node[anchor=north west, align=left, text width=104mm, font=\scriptsize, soft] at (\TX-8, -\BY-22)
+     {\textcolor{ink}{\textbf{두 추력은 같은 방향}}이므로 전진력은 그대로 더해짐 —
+      $X = F_L + F_R$.\\[3pt]
+      \textcolor{ink}{\textbf{모멘트는 힘 $\times$ 팔}}이고, 그 팔이 중심선에서 작용선까지의
+      수직거리 $b$ 임. 두 팔은 길이가 같고 도는 방향이 반대라
+      $N = b\,F_L - b\,F_R$.\\[3pt]
+      추진기의 전후 위치 $x_b = -2.374$ m 는 $X$ 에도 $N$ 에도 들어가지 않음 —
+      추력이 $x_b$ 축과 나란해 그 축에 대한 팔이 0 이기 때문임};
+
+\end{tikzpicture}
+\end{document}

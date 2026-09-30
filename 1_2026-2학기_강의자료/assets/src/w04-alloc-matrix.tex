@@ -1,0 +1,96 @@
+% assets/w04-alloc-matrix.svg — 기하를 행렬로 묶고, 역행렬로 되돌린다
+%
+%   bash _tools/tikz2svg.sh assets/src/w04-alloc-matrix.tex assets/w04-alloc-matrix.svg
+%
+% 요점
+%   1) 열 규칙 — T 의 각 열은 그 추진기가 1 N 을 낼 때 생기는 [X; N] 이다
+%   2) det T = -2b 이고 b != 0 이므로 역행렬이 있다 (해가 하나뿐이다)
+%   3) T^{-1} 의 성분이 Simulink 의 Alloc 코드 두 줄과 글자까지 같다
+%
+% 색 규약 : 왼쪽 추진기 = guid(파랑), 오른쪽 추진기 = ctrl(주황).
+%           3주차 w03-diff-thrust · 4주차 w04-alloc-geometry 와 같다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\W{132}    % 가로 폭 [mm]
+
+% =====================  1) 열 규칙  =========================================
+\node[font=\small\bfseries, anchor=north west] (h1) at (0,0)
+     {1. 열 규칙 — 행렬의 각 열은 그 추진기가 1 N 을 낼 때 생기는 것};
+
+\node[anchor=north, font=\normalsize] (e1) at (\W/2,-6)
+     {$\begin{bmatrix} X \\ N \end{bmatrix}
+       = F_L\,\textcolor{guid}{\begin{bmatrix} 1 \\ b \end{bmatrix}}
+       + F_R\,\textcolor{ctrl}{\begin{bmatrix} 1 \\ -b \end{bmatrix}}
+       = \underbrace{\begin{bmatrix}
+            \textcolor{guid}{1} & \textcolor{ctrl}{1} \\
+            \textcolor{guid}{b} & \textcolor{ctrl}{-b}
+         \end{bmatrix}}_{\mathbf{T}}
+         \begin{bmatrix} F_L \\ F_R \end{bmatrix}$};
+
+\node[anchor=north west, font=\scriptsize, soft, text width=\W mm, align=left] (n1)
+      at (0,-28)
+     {\textcolor{guid}{\textbf{파란 열}}은 왼쪽 추진기가 1 N 을 낼 때의 $[X,\,N]$,
+      \textcolor{ctrl}{\textbf{주황 열}}은 오른쪽 추진기의 것임.
+      두 열은 기하만으로 정해짐 — 물의 저항도, 게인도 들어가지 않음};
+
+\draw[soft, line width=0.3pt] (0,-36) -- (\W,-36);
+
+% =====================  2) 역행렬  ==========================================
+\node[font=\small\bfseries, anchor=north west] (h2) at (0,-39)
+     {2. 역행렬 — 한 단계씩};
+
+\node[anchor=north west, font=\small] (s1) at (2,-45)
+     {\textcircled{\scriptsize 1}\ \ 행렬식 :\ \
+      $\det\mathbf{T} = (1)(-b) - (1)(b) = \mathbf{-2b}$};
+
+\node[anchor=north west, font=\small] (s2) at (2,-55)
+     {\textcircled{\scriptsize 2}\ \ $2\times2$ 공식 :\ \
+      $\begin{bmatrix} p & q \\ r & s \end{bmatrix}^{-1}
+       = \dfrac{1}{ps-qr}\begin{bmatrix} s & -q \\ -r & p \end{bmatrix}$};
+
+\node[anchor=north west, font=\small] (s3) at (2,-73)
+     {\textcircled{\scriptsize 3}\ \ 대입 :\ \
+      $\mathbf{T}^{-1}
+       = \dfrac{1}{-2b}\begin{bmatrix} -b & -1 \\ -b & 1 \end{bmatrix}
+       = \dfrac{1}{2b}\begin{bmatrix} b & 1 \\ b & -1 \end{bmatrix}
+       = \begin{bmatrix} \frac{1}{2} & \frac{1}{2b} \\[2pt]
+                         \frac{1}{2} & -\frac{1}{2b} \end{bmatrix}$};
+
+\node[anchor=north west, font=\scriptsize, soft, text width=\W mm, align=left] (n2)
+      at (0,-92)
+     {$b = 1.027$ m 이라 $\det\mathbf{T} = -2b \neq 0$ —
+      $\mathbf{T}$ 가 $2\times2$ 정방행렬이면서 역행렬을 가지므로
+      $X$\,$\cdot$\,$N$ 한 쌍에 $F_L$\,$\cdot$\,$F_R$ 한 쌍이 정확히 하나 대응함};
+
+\draw[soft, line width=0.3pt] (0,-101) -- (\W,-101);
+
+% =====================  3) 코드와 대조  =====================================
+\node[font=\small\bfseries, anchor=north west] (h3) at (0,-104)
+     {3. 코드와 글자까지 맞아떨어진다};
+
+\node[anchor=north west, font=\small] (c1) at (2,-111)
+     {$F_L = \dfrac{X}{2} + \dfrac{N}{2b}$};
+\node[anchor=north west, font=\small] (c1a) at (34,-112)
+     {$\Longleftrightarrow$};
+\node[anchor=north west, font=\small\ttfamily, guid] (c1b) at (48,-112)
+     {FL = X/2 + N/(2*B\_half);};
+
+\node[anchor=north west, font=\small] (c2) at (2,-123)
+     {$F_R = \dfrac{X}{2} - \dfrac{N}{2b}$};
+\node[anchor=north west, font=\small] (c2a) at (34,-124)
+     {$\Longleftrightarrow$};
+\node[anchor=north west, font=\small\ttfamily, ctrl] (c2b) at (48,-124)
+     {FR = X/2 - N/(2*B\_half);};
+
+\node[anchor=north west, font=\scriptsize, warn, text width=\W mm, align=left] (n3)
+      at (0,-134)
+     {추진기가 넷이면 $\mathbf{T}$ 가 정방행렬이 아니어서 이 역행렬을 쓸 수 없음 —
+      유사역행렬이 필요함 (8주차)};
+
+\end{tikzpicture}
+\end{document}

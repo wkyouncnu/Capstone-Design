@@ -45,7 +45,13 @@ function P = gnc_chain(stages, varargin)
 %     'Height'  scalar, or a struct with a field per stage. Default 90
 %     'Width'   scalar, or a struct with a field per stage. Default 110
 %     'Y'       top edge of the chain. Default 140
-%     'Pitch'   left-edge spacing between stages. Default 160
+%     'Pitch'   left-edge spacing between stages. Give it and every column is
+%               spaced the same. Leave it out and the spacing follows the width
+%     'Gap'     empty space between one column and the next when 'Pitch' is not
+%               given. Default 60
+%
+%   STAGE ALIASES  guidance·mission -> reference, control -> controller,
+%                  thruster -> allocation. gnc_roles 의 낱말을 그대로 써도 된다
 %
 %   WHY THE POSITIONS ARE FIXED
 %
@@ -55,16 +61,32 @@ function P = gnc_chain(stages, varargin)
 
 ORDER = {'command','reference','controller','allocation','plant','measurement'};
 
+%  같은 뜻의 다른 이름. gnc_roles·gnc_colour 가 쓰는 낱말을 그대로 받는다 —
+%  빌더가 표 하나만 외우면 되게. model-layout.md §2 의 예제가 이 이름을 쓴다
+ALIAS = {'guidance','reference'; 'mission','reference'; ...
+         'control','controller'; 'thruster','allocation'};
+
 p = inputParser;
 p.addParameter('Height', 90);
 p.addParameter('Width',  110);
 p.addParameter('Y',      140);
 p.addParameter('Pitch',  160);
+p.addParameter('Gap',     60);
 p.parse(varargin{:});
 o = p.Results;
 
+%  'Pitch' 를 주지 않으면 열 간격을 **그 단계의 폭 + Gap** 으로 잡는다.
+%  단계마다 상자 수가 다르기 때문이다 — 제어기 하나뿐인 주차와, 제어기 옆에
+%  개루프 스위치까지 선 주차를 같은 간격으로 놓으면 한쪽은 비고 한쪽은 겹친다.
+autoPitch = ismember('Pitch', p.UsingDefaults);
+
 if ischar(stages) || isstring(stages), stages = {char(stages)}; end
 stages = cellfun(@(s) lower(strtrim(s)), stages, 'UniformOutput', false);
+for i = 1:numel(stages)
+    k = find(strcmp(ALIAS(:,1), stages{i}), 1);
+    if ~isempty(k), stages{i} = ALIAS{k,2}; end
+end
+stages = unique(stages, 'stable');
 
 bad = setdiff(stages, ORDER);
 if ~isempty(bad)
@@ -85,7 +107,11 @@ for i = 1:numel(stages)
     w  = pick(o.Width,  st, 110);
     hh = pick(o.Height, st, 90);
     P.(st) = [x, o.Y, x + w, o.Y + hh];
-    x = x + o.Pitch;
+    if autoPitch
+        x = x + w + o.Gap;
+    else
+        x = x + o.Pitch;
+    end
 end
 end
 

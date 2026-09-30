@@ -1,8 +1,25 @@
-function n = tidy_model(m, verbose)
+function n = tidy_model(m, varargin)
 %TIDY_MODEL  모델 하나를 배치 규칙대로 정리하고 저장한다. 합격선은 지적 0건.
 %
 %   tidy_model('W03_1_frame_check')
 %   n = tidy_model('SB7_signal_done', true)
+%   n = tidy_model('W04_3_heading_offline', 'KeepRoot', true)
+%
+%   'KEEPROOT' — 최상위 블록은 빌더가 놓은 자리에 그대로 둔다
+%
+%       arrangeSystem 은 선 길이를 줄이는 데는 좋지만 **단계 순서를 모른다.**
+%       2026-09-30 에 W04_3_heading_offline 이 이렇게 나왔다 — 지령
+%       psi_ref_deg 가 x = 685, 제어기 HeadingCtrl 이 x = 1030, 운동모델이
+%       x = 800, 실시간 화면이 x = 126. 배선 검사 일곱 항목은 전부 0 인데
+%       도면은 오른쪽에서 왼쪽으로 읽혔다. model-layout.md §8 이 이미 경고하던
+%       바로 그것이다.
+%
+%       그래서 gnc_chain 으로 단계 열을 잡아 둔 모델은 이 옵션을 켠다. 최상위
+%       **블록**은 건드리지 않고, 선만(lay_feedback · tag_feedback · lay_links)
+%       손질한다. 안쪽 서브시스템은 그대로 arrangeSystem 을 쓴다 — 거기에는
+%       지켜야 할 단계 순서가 없다.
+%
+%       켰는지 확인하는 도구가 `check_flow` 다. 합격선은 0 이다.
 %
 %   순서 / the order, and why
 %     1) mss_style        블록 크기를 먼저 정한다. 나중에 키우면 배치가 어긋난다
@@ -26,7 +43,15 @@ function n = tidy_model(m, verbose)
 %
 %   돌려주는 값은 저장한 쪽의 지적 수다.
 
-if nargin < 2, verbose = false; end
+%  두 번째 인자가 참·거짓이면 옛 꼴 tidy_model(m, verbose) 이다
+verbose = false;
+if ~isempty(varargin) && (islogical(varargin{1}) || isnumeric(varargin{1}))
+    verbose = logical(varargin{1});  varargin(1) = [];
+end
+p = inputParser;
+p.addParameter('KeepRoot', false);
+p.parse(varargin{:});
+keepRoot = logical(p.Results.KeepRoot);
 
 %  신호에 붙은 기록 표시를 먼저 챙긴다. 배치 도구는 선을 지웠다 다시 긋는데,
 %  표시는 선과 함께 지워지므로 그대로 두면 결과 파일에서 신호가 조용히 빠진다.
@@ -35,7 +60,7 @@ sig = keep_signals(m);
 n = inf;
 for round = 1:4
     prev = n;
-    n = one_round(m);
+    n = one_round(m, keepRoot);
     if n == 0 || n >= prev, break, end
 end
 
@@ -51,7 +76,7 @@ close_system(m, 0);
 end
 
 % -------------------------------------------------------------------------
-function n = one_round(m)
+function n = one_round(m, keepRoot)
 %  손대기 전 성적과 파일 사본을 챙긴다. 정리가 오히려 나쁘게 나오면 되돌린다.
 %  이미 정리된 모델에 다시 돌리면 다른 배치가 나오는데, 그것이 더 나을 이유는
 %  없다 (2026-09-17 SB11 에서 0 -> 1 로 뒷걸음질).
@@ -67,7 +92,7 @@ copyfile(mfile, keepFile);
 
 best = inf;  bestAll = false;
 for allSinks = [false true]
-    run_once(m, allSinks);
+    run_once(m, allSinks, keepRoot);
     %  견주어 보는 중일 뿐이므로 중간 성적표는 삼킨다. 저장한 쪽만 보고한다.
     [~, k] = evalc('check_lines(m, false)');
     close_system(m, 0);                 % 저장하지 않는다 — 어느 쪽이 나은지 재 볼 뿐
@@ -75,7 +100,7 @@ for allSinks = [false true]
     if best == 0, break, end
 end
 
-run_once(m, bestAll);
+run_once(m, bestAll, keepRoot);
 save_system(m);
 close_system(m, 0);
 
@@ -142,15 +167,20 @@ try, set_param(m, 'SimulationCommand', 'stop'); catch, end
 end
 
 % -------------------------------------------------------------------------
-function run_once(m, allSinks)
+function run_once(m, allSinks, keepRoot)
 %  반드시 파일에서 다시 읽는다. 앞선 시도의 배치가 남아 있으면 두 방식을
 %  견주는 것이 아니라 한쪽 위에 다른 쪽을 덧칠하게 된다.
 if bdIsLoaded(m), close_system(m, 0); end
 load_system(m);
 try, mss_style(m); catch, end
 sys = [{m}; find_system(m, 'LookUnderMasks','all', 'BlockType','SubSystem')];
-for s = 1:numel(sys)
-    try, Simulink.BlockDiagram.arrangeSystem(sys{s}); catch, end
+%  KeepRoot 이면 최상위는 빌더가 놓은 자리 그대로 둔다. arrangeSystem 은 단계
+%  순서를 모르므로 gnc_chain 으로 잡아 둔 열을 흩뜨린다 (check_flow 참조).
+%  선을 손질하는 lay_* 는 최상위에도 그대로 돈다 — 옮기는 것은 선이지 상자가 아니다.
+arr = sys;
+if keepRoot, arr = arr(2:end); end
+for s = 1:numel(arr)
+    try, Simulink.BlockDiagram.arrangeSystem(arr{s}); catch, end
 end
 for s = 1:numel(sys)
     try, lay_feedback(sys{s});              catch, end

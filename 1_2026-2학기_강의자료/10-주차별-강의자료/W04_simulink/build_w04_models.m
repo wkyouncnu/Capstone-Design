@@ -52,7 +52,11 @@ function build_w04_models()
         [~, mName] = fileparts(slxList(k).name);
         try
 
-            tidy_model(mName);
+            %  'KeepRoot' — 최상위 블록은 빌더가 gnc_chain 으로 잡아 둔 열에
+            %  그대로 둔다. arrangeSystem 은 선 길이만 보고 단계 순서를 모른다.
+            %  (2026-09-30 이 옵션이 없을 때 W04_3_heading_offline 의 지령이
+            %   제어기 **오른쪽**으로, 운동모델이 제어기 **왼쪽**으로 갔다)
+            tidy_model(mName, 'KeepRoot', true);
 
             paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
 
@@ -63,6 +67,8 @@ function build_w04_models()
             nudge_labels(mName);
 
             check_lines(mName, true);  % 일곱 항목이 전부 0 이 합격선
+
+            check_flow(mName, true);   % 최상위가 왼쪽에서 오른쪽으로 읽히는가. 0 이 합격선
 
             export_model_pngs(mName);
 
@@ -134,6 +140,33 @@ function fresh(m)
 end
 
 % =====================================================================
+% 최상위 열 — 왼쪽에서 오른쪽으로
+%
+%   교수 지시 2026-09-30. "가장 왼쪽에 명령이 나오고, 그다음 제어기, 마지막
+%   오른쪽에 운동 모델이 나오는 형태로 해서 왼쪽에서 오른쪽으로 흐름을 볼 수
+%   있게 할 것."
+%
+%       [지령] -> [제어기] -> [배분] -> [운동모델] -> [로깅·화면]
+%
+%   x 를 손으로 적지 않는다. 단계 이름과 그 단계가 쓸 **폭**만 적으면
+%   _tools/gnc_chain 이 열의 왼쪽 모서리를 정해 준다. 폭을 적는 이유는 단계마다
+%   상자 수가 다르기 때문이다 — 제어기 하나뿐인 주차와, 그 옆에 개루프 스위치까지
+%   선 주차를 같은 간격으로 놓으면 한쪽은 비고 한쪽은 겹친다.
+%
+%   되먹임(psi · r · u)은 선으로 되돌리지 않는다. tidy_model 의 tag_feedback 이
+%   세 번 넘게 꺾이는 선을 Goto/From 한 쌍으로 바꾼다. 계산은 한 자리도
+%   달라지지 않고, 화면을 가로지르는 선만 사라진다.
+%
+%   이 배치가 지켜졌는지는 `check_flow` 가 센다. 합격선은 0 이다.
+% =====================================================================
+function P = w04cols(varargin)
+%   w04cols('command',300, 'controller',340, ...) -> 단계별 열 좌표 struct
+    st = varargin(1:2:end);
+    wd = varargin(2:2:end);
+    P  = gnc_chain(st, 'Width', cell2struct(wd(:), st(:), 1), 'Y', 140, 'Gap', 50);
+end
+
+% =====================================================================
 % 실시간 화면 — 일곱 모델이 같은 함수(W04_animate.m)를 쓴다
 %
 %   교수 지시 2026-09-24. 3주차에는 실시간 화면이 있는데 4주차 모델에는 없었다.
@@ -200,23 +233,27 @@ end
 function build_straight()
     m = 'W04_1_straight'; fresh(m);
 
-    add_block('simulink/Sources/Constant', [m '/FL'], ...
-              'Value','200', 'Position',[40 95 100 125]);
-    add_block('simulink/Sources/Constant', [m '/FR'], ...
-              'Value','200', 'Position',[40 275 100 305]);
+    %  [지령] -> [Gazebo 로 내보내기·읽어오기] -> [로깅·화면]
+    P  = w04cols('command',200, 'plant',400, 'measurement',330);
+    xC = P.command(1);  xP = P.plant(1);  xM = P.measurement(1);
 
-    addThrusterPublisher(m, 'left',  'L', 200, 60);
-    addThrusterPublisher(m, 'right', 'R', 200, 240);
+    add_block('simulink/Sources/Constant', [m '/FL'], ...
+              'Value','200', 'Position',[xC 95 xC+60 125]);
+    add_block('simulink/Sources/Constant', [m '/FR'], ...
+              'Value','200', 'Position',[xC 275 xC+60 305]);
+
+    addThrusterPublisher(m, 'left',  'L', xP, 60);
+    addThrusterPublisher(m, 'right', 'R', xP, 240);
 
     add_line(m,'FL/1','AsgL/2','autorouting','on');
     add_line(m,'FR/1','AsgR/2','autorouting','on');
 
     %  실시간 화면 — 내보낸 추력과, 그 결과로 배가 어디까지 갔는지를 함께 본다.
     %  이 모델은 제어를 하지 않으므로 지령 칸 둘은 "지령 없음" 이 된다.
-    addOdomReader(m, false, true);
-    tapGotos(m, 'FL', {'FL'}, 130);
-    tapGotos(m, 'FR', {'FR'}, 130);
-    addW04Animate(m, 40, 560, false, false);
+    addOdomReader(m, false, true, false, [xP 430], xM);
+    tapGotos(m, 'FL', {'FL'}, xC+90);
+    tapGotos(m, 'FR', {'FR'}, xC+90);
+    addW04Animate(m, xM, 900, false, false);
 
     setSolver(m);
     note(m, sprintf(['[1단계] 직진\n' ...
@@ -224,7 +261,7 @@ function build_straight()
         'FL 과 FR 값을 바꿔 보고 배가 어떻게 반응하는지 관찰할 것.\n' ...
         '\n' ...
         'Animate 상자가 도는 동안 항적과 상태를 그린다 (W04_animate.m).\n' ...
-        '끄려면 W04_setup.m 의 animate = 0.']), 40, 400);
+        '끄려면 W04_setup.m 의 animate = 0.']), xC, 1050);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
 end
@@ -235,10 +272,14 @@ end
 function build_turn()
     m = 'W04_2_turn'; fresh(m);
 
+    %  [시각] -> [시나리오] -> [Gazebo 로 내보내기·읽어오기] -> [로깅·화면]
+    P  = w04cols('command',100, 'reference',260, 'plant',400, 'measurement',330);
+    xC = P.command(1);  xR = P.reference(1);  xP = P.plant(1);  xM = P.measurement(1);
+
     add_block('simulink/Sources/Digital Clock', [m '/Clock'], ...
-              'SampleTime','0.05', 'Position',[40 185 100 215]);
+              'SampleTime','0.05', 'Position',[xC 185 xC+60 215]);
     add_block('simulink/User-Defined Functions/MATLAB Function', [m '/Scenario'], ...
-              'Position',[150 165 280 235]);
+              'Position',[xR 165 xR+130 235]);
     setFcn(m, 'Scenario', [ ...
         'function [FL, FR] = Scenario(t)' newline ...
         '%#codegen' newline ...
@@ -253,17 +294,17 @@ function build_turn()
         '    FL = 0;    FR = 0;     % stop' newline ...
         'end' newline]);
 
-    addThrusterPublisher(m, 'left',  'L', 360, 60);
-    addThrusterPublisher(m, 'right', 'R', 360, 240);
+    addThrusterPublisher(m, 'left',  'L', xP, 60);
+    addThrusterPublisher(m, 'right', 'R', xP, 240);
 
     add_line(m,'Clock/1','Scenario/1','autorouting','on');
     add_line(m,'Scenario/1','AsgL/2','autorouting','on');
     add_line(m,'Scenario/2','AsgR/2','autorouting','on');
 
     %  실시간 화면 — 시나리오가 추력을 바꾸는 순간과 항적이 휘는 순간을 나란히 본다
-    addOdomReader(m, false, true);
-    tapGotos(m, 'Scenario', {'FL','FR'}, 310);
-    addW04Animate(m, 40, 560, false, false);
+    addOdomReader(m, false, true, false, [xP 430], xM);
+    tapGotos(m, 'Scenario', {'FL','FR'}, xR+160);
+    addW04Animate(m, xM, 900, false, false);
 
     setSolver(m);
     set_param(m,'StopTime','80');
@@ -272,7 +313,7 @@ function build_turn()
         '좌현 추력이 크면 뱃머리가 오른쪽으로 돈다.\n' ...
         '\n' ...
         'Animate 상자가 도는 동안 추력과 항적을 함께 그린다 (W04_animate.m).\n' ...
-        '추력이 바뀌는 20 · 40 · 60 초에 항적이 어떻게 휘는지 볼 것.']), 40, 400);
+        '추력이 바뀌는 20 · 40 · 60 초에 항적이 어떻게 휘는지 볼 것.']), xC, 1050);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
 end
@@ -280,12 +321,22 @@ end
 % =====================================================================
 % 상태 읽기 블록 (3·4단계 공통)
 % =====================================================================
-function addOdomReader(m, withSpeed, anim, gate)
+function addOdomReader(m, withSpeed, anim, gate, org, xM)
 %   ANIM  true 이면 실시간 화면이 쓸 신호(위치·속도)를 **더 뽑아** 태그로 건다.
 %         제어에는 쓰이지 않는다. 뽑는 자리가 늘 뿐 제어 경로는 그대로다.
+%   ORG   [x y] — OdomSub 의 왼쪽 위 모서리. **운동모델 단계의 열**이다.
+%         오프라인 쌍둥이의 MotionModel 이 서 있는 바로 그 자리에 선다.
+%         배의 상태를 내놓는 자리가 같아야 두 모델이 같은 그림으로 읽힌다.
+%   XM    로깅 단계의 열. OdomTap 과 Goto 태그가 여기 선다 — 뽑아서 내보내기만
+%         하는 블록이므로 사슬 오른쪽 끝이 제자리다 (check_flow 가 이것을 본다)
     if nargin < 3, anim = false; end
     if nargin < 4, gate = false; end
-    add_block('ros2lib/Subscribe', [m '/OdomSub'], 'Position',[40 40 160 100]);
+    if nargin < 5 || isempty(org), org = [40 40]; end
+    if nargin < 6 || isempty(xM),  xM  = org(1) + 460; end
+    x0 = org(1);  y0 = org(2);
+    xTag = xM + 180;                     % 태그는 OdomTap 오른쪽에 한 줄로
+    add_block('ros2lib/Subscribe', [m '/OdomSub'], ...
+              'Position',[x0 y0 x0+120 y0+60]);
     set_param([m '/OdomSub'], 'topicSource','Specify your own', ...
               'topic','/wamv/sensors/position/ground_truth_odometry', ...
               'messageType','nav_msgs/Odometry', 'sampleTime','0.05');
@@ -313,7 +364,7 @@ function addOdomReader(m, withSpeed, anim, gate)
     end
 
     add_block('simulink/Signal Routing/Bus Selector', [m '/Sel'], ...
-              'Position',[210 40 220 140]);
+              'Position',[x0+170 y0 x0+180 y0+100]);
     set_param([m '/Sel'], 'OutputSignals', sig);
     add_line(m,'OdomSub/2','Sel/1','autorouting','on');
 
@@ -339,7 +390,7 @@ function addOdomReader(m, withSpeed, anim, gate)
         okFcn = '';
     end
     add_block('simulink/User-Defined Functions/MATLAB Function', [m '/Quat2Yaw'], ...
-              'Position',[280 40 400 110]);
+              'Position',[x0+240 y0 x0+360 y0+70]);
     setFcn(m, 'Quat2Yaw', [ ...
         hdr newline ...
         '%#codegen' newline ...
@@ -356,7 +407,7 @@ function addOdomReader(m, withSpeed, anim, gate)
     end
     add_line(m, sprintf('Sel/%d',iWz), 'Quat2Yaw/5', 'autorouting','on');
     if gate
-        tapGotos(m, 'Quat2Yaw', {'', '', 'odom_ok'}, 500);
+        tapGotos(m, 'Quat2Yaw', {'', '', 'odom_ok'}, xTag);
     end
 
     if ~anim, return, end
@@ -367,7 +418,7 @@ function addOdomReader(m, withSpeed, anim, gate)
     %  속도  선체 고정축은 ROS 가 FLU (앞-왼쪽-위), NED 는 앞-오른쪽-아래다.
     %        전진 u 는 같고, 옆으로 미는 v 는 **부호가 뒤집힌다.**
     add_block('simulink/User-Defined Functions/MATLAB Function', [m '/OdomTap'], ...
-              'Position',[280 200 420 420]);
+              'Position',[xM y0+170 xM+140 y0+390]);
     setFcn(m, 'OdomTap', [ ...
         'function [x_n, y_n, u, v] = OdomTap(px, py, vx, vy)' newline ...
         '%#codegen' newline ...
@@ -377,13 +428,13 @@ function addOdomReader(m, withSpeed, anim, gate)
         'y_n = px;      % ENU x is east' newline ...
         'u   =  vx;     % surge is the same in FLU and NED body axes' newline ...
         'v   = -vy;     % FLU +y is port, NED +y is starboard' newline]);
-    set_param([m '/OdomTap'], 'Position',[280 200 420 420]);
+    set_param([m '/OdomTap'], 'Position',[xM y0+170 xM+140 y0+390]);
     add_line(m, sprintf('Sel/%d',iPx), 'OdomTap/1', 'autorouting','on');
     add_line(m, sprintf('Sel/%d',iPy), 'OdomTap/2', 'autorouting','on');
     add_line(m, sprintf('Sel/%d',iVx), 'OdomTap/3', 'autorouting','on');
     add_line(m, sprintf('Sel/%d',iVy), 'OdomTap/4', 'autorouting','on');
-    tapGotos(m, 'OdomTap',  {'x_n','y_n','u','v'}, 500);
-    tapGotos(m, 'Quat2Yaw', {'psi','r'},           500);
+    tapGotos(m, 'OdomTap',  {'x_n','y_n','u','v'}, xTag);
+    tapGotos(m, 'Quat2Yaw', {'psi','r'},           xTag);
 end
 
 % =====================================================================
@@ -620,24 +671,39 @@ end
 % 3단계 — 헤딩 제어  (offline = true 이면 오프라인 쌍둥이)
 % =====================================================================
 function build_heading(offline)
+    %  [지령] -> [제어기·개루프 스위치] -> [배분·좌현효율] -> [운동모델] -> [로깅·화면]
+    %  오프라인과 VRX 는 **운동모델 열만 다르다.** 오프라인은 MotionModel 한 상자,
+    %  VRX 는 그 자리에 추력 발행과 오도메트리 구독이 선다 (model-layout.md §1)
     if offline
         m = 'W04_3_heading_offline'; fresh(m);
-        addMotionModel(m, 780, 200, '', true);     % true = 실시간 화면용 태그까지
-        sPsi = 'MotionModel/1';  sR = 'MotionModel/2';
+        P = w04cols('command',300, 'controller',350, 'allocation',250, ...
+                    'plant',160, 'measurement',260);
     else
         m = 'W04_3_heading'; fresh(m);
-        addOdomReader(m, false, true, true);     % 마지막 true = 첫 메시지 전 추력 차단
+        P = w04cols('command',300, 'controller',350, 'allocation',250, ...
+                    'plant',560, 'measurement',260);
+    end
+    xC = P.command(1);  xK = P.controller(1);  xA = P.allocation(1);
+    xP = P.plant(1);    xM = P.measurement(1);
+
+    if offline
+        addMotionModel(m, xP, 190, '', true);      % true = 실시간 화면용 태그까지
+        sPsi = 'MotionModel/1';  sR = 'MotionModel/2';
+    else
+        %  마지막 true = 첫 메시지 전 추력 차단
+        addOdomReader(m, false, true, true, [xP 430], xM);
         sPsi = 'Quat2Yaw/1';  sR = 'Quat2Yaw/2';
     end
 
     add_block('simulink/Sources/Constant', [m '/psi_ref_deg'], ...
-              'Value','psi_ref_deg', 'Position',[40 200 130 230]);
+              'Value','psi_ref_deg', 'Position',[xC 200 xC+90 230]);
     add_block('simulink/Math Operations/Gain', [m '/deg2rad'], ...
-              'Gain','pi/180', 'Position',[160 200 200 230]);
-    addHeadingCtrl(m, 300, 185);
+              'Gain','pi/180', 'Position',[xC+130 200 xC+170 230]);
+    addHeadingCtrl(m, xK, 185);
 
     %  제어기를 통째로 건너뛰는 스위치. head_open = 1 이면 계단 모멘트를 직접 준다
-    add_switch_box(m, 'OpenLoop', [500 185 640 275], {'N_ctrl','N_raw'}, 'head_open', ...
+    %  자리는 **제어기 바로 뒤, 배분 앞** — 신호가 실제로 지나가는 그 자리다
+    add_switch_box(m, 'OpenLoop', [xK+210 185 xK+350 275], {'N_ctrl','N_raw'}, 'head_open', ...
         struct('name','N_step', 'lib','simulink/Sources/Constant', ...
                'params',{{'Value','N_open'}}, 'fed',false, 'w',55, 'h',30), ...
         gnc_colour('control'), sprintf([ ...
@@ -653,9 +719,9 @@ function build_heading(offline)
         '  >> W04_heading_compare(''open'')']));
 
     add_block('simulink/Sources/Constant', [m '/X_const'], ...
-              'Value','X_head', 'Position',[430 340 510 370]);
+              'Value','X_head', 'Position',[xC 340 xC+80 370]);
 
-    addAllocator(m, 700, 210);
+    addAllocator(m, xA, 200);
     add_line(m,'X_const/1','Alloc/1','autorouting','on');
     add_line(m,'HeadingCtrl/1','OpenLoop/1','autorouting','on');
     add_line(m,'OpenLoop/1','Alloc/2','autorouting','on');
@@ -665,48 +731,49 @@ function build_heading(offline)
     add_line(m,sR,  'HeadingCtrl/3','autorouting','on');
 
     %  좌현 추진기를 약하게 만드는 자리. port_eff = 1 이면 아무 일도 안 한다
+    %  배분 바로 뒤 — 추력이 실제로 줄어드는 그 자리에 둔다
     add_block('simulink/Math Operations/Gain', [m '/PortEff'], ...
-              'Gain','port_eff', 'Position',[880 200 930 236]);
+              'Gain','port_eff', 'Position',[xA+200 200 xA+250 236]);
     add_line(m,'Alloc/1','PortEff/1','autorouting','on');
 
     if offline
         add_line(m,'PortEff/1','MotionModel/1','autorouting','on');
         add_line(m,'Alloc/2',  'MotionModel/2','autorouting','on');
     else
-        addThrusterPublisher(m, 'left',  'L', 1000, 150);
-        addThrusterPublisher(m, 'right', 'R', 1000, 320);
-        addFirstMsgGate(m, 'PortEff/1', 'L', 960, 120);
-        addFirstMsgGate(m, 'Alloc/2',   'R', 960, 300);
+        addThrusterPublisher(m, 'left',  'L', xP+170, 90);
+        addThrusterPublisher(m, 'right', 'R', xP+170, 270);
+        addFirstMsgGate(m, 'PortEff/1', 'L', xP,     60);
+        addFirstMsgGate(m, 'Alloc/2',   'R', xP,    240);
     end
 
-    % 관찰용
-    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[430 60 480 110]);
+    % 관찰용 — 사슬 오른쪽 끝 한 열
+    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[xM 60 xM+50 110]);
     set_param([m '/Scope_psi'],'NumInputPorts','2');
     add_line(m,sPsi,'Scope_psi/1','autorouting','on');
     add_line(m,'deg2rad/1','Scope_psi/2','autorouting','on');
-    addLog(m, sPsi, 'psi', 1200, 60);
+    addLog(m, sPsi, 'psi', xM, 150);
     if offline
-        addLog(m, 'PortEff/1', 'FL', 1200, 110);
-        addLog(m, 'Alloc/2',   'FR', 1200, 160);
+        addLog(m, 'PortEff/1', 'FL', xM, 200);
+        addLog(m, 'Alloc/2',   'FR', xM, 250);
     else
         %  VRX 는 게이트를 지난 값 — 배로 실제 나간 추력. 지표의 시작 시각을 여기서 읽는다
-        addLog(m, 'GateL/1', 'FL', 1200, 110);
-        addLog(m, 'GateR/1', 'FR', 1200, 160);
+        addLog(m, 'GateL/1', 'FL', xM, 200);
+        addLog(m, 'GateR/1', 'FR', xM, 250);
     end
-    addLog(m, sR,          'r',  1200, 210);
-    addLog(m, 'OpenLoop/1','N',  1200, 260);
+    addLog(m, sR,          'r',  xM, 300);
+    addLog(m, 'OpenLoop/1','N',  xM, 350);
 
     %  ---- 실시간 화면 ----------------------------------------------------
     %  헤딩 지령은 deg2rad 를 지난 rad 값을 그대로 쓴다 — 제어기가 보는 그 값이다.
     %  속도 지령은 **없다.** 이 모델은 헤딩만 돌린다 (전진 추력은 X_head 상수).
     %  그래서 속도 칸은 응답 u 만 그리고 "지령 없음" 이라고 적힌다.
-    tapGotos(m, 'deg2rad', {'psi_ref'}, 230);
+    tapGotos(m, 'deg2rad', {'psi_ref'}, xC+200);
     if ~offline
         %  VRX 에서는 배로 실제 나가는 추력을 잡는다 — 첫 메시지 게이트를 지난 값
-        tapGotos(m, 'GateL', {'FL'}, 1100);
-        tapGotos(m, 'GateR', {'FR'}, 1100);
+        tapGotos(m, 'GateL', {'FL'}, xM+180);
+        tapGotos(m, 'GateR', {'FR'}, xM+180);
     end
-    addW04Animate(m, 40, 700, false, true);
+    addW04Animate(m, xM, 900, false, true);
 
     if offline
         setSolverOffline(m);
@@ -722,7 +789,7 @@ function build_heading(offline)
             '  Ki_psi    > 0     port_eff 가 남긴 오차를 I 로 지운다\n' ...
             '\n' ...
             '  >> W04_heading_compare(''open''|''Kp''|''Kd''|''Ki''|''wrap'')\n' ...
-            '비교: >> W04_step_compare(3)']), 40, 520);
+            '비교: >> W04_step_compare(3)']), xC, 1050);
         save_system(m); close_system(m,0);
         fprintf('  [OK] %s\n', m);
         return
@@ -736,7 +803,7 @@ function build_heading(offline)
         '  N = Kp_psi * ssa(psi_ref - psi) + Ki_psi * INT(e) + Kd_psi * r\n' ...
         '게인은 전부 W04_setup.m 에 있다. 오프라인 쌍둥이와 **같은 변수**다.\n' ...
         'Kp_psi, Kd_psi 를 조정해 오버슈트와 정정시간을 비교할 것.\n' ...
-        '먼저 W04_3_heading_offline 으로 숫자를 적어 두고 VRX 를 켠다.']), 40, 520);
+        '먼저 W04_3_heading_offline 으로 숫자를 적어 두고 VRX 를 켠다.']), xC, 1050);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
 end
@@ -745,36 +812,48 @@ end
 % 4단계 — 속도 + 헤딩 (inner loop)
 % =====================================================================
 function build_inner_loop(offline)
+    %  [지령] -> [제어기 둘] -> [배분] -> [운동모델] -> [로깅·화면]
     if offline
         m = 'W04_4_inner_loop_offline'; fresh(m);
-        addMotionModel(m, 780, 230, '', true);     % true = 실시간 화면용 태그까지
-        sPsi = 'MotionModel/1';  sR = 'MotionModel/2';  sU = 'MotionModel/3';
+        P = w04cols('command',300, 'controller',450, 'allocation',160, ...
+                    'plant',160, 'measurement',260);
     else
         m = 'W04_4_inner_loop'; fresh(m);
-        addOdomReader(m, true, true, true);    % twist.twist.linear.x 까지 뽑음 · 첫 메시지 전 추력 차단
+        P = w04cols('command',300, 'controller',450, 'allocation',160, ...
+                    'plant',560, 'measurement',260);
+    end
+    xC = P.command(1);  xK = P.controller(1);  xA = P.allocation(1);
+    xP = P.plant(1);    xM = P.measurement(1);
+
+    if offline
+        addMotionModel(m, xP, 220, '', true);      % true = 실시간 화면용 태그까지
+        sPsi = 'MotionModel/1';  sR = 'MotionModel/2';  sU = 'MotionModel/3';
+    else
+        %  twist.twist.linear.x 까지 뽑음 · 첫 메시지 전 추력 차단
+        addOdomReader(m, true, true, true, [xP 430], xM);
         sPsi = 'Quat2Yaw/1';  sR = 'Quat2Yaw/2';  sU = 'Sel/5';
     end
 
     % --- 헤딩 루프 ---
     add_block('simulink/Sources/Constant', [m '/psi_ref_deg'], ...
-              'Value','psi_ref_deg', 'Position',[40 200 130 230]);
+              'Value','psi_ref_deg', 'Position',[xC 200 xC+90 230]);
     add_block('simulink/Math Operations/Gain', [m '/deg2rad'], ...
-              'Gain','pi/180', 'Position',[160 200 200 230]);
-    addHeadingCtrl(m, 300, 185);
+              'Gain','pi/180', 'Position',[xC+130 200 xC+170 230]);
+    addHeadingCtrl(m, xK, 185);
 
     % --- 속도 루프 ---
     add_block('simulink/Sources/Constant', [m '/u_ref'], ...
-              'Value','1.5', 'Position',[40 320 130 350]);
+              'Value','1.5', 'Position',[xC 350 xC+90 380]);
     add_block('simulink/Math Operations/Sum', [m '/SumU'], ...
-              'Inputs','+-', 'Position',[210 320 240 350]);
+              'Inputs','+-', 'Position',[xK 350 xK+30 380]);
     add_block('simulink/Discrete/Discrete PID Controller', [m '/PI_u'], ...
-              'Position',[290 310 370 360]);
+              'Position',[xK+250 340 xK+330 390]);
     set_param([m '/PI_u'], 'Controller','PI', 'P','300', 'I','40', ...
               'SampleTime','0.05', 'LimitOutput','on', ...
               'UpperSaturationLimit','500', 'LowerSaturationLimit','-500', ...
               'AntiWindupMode','clamping');
 
-    addAllocator(m, 570, 240);
+    addAllocator(m, xA, 250);
     add_line(m,'psi_ref_deg/1','deg2rad/1','autorouting','on');
     add_line(m,'deg2rad/1', 'HeadingCtrl/1','autorouting','on');
     add_line(m,sPsi,'HeadingCtrl/2','autorouting','on');
@@ -788,9 +867,9 @@ function build_inner_loop(offline)
         %  묶지 않으면 게이트가 열리는 순간 포화 500 N 에서 출발해 u 가 63 % 에 1.4 s 만에 닿는다
         %  (오프라인 2.5 s, 2026-09-24 실측). 열린 뒤에는 오프라인과 같은 0 에서 출발한다
         add_block('simulink/Signal Routing/From', [m '/From_okE'], ...
-                  'GotoTag','odom_ok', 'Position',[200 380 270 402]);
+                  'GotoTag','odom_ok', 'Position',[xK+50 420 xK+120 442]);
         add_block('simulink/Math Operations/Product', [m '/GateE'], ...
-                  'Position',[250 320 270 360]);
+                  'Position',[xK+150 350 xK+170 390]);
         add_line(m,'SumU/1',    'GateE/1','autorouting','on');
         add_line(m,'From_okE/1','GateE/2','autorouting','on');
         add_line(m,'GateE/1',   'PI_u/1', 'autorouting','on');
@@ -802,43 +881,43 @@ function build_inner_loop(offline)
         add_line(m,'Alloc/1','MotionModel/1','autorouting','on');
         add_line(m,'Alloc/2','MotionModel/2','autorouting','on');
     else
-        addThrusterPublisher(m, 'left',  'L', 920, 180);
-        addThrusterPublisher(m, 'right', 'R', 920, 350);
-        addFirstMsgGate(m, 'Alloc/1', 'L', 740, 180);
-        addFirstMsgGate(m, 'Alloc/2', 'R', 740, 350);
+        addThrusterPublisher(m, 'left',  'L', xP+170,  90);
+        addThrusterPublisher(m, 'right', 'R', xP+170, 270);
+        addFirstMsgGate(m, 'Alloc/1', 'L', xP,      60);
+        addFirstMsgGate(m, 'Alloc/2', 'R', xP,     240);
     end
 
-    % 관찰용
-    add_block('simulink/Sinks/Scope', [m '/Scope_u'], 'Position',[430 60 480 110]);
+    % 관찰용 — 사슬 오른쪽 끝 한 열
+    add_block('simulink/Sinks/Scope', [m '/Scope_u'], 'Position',[xM 60 xM+50 110]);
     set_param([m '/Scope_u'],'NumInputPorts','2');
     add_line(m,sU,'Scope_u/1','autorouting','on');
     add_line(m,'u_ref/1','Scope_u/2','autorouting','on');
 
-    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[430 120 480 170]);
+    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[xM 130 xM+50 180]);
     set_param([m '/Scope_psi'],'NumInputPorts','2');
     add_line(m,sPsi,'Scope_psi/1','autorouting','on');
     add_line(m,'deg2rad/1','Scope_psi/2','autorouting','on');
-    addLog(m, sPsi, 'psi', 1000, 60);
-    addLog(m, sU,   'u',   1000, 110);
+    addLog(m, sPsi, 'psi', xM, 220);
+    addLog(m, sU,   'u',   xM, 270);
     if offline
-        addLog(m, 'Alloc/1', 'FL', 1000, 160);
-        addLog(m, 'Alloc/2', 'FR', 1000, 210);
+        addLog(m, 'Alloc/1', 'FL', xM, 320);
+        addLog(m, 'Alloc/2', 'FR', xM, 370);
     else
         %  VRX 는 게이트를 지난 값 — 배로 실제 나간 추력. 지표의 시작 시각을 여기서 읽는다
-        addLog(m, 'GateL/1', 'FL', 1000, 160);
-        addLog(m, 'GateR/1', 'FR', 1000, 210);
+        addLog(m, 'GateL/1', 'FL', xM, 320);
+        addLog(m, 'GateR/1', 'FR', xM, 370);
     end
 
     %  ---- 실시간 화면 ----------------------------------------------------
     %  이 모델만 **지령이 둘 다 있다.** 속도 칸과 헤딩 칸에 지령선이 함께 그려지므로
     %  두 루프가 서로를 어떻게 방해하는지가 한 화면에서 보인다 (선회하면 u 가 준다).
-    tapGotos(m, 'deg2rad', {'psi_ref'}, 230);
-    tapGotos(m, 'u_ref',   {'u_ref'},   160);
+    tapGotos(m, 'deg2rad', {'psi_ref'}, xC+200);
+    tapGotos(m, 'u_ref',   {'u_ref'},   xC+200);
     if ~offline
-        tapGotos(m, 'GateL', {'FL'}, 880);
-        tapGotos(m, 'GateR', {'FR'}, 880);
+        tapGotos(m, 'GateL', {'FL'}, xM+180);
+        tapGotos(m, 'GateR', {'FR'}, xM+180);
     end
-    addW04Animate(m, 40, 680, true, true);
+    addW04Animate(m, xM, 900, true, true);
 
     if offline
         setSolverOffline(m);
@@ -846,7 +925,7 @@ function build_inner_loop(offline)
             'W04_4_inner_loop 과 HeadingCtrl · PI_u · Alloc 이 같은 함수로 만들어졌다.\n' ...
             'OdomSub/Sel/Quat2Yaw 와 Publish 자리에 MotionModel 하나가 있다.\n' ...
             '초기 선수각 32.7 deg (VRX 스폰), 초기 속도 0.\n' ...
-            '비교: >> W04_step_compare(4)']), 40, 500);
+            '비교: >> W04_step_compare(4)']), xC, 1050);
         save_system(m); close_system(m,0);
         fprintf('  [OK] %s\n', m);
         return
@@ -858,7 +937,7 @@ function build_inner_loop(offline)
         '\n' ...
         '제어기는 상자 두 개다 — HeadingCtrl (요 모멘트), PI_u (전진력).\n' ...
         'HeadingCtrl 의 D 항은 요각속도 r 을 직접 되먹인다 (-Kd*r).\n' ...
-        'PI_u 는 안티와인드업(clamping)이 켜져 있다.']), 40, 500);
+        'PI_u 는 안티와인드업(clamping)이 켜져 있다.']), xC, 1050);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
 end
@@ -882,24 +961,30 @@ end
 function build_wrap()
     m = 'W04_6_wrap'; fresh(m);
 
+    %  [계단 둘 -> 합 -> deg2rad] -> [제어기] -> [배분] -> [운동모델] -> [로깅]
+    P  = w04cols('command',300, 'controller',160, 'allocation',150, ...
+                 'plant',160, 'measurement',160);
+    xC = P.command(1);  xK = P.controller(1);  xA = P.allocation(1);
+    xP = P.plant(1);    xM = P.measurement(1);
+
     add_block('simulink/Sources/Step', [m '/psi_step1'], ...
               'Time','t_wrap1', 'Before','0', 'After','psi_wrap1_deg', ...
-              'Position',[40 190 90 220]);
+              'Position',[xC 190 xC+50 220]);
     add_block('simulink/Sources/Step', [m '/psi_step2'], ...
               'Time','t_wrap2', 'Before','0', 'After','psi_wrap2_deg - psi_wrap1_deg', ...
-              'Position',[40 280 90 310]);
+              'Position',[xC 280 xC+50 310]);
     add_block('simulink/Math Operations/Sum', [m '/SumRef'], ...
-              'Inputs','++', 'Position',[150 195 180 225]);
+              'Inputs','++', 'Position',[xC+110 195 xC+140 225]);
     add_block('simulink/Math Operations/Gain', [m '/deg2rad'], ...
-              'Gain','pi/180', 'Position',[220 195 260 225]);
-    addHeadingCtrl(m, 320, 185);
+              'Gain','pi/180', 'Position',[xC+200 195 xC+240 225]);
+    addHeadingCtrl(m, xK, 185);
 
     %  제자리에서 돌기만 한다 — 전진 추력 0. 도는 각도만 보면 되기 때문이다
     add_block('simulink/Sources/Constant', [m '/X_const'], ...
-              'Value','0', 'Position',[430 340 510 370]);
+              'Value','0', 'Position',[xC 380 xC+80 410]);
 
-    addAllocator(m, 560, 210);
-    addMotionModel(m, 780, 200, 'psi0_deg*pi/180');
+    addAllocator(m, xA, 200);
+    addMotionModel(m, xP, 190, 'psi0_deg*pi/180');
 
     add_line(m,'psi_step1/1','SumRef/1','autorouting','on');
     add_line(m,'psi_step2/1','SumRef/2','autorouting','on');
@@ -912,13 +997,13 @@ function build_wrap()
     add_line(m,'Alloc/1','MotionModel/1','autorouting','on');
     add_line(m,'Alloc/2','MotionModel/2','autorouting','on');
 
-    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[430 60 480 110]);
+    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[xM 60 xM+50 110]);
     set_param([m '/Scope_psi'],'NumInputPorts','2');
     add_line(m,'MotionModel/1','Scope_psi/1','autorouting','on');
     add_line(m,'deg2rad/1',    'Scope_psi/2','autorouting','on');
-    addLog(m, 'MotionModel/1', 'psi', 1000, 60);
-    addLog(m, 'MotionModel/2', 'r',   1000, 110);
-    addLog(m, 'HeadingCtrl/1', 'N',   1000, 160);
+    addLog(m, 'MotionModel/1', 'psi', xM, 150);
+    addLog(m, 'MotionModel/2', 'r',   xM, 200);
+    addLog(m, 'HeadingCtrl/1', 'N',   xM, 250);
 
     setSolverOffline(m);
     set_param(m, 'StopTime','60');
@@ -942,7 +1027,7 @@ function build_wrap()
         '\n' ...
         '전진 추력은 0 이다. 제자리에서 도는 각도만 본다.\n' ...
         '  >> W04_wrap_run                   두 실행을 한 번에 — 돈 각을 표로\n' ...
-        '  >> W04_heading_compare(''wrap'')   같은 두 실행의 자세한 지표']), 40, 470);
+        '  >> W04_heading_compare(''wrap'')   같은 두 실행의 자세한 지표']), xC, 700);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
 end
@@ -961,11 +1046,17 @@ end
 function build_offline()
     m = 'W04_5_offline'; fresh(m);
 
+    %  [시각] -> [시나리오] -> [추진기 지연] -> [운동모델] -> [로깅·화면]
+    P  = w04cols('command',100, 'reference',140, 'allocation',200, ...
+                 'plant',520, 'measurement',330);
+    xC = P.command(1);  xR = P.reference(1);  xT = P.allocation(1);
+    xP = P.plant(1);    xM = P.measurement(1);
+
     % --- 1단 · 시나리오 (2단계와 같은 코드) ---------------------------
     add_block('simulink/Sources/Digital Clock', [m '/Clock'], ...
-              'SampleTime','0.05', 'Position',[40 185 100 215]);
+              'SampleTime','0.05', 'Position',[xC 185 xC+60 215]);
     add_block('simulink/User-Defined Functions/MATLAB Function', [m '/Scenario'], ...
-              'Position',[150 165 280 235]);
+              'Position',[xR 165 xR+130 235]);
     setFcn(m, 'Scenario', [ ...
         'function [FL, FR] = Scenario(t)' newline ...
         '%#codegen' newline ...
@@ -982,17 +1073,17 @@ function build_offline()
 
     % --- 2단 · 추진기 (모터 1차 지연) ---------------------------------
     add_block('simulink/Signal Routing/Mux', [m '/MuxF'], ...
-              'Inputs','2', 'Position',[340 175 345 225]);
+              'Inputs','2', 'Position',[xT 175 xT+5 225]);
     add_block('simulink/Discrete/Discrete Transfer Fcn', [m '/MotorLag'], ...
-              'Position',[400 175 520 225]);
+              'Position',[xT+70 175 xT+190 225]);
     set_param([m '/MotorLag'], 'Numerator','0.05/0.30', ...
               'Denominator','[1, 0.05/0.30 - 1]', 'SampleTime','0.05');
 
     % --- 3단 · WAM-V 운동모델 -----------------------------------------
     add_block('simulink/User-Defined Functions/MATLAB Function', [m '/EOM'], ...
-              'Position',[580 140 760 260]);
+              'Position',[xP 140 xP+180 260]);
     setFcn(m, 'EOM', [ ...
-'function xdot = EOM(s, F)'                                              newline ...
+'function xdot = EOM(s, F)'                                           newline ...
 '%#codegen'                                                              newline ...
 '% 3-DOF WAM-V equations of motion in NED.'                              newline ...
 '% Every coefficient below is taken from the Gazebo VRX plugins, so'     newline ...
@@ -1028,10 +1119,10 @@ function build_offline()
 '        r];']);
 
     add_block('simulink/Continuous/Integrator', [m '/Integ'], ...
-              'Position',[820 175 870 225], 'InitialCondition','[0;0;0;0;0;0]');
+              'Position',[xP+240 175 xP+290 225], 'InitialCondition','[0;0;0;0;0;0]');
 
     add_block('simulink/User-Defined Functions/MATLAB Function', [m '/States'], ...
-              'Position',[930 130 1080 270]);
+              'Position',[xP+370 130 xP+520 270]);
     setFcn(m, 'States', [ ...
 'function [x_n, y_n, psi_deg, u, r_deg] = States(s)'          newline ...
 '%#codegen'                                                 newline ...
@@ -1043,16 +1134,16 @@ function build_offline()
 'r_deg = s(3)*180/pi;']);
 
     % --- 4단 · 관찰 -----------------------------------------------------
-    add_block('simulink/Sinks/Scope', [m '/Scope_u'],   'Position',[1160 100 1200 140]);
-    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[1160 180 1200 220]);
-    add_block('simulink/Sinks/XY Graph', [m '/Track'],  'Position',[1160 270 1220 330]);
+    add_block('simulink/Sinks/Scope', [m '/Scope_u'],   'Position',[xM 100 xM+40 140]);
+    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[xM 180 xM+40 220]);
+    add_block('simulink/Sinks/XY Graph', [m '/Track'],  'Position',[xM 270 xM+60 330]);
     set_param([m '/Track'],'xmin','-20','xmax','120','ymin','-40','ymax','60');
 
     nm = {'x_n','y_n','psi','u','r'};
     for k = 1:numel(nm)
         b = [m '/log_' nm{k}];
         add_block('simulink/Sinks/To Workspace', b, ...
-                  'Position',[1160 380+(k-1)*50 1260 410+(k-1)*50]);
+                  'Position',[xM 380+(k-1)*50 xM+100 410+(k-1)*50]);
         set_param(b,'VariableName',['log_' nm{k}], ...
                     'SaveFormat','Timeseries','SampleTime','0.05');
     end
@@ -1079,7 +1170,7 @@ function build_offline()
     %  스웨이 v 와 추력 둘을 더 쓰므로, 상태벡터와 추력을 한 번 더 들여다본다.
     %  이 모델은 추력을 직접 주는 개루프라 지령 칸 둘은 "지령 없음" 이 된다.
     add_block('simulink/User-Defined Functions/MATLAB Function', [m '/AnimTap'], ...
-              'Position',[930 320 1080 780]);
+              'Position',[xM 660 xM+150 1120]);
     setFcn(m, 'AnimTap', [ ...
 'function [x_n, y_n, psi, u, v, r, fl, fr] = AnimTap(s, F)'             newline ...
 '%#codegen'                                                             newline ...
@@ -1093,11 +1184,11 @@ function build_offline()
 'r   = s(3);'                                                           newline ...
 'fl  = F(1);'                                                           newline ...
 'fr  = F(2);']);
-    set_param([m '/AnimTap'], 'Position',[930 320 1080 780]);
+    set_param([m '/AnimTap'], 'Position',[xM 660 xM+150 1120]);
     add_line(m, 'Integ/1',    'AnimTap/1', 'autorouting','on');
     add_line(m, 'MotorLag/1', 'AnimTap/2', 'autorouting','on');
-    tapGotos(m, 'AnimTap', {'x_n','y_n','psi','u','v','r','FL','FR'}, 1130);
-    addW04Animate(m, 40, 780, false, false);
+    tapGotos(m, 'AnimTap', {'x_n','y_n','psi','u','v','r','FL','FR'}, xM+190);
+    addW04Animate(m, xM, 1200, false, false);
 
     set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
                  'FixedStep','0.05', 'StopTime','80', 'SimulationMode','normal');
@@ -1109,7 +1200,7 @@ function build_offline()
         '실행 뒤 >> W04_offline_plot 으로 그림을 본다.\n' ...
         '\n' ...
         '도는 동안에는 Animate 상자가 항적과 상태를 실시간으로 그린다.\n' ...
-        '끄려면 W04_setup.m 의 animate = 0 (끄면 훨씬 빨리 끝난다).']), 40, 660);
+        '끄려면 W04_setup.m 의 animate = 0 (끄면 훨씬 빨리 끝난다).']), xC, 1050);
     save_system(m); close_system(m,0);
     fprintf('  [OK] %s\n', m);
 end
