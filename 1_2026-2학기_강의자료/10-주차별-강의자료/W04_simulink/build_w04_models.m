@@ -1,5 +1,8 @@
-function build_w04_models()
-% BUILD_W04_MODELS  4주차 3~5단계 Simulink 예제 모델 8개를 생성한다.
+function build_w04_models(only)
+% BUILD_W04_MODELS  4주차 3~5단계 Simulink 예제 모델 9개를 생성한다.
+%
+%   build_w04_models()                    전부 다시 만든다 (평소에는 이것)
+%   build_w04_models('W04_7_ssa_test')    한 모델만 — 고치는 중에 빨리 보려고
 %
 %   이 스크립트를 실행하면 아래 모델이 이 폴더에 만들어진다.
 %     W04_1_straight.slx          직진
@@ -35,21 +38,28 @@ function build_w04_models()
         evalin('base', 'W04_setup');
     end
 
-    build_straight();
-    build_turn();
-    build_heading(false);
-    build_inner_loop(false);
-    build_offline();
-    build_heading(true);
-    build_inner_loop(true);
-    build_wrap();
-    build_ssa_test();
+    if nargin < 1 || isempty(only), only = ''; end
+    want = @(n) isempty(only) || any(strcmp(n, cellstr(only)));
+
+    if want('W04_1_straight'),            build_straight();       end
+    if want('W04_2_turn'),                build_turn();           end
+    if want('W04_3_heading'),             build_heading(false);   end
+    if want('W04_4_inner_loop'),          build_inner_loop(false);end
+    if want('W04_5_offline'),             build_offline();        end
+    if want('W04_3_heading_offline'),     build_heading(true);    end
+    if want('W04_4_inner_loop_offline'),  build_inner_loop(true); end
+    if want('W04_6_wrap'),                build_wrap();           end
+    if want('W04_7_ssa_test'),            build_ssa_test();       end
 
 
     % 배치와 색을 정리한다. 선은 직선 또는 직각으로만 다시 그린다.
     % dir 의 문자 클래스는 Windows 에서 먹지 않는다. 목록을 받아 이름으로 거른다
     slxList = dir('W04_*.slx');
     slxList = slxList(~cellfun(@isempty, regexp({slxList.name}, '^W04_[1-7]_', 'once')));   % 오프라인 쌍둥이 · wrap · ssa 시험 포함
+    if ~isempty(only)
+        keep = cellfun(@(n) want(erase(n,'.slx')), {slxList.name});
+        slxList = slxList(keep);
+    end
     for k = 1:numel(slxList)
         [~, mName] = fileparts(slxList(k).name);
         try
@@ -680,6 +690,17 @@ function setSolverOffline(m)
                  'FixedStep','0.05', 'StopTime','40', 'SimulationMode','normal');
 end
 
+function addLogVar(m, src, var, x, y)
+% 로그 변수 이름 = **신호 이름**. 블록 이름만 log_<var> 로 두어 도면에서 구분한다.
+%   SRC 가 비어 있으면 선을 잇지 않는다 (부르는 쪽이 From 으로 채운다)
+    b = [m '/log_' var];
+    add_block('simulink/Sinks/To Workspace', b, 'Position',[x y x+90 y+26]);
+    set_param(b, 'VariableName', var, 'SaveFormat','Timeseries', 'SampleTime','0.05');
+    if ~isempty(src)
+        add_line(m, src, ['log_' var '/1'], 'autorouting','on');
+    end
+end
+
 function addLog(m, src, name, x, y)
     % To Workspace — W04_step_compare 가 VRX 와 오프라인을 같은 이름으로 꺼낸다
     b = [m '/log_' name];
@@ -1086,13 +1107,17 @@ function build_ssa_test()
 
     % ---- ① 쓸어보기 지령 — psi 는 0 에 두고 psi_ref 만 훑는다 -----------
     %    d = psi_ref - psi 이므로 psi = 0 이면 psi_ref 가 곧 d 다
-    add_block('simulink/Sources/Ramp', [m '/d_deg'], ...
-              'slope','1', 'start','0', 'InitialOutput','-540', ...
-              'Position',[xC 100 xC+50 150]);
+    %    Ramp 대신 Digital Clock + Bias 로 적는다. Ramp 는 마스크 서브시스템이라
+    %    색 검사가 "단계를 나르는 상자" 로 잡는데, 이것은 상자가 아니라 눈금이다.
+    %    덧붙여 d = t - 540 이라는 관계가 도면에 그대로 보인다 (2026-10-01)
+    add_block('simulink/Sources/Digital Clock', [m '/Clock'], ...
+              'SampleTime','0.05', 'Position',[xC 110 xC+60 140]);
+    add_block('simulink/Math Operations/Bias', [m '/d_deg'], ...
+              'Bias','-540', 'Position',[xC+110 110 xC+170 140]);
     add_block('simulink/Math Operations/Gain', [m '/deg2rad_sweep'], ...
-              'Gain','pi/180', 'Position',[xC+120 110 xC+180 140]);
+              'Gain','pi/180', 'Position',[xC+220 110 xC+280 140]);
     add_block('simulink/Sources/Constant', [m '/psi_zero'], ...
-              'Value','0', 'Position',[xC+120 200 xC+180 230]);
+              'Value','0', 'Position',[xC+220 200 xC+280 230]);
 
     % ---- ② 한 점 확인 — 170 deg 에 있는 배에 -170 deg 를 시킨다 ---------
     add_block('simulink/Sources/Constant', [m '/psi_ref_pt'], ...
@@ -1108,6 +1133,7 @@ function build_ssa_test()
     addSsaBox(m, 'Sweep', xK,  90);
     addSsaBox(m, 'Point',  xK, 320);
 
+    add_line(m,'Clock/1','d_deg/1','autorouting','on');
     add_line(m,'d_deg/1','deg2rad_sweep/1','autorouting','on');
     add_line(m,'deg2rad_sweep/1','Sweep/1','autorouting','on');
     add_line(m,'psi_zero/1',     'Sweep/2','autorouting','on');
@@ -1129,17 +1155,22 @@ function build_ssa_test()
     add_line(m,'Point/1','e_ssa_deg/1','autorouting','on');
     add_line(m,'Point/2','e_raw_deg/1','autorouting','on');
 
-    %  로깅 — 신호 이름 그대로. d 는 Ramp 의 값(deg)을 그대로 적는다
-    addLog(m, 'd_deg/1',  'd',     xM, 500);
-    addLog(m, 'Sweep/1',  'e_ssa', xM, 570);
-    addLog(m, 'Sweep/2',  'e_raw', xM, 640);
+    %  로깅 — 로그 변수 이름은 **신호 이름 그대로**다 (out.d · out.e_ssa · out.e_raw).
+    %  e_ssa · e_raw 는 바로 왼쪽 Sweep 에서 오므로 **선으로** 잇는다.
+    %  d 만 태그다 — 맨 왼쪽 command 열에서 오는 신호라 선으로 이으면 Sweep 상자를
+    %  가로질러 관통한다 (2026-10-01). 태그 이름은 접미사 없이 신호 이름 'd' 하나다
+    addLogVar(m, 'Sweep/1', 'e_ssa', xM, 500);
+    addLogVar(m, 'Sweep/2', 'e_raw', xM, 570);
+    tapGotos(m, 'd_deg', {'d'}, xC+350);
+    addLogVar(m, '', 'd', xM, 640);
+    feed_from(m, 'd', 'log_d', 1, 70);
 
     set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
                  'FixedStep','0.05', 'StopTime','1080', 'SimulationMode','normal');
     note(m, sprintf(['[7단계] ssa 함수만 시험한다 — 배도 제어기도 없다\n' ...
         '\n' ...
         '위 줄 (쓸어보기)  psi = 0 에 두고 psi_ref 를 -540 -> +540 deg 로 훑는다.\n' ...
-        '  Ramp 기울기가 1 deg/s 라 t [s] 와 d [deg] 는 540 만큼 어긋난 같은 수다.\n' ...
+        '  d_deg = Clock - 540 이다. t [s] 와 d [deg] 는 540 만큼 어긋난 같은 수다.\n' ...
         '  Scope_e 위 곡선(ssa)  +-180 deg 마다 접히는 **톱니**\n' ...
         '  Scope_e 아래 곡선(그대로) 접히지 않는 **직선**\n' ...
         '\n' ...
