@@ -66,13 +66,13 @@ o = p.Results;
 %  도면을 모으는 치수. 한곳에 모아 두어야 "얼마나 좁혔는가" 를 한눈에 읽는다.
 %  (교수 지시 2026-10-01 — 빈 공간을 남기지 않는다)
 TAG_DROP  = 48;    % 블록 아래 테두리에서 첫 태그까지 (전 70)
-TAG_STEP  = 36;    % 태그끼리의 세로 간격       (전 45)
-TAG_LANE  = 24;    % 태그 통로끼리의 가로 간격   (전 26)
+TAG_STEP  = 42;    % 태그끼리의 세로 간격       (전 45). 더 좁히면 이름표가 겹친다
+TAG_LANE  = 26;    % 태그 통로끼리의 가로 간격   (그대로 — 좁히면 두 신호가 한 통로를 나눠 쓴다)
 ROW_GAP   = 36;    % 사슬 줄과 줄 사이          (전 60)
 BOX_DROP  = 50;    % 사슬 아래 상자 줄까지      (전 120)
 BOX_GAPX  = 70;    % 상자끼리 가로 간격         (전 170)
 BOX_GAPY  = 46;    % 상자 줄끼리 세로 간격      (전 70)
-LANE_MIN  = 60;    % 사슬 통로가 출발 포트에서 떨어지는 최소 거리 (전 150)
+LANE_MIN  = 70;    % 사슬 통로가 출발 포트에서 떨어지는 최소 거리 (전 150)
 
 opened = false;
 if ~bdIsLoaded(m), load_system(m); opened = true; end
@@ -133,6 +133,22 @@ for k = 1:numel(stages)
     D(k) = TAG_DROP + TAG_STEP*max(nt-1,0) + 26;   % 블록 아래 태그 더미의 깊이
 end
 
+%  단계마다 **다음 단계로 몇 가닥이 나가는가**. 사슬 통로는 가닥마다 제 x 가
+%  있어야 하므로, 칸 너비를 정할 때 이 수가 필요하다. 같은 출발 포트에서
+%  갈라지는 팬아웃은 줄기를 함께 쓰므로 한 가닥으로 센다.
+nChain = containers.Map('KeyType','char','ValueType','double');
+seen   = containers.Map('KeyType','char','ValueType','logical');
+for i = 1:numel(conn)
+    c = conn(i);
+    if ~isKey(rowOf, c.src) || ~isKey(rowOf, c.dst), continue, end
+    if rowOf(c.src) ~= rowOf(c.dst), continue, end     % 줄이 바뀌면 태그가 된다
+    kk = sprintf('%s|%d', c.src, c.sp);
+    if isKey(seen, kk), continue, end
+    seen(kk) = true;
+    if ~isKey(nChain, c.src), nChain(c.src) = 0; end
+    nChain(c.src) = nChain(c.src) + 1;
+end
+
 nRow = 0;
 for k = 1:numel(stages), nRow = max(nRow, rowOf(stages{k})); end
 yTop = o.Row;
@@ -144,11 +160,20 @@ for rr = 1:nRow
     for k = idx
         set_param([m '/' stages{k}], 'Position', ...
                   round([x, yc-H(k)/2, x+W(k), yc+H(k)/2]));
-        %  간격은 **그 단계가 내는 태그 수**에 맞춘다. 태그가 여덟 개인 블록 하나
-        %  때문에 모든 칸을 넓히면 도면이 통째로 늘어난다 (W05_1_vrx 가 그랬다).
+        %  간격은 **그 칸에 실제로 들어가야 하는 것**에 맞춘다. 태그가 여덟 개인
+        %  블록 하나 때문에 모든 칸을 넓히면 도면이 통째로 늘어난다 (W05_1_vrx 가
+        %  그랬다). 그렇다고 한 값으로 못박으면 빽빽한 칸에서 통로가 포개진다
+        %  (2026-10-01 W06·W07 의 `Guidance -> InnerLoop` 두 가닥이 그랬다).
+        %
+        %  한 칸에 들어가는 것은 셋이다 — 왼쪽부터
+        %    1) 내는 블록 아래로 내려가는 **Goto 통로**   18 + TAG_LANE*(태그수-1)
+        %    2) 다음 단계로 가는 **사슬 통로**            13 px 씩, 가닥 수만큼
+        %    3) 받는 포트 왼쪽의 **From 태그 열**         Gap + 태그폭 + 이름표
         g  = o.Pitch;
-        nt = 0;  if isKey(cnt, stages{k}), nt = cnt(stages{k}); end
-        if nt > 0, g = max(g, TAG_LANE*nt + 120); end
+        nt = 0;  if isKey(cnt, stages{k}),   nt = cnt(stages{k});   end
+        nc = 0;  if isKey(nChain, stages{k}), nc = nChain(stages{k}); end
+        need = max(18 + TAG_LANE*max(nt-1,0), LANE_MIN) + 13*nc + (o.Gap + 70 + 15) + 20;
+        g = max(g, need);
         x = x + W(k) + g;
     end
     %  태그 더미는 **각 블록의 아래 테두리**에서 D 만큼 내려간다. 줄 가운데(yc)에서 재면
@@ -296,6 +321,60 @@ end
 %   다르면 **두 블록 사이의 빈 곳**에서 한 번 내려가고 한 번 나온다(꺾임 2회).
 %   출발·도착 블록의 테두리 위에서 꺾으려 하면 Simulink 가 그 구간을 거부하고
 %   스스로 우회해 꺾임이 넷으로 늘어난다 — 2026-09-16 에 재현.
+%  통로를 **먼저 다 정하고** 그 다음에 긋는다. 간격을 좁히면 통로가 들어갈
+%  띠가 얇아지는데, 하나씩 그으면 뒤 통로가 앞 통로와 같은 x 에 올라앉는 것을
+%  알아차릴 길이 없다 (2026-10-01 — Pitch 를 340 에서 190 으로 줄였더니
+%  `Guidance -> InnerLoop` 두 가닥이 x = 345 에서 포개졌다).
+%
+%  규칙은 그대로다 — 통로 x 는 출발 포트 번호로 정한다. 한 신호의 여러 갈래는
+%  같은 줄기를 공유해야 하므로(팬아웃은 그것이 옳다) **같은 출발 포트면 같은
+%  통로**를 쓰고, 다른 포트끼리만 비킨다.
+busyX = zeros(0, 3);          % [x, 위, 아래] — 이미 쓰고 있는 통로
+for i = 1:numel(busy)/3
+    busyX(end+1,:) = busy(i,:); %#ok<AGROW>
+end
+laneOf = containers.Map('KeyType','char','ValueType','double');
+
+for i = 1:numel(conn)
+    c = conn(i);
+    if is_type(m, c.dst, 'Goto'), continue, end
+    a = port_xy(m, c.src, 'Outport', c.sp);
+    b = port_xy(m, c.dst, 'Inport',  c.dp);
+    if abs(a(2)-b(2)) < 0.5, continue, end
+
+    key = sprintf('%s|%d', c.src, c.sp);
+    if isKey(laneOf, key), continue, end      % 같은 출발 포트 — 줄기를 함께 쓴다
+
+    xm = round((a(1) + b(1))/2) + TAG_LANE*(c.sp - 1);
+    %  태그로 내려가는 통로들이 출발 포트 오른쪽에 줄지어 있다 (+18 부터
+    %  TAG_LANE 씩). 사슬 통로를 그 안에 두면 두 신호가 같은 x 를 나눠 쓴다.
+    lo = a(1) + LANE_MIN;
+    if isKey(cnt, c.src), lo = max(lo, a(1) + 24 + TAG_LANE*cnt(c.src)); end
+    hi = b(1) - 15;
+    %  받는 포트 왼쪽에 From 태그·상수 열이 서 있으면 그 이름표 앞에서 멈춘다
+    if isKey(edgeL, c.dst), hi = min(hi, edgeL(c.dst) - 10); end
+    if hi < a(1) + 15, hi = a(1) + 15; end
+    if lo > hi, lo = max(a(1) + 15, hi); end
+    xm = min(max(xm, lo), hi);
+
+    %  같은 높이를 지나는 통로와 겹치면 비킨다. 오른쪽으로 먼저, 막히면 왼쪽으로.
+    %  13 px 는 통로 반 칸이다 — 이만큼이면 두 선이 따로 보인다
+    yl = min(a(2), b(2));  yh = max(a(2), b(2));
+    if taken(busyX, xm, yl, yh)
+        found = false;
+        for d = 13:13:260
+            for s = [1 -1]
+                x2 = xm + s*d;
+                if x2 < lo || x2 > hi, continue, end
+                if ~taken(busyX, x2, yl, yh), xm = x2; found = true; break, end
+            end
+            if found, break, end
+        end
+    end
+    busyX(end+1,:) = [xm, yl, yh]; %#ok<AGROW>
+    laneOf(key) = xm;
+end
+
 for i = 1:numel(conn)
     c = conn(i);
     a = port_xy(m, c.src, 'Outport', c.sp);
@@ -307,22 +386,7 @@ for i = 1:numel(conn)
         %  통로를 공유하면 서로 다른 신호가 한 선으로 겹쳐 보인다
         add_line(m, [a; lane(c.dst) a(2); lane(c.dst) b(2); b]);
     else
-        %  통로 x 는 **출발 포트 번호**로만 정한다. 그래야 한 신호의 여러 갈래가
-        %  같은 줄기를 공유하고(팬아웃은 그것이 옳다), 다른 신호끼리는 어긋난다.
-        xm = round((a(1) + b(1))/2) + TAG_LANE*(c.sp - 1);
-        %  태그로 내려가는 통로들이 출발 포트 오른쪽에 줄지어 있다 (+18 부터
-        %  TAG_LANE 씩). 사슬 통로를 그 안에 두면 두 신호가 같은 x 를 나눠 쓴다.
-        lo = a(1) + LANE_MIN;
-        if isKey(cnt, c.src), lo = max(lo, a(1) + 24 + TAG_LANE*cnt(c.src)); end
-        if xm < lo, xm = lo; end
-        %  받는 포트 왼쪽에 From 태그·상수 열이 서 있으면 그 이름표 앞에서 멈춘다.
-        %  포트 번호 순서는 지켜 준다 — 통로끼리 x 를 나눠 쓰면 한 선으로 보인다
-        if isKey(edgeL, c.dst)
-            nOut = numel(get_param([m '/' c.src], 'PortHandles').Outport);
-            xr   = edgeL(c.dst) - 10 - TAG_LANE*(nOut - c.sp);
-            if xm > xr, xm = max(lo, xr); end
-        end
-        if xm > b(1)-15, xm = max(a(1)+15, b(1)-15); end
+        xm = laneOf(sprintf('%s|%d', c.src, c.sp));
         add_line(m, [a; xm a(2); xm b(2); b]);
     end
 end
@@ -330,6 +394,14 @@ end
 %  직접 연 모델은 **저장하고** 닫는다. 저장하지 않으면 여기서 한 배치가
 %  전부 버려진다 (2026-09-16 에 한참 헤맴).
 if opened, save_system(m); close_system(m, 0); end
+end
+
+% -------------------------------------------------------------------------
+function tf = taken(busyX, x, yl, yh)
+%TAKEN  그 x 통로를 같은 높이에서 이미 쓰고 있는가.
+%   두 통로가 8 px 안에 들어오고 세로 구간이 겹치면 한 선으로 보인다.
+if isempty(busyX), tf = false; return, end
+tf = any(abs(busyX(:,1) - x) < 8 & busyX(:,2) < yh - 1 & yl < busyX(:,3) - 1);
 end
 
 % -------------------------------------------------------------------------
