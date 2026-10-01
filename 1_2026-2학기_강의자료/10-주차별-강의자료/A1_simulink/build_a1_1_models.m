@@ -79,6 +79,16 @@ function wire(m, src, dst)
     add_line(m, src, dst, 'autorouting','on');
 end
 
+function nameLine(sys, blk, nm)
+%NAMELINE  그 블록의 1번 출력선에 **신호 이름**을 붙인다.
+%   되돌아가는 선을 tidy_model 의 tag_feedback 이 Goto/From 으로 바꿀 때 이
+%   이름을 태그로 쓴다. 이름을 안 주면 블록 이름을 빌려 `SumA_1` · `ToDouble_1`
+%   같은 태그가 생기고 check_tags 가 그것을 잡는다 (0 이 합격선).
+    h = get_param([sys '/' blk], 'PortHandles');
+    l = get_param(h.Outport(1), 'Line');
+    if l > 0, set_param(l, 'Name', nm); end
+end
+
 function finish(m)
     save_system(m); close_system(m, 0);
     fprintf('  [OK] %s\n', m);
@@ -187,6 +197,10 @@ function build_SB8_done()
     wire(m,'SumA/1','UD/1');
     wire(m,'UD/1','SumA/2');
     wire(m,'SumA/1','Sc/1');
+    %  UD 출력이 Sum 으로 돌아가므로 tidy_model 이 Goto/From 한 쌍으로 바꾼다.
+    %  선 이름이 없으면 블록 이름을 빌려 `SumA_1` 같은 태그가 생긴다 (check_tags)
+    nameLine(m,'SumA','acc');     % 누적값 y[k]
+    nameLine(m,'UD',  'acc_prev');% 한 스텝 전 값 y[k-1]
     wire(m,'One/1','DTI/1');
     wire(m,'DTI/1','Sc/2');
     wire(m,'Slow/1','RT/1');
@@ -651,6 +665,9 @@ function sb13_common(m, withStop)
     wire(m,'Goal/1','Reached/2');
     wire(m,'Reached/1','ToDouble/1');
     wire(m,'ToDouble/1','Mission/1');
+    %  도착 판정이 차트로 돌아가는 되먹임이다. 선 이름이 없으면 tag_feedback 이
+    %  블록 이름을 빌려 `ToDouble_1` 같은 태그를 만든다 (check_tags)
+    nameLine(m,'ToDouble','reached');
 
     setSolverD(m,'30');
 end
