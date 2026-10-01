@@ -59,7 +59,9 @@ function build_w02_models()
 
             paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
 
-            check_colour(mName);
+            check_colour(mName);       % 흰색으로 남은 블록 0 이 합격선
+            check_lines(mName, false); % 일곱 항목이 전부 0 이 합격선
+            check_tags(mName);         % 태그 이름이 신호 이름인가. 0 이 합격선
 
             export_model_pngs(mName);
 
@@ -101,8 +103,13 @@ function C(sys, name, value, x, y)
               'Position', [x y x+95 y+30], 'Value', value);
 end
 
-function F(sys, tag, sfx, x, y)
-    add_block('simulink/Signal Routing/From', [sys '/Fr_' tag '_' sfx], ...
+function nm = F(sys, tag, x, y)
+%  From 블록 이름은 `Fr_<태그>` 다. 같은 태그를 여러 곳에서 받으면 **번호만** 붙인다
+%  (line-routing.md §3.1). 이름을 손으로 짓지 않는다 — `Fr_x_a` · `Fr_x_log` 처럼
+%  받는 쪽을 이름에 섞으면 이름표가 이웃 블록을 덮고, 받는 블록을 바꿀 때 태그
+%  이름까지 손대야 한다. `_tools/from_name.m` 이 비어 있는 이름을 돌려준다.
+    nm = from_name(sys, tag);
+    add_block('simulink/Signal Routing/From', [sys '/' nm], ...
               'Position', [x y x+70 y+25], 'GotoTag', tag);
 end
 
@@ -110,6 +117,15 @@ function G(sys, tag, x, y)
     % global — 서브시스템 안의 From 도 이 태그를 받을 수 있다
     add_block('simulink/Signal Routing/Goto', [sys '/Go_' tag], ...
               'Position', [x y x+80 y+25], 'GotoTag', tag, 'TagVisibility','global');
+end
+
+function nameLine(sys, blk, nm)
+%NAMELINE  그 블록의 1번 출력선에 **신호 이름**을 붙인다.
+%   되돌아가는 선을 tag_feedback 이 Goto/From 으로 바꿀 때 이 이름을 태그로 쓴다.
+%   이름을 안 주면 블록 이름을 빌려 `IntegDly_1` 같은 태그가 생긴다 (check_tags).
+    h = get_param([sys '/' blk], 'PortHandles');
+    l = get_param(h.Outport(1), 'Line');
+    if l > 0, set_param(l, 'Name', nm); end
 end
 
 function note(sys, tag, txt, x, y)
@@ -375,6 +391,12 @@ function addPlant(m, pos)
     L(ss, 'PlantEq/1', 'IntegDly/1');
     L(ss, 'IntegDly/1', 'PlantEq/3');
     L(ss, 'IntegDly/1', 'PlantOut/1');
+    %  상태벡터가 운동방정식으로 되돌아가는 선이다. tidy_model 의 tag_feedback 이
+    %  이것을 Goto/From 한 쌍으로 바꾸는데, 선 이름이 없으면 블록 이름을 빌려
+    %  `IntegDly_1` 같은 태그를 만든다 (check_tags 가 잡는다 — 0 이 합격선).
+    %  태그 이름은 손으로 고치지 않고 **선 이름**으로 정한다 (SKILL.md §2 규칙 4)
+    nameLine(ss, 'IntegDly', 's');
+    nameLine(ss, 'PlantEq',  's_next');
     for k = 1:3, L(ss, sprintf('PlantOut/%d',k), [outs{k} '/1']); end
 end
 
@@ -436,9 +458,9 @@ end
 % =====================================================================
 function addAnimate(m, pos)
     ss = newSub(m, 'Animate', pos);
-    F(ss,'x','a',  50, 40);
-    F(ss,'y','a',  50, 90);
-    F(ss,'th','a', 50, 140);
+    fx = F(ss,'x',  50, 40);
+    fy = F(ss,'y',  50, 90);
+    ft = F(ss,'th', 50, 140);
     add_block('simulink/Sources/Digital Clock', [ss '/Clk'], ...
               'Position', [50 190 100 220], 'SampleTime','Ts');
     C(ss,'Anim','animate', 50, 240);
@@ -453,9 +475,9 @@ function addAnimate(m, pos)
 '    W02_animate(x, y, th, t);'                                        newline ...
 'end']);
     add_block('simulink/Sinks/Terminator', [ss '/AnimEnd'], 'Position', [480 140 500 160]);
-    L(ss, 'Fr_x_a/1',  'AnimateFcn/1');
-    L(ss, 'Fr_y_a/1',  'AnimateFcn/2');
-    L(ss, 'Fr_th_a/1', 'AnimateFcn/3');
+    L(ss, [fx '/1'], 'AnimateFcn/1');
+    L(ss, [fy '/1'], 'AnimateFcn/2');
+    L(ss, [ft '/1'], 'AnimateFcn/3');
     L(ss, 'Clk/1',     'AnimateFcn/4');
     L(ss, 'Anim/1',    'AnimateFcn/5');
     L(ss, 'AnimateFcn/1', 'AnimEnd/1');
@@ -469,12 +491,12 @@ function addLogging(m, pos)
     sig = {'x','y','th','v','w','psi_ref','dist','e_th','mode'};
     for k = 1:numel(sig)
         yy = 40 + (k-1)*55;
-        F(ss, sig{k}, 'log', 50, yy+3);
+        f = F(ss, sig{k}, 50, yy+3);
         b = [ss '/log_' sig{k}];
         add_block('simulink/Sinks/To Workspace', b, 'Position', [200 yy 300 yy+30]);
         set_param(b, 'VariableName', ['log_' sig{k}], ...
                      'SaveFormat','Timeseries', 'SampleTime','Ts');
-        L(ss, ['Fr_' sig{k} '_log/1'], ['log_' sig{k} '/1']);
+        L(ss, [f '/1'], ['log_' sig{k} '/1']);
     end
 end
 
@@ -482,8 +504,8 @@ end
 function wireFront(m, xg, yg)
     fr = {'x','y','th','valid'};
     for k = 1:4
-        F(m, fr{k}, 'g', xg, yg + (k-1)*50);
-        L(m, ['Fr_' fr{k} '_g/1'], sprintf('Guidance/%d',k));
+        f = F(m, fr{k}, xg, yg + (k-1)*50);
+        L(m, [f '/1'], sprintf('Guidance/%d',k));
     end
     L(m, 'Guidance/1', 'Control/1');
     L(m, 'Guidance/2', 'Control/2');
@@ -502,8 +524,8 @@ function build_offline()
     addPlant   (m, [850 100 1000 300]);
     wireFront(m, 100, 110);
 
-    F(m, 'th', 'c', 400, 330);
-    L(m, 'Fr_th_c/1', 'Control/4');
+    fc = F(m, 'th', 400, 330);
+    L(m, [fc '/1'], 'Control/4');
     L(m, 'Control/1', 'TurtlePlant/1');
     L(m, 'Control/2', 'TurtlePlant/2');
 
@@ -543,8 +565,8 @@ function build_turtlesim()
     addCmdPublisher(m, [850 150 1000 250]);
     wireFront(m, 100, 110);
 
-    F(m, 'th', 'c', 400, 330);
-    L(m, 'Fr_th_c/1', 'Control/4');
+    fc = F(m, 'th', 400, 330);
+    L(m, [fc '/1'], 'Control/4');
     L(m, 'Control/1', 'CmdPublisher/1');
     L(m, 'Control/2', 'CmdPublisher/2');
 

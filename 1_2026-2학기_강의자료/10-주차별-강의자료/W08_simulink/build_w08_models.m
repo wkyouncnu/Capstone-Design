@@ -33,7 +33,12 @@ function build_w08_models()
         m = mm{1}; load_system(m);
         paint_roles(m);
         check_colour(m);
-        mss_style(m); save_system(m); check_lines(m, false); export_diagram(m);
+        mss_style(m);
+        %  태그를 신호 옆으로 — lay_chain 은 Goto 를 내는 블록 **아래**에 쌓으므로
+        %  잇는 선이 통로로 내려가며 두 번 꺾인다. 마지막에 한 번 끌어오면 수평
+        %  한 토막이 된다 (2026-10-01 교수 지시, line-routing.md §3)
+        snug_tags(m);
+        save_system(m); check_lines(m, false); export_diagram(m);
         close_system(m, 0);
     end
 
@@ -69,8 +74,13 @@ function C(m, name, value, x, y)
               'Value', value, 'Position', [x y x+95 y+30]);
 end
 
-function F(m, tag, sfx, x, y)
-    add_block('simulink/Signal Routing/From', [m '/Fr_' tag '_' sfx], ...
+function nm = F(m, tag, x, y)
+%  From 블록 이름은 `Fr_<태그>` 다. 같은 태그를 여러 곳에서 받으면 **번호만** 붙인다
+%  (line-routing.md §3.1). `_tools/from_name.m` 이 비어 있는 이름을 돌려준다 —
+%  `Fr_eta_f` 처럼 받는 쪽을 이름에 섞으면 이름표가 이웃을 덮고, 받는 블록을
+%  바꿀 때 태그 이름까지 손대야 한다.
+    nm = from_name(m, tag);
+    add_block('simulink/Signal Routing/From', [m '/' nm], ...
               'Position', [x y x+70 y+25], 'GotoTag', tag);
 end
 
@@ -430,7 +440,11 @@ end
 % =====================================================================
 % 4단 · 추진기 (모터 + 방위 서보)
 % =====================================================================
-function addThrusters(m, x, y)
+function addThrusters(m, x, y, useF)
+%   useF  세 번째 출력 f (BODY 성분 추력) 를 내보낼지. 오프라인 운동모델만 쓴다.
+%         VRX 는 Gazebo 가 운동모델이라 받는 쪽이 없다 — 내보내면 받는 From 이
+%         없는 태그만 남으므로(check_tags) 상자 **안에서** Terminator 로 끝낸다
+    if nargin < 4, useF = true; end
     ss = [m '/Thrusters'];
     add_block('built-in/Subsystem', ss, 'Position', [x y x+190 y+180]);
 
@@ -471,10 +485,16 @@ function addThrusters(m, x, y)
     set_param([ss '/Act'],'Position',[220 70 420 380]);
 
     out = {'Tact','Dact','f'};
-    for k = 1:numel(out)
+    nOut = 2 + double(useF);
+    for k = 1:nOut
         add_block('simulink/Sinks/Out1', [ss '/' out{k}], ...
                   'Position',[440 100+(k-1)*90 475 130+(k-1)*90], 'Port', num2str(k));
         add_line(ss, sprintf('Act/%d',k), [out{k} '/1'], 'autorouting','on');
+    end
+    if ~useF
+        add_block('simulink/Sinks/Terminator', [ss '/EndF'], ...
+                  'Position',[440 280 470 310]);
+        add_line(ss, 'Act/3', 'EndF/1', 'autorouting','on');
     end
     for k = 1:numel(in)
         add_line(ss, [in{k} '/1'], sprintf('Act/%d',k), 'autorouting','on');
@@ -683,7 +703,9 @@ end
 % 앞단 배선 — 두 모델이 공유한다
 %   설정값과 상태 지연은 각 상자 안에 있다. 최상위에 남는 것은 신호뿐이다.
 % =====================================================================
-function wireFront(m)
+function wireFront(m, useF)
+%   useF  추진기의 f 출력을 fthr 태그로 내보낼지 (오프라인 운동모델만 받는다)
+    if nargin < 2, useF = true; end
     % --- 1단 · 목표값 : 입력이 없다. 시계와 표가 상자 안에 있다 ----------
     addDPRef(m, 400, 60);
     G(m,'eta_d',   620, 100);
@@ -693,10 +715,10 @@ function wireFront(m)
 
     % --- 1.5단 · 파랑 필터 ---------------------------------------------
     addWaveFilter(m, 300, 400);
-    F(m,'eta','f', 200, 420);
-    F(m,'nu','f',  200, 470);
-    add_line(m,'Fr_eta_f/1','WaveFilter/1','autorouting','on');
-    add_line(m,'Fr_nu_f/1', 'WaveFilter/2','autorouting','on');
+    fe = F(m,'eta', 200, 420);
+    fn = F(m,'nu',  200, 470);
+    add_line(m,[fe '/1'],'WaveFilter/1','autorouting','on');
+    add_line(m,[fn '/1'],'WaveFilter/2','autorouting','on');
     G(m,'eta_f', 520, 420);
     G(m,'nu_f',  520, 470);
     add_line(m,'WaveFilter/1','Go_eta_f/1','autorouting','on');
@@ -704,12 +726,12 @@ function wireFront(m)
 
     % --- 2단 · 제어기 ---------------------------------------------------
     addDPCtrl(m, 620, 60);
-    F(m,'eta_d','c', 540, 80);
-    F(m,'eta_f','c', 540, 140);
-    F(m,'nu_f','c',  540, 200);
-    add_line(m,'Fr_eta_d_c/1','DPCtrl/1','autorouting','on');
-    add_line(m,'Fr_eta_f_c/1','DPCtrl/2','autorouting','on');
-    add_line(m,'Fr_nu_f_c/1', 'DPCtrl/3','autorouting','on');
+    fd1 = F(m,'eta_d', 540, 80);
+    fd2 = F(m,'eta_f', 540, 140);
+    fd3 = F(m,'nu_f',  540, 200);
+    add_line(m,[fd1 '/1'],'DPCtrl/1','autorouting','on');
+    add_line(m,[fd2 '/1'],'DPCtrl/2','autorouting','on');
+    add_line(m,[fd3 '/1'],'DPCtrl/3','autorouting','on');
     G(m,'tau_cmd', 860, 100);
     G(m,'eta_e',   860, 160);
     add_line(m,'DPCtrl/1','Go_tau_cmd/1','autorouting','on');
@@ -719,8 +741,8 @@ function wireFront(m)
 
     % --- 3단 · 추력배분 -------------------------------------------------
     addAlloc(m, 1020, 60);
-    F(m,'tau_cmd','a', 940, 80);
-    add_line(m,'Fr_tau_cmd_a/1','Alloc/1','autorouting','on');
+    fa = F(m,'tau_cmd', 940, 80);
+    add_line(m,[fa '/1'],'Alloc/1','autorouting','on');
     G(m,'Tcmd', 1260, 100);
     G(m,'Dcmd', 1260, 160);
     G(m,'sat',  1260, 220);
@@ -729,17 +751,19 @@ function wireFront(m)
     add_line(m,'Alloc/3','Go_sat/1','autorouting','on');
 
     % --- 4단 · 추진기 ---------------------------------------------------
-    addThrusters(m, 1420, 60);
-    F(m,'Tcmd','t', 1340, 80);
-    F(m,'Dcmd','t', 1340, 140);
-    add_line(m,'Fr_Tcmd_t/1','Thrusters/1','autorouting','on');
-    add_line(m,'Fr_Dcmd_t/1','Thrusters/2','autorouting','on');
+    addThrusters(m, 1420, 60, useF);
+    ft = F(m,'Tcmd', 1340, 80);
+    fd = F(m,'Dcmd', 1340, 140);
+    add_line(m,[ft '/1'],'Thrusters/1','autorouting','on');
+    add_line(m,[fd '/1'],'Thrusters/2','autorouting','on');
     G(m,'Tact', 1680, 100);
     G(m,'Dact', 1680, 160);
-    G(m,'fthr', 1680, 220);
     add_line(m,'Thrusters/1','Go_Tact/1','autorouting','on');
     add_line(m,'Thrusters/2','Go_Dact/1','autorouting','on');
-    add_line(m,'Thrusters/3','Go_fthr/1','autorouting','on');
+    if useF
+        G(m,'fthr', 1680, 220);
+        add_line(m,'Thrusters/3','Go_fthr/1','autorouting','on');
+    end
 end
 % =====================================================================
 function build_offline()
@@ -750,19 +774,19 @@ function build_offline()
 
     % --- 외란 : 바람·파랑. 설정값은 상자 안에 있다 -----------------------
     addEnv(m, 1820, 460);
-    F(m,'nu','e',  1740, 540);
-    F(m,'eta','e', 1740, 600);
-    add_line(m,'Fr_nu_e/1', 'Env/1','autorouting','on');
-    add_line(m,'Fr_eta_e/1','Env/2','autorouting','on');
+    fn2 = F(m,'nu',  1740, 540);
+    fe2 = F(m,'eta', 1740, 600);
+    add_line(m,[fn2 '/1'],'Env/1','autorouting','on');
+    add_line(m,[fe2 '/1'],'Env/2','autorouting','on');
     G(m,'tau_env', 2080, 500);
     add_line(m,'Env/1','Go_tau_env/1','autorouting','on');
 
     % --- 운동모델 -------------------------------------------------------
     addMotionModel(m, 2200, 60);
-    F(m,'fthr','p',   2110, 80);
-    F(m,'tau_env','p',2110, 140);
-    add_line(m,'Fr_fthr_p/1','MotionModel/1','autorouting','on');
-    add_line(m,'Fr_tau_env_p/1','MotionModel/2','autorouting','on');
+    fp1 = F(m,'fthr',    2110, 80);
+    fp2 = F(m,'tau_env', 2110, 140);
+    add_line(m,[fp1 '/1'],'MotionModel/1','autorouting','on');
+    add_line(m,[fp2 '/1'],'MotionModel/2','autorouting','on');
 
     tags = {'eta','nu','U','beta','tau_thr'};
     for k = 1:numel(tags)
@@ -790,7 +814,9 @@ function build_vrx()
     load_system('ros2lib');
     setSolver(m, 'T_end');
 
-    wireFront(m);
+    %  useF = false — 운동모델이 Gazebo 이므로 추진기의 f (BODY 성분 추력) 를
+    %  받는 쪽이 없다. 태그로 내보내면 받는 From 이 없는 태그만 남는다 (check_tags)
+    wireFront(m, false);
     % --- 추력·각도 발행 : 네 토픽을 한 상자에 -----------------------------
     addCmdPub(m, [1820 60]);
 

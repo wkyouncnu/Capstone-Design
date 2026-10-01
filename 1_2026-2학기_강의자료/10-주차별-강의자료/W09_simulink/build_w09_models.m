@@ -49,7 +49,9 @@ function build_w09_models()
 
             paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
 
-            check_colour(mName);
+            check_colour(mName);       % 흰색으로 남은 블록 0 이 합격선
+            check_lines(mName, false); % 일곱 항목이 전부 0 이 합격선
+            check_tags(mName);         % 태그 이름이 신호 이름인가. 0 이 합격선
 
             export_model_pngs(mName);
 
@@ -89,6 +91,15 @@ end
 function G(sys, tag, x, y)
     add_block('simulink/Signal Routing/Goto', [sys '/Go_' tag], ...
               'Position', [x y x+80 y+25], 'GotoTag', tag, 'TagVisibility','global');
+end
+
+function nameLine(sys, blk, nm)
+%NAMELINE  그 블록의 1번 출력선에 **신호 이름**을 붙인다.
+%   되돌아가는 선을 tag_feedback 이 Goto/From 으로 바꿀 때 이 이름을 태그로 쓴다.
+%   이름을 안 주면 블록 이름을 빌려 `EOM_1` 같은 태그가 생긴다 (check_tags).
+    h = get_param([sys '/' blk], 'PortHandles');
+    l = get_param(h.Outport(1), 'Line');
+    if l > 0, set_param(l, 'Name', nm); end
 end
 
 function note(sys, tag, txt, x, y)
@@ -257,6 +268,13 @@ function build_offline()
     L(ms,'EOM/1','Integ/1');  L(ms,'Integ/1','EOM/1');
     L(ms,'FL/1','EOM/2');     L(ms,'FR/1','EOM/3');   L(ms,'p/1','EOM/4');
     L(ms,'Integ/1','States/1');
+    %  운동모델 안의 두 선에 **이름**을 준다. 둘 중 하나는 되돌아가는 선이어서
+    %  tidy_model 의 tag_feedback 이 Goto/From 한 쌍으로 바꾸는데, 이름이 없으면
+    %  블록 이름을 빌려 `EOM_1` 같은 태그를 만든다 (check_tags 가 잡는다 —
+    %  0 이 합격선). 태그 이름은 손으로 고치지 않고 **선 이름**으로 정한다
+    %  (SKILL.md §2 규칙 4). xdot = 상태 미분, x_state = 적분된 상태벡터다
+    nameLine(ms, 'EOM',   'xdot');
+    nameLine(ms, 'Integ', 'x_state');
     for k = 1:numel(outs), L(ms, sprintf('States/%d',k), [outs{k} '/1']); end
     % 참값은 센서 모델 결과와 비교하려고 태그로 남긴다 (W09_offline_run)
     for k = 1:numel(outs)

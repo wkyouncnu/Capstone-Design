@@ -50,7 +50,9 @@ function build_w03_models()
 
             paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
 
-            check_colour(mName);
+            check_colour(mName);       % 흰색으로 남은 블록 0 이 합격선
+            check_lines(mName, false); % 일곱 항목이 전부 0 이 합격선
+            check_tags(mName);         % 태그 이름이 신호 이름인가. 0 이 합격선
 
             export_model_pngs(mName);
 
@@ -87,9 +89,23 @@ function C(sys, name, value, x, y)
               'Position', [x y x+95 y+30], 'Value', value);
 end
 
-function F(sys, tag, sfx, x, y)
-    add_block('simulink/Signal Routing/From', [sys '/Fr_' tag '_' sfx], ...
+function nm = F(sys, tag, x, y)
+%  From 블록 이름은 `Fr_<태그>` 다. 같은 태그를 여러 곳에서 받으면 **번호만** 붙인다
+%  (line-routing.md §3.1). 이름을 손으로 짓지 않는다 — `Fr_psi_a` · `Fr_psi_log`
+%  처럼 받는 쪽을 이름에 섞으면 이름표가 이웃 블록을 덮고, 받는 블록을 바꿀 때
+%  태그 이름까지 손대야 한다. `_tools/from_name.m` 이 비어 있는 이름을 돌려준다.
+    nm = from_name(sys, tag);
+    add_block('simulink/Signal Routing/From', [sys '/' nm], ...
               'Position', [x y x+70 y+25], 'GotoTag', tag);
+end
+
+function nameLine(sys, blk, nm)
+%NAMELINE  그 블록의 1번 출력선에 **신호 이름**을 붙인다.
+%   되돌아가는 선을 tag_feedback 이 Goto/From 으로 바꿀 때 이 이름을 태그로 쓴다.
+%   이름을 안 주면 블록 이름을 빌려 `Integ_1` 같은 태그가 생긴다 (check_tags).
+    h = get_param([sys '/' blk], 'PortHandles');
+    l = get_param(h.Outport(1), 'Line');
+    if l > 0, set_param(l, 'Name', nm); end
 end
 
 function G(sys, tag, x, y)
@@ -337,9 +353,9 @@ end
 % =====================================================================
 function addAnimate(m, pos)
     ss = newSub(m, 'Animate', pos);
-    F(ss,'x_n','a', 50, 40);
-    F(ss,'y_n','a', 50, 90);
-    F(ss,'psi','a', 50, 140);
+    fx = F(ss,'x_n', 50, 40);
+    fy = F(ss,'y_n', 50, 90);
+    fp = F(ss,'psi', 50, 140);
     add_block('simulink/Sources/Digital Clock', [ss '/Clk'], ...
               'Position', [50 190 100 220], 'SampleTime','Ts');
     C(ss,'Anim','animate', 50, 240);
@@ -352,9 +368,9 @@ function addAnimate(m, pos)
 '    W03_animate(x_n, y_n, psi, t);'                                     newline ...
 'end']);
     add_block('simulink/Sinks/Terminator', [ss '/AnimEnd'], 'Position', [480 140 500 160]);
-    L(ss,'Fr_x_n_a/1','AnimateFcn/1');
-    L(ss,'Fr_y_n_a/1','AnimateFcn/2');
-    L(ss,'Fr_psi_a/1','AnimateFcn/3');
+    L(ss,[fx '/1'],'AnimateFcn/1');
+    L(ss,[fy '/1'],'AnimateFcn/2');
+    L(ss,[fp '/1'],'AnimateFcn/3');
     L(ss,'Clk/1','AnimateFcn/4');
     L(ss,'Anim/1','AnimateFcn/5');
     L(ss,'AnimateFcn/1','AnimEnd/1');
@@ -364,12 +380,12 @@ function addLogging(m, pos, sig)
     ss = newSub(m, 'Logging', pos);
     for k = 1:numel(sig)
         yy = 40 + (k-1)*55;
-        F(ss, sig{k}, 'log', 50, yy+3);
+        f = F(ss, sig{k}, 50, yy+3);
         b = [ss '/log_' sig{k}];
         add_block('simulink/Sinks/To Workspace', b, 'Position', [200 yy 300 yy+30]);
         set_param(b, 'VariableName', ['log_' sig{k}], ...
                      'SaveFormat','Timeseries', 'SampleTime','Ts');
-        L(ss, ['Fr_' sig{k} '_log/1'], ['log_' sig{k} '/1']);
+        L(ss, [f '/1'], ['log_' sig{k} '/1']);
     end
 end
 
@@ -815,7 +831,8 @@ end
 function addTeleopAnimate(m, pos)
     ss = newSub(m, 'Animate', pos);
     tags = {'x_n','y_n','psi','u','v','r','FL','FR'};
-    for k = 1:numel(tags), F(ss, tags{k}, 'a', 60, 40 + (k-1)*55); end
+    fnm = cell(1, numel(tags));
+    for k = 1:numel(tags), fnm{k} = F(ss, tags{k}, 60, 40 + (k-1)*55); end
     add_block('simulink/Sources/Digital Clock', [ss '/Clk'], ...
               'Position',[60 490 130 520], 'SampleTime','Ts');
     C(ss, 'En', 'animate', 60, 550);
@@ -831,7 +848,7 @@ function addTeleopAnimate(m, pos)
 'end']);
 
     for k = 1:numel(tags)
-        L(ss, ['Fr_' tags{k} '_a/1'], sprintf('AnimateFcn/%d',k));
+        L(ss, [fnm{k} '/1'], sprintf('AnimateFcn/%d',k));
     end
     L(ss,'Clk/1','AnimateFcn/9');
     L(ss,'En/1', 'AnimateFcn/10');

@@ -32,18 +32,26 @@ function build_w07_models()
     build_vrx();
     % 최상위 배치 — autorouting 에 맡기지 않고 규칙대로 직접 놓는다.
     % check_lines 의 일곱 항목이 전부 0 이 합격선 (references/line-routing.md)
+    %  Wrap 3 — 두 모델이 **같은 자리**(InnerLoop -> Thrusters)에서 줄을 바꾼다.
+    %  그 자리의 연결은 빌더가 FL_cmd·FR_cmd 태그로 미리 이름 붙여 두었으므로
+    %  lay_chain 이 블록 이름 꼴 태그(`InnerLoop_1`)를 새로 만들지 않는다
     lay_chain('W07_0_offline', {'Guidance','Mission','InnerLoop','Thrusters','MotionModel'}, ...
               'Boxes', {'Animate','Logging'}, 'Wrap', 3);
     lay_chain('W07_1_vrx', {'Guidance','Mission','InnerLoop','Thrusters', ...
                             'CmdPublisher','PoseSubscriber'}, ...
-              'Boxes', {'Animate','Logging'}, 'Wrap', 2);
+              'Boxes', {'Animate','Logging'}, 'Wrap', 3);
 
     %  색 — 역할표는 _tools/gnc_roles.m 하나뿐이다. 빌더는 부르기만 한다
     for mm = {'W07_0_offline','W07_1_vrx'}
         m = mm{1}; load_system(m);
         paint_roles(m);
         check_colour(m);
-        mss_style(m); save_system(m); check_lines(m, false); export_diagram(m);
+        mss_style(m);
+        %  태그를 신호 옆으로 — lay_chain 은 Goto 를 내는 블록 **아래**에 쌓으므로
+        %  잇는 선이 통로로 내려가며 두 번 꺾인다. 마지막에 한 번 끌어오면 수평
+        %  한 토막이 된다 (2026-10-01 교수 지시, line-routing.md §3)
+        snug_tags(m);
+        save_system(m); check_lines(m, false); export_diagram(m);
         close_system(m, 0);
     end
     fprintf('\n완료. 생성된 모델:\n');
@@ -73,8 +81,13 @@ function C(m, name, value, x, y)
               'Position', [x y x+95 y+30], 'Value', value);
 end
 
-function F(m, tag, sfx, x, y)
-    add_block('simulink/Signal Routing/From', [m '/Fr_' tag '_' sfx], ...
+function nm = F(m, tag, x, y)
+%  From 블록 이름은 `Fr_<태그>` 다. 같은 태그를 여러 곳에서 받으면 **번호만** 붙인다
+%  (line-routing.md §3.1). `_tools/from_name.m` 이 비어 있는 이름을 돌려준다 —
+%  `Fr_psi_d` 처럼 받는 쪽을 이름에 섞으면 이름표가 이웃을 덮고, 받는 블록을
+%  바꿀 때 태그 이름까지 손대야 한다.
+    nm = from_name(m, tag);
+    add_block('simulink/Signal Routing/From', [m '/' nm], ...
               'Position', [x y x+70 y+25], 'GotoTag', tag);
 end
 
@@ -573,9 +586,10 @@ function addThrusters(m, x, y)
 'FL = k * n(1) * abs(n(1));'                                     newline ...
 'FR = k * n(2) * abs(n(2));']);
 
+    %  회전수 n 은 이 주차의 로깅·화면 어디에도 없다. 내보내면 받는 From 이 없는
+    %  태그만 남으므로(check_tags) 포트를 두지 않는다. 6주차는 n 을 기록하므로 있다
     add_block('simulink/Sinks/Out1', [ss '/FL'], 'Position',[780 70 815 100], 'Port','1');
     add_block('simulink/Sinks/Out1', [ss '/FR'], 'Position',[780 130 815 160],'Port','2');
-    add_block('simulink/Sinks/Out1', [ss '/n'],  'Position',[780 190 815 220],'Port','3');
 
     add_line(ss,'FL_cmd/1','F2n/1','autorouting','on');
     add_line(ss,'FR_cmd/1','F2n/2','autorouting','on');
@@ -586,7 +600,6 @@ function addThrusters(m, x, y)
     add_line(ss,'Kp/1','n2F/2','autorouting','on');
     add_line(ss,'n2F/1','FL/1','autorouting','on');
     add_line(ss,'n2F/2','FR/1','autorouting','on');
-    add_line(ss,'MotorLag/1','n/1','autorouting','on');
 
     Simulink.BlockDiagram.arrangeSystem(ss);
 end
@@ -641,14 +654,14 @@ function addMotionModel(m, x, y)
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
               [ss '/States'], 'Position', [570 60 720 260]);
     setFcn(ss, 'States', [ ...
-'function [x_n, y_n, psi, u, r, beta, chi, U] = States(s)'    newline ...
+'function [x_n, y_n, psi, u, r, beta] = States(s)'            newline ...
 '%#codegen'                                                 newline ...
+'% chi (course) 와 U (speed over ground) 는 이 주차가 쓰지 않는다 —'  newline ...
+'% 로깅·화면 어디에도 없고, 내보내면 받는 From 이 없는 태그만 남는다'  newline ...
+'% (check_tags). 쓰게 되는 주차에서 다시 꺼낸다.'            newline ...
 'u = s(1); v = s(2); r = s(3);'                             newline ...
 'x_n = s(4); y_n = s(5); psi = s(6);'                         newline ...
-'U    = sqrt(u*u + v*v);'                                   newline ...
-'beta = atan2(v, u);'                                       newline ...
-'c    = psi + beta;'                                        newline ...
-'chi  = atan2(sin(c), cos(c));']);
+'beta = atan2(v, u);']);
 
     % --- 배치 : 한 줄에 EOM -> 1/s -> States. 포트 높이를 읽어서 맞춘다 ----
     ROW = 340;
@@ -669,8 +682,8 @@ function addMotionModel(m, x, y)
               'Position', [180 b(2)-11 250 b(2)+11], 'GotoTag','x_state');
     add_line(ss, 'Fr_x_state/1', 'EOM/1');
 
-    % 출력 포트를 States 의 포트 높이에 맞춘다 -> 여덟 선이 전부 직선
-    out = {'x_n','y_n','psi','u','r','beta','chi','U'};
+    % 출력 포트를 States 의 포트 높이에 맞춘다 -> 여섯 선이 전부 직선
+    out = {'x_n','y_n','psi','u','r','beta'};
     for k = 1:numel(out)
         q = port_xy(ss, 'States', 'Outport', k);
         add_block('simulink/Sinks/Out1', [ss '/' out{k}], ...
@@ -705,15 +718,15 @@ end
 %   설정값은 각 상자 안에 있다. 최상위에 남는 것은 되먹임뿐이다.
 % =====================================================================
 function wireFront(m)
-    F(m,'x_n','a',   40,  65);
-    F(m,'y_n','a',   40, 110);
-    F(m,'beta','a', 40, 155);
-    F(m,'mode','a', 40, 200);
+    fx = F(m,'x_n',   40,  65);
+    fy = F(m,'y_n',   40, 110);
+    fb = F(m,'beta',  40, 155);
+    fm = F(m,'mode',  40, 200);
 
-    add_line(m,'Fr_x_n_a/1',  'Guidance/1','autorouting','on');
-    add_line(m,'Fr_y_n_a/1',  'Guidance/2','autorouting','on');
-    add_line(m,'Fr_beta_a/1','Guidance/3','autorouting','on');
-    add_line(m,'Fr_mode_a/1','Guidance/4','autorouting','on');
+    add_line(m,[fx '/1'],'Guidance/1','autorouting','on');
+    add_line(m,[fy '/1'],'Guidance/2','autorouting','on');
+    add_line(m,[fb '/1'],'Guidance/3','autorouting','on');
+    add_line(m,[fm '/1'],'Guidance/4','autorouting','on');
 
     % 유도 -> 미션 : 다섯 줄이 그대로 넘어간다
     % 유도 출력과 미션 입력의 **순서가 같다**. 다섯 선이 전부 직선이 된다
@@ -723,15 +736,39 @@ function wireFront(m)
 
     % 내부루프 입력 : 미션 출력 둘 + 목표 속도 + 자세·속도 되먹임 셋
     C(m,'URf2','u_ref', 1500, 560);
-    F(m,'psi','d', 1500, 620);
-    F(m,'r',  'd', 1500, 660);
-    F(m,'u',  'd', 1500, 700);
+    fp = F(m,'psi', 1500, 620);
+    fr = F(m,'r',   1500, 660);
+    fu = F(m,'u',   1500, 700);
+    %  Mission 과 InnerLoop 은 같은 줄에 있다 — 옆 단계로 가는 본선에 태그를 쓰지
+    %  않는다 (SKILL.md §2 규칙 5.1 "가까우면 선으로 잇는다")
     add_line(m,'Mission/1','InnerLoop/1','autorouting','on');
     add_line(m,'Mission/2','InnerLoop/2','autorouting','on');
     add_line(m,'URf2/1',   'InnerLoop/3','autorouting','on');
-    add_line(m,'Fr_psi_d/1','InnerLoop/4','autorouting','on');
-    add_line(m,'Fr_r_d/1',  'InnerLoop/5','autorouting','on');
-    add_line(m,'Fr_u_d/1',  'InnerLoop/6','autorouting','on');
+    add_line(m,[fp '/1'],'InnerLoop/4','autorouting','on');
+    add_line(m,[fr '/1'],'InnerLoop/5','autorouting','on');
+    add_line(m,[fu '/1'],'InnerLoop/6','autorouting','on');
+end
+
+% =====================================================================
+% 내부루프 -> 추진기 : 사슬이 줄을 바꾸는 자리 (두 모델 공통)
+%
+%   lay_chain 은 줄이 바뀌는 자리의 연결을 Goto/From 한 쌍으로 바꾼다 — 선으로
+%   두면 오른쪽 끝에서 왼쪽 끝으로 거슬러 올라가 도면을 가로지르기 때문이다.
+%   그런데 lay_chain 은 **신호 이름을 모른다.** 그래서 `InnerLoop_1` 처럼 블록
+%   이름에서 딴 태그를 만들고 check_tags 가 그것을 잡는다 (0 이 합격선).
+%
+%   그래서 빌더가 미리 이름을 붙여 둔다. 추력 **지령**이므로 추진기 입력 포트
+%   이름 그대로 FL_cmd · FR_cmd 다 — 추진기 **출력**의 FL · FR (모터 지연을 지난
+%   실제 추력) 과 구별된다.
+% =====================================================================
+function wireAllocToThrusters(m, x, y)
+    nm = {'FL_cmd','FR_cmd'};
+    for k = 1:2
+        G(m, nm{k}, x, y+(k-1)*45);
+        add_line(m, sprintf('InnerLoop/%d',k), ['Go_' nm{k} '/1'], 'autorouting','on');
+        f = F(m, nm{k}, x+130, y+(k-1)*45);
+        add_line(m, [f '/1'], sprintf('Thrusters/%d',k), 'autorouting','on');
+    end
 end
 
 % =====================================================================
@@ -758,17 +795,17 @@ function build_offline()
     addThrusters(m, 2050, 570);
     addMotionModel(m, 2350, 560);
 
-    add_line(m,'InnerLoop/1','Thrusters/1','autorouting','on');
-    add_line(m,'InnerLoop/2','Thrusters/2','autorouting','on');
+    %  줄이 바뀌는 자리 (첫 줄 끝 InnerLoop -> 둘째 줄 머리 Thrusters)
+    wireAllocToThrusters(m, 1980, 420);
+
     add_line(m,'Thrusters/1','MotionModel/1','autorouting','on');
     add_line(m,'Thrusters/2','MotionModel/2','autorouting','on');
 
-    G(m,'FL', 2250, 800);  G(m,'FR', 2250, 840);  G(m,'nprop', 2250, 880);
+    G(m,'FL', 2250, 800);  G(m,'FR', 2250, 840);
     add_line(m,'Thrusters/1','Go_FL/1','autorouting','on');
     add_line(m,'Thrusters/2','Go_FR/1','autorouting','on');
-    add_line(m,'Thrusters/3','Go_nprop/1','autorouting','on');
 
-    tags = {'x_n','y_n','psi','u','r','beta','chi','U'};
+    tags = {'x_n','y_n','psi','u','r','beta'};
     for k = 1:numel(tags)
         G(m, tags{k}, 2620, 560+(k-1)*40);
         add_line(m, sprintf('MotionModel/%d',k), ['Go_' tags{k} '/1'], 'autorouting','on');
@@ -804,26 +841,25 @@ function build_vrx()
     % --- 4단 · 추력 발행 (운동모델 = Gazebo) -----------------------------
     add_cmd_publisher(m, [2350 470], ...
         {'/wamv/thrusters/left/thrust','/wamv/thrusters/right/thrust'}, 'Ts_ctrl');
-    add_line(m,'InnerLoop/1','Thrusters/1','autorouting','on');
-    add_line(m,'InnerLoop/2','Thrusters/2','autorouting','on');
+    %  줄이 바뀌는 자리 (오프라인 쌍둥이와 같은 자리)
+    wireAllocToThrusters(m, 1980, 420);
     add_line(m,'Thrusters/1','CmdPublisher/1','autorouting','on');
     add_line(m,'Thrusters/2','CmdPublisher/2','autorouting','on');
 
-    G(m,'FL', 2250, 860);  G(m,'FR', 2250, 900);  G(m,'nprop', 2250, 940);
+    G(m,'FL', 2250, 860);  G(m,'FR', 2250, 900);
     add_line(m,'Thrusters/1','Go_FL/1','autorouting','on');
     add_line(m,'Thrusters/2','Go_FR/1','autorouting','on');
-    add_line(m,'Thrusters/3','Go_nprop/1','autorouting','on');
 
     % --- 5단 · 항법 (ENU -> NED 변환) -----------------------------------
     navCode = [ ...
-'function [x_n, y_n, psi, u, r, beta, chi, U] = Nav(ex, ey, qx, qy, qz, qw, bx, by, wz, org_x, org_y)' newline ...
+'function [x_n, y_n, psi, u, r, beta] = Nav(ex, ey, qx, qy, qz, qw, bx, by, wz, org_x, org_y)' newline ...
 '%#codegen'                                                                 newline ...
 '% Gazebo/ROS uses ENU with a body frame of x-forward, y-LEFT, z-UP.'       newline ...
 '% Marine control uses NED with x-forward, y-STARBOARD, z-DOWN.'            newline ...
 '% 첫 메시지가 도착하기 전에는 Subscribe 가 0 으로 채운 버스를 낸다.'       newline ...
 '% 그대로 쓰면 위치가 스폰 원점만큼(약 568 m) 튀어 로그 첫 점이 망가진다.'  newline ...
 'if ex == 0 && ey == 0'                                                     newline ...
-'    x_n = 0; y_n = 0; psi = 0; u = 0; r = 0; beta = 0; chi = 0; U = 0;'      newline ...
+'    x_n = 0; y_n = 0; psi = 0; u = 0; r = 0; beta = 0;'                    newline ...
 '    return'                                                                newline ...
 'end'                                                                       newline ...
 'x_n = ey - org_x;'                                                           newline ...
@@ -832,16 +868,15 @@ function build_vrx()
 'p   = pi/2 - yaw_enu;'                                                     newline ...
 'psi = atan2(sin(p), cos(p));'                                              newline ...
 'u = bx;  v = -by;  r = -wz;'                                               newline ...
-'U    = sqrt(u*u + v*v);'                                                   newline ...
-'beta = atan2(v, u);'                                                       newline ...
-'c    = psi + beta;'                                                        newline ...
-'chi  = atan2(sin(c), cos(c));'];
+'beta = atan2(v, u);'];
 
+    %  chi (침로) 와 U (대지속력) 는 이 주차가 쓰지 않는다 — 오프라인 쌍둥이의
+    %  States 와 출력이 똑같아야 하고, 내보내면 받는 From 이 없는 태그만 남는다
     add_pose_subscriber(m, [2710 970], ...
         '/wamv/sensors/position/ground_truth_odometry', 'Ts_ctrl', navCode, ...
-        {'x_n','y_n','psi','u','r','beta','chi','U'});
+        {'x_n','y_n','psi','u','r','beta'});
 
-    tags = {'x_n','y_n','psi','u','r','beta','chi','U'};
+    tags = {'x_n','y_n','psi','u','r','beta'};
     for k = 1:numel(tags)
         G(m, tags{k}, 2950, 970+(k-1)*45);
         add_line(m, sprintf('PoseSubscriber/%d',k), ['Go_' tags{k} '/1'], 'autorouting','on');
