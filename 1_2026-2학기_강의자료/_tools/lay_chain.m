@@ -19,13 +19,27 @@ function lay_chain(m, stages, varargin)
 %       배치를 정하면 배선은 따라온다 — references/line-routing.md
 %
 %   NAME/VALUE
-%     'Row'    사슬이 놓이는 높이. 기본 400
-%     'Pitch'  단계 사이의 간격. 기본 340. 태그 열과 통로가 들어갈 만큼 띄운다 —
-%              좁히면 From 태그 열과 사슬 통로가 부딪힌다 (2026-09-17 W05 에서 재현)
-%     'X0'     첫 단계의 왼쪽. 기본 260
-%     'Boxes'  포트 없는 서브시스템 이름들. 사슬 아래에 놓는다
+%     'Row'    사슬이 놓이는 높이. 기본 40 — 도면 **맨 위**에서 시작한다
+%     'Pitch'  단계 사이의 간격. 기본 190. 태그 열과 통로가 들어갈 만큼만 띄운다.
+%              태그를 내는 블록 뒤에서는 `26*태그수 + 120` 으로 저절로 넓어진다
+%     'X0'     첫 단계의 왼쪽. 기본 40 — 도면 **맨 왼쪽**에서 시작한다
+%     'Boxes'  포트 없는 서브시스템 이름들. 사슬 **바로 아래**에 놓는다
 %     'Gap'    태그 블록과 포트 사이의 간격. 기본 45
 %     'Wrap'   한 줄에 놓을 단계 수. 기본 inf (한 줄)
+%
+%   빈 공간을 남기지 않는다 (교수 지시 2026-10-01)
+%
+%       *"블록을 띄엄띄엄 놓지 말고 가까이 모아 주세요. 빈 공간이 너무 많습니다."*
+%
+%       `W05_1_vrx` 는 사슬이 x = 260, y = 400 에서 시작하고 로깅 상자가 사슬에서
+%       120 px 아래 떨어져 있어 최상위 **채움 비율이 11.5 %** 였다 — 그림의 열에
+%       아홉이 빈 칸이다. 도면이 넓어지면 PDF 쪽폭에 맞출 때 **글씨가 작아진다.**
+%       같은 내용이면 작은 도면이 낫다.
+%
+%       그래서 시작 좌표를 원점 쪽으로 당기고(260·400 -> 40·40), 단계 간격을
+%       340 -> 190 으로 줄이고, 태그 더미·줄 간격·상자 간격을 같이 좁혔다.
+%       좁힌 뒤에도 일곱 항목·흐름·태그·색은 그대로 0 이어야 한다. 겹치면
+%       **그만큼만** 다시 벌린다 — 눈대중이 아니라 `check_fill` 로 재서 견준다.
 %
 %   줄 접기 / wrapping the chain
 %       다섯 칸짜리 사슬을 한 줄에 놓으면 캔버스가 2700 x 800 이 된다. 가로세로 비가
@@ -40,14 +54,25 @@ function lay_chain(m, stages, varargin)
 %       2000 px 안에 담을 때 39 dpi 에서 79 dpi 로, 글씨 크기가 두 배가 된다.
 
 p = inputParser;
-p.addParameter('Row',   400);
-p.addParameter('Pitch', 340);
-p.addParameter('X0',    260);
+p.addParameter('Row',    40);
+p.addParameter('Pitch', 190);
+p.addParameter('X0',     40);
 p.addParameter('Boxes', {});
 p.addParameter('Gap',   45);
 p.addParameter('Wrap',  inf);
 p.parse(varargin{:});
 o = p.Results;
+
+%  도면을 모으는 치수. 한곳에 모아 두어야 "얼마나 좁혔는가" 를 한눈에 읽는다.
+%  (교수 지시 2026-10-01 — 빈 공간을 남기지 않는다)
+TAG_DROP  = 48;    % 블록 아래 테두리에서 첫 태그까지 (전 70)
+TAG_STEP  = 36;    % 태그끼리의 세로 간격       (전 45)
+TAG_LANE  = 24;    % 태그 통로끼리의 가로 간격   (전 26)
+ROW_GAP   = 36;    % 사슬 줄과 줄 사이          (전 60)
+BOX_DROP  = 50;    % 사슬 아래 상자 줄까지      (전 120)
+BOX_GAPX  = 70;    % 상자끼리 가로 간격         (전 170)
+BOX_GAPY  = 46;    % 상자 줄끼리 세로 간격      (전 70)
+LANE_MIN  = 60;    % 사슬 통로가 출발 포트에서 떨어지는 최소 거리 (전 150)
 
 opened = false;
 if ~bdIsLoaded(m), load_system(m); opened = true; end
@@ -105,7 +130,7 @@ for k = 1:numel(stages)
     W(k) = r(3)-r(1);
     H(k) = max(r(4)-r(2), 52*(n-1) + 40);
     nt   = 0;  if isKey(cnt, stages{k}), nt = cnt(stages{k}); end
-    D(k) = 70 + 45*max(nt-1,0) + 26;          % 블록 아래 태그 더미의 깊이
+    D(k) = TAG_DROP + TAG_STEP*max(nt-1,0) + 26;   % 블록 아래 태그 더미의 깊이
 end
 
 nRow = 0;
@@ -123,7 +148,7 @@ for rr = 1:nRow
         %  때문에 모든 칸을 넓히면 도면이 통째로 늘어난다 (W05_1_vrx 가 그랬다).
         g  = o.Pitch;
         nt = 0;  if isKey(cnt, stages{k}), nt = cnt(stages{k}); end
-        if nt > 0, g = max(g, 26*nt + 130); end
+        if nt > 0, g = max(g, TAG_LANE*nt + 120); end
         x = x + W(k) + g;
     end
     %  태그 더미는 **각 블록의 아래 테두리**에서 D 만큼 내려간다. 줄 가운데(yc)에서 재면

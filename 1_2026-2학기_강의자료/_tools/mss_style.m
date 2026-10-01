@@ -33,6 +33,16 @@ function n = mss_style(mdl, verbose)
 %   with the signal passing through it stays lined up. Simulink keeps the
 %   lines attached and redraws them.
 %
+%   GAIN BLOCKS ARE WIDENED TO FIT THEIR EXPRESSION  (교수 지시 2026-10-01)
+%
+%   MSS 치수 50 x 36 은 숫자 게인에는 맞지만 `Kp_psi` 같은 **변수 이름**은 그
+%   폭에 들어가지 않는다. Simulink 는 식이 블록보다 넓으면 식을 숨기고 `-K-`
+%   를 그린다. 그러면 도면만 보고는 **어느 게인인지 알 수 없다.** 가독성이 MSS
+%   치수보다 앞서므로 Gain 만 예외로 두고 식 길이에 맞춰 폭을 늘린다.
+%   글자당 GAIN_PX_PER_CHAR, 좌우 여백 GAIN_PAD, 최소 폭은 MSS 의 50 px 그대로.
+%   숫자 게인(`2` · `0.5`)은 식이 짧아 50 px 에서 멈추므로 달라지지 않는다.
+%   중심은 그대로 두므로 배선이 틀어지지 않는다.
+%
 %   WHAT IS LEFT ALONE
 %
 %   SubSystem blocks. Those are the six stages of the signal chain and their
@@ -84,6 +94,13 @@ for i = 1:numel(blocks)
     end
 
     wh = want(t);
+
+    %  Gain 은 식이 보여야 한다. MSS 폭 50 px 를 **최소값**으로 두고 식 길이에
+    %  맞춰 늘린다. 안 그러면 Simulink 가 식을 숨기고 `-K-` 를 그린다.
+    if strcmp(t, 'Gain')
+        wh(1) = max(wh(1), gain_width(b));
+    end
+
     p  = get_param(b, 'Position');
     if (p(3)-p(1)) == wh(1) && (p(4)-p(2)) == wh(2), continue; end
 
@@ -115,6 +132,34 @@ end
 square_lines(mdl);
 
 if verbose, fprintf('    %d blocks restyled in %s\n', n, mdl); end
+end
+
+% -------------------------------------------------------------------------
+function w = gain_width(b)
+%GAIN_WIDTH  Gain 의 식이 글자 그대로 보이는 데 필요한 폭 [px].
+%
+%   Simulink 는 식이 블록보다 넓으면 `-K-` 를 그린다. 블록을 글자가 들어갈
+%   만큼 키우면 변수 이름이 그대로 보인다. 폭만 늘리고 높이는 그대로 둔다.
+%
+%   7 px/글자는 Simulink 의 기본 도면 글꼴(Helvetica 10 pt)을 도면에서 재
+%   얻은 값이다. 여백 16 px 는 좌우 8 px 씩이다.
+GAIN_PX_PER_CHAR = 7;
+GAIN_PAD         = 16;
+GAIN_MAX         = 200;     % 이보다 길면 식이 아니라 수식이다. 거기서 멈춘다
+
+try
+    ex = get_param(b, 'Gain');
+catch
+    w = 0; return
+end
+if ~ischar(ex) && ~isstring(ex), w = 0; return; end
+ex = char(ex);
+
+%  행렬 게인은 여러 줄로 그려진다 — 가장 긴 줄로 잰다
+lines = strsplit(ex, {char(10), char(13), ';'});
+len   = max(cellfun(@(s) numel(strtrim(s)), lines));
+
+w = min(GAIN_MAX, len*GAIN_PX_PER_CHAR + GAIN_PAD);
 end
 
 % =========================================================================
