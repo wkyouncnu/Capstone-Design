@@ -35,6 +35,10 @@ for pass = 1:3
     [n, v] = check_lines(mdl);
     if v(6) == 0 && v(7) == 0, break, end
 
+    %  check_lines 는 자기가 연 모델을 **닫고** 나간다. 두 바퀴째에는 그 바람에
+    %  모델이 닫혀 있고, label_hits 의 find_system 이 "시스템을 불러오지 않았습니다"
+    %  로 죽는다 (2026-10-01 W04_3_heading_offline 에서 재현)
+    load_system(mdl);
     hits = label_hits(mdl);
     if isempty(hits), break, end
     moved = false;

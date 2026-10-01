@@ -742,11 +742,14 @@ function addLogging(mdl, tags, xy, extra)
     blk(s, 'simulink/Sinks/Scope', 'Scope_all', 460, 88 + 40*(n-1), ...
         30, 56 + 80*(n-1), {'NumInputPorts', num2str(n)});
 
+    %  블록 이름은 'Fr_<태그>', 중복이면 **번호만** 붙는다 (from_name.m).
+    %  'FrB_' 처럼 글자를 섞지 않는다 — 2026-10-01 교수 지시
     for k = 1:n
-        q = port_xy(s, 'Scope_all', 'Inport', k);
-        blk(s, 'simulink/Signal Routing/From', ['Fr_' tags{k}], 140, q(2), 60, 22, ...
+        q  = port_xy(s, 'Scope_all', 'Inport', k);
+        nm = from_name(s, tags{k});
+        blk(s, 'simulink/Signal Routing/From', nm, 140, q(2), 60, 22, ...
             {'GotoTag', tags{k}});
-        add_line(s, ['Fr_' tags{k} '/1'], sprintf('Scope_all/%d', k));   % 직선
+        add_line(s, [nm '/1'], sprintf('Scope_all/%d', k));   % 직선
     end
 
     %  ---- 저장 — Bus Creator 하나, To Workspace 하나 ---------------------
@@ -755,10 +758,11 @@ function addLogging(mdl, tags, xy, extra)
     blk(s, 'simulink/Signal Routing/Bus Creator', 'LogBus', 300, yB + 32*(na-1), ...
         5, 65*na, {'Inputs', num2str(na)});
     for k = 1:na
-        q = port_xy(s, 'LogBus', 'Inport', k);
-        blk(s, 'simulink/Signal Routing/From', ['FrB_' all{k}], 140, q(2), 60, 22, ...
+        q  = port_xy(s, 'LogBus', 'Inport', k);
+        nm = from_name(s, all{k});       % 같은 태그를 Scope 도 받으므로 Fr_y_2 꼴이 된다
+        blk(s, 'simulink/Signal Routing/From', nm, 140, q(2), 60, 22, ...
             {'GotoTag', all{k}});
-        h = add_line(s, ['FrB_' all{k} '/1'], sprintf('LogBus/%d', k));   % 직선
+        h = add_line(s, [nm '/1'], sprintf('LogBus/%d', k));   % 직선
         set_param(h, 'Name', all{k});   % 이 이름이 곧 out.log 의 필드 이름이다
     end
     q = port_xy(s, 'LogBus', 'Outport', 1);
@@ -797,8 +801,9 @@ function goto(sys, tag, cx, cy)
         {'GotoTag', tag, 'TagVisibility','global'});
 end
 
-function from(sys, tag, sfx, cx, cy)
-    blk(sys, 'simulink/Signal Routing/From', ['Fr_' tag '_' sfx], cx, cy, 60, 22, ...
+function from(sys, tag, cx, cy)
+%  블록 이름은 'Fr_<태그>', 중복이면 **번호만** 붙는다 (from_name.m)
+    blk(sys, 'simulink/Signal Routing/From', from_name(sys, tag), cx, cy, 60, 22, ...
         {'GotoTag', tag});
 end
 

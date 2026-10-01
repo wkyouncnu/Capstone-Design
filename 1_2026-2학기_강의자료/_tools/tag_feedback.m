@@ -81,7 +81,9 @@ for k = 1:numel(job)
         continue
     end
 
-    %  태그마다 60 px 씩 층을 내린다. 40 px 이면 위 태그의 **이름표**(상자 아래
+    %  태그는 drop_tag · feed_from 이 **포트 옆**에 놓는다. DY 는 그 자리가 차
+    %  있을 때 비켜 갈 방향일 뿐이다. 태그마다 60 px 씩 층을 달리 주어, 비켜야
+    %  할 때 서로 포개지지 않게 한다 — 40 px 이면 위 태그의 **이름표**(상자 아래
     %  14 px)가 아래 태그 상자에 1 px 걸쳐 check_lines 의 여섯째 항목에 잡힌다
     %  (2026-09-30 W04_4_inner_loop 의 Fr_deg2rad_1_1 / Fr_Quat2Yaw_1_1_1)
     if ~reuse
@@ -89,7 +91,9 @@ for k = 1:numel(job)
         set_param(g, 'TagVisibility', 'local');
         set_param(g, 'BackgroundColor', gnc_colour('measurement'));
     end
-    f = feed_from(sys, tag, c.dst, c.dp, o.Dy + 60*(k-1), next_sfx(sys, tag));
+    %  블록 이름은 feed_from 이 'Fr_<태그>' 로 짓고, 중복이면 **번호만** 붙인다
+    %  (from_name.m). 꼬리표를 넘기지 않는다 — 2026-10-01 교수 지시
+    f = feed_from(sys, tag, c.dst, c.dp, o.Dy + 60*(k-1));
     set_param(f, 'BackgroundColor', gnc_colour('measurement'));
     n = n + 1;
 end
@@ -161,14 +165,4 @@ function tag = free_tag(sys, want)
         j   = j + 1;
         tag = sprintf('%s_%d', want, j);
     end
-end
-
-function s = next_sfx(sys, tag)
-%  같은 태그를 받는 From 이 여럿이면 블록 이름이 겹치지 않게 번호를 센다.
-    j = 1;
-    while ~isempty(find_system(sys, 'SearchDepth',1, 'LookUnderMasks','all', ...
-                               'Name', sprintf('Fr_%s_%d', tag, j)))
-        j = j + 1;
-    end
-    s = num2str(j);
 end

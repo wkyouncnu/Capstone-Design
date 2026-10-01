@@ -5,10 +5,16 @@ function moved = lay_sinks(sys, varargin)
 %   n = lay_sinks(m, 'Band', 120, 'Row', 45, 'Lane', 26)
 %
 %   종착 블록 / a sink
-%       출력이 없고 입력만 있는 블록 — Display, To Workspace, Goto, Scope,
+%       출력이 없고 입력만 있는 블록 — Display, To Workspace, Scope,
 %       Terminator, 그리고 입력만 받는 서브시스템. Outport 는 뺀다. 종착처럼
 %       보이지만 바깥 사슬로 신호를 **내보내는** 자리라, 서브시스템 오른쪽
 %       테두리에 포트 순서대로 있어야 한다.
+%
+%       **Goto 도 뺀다.** 출력이 없어 종착처럼 보이지만, Goto 는 블록이 아니라
+%       신호에 붙인 **이름표**다. 도면 아래 종착 구역으로 쓸어 내리면 제 신호에서
+%       수백 px 떨어져 앉고, 잇는 선이 길게 꺾여 내려간다 (2026-10-01 교수 지적 —
+%       `Go_N` 이 Alloc 입력에서 1000 px 아래에 있었다). 태그는 `snug_tags` 가
+%       **출발 포트 옆**으로 끌어온다.
 %
 %   무엇을 고치는가 / what it fixes
 %       한 출력이 Display 와 Goto 둘로 갈라지면 배치기는 둘을 **같은 줄에**
@@ -56,8 +62,9 @@ for i = 1:numel(blks)
     name{i} = get_param(blks{i}, 'Name');
     box(i,:) = get_param(blks{i}, 'Position');
     ph = get_param(blks{i}, 'PortHandles');
+    bt      = get_param(blks{i}, 'BlockType');
     sink(i) = isempty(ph.Outport) && ~isempty(ph.Inport) && ...
-              ~strcmp(get_param(blks{i}, 'BlockType'), 'Outport');
+              ~strcmp(bt, 'Outport') && ~strcmp(bt, 'Goto');
 end
 if ~any(sink), return, end
 

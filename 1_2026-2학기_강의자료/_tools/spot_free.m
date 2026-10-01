@@ -1,7 +1,12 @@
-function tf = spot_free(sys, rect, name, pts, skip)
+function tf = spot_free(sys, rect, name, pts, skip, ignore)
 %SPOT_FREE  새 블록을 RECT 에 놓고 PTS 로 이어도 아무것과 포개지지 않는가.
 %
 %   tf = spot_free(s, [x1 y1 x2 y2], 'Go_X', [a; a(1) y; x1 y], {'MotorLag'})
+%   tf = spot_free(s, rect, 'Go_X', pts, {'MotorLag'}, {'Go_X'})   % 자기는 없는 셈
+%
+%   IGNORE 에 적은 블록은 **아예 없는 것으로 본다** — 사각형도 이름표도, 그 블록에
+%   붙은 선도 세지 않는다. 이미 놓인 태그를 **다른 자리로 옮겨 보는** 도구가 쓴다
+%   (snug_tags). 자기 자신과 자기 선을 장애물로 세면 어디로도 옮길 수 없다.
 %
 %   drop_tag · feed_from 이 태그 자리를 고를 때 쓴다. 다섯을 본다.
 %     - 새 블록 사각형과 그 이름표(아래 14 px)가 다른 블록·이름표와 겹치는가
@@ -18,11 +23,19 @@ function tf = spot_free(sys, rect, name, pts, skip)
 %       자리를 먼저 재 보고 비어 있을 때만 놓는다.
 
 if nargin < 5, skip = {}; end
+if nargin < 6 || isempty(ignore), ignore = {}; end
 tf = false;
 nb = name_box(name, rect);
 b = find_system(sys, 'SearchDepth',1, 'Type','Block');
 b = b(~strcmp(b, sys));
+gone = false(numel(b),1);           % 없는 셈으로 보는 블록의 핸들
 for i = 1:numel(b)
+    gone(i) = any(strcmp(get_param(b{i},'Name'), ignore));
+end
+gh = zeros(0,1);
+for i = find(gone)', gh(end+1,1) = get_param(b{i},'Handle'); end %#ok<AGROW>
+for i = 1:numel(b)
+    if gone(i), continue, end
     r  = get_param(b{i}, 'Position');
     nm = get_param(b{i}, 'Name');
     t  = name_box(b{i});
@@ -37,6 +50,7 @@ for i = 1:numel(b)
 end
 L = find_system(sys, 'FindAll','on', 'SearchDepth',1, 'Type','line');
 for i = 1:numel(L)
+    if ~isempty(gh) && touches(L(i), gh), continue, end
     q = get_param(L(i), 'Points');
     for k = 1:size(q,1)-1
         if seg_hits(q(k,:), q(k+1,:), rect), return, end
@@ -50,6 +64,26 @@ end
 
 function tf = ov(p, q)
 tf = min(p(3),q(3)) - max(p(1),q(1)) > 1 && min(p(4),q(4)) - max(p(2),q(2)) > 1;
+end
+
+function tf = touches(ln, gh)
+%TOUCHES  이 선이 IGNORE 로 적은 블록에 붙어 있는가. 뿌리·가지를 한 단계만 본다.
+tf = false;
+h = [];
+try, h = [h; get_param(ln,'SrcBlockHandle')]; catch, end
+try, h = [h; get_param(ln,'DstBlockHandle')]; catch, end
+try
+    par = get_param(ln,'LineParent');
+    if par > 0, h = [h; get_param(par,'SrcBlockHandle')]; end
+catch
+end
+try
+    for k = get_param(ln,'LineChildren')'
+        h = [h; get_param(k,'DstBlockHandle')]; %#ok<AGROW>
+    end
+catch
+end
+tf = any(ismember(h(h>0), gh));
 end
 
 function tf = seg_hits(a, b, r)

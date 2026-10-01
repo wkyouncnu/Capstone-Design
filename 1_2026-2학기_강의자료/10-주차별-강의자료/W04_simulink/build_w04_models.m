@@ -112,6 +112,14 @@ function addThrusterPublisher(m, side, tag, x, y)
     set_param([m '/Pub' tag], 'topicSource','Specify your own', ...
               'topic', ['/wamv/thrusters/' side '/thrust'], ...
               'messageType','std_msgs/Float64');
+
+    %  Blank 의 출력을 Asg 의 1번 입력 **높이에 맞추고**, Pub 의 입력을 Asg 의 출력
+    %  높이에 맞춘다. Bus Assignment 는 115 px 키에 입력이 둘이라 1번 포트가 위쪽에
+    %  치우쳐 있어, 블록 가운데를 맞추는 것으로는 선이 두 번 꺾인다 (2026-10-01
+    %  꺾임 2회 세기에서 네 모델 모두 Blank->Asg · Asg->Pub 가 잡혔다)
+    align_to(m, ['Blank' tag], 'Outport', port_xy(m, ['Asg' tag], 'Inport',  1));
+    align_to(m, ['Pub'   tag], 'Inport',  port_xy(m, ['Asg' tag], 'Outport', 1));
+
     add_line(m, ['Blank' tag '/1'], ['Asg' tag '/1'], 'autorouting','on');
     add_line(m, ['Asg'   tag '/1'], ['Pub' tag '/1'], 'autorouting','on');
 end
@@ -130,12 +138,15 @@ function addFirstMsgGate(m, src, tag, x, y)
     yG  = qa(2) - 30;                      % Product 30 px 높이의 가운데가 그 포트에
     add_block('simulink/Math Operations/Product', [m '/Gate' tag], ...
               'Position',[x+100 yG x+130 yG+60]);
+    %  블록 이름은 'Fr_odom_ok', 중복이면 **번호만** (from_name.m). 'From_okL' 처럼
+    %  블록 이름을 섞지 않는다 — 2026-10-01 교수 지시
     qg = port_xy(m, ['Gate' tag], 'Inport', 2);
-    add_block('simulink/Signal Routing/From', [m '/From_ok' tag], ...
+    fr = from_name(m, 'odom_ok');
+    add_block('simulink/Signal Routing/From', [m '/' fr], ...
               'GotoTag','odom_ok', 'Position',[x qg(2)-11 x+70 qg(2)+11]);
-    add_line(m, src,                  ['Gate' tag '/1'], 'autorouting','on');
-    add_line(m, ['From_ok' tag '/1'], ['Gate' tag '/2'], 'autorouting','on');
-    add_line(m, ['Gate' tag '/1'],    ['Asg' tag '/2'],  'autorouting','on');
+    add_line(m, src,          ['Gate' tag '/1'], 'autorouting','on');
+    add_line(m, [fr '/1'],    ['Gate' tag '/2'], 'autorouting','on');
+    add_line(m, ['Gate' tag '/1'], ['Asg' tag '/2'],  'autorouting','on');
 end
 
 function setSolver(m)
@@ -276,9 +287,12 @@ function animBundle(sys, srcs, x, y, h)
         if src(1) == '#'
             tag = src(2:end);
             q   = port_xy(sys, 'MuxAnim', 'Inport', k);
-            add_block('simulink/Signal Routing/From', [sys '/Fr_anim_' tag], ...
-                      'GotoTag', tag, 'Position',[x-150 q(2)-11 x-80 q(2)+11]);
-            src = ['Fr_anim_' tag '/1'];
+            %  블록 이름은 'Fr_<태그>', 중복이면 **번호만** (from_name.m).
+            %  Mux 입력 포트 **바로 왼쪽**에 둔다 — 선이 수평 직선 한 토막이다
+            nm  = from_name(sys, tag);
+            add_block('simulink/Signal Routing/From', [sys '/' nm], ...
+                      'GotoTag', tag, 'Position',[x-110 q(2)-11 x-40 q(2)+11]);
+            src = [nm '/1'];
         end
         add_line(sys, src, sprintf('MuxAnim/%d',k), 'autorouting','on');
     end
@@ -291,39 +305,44 @@ end
 
 % ---- From 하나를 놓고 잇는다. 제어기·Scope 가 태그에서 값을 받는 자리 ----
 %
-%   자리는 손으로 잡지 않고 `feed_from` 에게 맡긴다. 그 함수가 도착 포트에서
-%   DY 만큼 떨어진 **빈자리**를 찾아 꺾임 1회로 이어 준다. 손으로 x·y 를 주면
-%   그 자리가 이미 차 있을 때 세 번 꺾이는 선이 생기고, 배치 도구가 그것을
-%   끝내 풀지 못한다 (2026-10-01 W04_6_wrap 에서 재현).
+%   자리는 손으로 잡지 않고 `feed_from` 에게 맡긴다. 그 함수가 **도착 포트 바로
+%   왼쪽**(같은 높이)에 놓아 꺾임 0회로 이어 주고, 그 자리가 차 있을 때만 DY 쪽으로
+%   비킨다. 손으로 x·y 를 주면 그 자리가 이미 차 있을 때 세 번 꺾이는 선이 생기고,
+%   배치 도구가 그것을 끝내 풀지 못한다 (2026-10-01 W04_6_wrap 에서 재현).
+%
+%   블록 이름은 `Fr_<태그>` 다. 같은 태그를 여러 곳에서 받으면 **번호만** 붙는다
+%   (Fr_psi · Fr_psi_2). 도착 블록 이름을 섞지 않는다 — 2026-10-01 교수 지시
 function fromTo(sys, tag, dst, dp, dy)
     if nargin < 5 || isempty(dy), dy = 90; end
-    f = feed_from(sys, tag, dst, dp, dy, dst);   % 블록 이름은 Fr_<태그>_<도착블록>
+    f = feed_from(sys, tag, dst, dp, dy);
     set_param(f, 'BackgroundColor', gnc_colour('measurement'));
 end
 
-% ---- 출발 포트 **아래**에 Goto 를 놓는다 (앞으로 가는 선을 막지 않는다) ----
-%   tapGotos 는 태그를 포트와 **같은 높이**에 세운다. 그 자리가 다음 단계로 가는
-%   본선 위이면 선이 태그를 관통한 것처럼 보인다 (2026-10-01 W04_4_inner_loop 의
-%   deg2rad -> HeadingCtrl 이 Go_psi_ref 를 가로질렀다). 지령 열처럼 본선이
-%   가로로 길게 지나가는 자리에서는 태그를 아래로 내린다.
+% ---- 출발 포트 **옆**에 Goto 를 놓는다 ----------------------------------
+%   drop_tag 가 출발 포트와 **같은 높이**, 한 칸 오른쪽에 세운다 (꺾임 0회).
+%   그 자리가 다음 단계로 가는 본선 위이면 spot_free 가 막고 DY 쪽으로 비킨다
+%   (2026-10-01 W04_4_inner_loop 의 deg2rad -> HeadingCtrl 이 Go_psi_ref 를
+%   가로질렀다). DY 는 비켜 갈 **방향**일 뿐, 평소에 쓰이는 값이 아니다.
 function dropTag(sys, src, sp, name, dy)
     g = drop_tag(sys, src, sp, name, dy);
     set_param(g, 'TagVisibility','global', 'BackgroundColor', gnc_colour('measurement'));
 end
 
-% ---- 출력 포트 높이에 맞춰 Goto 태그를 한 줄로 세운다 -> 선이 전부 수평 직선 ----
+% ---- 출발 포트 **옆**에 Goto 태그를 한 줄로 세운다 -> 선이 전부 수평 직선 ----
 %   실시간 화면은 제어 신호를 **구경만** 한다. 본선에 가지를 쳐서 태그에 걸 뿐,
 %   블록 하나 게인 하나 건드리지 않는다.
-function tapGotos(sys, src, names, x)
+%
+%   자리는 `drop_tag` 가 잡는다. 전에는 x 를 손으로 주었는데, 그 자리에 다음 단계
+%   블록이 앉아 있으면 태그가 그 위에 포개졌다 (2026-10-01 W04_3_heading_offline 의
+%   Go_FR 이 MotionModel 위에. 전에는 lay_sinks 가 태그를 도면 아래로 쓸어 내려
+%   가려져 있었을 뿐이다). drop_tag 는 빈자리를 재고 놓는다.
+function tapGotos(sys, src, names, x) %#ok<INUSD>
 %   NAMES 의 k 번째가 빈 문자열이면 그 출력 포트는 건너뛴다 — 두 출력 중
 %   하나만 태그로 뺄 때 쓴다 (예: Alloc 의 FR 만. FL 은 PortEff 를 지난 값이다)
+%   X 는 쓰이지 않는다. 태그는 **출발 포트 옆**에 놓는다 (2026-10-01 교수 지시)
     for k = 1:numel(names)
         if isempty(names{k}), continue, end
-        q = port_xy(sys, src, 'Outport', k);
-        add_block('simulink/Signal Routing/Goto', [sys '/Go_' names{k}], ...
-                  'Position', [x q(2)-11 x+70 q(2)+11], ...
-                  'GotoTag', names{k}, 'TagVisibility','global');
-        add_line(sys, sprintf('%s/%d', src, k), ['Go_' names{k} '/1']);
+        dropTag(sys, src, k, names{k}, 120);
     end
 end
 
@@ -344,6 +363,10 @@ function build_straight()
 
     addThrusterPublisher(m, 'left',  'L', xP, 60);
     addThrusterPublisher(m, 'right', 'R', xP, 240);
+
+    %  지령 상수를 Asg 의 2번 입력 **높이에 맞춘다** — 선이 수평 직선 한 토막이 된다
+    align_to(m, 'FL', 'Outport', port_xy(m, 'AsgL', 'Inport', 2));
+    align_to(m, 'FR', 'Outport', port_xy(m, 'AsgR', 'Inport', 2));
 
     add_line(m,'FL/1','AsgL/2','autorouting','on');
     add_line(m,'FR/1','AsgR/2','autorouting','on');
@@ -398,6 +421,12 @@ function build_turn()
 
     addThrusterPublisher(m, 'left',  'L', xP, 60);
     addThrusterPublisher(m, 'right', 'R', xP, 240);
+
+    %  시나리오의 1번 출력을 AsgL 의 2번 입력 높이에 맞춘다. 두 출력이 70 px
+    %  떨어져 있고 Asg 둘은 180 px 떨어져 있으므로 **둘 다** 직선이 될 수는 없다 —
+    %  한쪽이라도 꺾임 0 회로 만든다 (2026-10-01 꺾임 2회 세기)
+    align_to(m, 'Scenario', 'Outport', port_xy(m, 'AsgL', 'Inport', 2), 1);
+    align_to(m, 'Clock',    'Outport', port_xy(m, 'Scenario', 'Inport', 1));
 
     add_line(m,'Clock/1','Scenario/1','autorouting','on');
     add_line(m,'Scenario/1','AsgL/2','autorouting','on');
@@ -472,6 +501,10 @@ function addOdomReader(m, withSpeed, anim, gate, org)
     add_block('simulink/Signal Routing/Bus Selector', [m '/Sel'], ...
               'Position',[x0+170 y0 x0+180 y0+220]);
     set_param([m '/Sel'], 'OutputSignals', sig);
+    %  Subscribe 의 2번 출력(버스)을 셀렉터 입력 **높이에 맞춘다.** Subscribe 는
+    %  출력이 둘(isNew·msg)이라 2번 포트가 아래쪽에 있어, 블록 가운데를 맞추면
+    %  선이 두 번 꺾인다 (2026-10-01 꺾임 2회 세기에서 네 모델 모두 잡혔다)
+    align_to(m, 'OdomSub', 'Outport', port_xy(m, 'Sel', 'Inport', 1), 2);
     add_line(m,'OdomSub/2','Sel/1','autorouting','on');
 
     %  GATE  true 이면 Quat2Yaw 가 셋째 출력 ok 를 내고 태그 odom_ok 로 건다.
@@ -521,12 +554,9 @@ function addOdomReader(m, withSpeed, anim, gate, org)
         tapGotos(m, 'Quat2Yaw', {'psi','r','odom_ok'}, xTag);
     end
     if withSpeed
-        %  속도 u 는 버스에서 바로 나온다 (twist.twist.linear.x). 태그 이름도 u
-        q = port_xy(m, 'Sel', 'Outport', 5);
-        add_block('simulink/Signal Routing/Goto', [m '/Go_u'], ...
-                  'Position',[xTag q(2)-11 xTag+70 q(2)+11], ...
-                  'GotoTag','u', 'TagVisibility','global');
-        add_line(m, 'Sel/5', 'Go_u/1');
+        %  속도 u 는 버스에서 바로 나온다 (twist.twist.linear.x). 태그 이름도 u.
+        %  자리는 drop_tag 가 **출발 포트 옆**에 잡는다 (2026-10-01 교수 지시)
+        dropTag(m, 'Sel', 5, 'u', 120);
     end
 
     if ~anim, return, end
@@ -862,22 +892,26 @@ end
 function addLogFromTags(m, names, x, y)
     n  = numel(names);
     bc = [m '/LogBus'];
-    %  From 은 측정 열의 **맨 왼쪽**(x), Bus Creator 는 그 오른쪽에 둔다.
-    %  전에는 From 을 x-180 에 두었다가 운동모델 위에 올라앉았다 (2026-10-01)
+    %  From 은 측정 열의 **맨 왼쪽**(x), Bus Creator 는 그 **바로** 오른쪽에 둔다.
+    %  전에는 From 을 x-180 에 두었다가 운동모델 위에 올라앉았다 (2026-10-01).
+    %  틈은 40 px 이다. 200 px 을 띄우면 선이 쓸데없이 길어진다 — 태그는 받는
+    %  포트 바로 옆에 있어야 한다 (2026-10-01 교수 지시, snug_tags 와 같은 규칙)
     add_block('simulink/Signal Routing/Bus Creator', bc, ...
-              'Inputs', num2str(n), 'Position',[x+200 y x+205 y+65*n]);
+              'Inputs', num2str(n), 'Position',[x+110 y x+115 y+65*n]);
     for k = 1:n
         q = port_xy(m, 'LogBus', 'Inport', k);
-        %  Bus Creator 입력 포트 높이를 **읽어서** 놓는다. 계산으로 맞추면 사선이 된다
-        add_block('simulink/Signal Routing/From', [m '/Fr_log_' names{k}], ...
+        %  Bus Creator 입력 포트 높이를 **읽어서** 놓는다. 계산으로 맞추면 사선이 된다.
+        %  블록 이름은 'Fr_<태그>', 중복이면 번호만 (from_name.m) — 2026-10-01 교수 지시
+        nm = from_name(m, names{k});
+        add_block('simulink/Signal Routing/From', [m '/' nm], ...
                   'GotoTag', names{k}, 'Position',[x q(2)-11 x+70 q(2)+11]);
-        h = add_line(m, ['Fr_log_' names{k} '/1'], sprintf('LogBus/%d',k));
+        h = add_line(m, [nm '/1'], sprintf('LogBus/%d',k));
         set_param(h, 'Name', names{k});   % 이 이름이 곧 out.log 의 필드 이름이다
     end
     q = port_xy(m, 'LogBus', 'Outport', 1);
     tw = [m '/log'];
     add_block('simulink/Sinks/To Workspace', tw, ...
-              'Position',[x+320 q(2)-15 x+420 q(2)+15]);
+              'Position',[x+190 q(2)-15 x+290 q(2)+15]);
     set_param(tw, 'VariableName','log', 'SaveFormat','Timeseries', 'SampleTime','0.05');
     add_line(m, 'LogBus/1', 'log/1');
 end
@@ -1101,12 +1135,13 @@ function build_inner_loop(offline)
         %  추력을 막아 둔 예열 동안 PI_u 의 적분기가 오차 1.5 m/s 를 쌓지 않게 오차도 0 으로 묶는다.
         %  묶지 않으면 게이트가 열리는 순간 포화 500 N 에서 출발해 u 가 63 % 에 1.4 s 만에 닿는다
         %  (오프라인 2.5 s, 2026-09-24 실측). 열린 뒤에는 오프라인과 같은 0 에서 출발한다
-        add_block('simulink/Signal Routing/From', [m '/From_okE'], ...
+        frE = from_name(m, 'odom_ok');      % 'Fr_odom_ok_3' 꼴 — 번호만 붙는다
+        add_block('simulink/Signal Routing/From', [m '/' frE], ...
                   'GotoTag','odom_ok', 'Position',[xK+50 530 xK+120 552]);
         add_block('simulink/Math Operations/Product', [m '/GateE'], ...
                   'Position',[xK+150 440 xK+170 480]);
         add_line(m,'SumU/1',    'GateE/1','autorouting','on');
-        add_line(m,'From_okE/1','GateE/2','autorouting','on');
+        add_line(m,[frE '/1'],  'GateE/2','autorouting','on');
         add_line(m,'GateE/1',   'PI_u/1', 'autorouting','on');
     end
     add_line(m,'PI_u/1','Alloc/1','autorouting','on');

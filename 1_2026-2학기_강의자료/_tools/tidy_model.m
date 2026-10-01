@@ -27,7 +27,9 @@ function n = tidy_model(m, varargin)
 %     3) lay_feedback     되돌아가는 선을 블록 아래 통로로 돌린다
 %     4) tag_feedback     그래도 세 번 꺾이면 Goto/From 한 쌍으로 바꾼다
 %     5) lay_sinks        갈라져 나온 종착 블록을 아래 한 열로 내린다
-%     6) lay_links        남은 지저분한 선만 통로 하나로 다시 긋는다
+%     6) snug_tags        Goto/From 을 제 포트 옆으로 끌어온다 (배치기가 끌고 갔다)
+%     7) lay_links        남은 지저분한 선만 통로 하나로 다시 긋는다
+%     8) snug_tags        lay_links 가 길을 내느라 옮긴 태그를 한 번 더 끌어온다
 %
 %   왜 두 번 해 보는가 / why it tries twice
 %       lay_sinks 는 "이미 깨끗한 선은 두고 본다" 와 "종착 블록은 전부 내린다"
@@ -147,6 +149,7 @@ for t = 1:6
     for k = 1:4
         for s = 1:numel(sys)
             try, lay_links(sys{s}); catch, end
+            try, snug_tags(sys{s}); catch, end   % 태그는 늘 제 포트 옆으로
         end
         [~, cur] = evalc('check_lines(m, false)');
         if cur < before, gain = true; break, end
@@ -194,8 +197,11 @@ for s = 1:numel(sys)
     try, lay_feedback(sys{s});              catch, end
     try, tag_feedback(sys{s});              catch, end
     try, lay_sinks(sys{s}, 'All', allSinks); catch, end
+    try, snug_tags(sys{s});                 catch, end
     try, lay_links(sys{s});                 catch, end
     try, lay_links(sys{s});                 catch, end
+    %  lay_links 가 길을 내느라 From 을 옮겨 놓았을 수 있다. 마지막에 한 번 더 끌어온다
+    try, snug_tags(sys{s});                 catch, end
 end
 try, lay_notes(m); catch, end     % 주석도 옮긴 뒤에 견준다 (arrangeSystem 은 주석을 두고 간다)
 end

@@ -1,10 +1,13 @@
-function [n, v] = check_lines(mdl, verbose)
+function [n, v, n2] = check_lines(mdl, verbose)
 %CHECK_LINES  도면을 읽을 수 없게 만드는 일곱 가지를 찾아 보고한다.
 %
 %   n = check_lines('W04_P3_boat_speed')
 %   check_lines('W04_P3_boat_speed', true)      % 건건이 나열한다
 %   [n, v] = check_lines(m)
 %       v = [겹침 블록관통 꺾임3회+ 매달림 사선 블록겹침 이름표위선]
+%   [n, v, n2] = check_lines(m)
+%       n2 = 꺾임 2회인 선의 수. 합격선은 아니지만 **모델별로 세어 줄여 나간다**.
+%       0·1 회가 목표다 (2026-10-01 교수 지시 — 태그를 신호 옆에 모아 꺾임을 없앨 것)
 %
 %   일곱 가지 / the seven findings
 %     1) 겹친 선      — 같은 직선 위를 나누어 쓰는 두 선. 인쇄하면 한 선이다
