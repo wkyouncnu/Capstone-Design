@@ -84,7 +84,7 @@ function fresh(m)
 end
 
 function setSolver(m, stopTime)
-    set_param(m, 'SolverType','Fixed-step', 'SolverName','FixedStepDiscrete', ...
+    set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
                  'FixedStep','Ts_ctrl', 'StopTime',stopTime, 'SimulationMode','normal');
 end
 
@@ -264,22 +264,21 @@ function addInnerLoop(m, x, y)
     add_block('simulink/Math Operations/Gain', [ss '/Kp_psi'], ...
               'Position', [410 60 460 100], 'Gain','Kp_psi');
 
-    % D 항을 만드는 두 가지 방법. d_mode 로 고른다.
-    %   d_mode = 1  요각속도 되먹임   -Kd*r          (기본. 미분 킥이 없다)
-    %   d_mode = 2  오차 미분         +Kd*de/dt      (7주차 비교 실험용)
+    %  D 항은 **요각속도 되먹임 하나**다 (교수 지시 2026-10-01).
+    %
+    %    tau_N = Kp_psi * ssa(psi_ref - psi)  -  Kd_psi * r
+    %
+    %  전에는 오차를 미분하는 갈래(`dedt`)와 둘 중 하나를 고르는 스위치(`Dsel`)가
+    %  함께 있었다. 그 비교는 **4주차 2-8절**(`W04_heading_sign`)에서 이미 끝났으므로
+    %  여기서는 결론만 쓴다 — 지령이 계단으로 바뀌어도 r 은 튀지 않는다.
+    %
+    %  게인은 **양수**이고 부호는 합산점에서 준다 (`SumN` 이 '+-'). 게인에
+    %  마이너스를 숨기면 도면만 보고는 덧셈인지 뺄셈인지 알 수 없다.
     add_block('simulink/Math Operations/Gain', [ss '/Kd_rate'], ...
-              'Position', [410 300 460 340], 'Gain','-Kd_psi');
-    add_block('simulink/Discrete/Discrete Derivative', [ss '/dedt'], ...
-              'Position', [400 180 470 240]);
-    set_param([ss '/dedt'], 'gainval','Kd_psi');
-    add_block('simulink/Sources/Constant', [ss '/DM'], ...
-              'Position', [400 400 490 430], 'Value','d_mode');
-    add_block('simulink/Signal Routing/Switch', [ss '/Dsel'], ...
-              'Position', [540 190 580 330]);
-    set_param([ss '/Dsel'], 'Criteria','u2 >= Threshold', 'Threshold','1.5');
+              'Position', [410 300 460 340], 'Gain','Kd_psi');
 
     add_block('simulink/Math Operations/Sum', [ss '/SumN'], ...
-              'Position', [640 110 670 150], 'Inputs','++');
+              'Position', [640 110 670 150], 'Inputs','+-');
     add_block('simulink/Discontinuities/Saturation', [ss '/SatN'], ...
               'Position', [720 110 760 150], ...
               'UpperLimit','2*F_max*half_beam', 'LowerLimit','-2*F_max*half_beam');
@@ -287,13 +286,9 @@ function addInnerLoop(m, x, y)
     add_line(ss,'psi_ref/1','HeadingErr/1','autorouting','on');
     add_line(ss,'psi/1',    'HeadingErr/2','autorouting','on');
     add_line(ss,'HeadingErr/1','Kp_psi/1','autorouting','on');
-    add_line(ss,'HeadingErr/1','dedt/1','autorouting','on');
     add_line(ss,'r/1',        'Kd_rate/1','autorouting','on');
-    add_line(ss,'dedt/1',   'Dsel/1','autorouting','on');
-    add_line(ss,'DM/1',     'Dsel/2','autorouting','on');
-    add_line(ss,'Kd_rate/1','Dsel/3','autorouting','on');
-    add_line(ss,'Kp_psi/1','SumN/1','autorouting','on');
-    add_line(ss,'Dsel/1',  'SumN/2','autorouting','on');
+    add_line(ss,'Kp_psi/1', 'SumN/1','autorouting','on');
+    add_line(ss,'Kd_rate/1','SumN/2','autorouting','on');
     add_line(ss,'SumN/1','SatN/1','autorouting','on');
 
     % ---------- 속도 제어 : u 되먹임 PI ----------
@@ -303,8 +298,12 @@ function addInnerLoop(m, x, y)
               'Position', [300 385 330 415], 'Inputs','+-');
     add_block('simulink/Continuous/PID Controller', [ss '/PI_u'], ...
               'Position', [400 370 490 430]);
+    %  **연속 시간 PI** 다 (교수 지시 2026-10-01 — 제어기는 연속으로 적는다).
+    %  적분기는 1/s 이고 안티와인드업은 clamping 이다. 전에는 같은 블록을
+    %  Discrete-time 으로 두었는데, 그 근거로 적혀 있던 "VRX 라서 이산" 은
+    %  이유가 아니었다 — 솔버를 ode4 로 바꾸면 같은 스텝으로 돈다 (4주차에서 확인).
     set_param([ss '/PI_u'], 'Controller','PI', ...
-        'TimeDomain','Discrete-time', 'SampleTime','Ts_ctrl', ...
+        'TimeDomain','Continuous-time', ...
         'P','Kp_u', 'I','Ki_u', ...
         'LimitOutput','on', ...
         'UpperSaturationLimit','2*F_max', 'LowerSaturationLimit','-2*F_max', ...
@@ -391,11 +390,11 @@ function addThrusters(m, x, y)
     add_block('simulink/Sources/Constant', [ss '/Nm'], ...
               'Position',[40 300 130 330], 'Value','n_max');
 
-    % 모터 1차 지연  n/n_cmd = a/(z-(1-a)),  a = Ts/tau
-    add_block('simulink/Discrete/Discrete Transfer Fcn', [ss '/MotorLag'], ...
+    % 모터 1차 지연  n/n_cmd = 1/(tau_n*s + 1)  -- 연속 전달함수다 (교수 지시 2026-10-01)
+    add_block('simulink/Continuous/Transfer Fcn', [ss '/MotorLag'], ...
               'Position',[380 85 500 145]);
-    set_param([ss '/MotorLag'], 'Numerator','Ts_ctrl/tau_n', ...
-              'Denominator','[1, Ts_ctrl/tau_n - 1]', 'SampleTime','Ts_ctrl');
+    set_param([ss '/MotorLag'], 'Numerator','1', ...
+              'Denominator','[tau_n, 1]');
 
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
               [ss '/n2F'], 'Position', [560 70 700 160]);

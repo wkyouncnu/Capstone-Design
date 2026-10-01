@@ -154,9 +154,9 @@ for rr = 1:nRow
     %  태그 더미는 **각 블록의 아래 테두리**에서 D 만큼 내려간다. 줄 가운데(yc)에서 재면
     %  키 큰 블록의 태그가 다음 줄에 닿아 이름표가 가려진다 (2026-09-19 W05_0 의
     %  Go_psi_ref 가 MotionModel 에 — check_lines 의 (6) 블록겹침)
-    yTop = yc + max(hMax/2, max(H(idx)/2 + D(idx))) + 60;
+    yTop = yc + max(hMax/2, max(H(idx)/2 + D(idx))) + ROW_GAP;
 end
-yBot = yTop - 60;
+yBot = yTop - ROW_GAP;
 
 % --- 3.5) 줄이 바뀌는 자리는 태그 한 쌍으로 -----------------------------
 %   오른쪽 끝에서 왼쪽 끝으로 선을 끌면 도면을 통째로 가로지른다. 사슬이 줄을
@@ -190,15 +190,15 @@ for k = 1:numel(stages)
     r    = get_param([m '/' stages{k}], 'Position');
     xLim = max(xLim, r(3));
 end
-bx = o.X0;  by = yBot + 120;  bh = 0;
+bx = o.X0;  by = yBot + BOX_DROP;  bh = 0;
 for k = 1:numel(o.Boxes)
     b = [m '/' o.Boxes{k}];
     if ~ismember(b, find_system(m,'SearchDepth',1,'Type','Block')), continue, end
     r = get_param(b, 'Position');
     w = r(3)-r(1);  h = r(4)-r(2);
-    if bx > o.X0 && bx + w > xLim, bx = o.X0;  by = by + bh + 70;  bh = 0; end
+    if bx > o.X0 && bx + w > xLim, bx = o.X0;  by = by + bh + BOX_GAPY;  bh = 0; end
     set_param(b, 'Position', round([bx, by, bx+w, by+h]));
-    bx = bx + w + 170;
+    bx = bx + w + BOX_GAPX;
     bh = max(bh, h);
 end
 
@@ -222,10 +222,10 @@ for k = 1:numel(rest)
     if feeds, continue, end          % 사슬 먹임 — 5)에서 받는 포트 옆에 놓는다
     r = get_param(rest{k}, 'Position');
     w = r(3)-r(1);  h = r(4)-r(2);
-    if bx > o.X0 && bx + w + 130 > xLim, bx = o.X0;  by = by + bh + 70;  bh = 0; end
+    if bx > o.X0 && bx + w + 130 > xLim, bx = o.X0;  by = by + bh + BOX_GAPY;  bh = 0; end
     set_param(rest{k}, 'Position', round([bx, by, bx+w, by+h]));
-    bx = bx + w + 200;
-    bh = max(bh, max(h, 120));       % 이 상수의 태그가 아래에 쌓인다
+    bx = bx + w + BOX_GAPX + 30;
+    bh = max(bh, max(h, 100));       % 이 상수의 태그가 아래에 쌓인다
 end
 yBot = by + bh;
 
@@ -255,16 +255,16 @@ for i = 1:numel(conn)
         r = get_param([m '/' c.src], 'Position');
         if ~isKey(nTag, c.src), nTag(c.src) = 0; end
         j = nTag(c.src);  nTag(c.src) = j + 1;
-        ty = r(4) + 70 + 45*j;
-        lx = r(3) + 18 + 26*j;
+        ty = r(4) + TAG_DROP + TAG_STEP*j;
+        lx = r(3) + 18 + TAG_LANE*j;
         while ~isempty(busy) && ...
               any(abs(busy(:,1)-lx) < 1 & busy(:,2) < ty-1 & r(2) < busy(:,3)-1)
-            lx = lx + 26;
+            lx = lx + TAG_LANE;
         end
         busy(end+1,:) = [lx, r(2), ty]; %#ok<AGROW>
         lane(c.dst)   = lx;
         tagY(c.dst)   = ty;
-        if ~isKey(colOf, c.src), colOf(c.src) = r(3) + 250; end
+        if ~isKey(colOf, c.src), colOf(c.src) = r(3) + 150; end
         colOf(c.src) = max(colOf(c.src), lx + 40);   % 태그 열은 마지막 통로보다 오른쪽
     elseif isKey(rowOf, c.dst) && ~isKey(rowOf, c.src) && ...
            ~ismember(c.src, o.Boxes) && ~is_type(m, c.src, 'Goto')
@@ -309,17 +309,17 @@ for i = 1:numel(conn)
     else
         %  통로 x 는 **출발 포트 번호**로만 정한다. 그래야 한 신호의 여러 갈래가
         %  같은 줄기를 공유하고(팬아웃은 그것이 옳다), 다른 신호끼리는 어긋난다.
-        xm = round((a(1) + b(1))/2) + 26*(c.sp - 1);
+        xm = round((a(1) + b(1))/2) + TAG_LANE*(c.sp - 1);
         %  태그로 내려가는 통로들이 출발 포트 오른쪽에 줄지어 있다 (+18 부터
-        %  26 씩). 사슬 통로를 그 안에 두면 두 신호가 같은 x 를 나눠 쓴다.
-        lo = a(1) + 150;
-        if isKey(cnt, c.src), lo = max(lo, a(1) + 24 + 26*cnt(c.src)); end
+        %  TAG_LANE 씩). 사슬 통로를 그 안에 두면 두 신호가 같은 x 를 나눠 쓴다.
+        lo = a(1) + LANE_MIN;
+        if isKey(cnt, c.src), lo = max(lo, a(1) + 24 + TAG_LANE*cnt(c.src)); end
         if xm < lo, xm = lo; end
         %  받는 포트 왼쪽에 From 태그·상수 열이 서 있으면 그 이름표 앞에서 멈춘다.
         %  포트 번호 순서는 지켜 준다 — 통로끼리 x 를 나눠 쓰면 한 선으로 보인다
         if isKey(edgeL, c.dst)
             nOut = numel(get_param([m '/' c.src], 'PortHandles').Outport);
-            xr   = edgeL(c.dst) - 10 - 26*(nOut - c.sp);
+            xr   = edgeL(c.dst) - 10 - TAG_LANE*(nOut - c.sp);
             if xm > xr, xm = max(lo, xr); end
         end
         if xm > b(1)-15, xm = max(a(1)+15, b(1)-15); end
