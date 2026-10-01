@@ -52,11 +52,6 @@ current_direction = 0.0;    % 조류가 흘러가는 방향 [deg, NED. 0 = 북]
 %   오차를 미분하지 않으므로 웨이포인트 전환 때 미분 킥이 없다
 Kp_psi = 400;   Kd_psi = 200;
 
-% D 항을 만드는 방법 — 7주차 비교 실험용
-%   1 = 요각속도 되먹임  -Kd*r        (기본. 주기에 둔감하다)
-%   2 = 오차 미분        +Kd*de/dt    (미분 킥이 생기고 주기에 민감하다)
-d_mode = 1;
-
 % 속도 제어 — u (surge velocity) 되먹임 PI
 %   U = sqrt(u^2+v^2) 가 아니다. MSS 의 surge velocity control 과 같다
 Kp_u = 300;     Ki_u = 100;

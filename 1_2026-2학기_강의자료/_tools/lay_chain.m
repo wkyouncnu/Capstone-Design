@@ -245,6 +245,26 @@ for k = 1:numel(rest)
         if strcmp(conn(i).src, nmk) && isKey(rowOf, conn(i).dst), feeds = true; break, end
     end
     if feeds, continue, end          % 사슬 먹임 — 5)에서 받는 포트 옆에 놓는다
+
+    %  **받기만 하는 종착 블록**(Terminator·Display)은 바닥으로 쓸어내리지 않는다.
+    %  내는 포트 바로 오른쪽에 두면 잇는 선이 수평 한 토막, 꺾임 0회다. 바닥으로
+    %  내리면 두 종착이 같은 통로로 나란히 내려가 서로 겹치고 상대를 관통한다
+    %  (2026-10-01 W06_1_vrx 의 EndChi·EndU 가 그랬다).
+    ph = get_param(rest{k}, 'PortHandles');
+    if isempty(ph.Outport) && numel(ph.Inport) == 1
+        srcNm = '';  srcPt = 0;
+        for i = 1:numel(conn)
+            if strcmp(conn(i).dst, nmk) && isKey(rowOf, conn(i).src)
+                srcNm = conn(i).src;  srcPt = conn(i).sp;  break
+            end
+        end
+        if ~isempty(srcNm)
+            q = port_xy(m, srcNm, 'Outport', srcPt);
+            move_to(m, nmk, q(1) + 60, q(2), 'left');
+            continue
+        end
+    end
+
     r = get_param(rest{k}, 'Position');
     w = r(3)-r(1);  h = r(4)-r(2);
     if bx > o.X0 && bx + w + 130 > xLim, bx = o.X0;  by = by + bh + BOX_GAPY;  bh = 0; end
