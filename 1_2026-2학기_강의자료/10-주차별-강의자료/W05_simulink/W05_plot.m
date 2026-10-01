@@ -30,8 +30,12 @@ chi  = out.log_chi.Data;    beta= out.log_beta.Data;
 u    = out.log_u.Data;
 FL   = out.log_FL.Data;     FR  = out.log_FR.Data;
 
-% 회전수는 2원소 벡터 신호라 [2 x 1 x N] 로 저장된다. [N x 2] 로 편다
-n = squeeze(out.log_n.Data)';
+% 회전수는 2원소 벡터 신호다. 저장 모양이 [2 x 1 x N] 일 수도 [N x 2] 일 수도
+% 있다 — 내는 블록이 2x1 행렬을 내면 앞쪽, 폭 2 짜리 벡터를 내면 뒤쪽이다.
+% 시간 길이를 보고 [N x 2] 로 맞춘다 (2026-10-01 모터 지연을 연속 상태공간으로
+% 바꾸면서 모양이 뒤쪽으로 바뀌었다)
+n = squeeze(out.log_n.Data);
+if size(n,1) ~= numel(t), n = n.'; end
 
 % 미션 완료 시점까지만 본다
 k = find(gate < 0.5, 1);

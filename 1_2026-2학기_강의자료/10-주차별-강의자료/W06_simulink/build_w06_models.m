@@ -54,6 +54,15 @@ function build_w06_models()
         save_system(m); check_lines(m, false); export_diagram(m);
         close_system(m, 0);
     end
+    %  강의노트가 쓰는 서브시스템 도면. 모델과 함께 다시 뽑는다 —
+    %  모델이 바뀌면 도면도 바뀐다 (vault_check §6 이 뒤처짐을 센다)
+    load_system('W06_0_offline');
+    for nm = {'InnerLoop'}
+        g = export_diagram('W06_0_offline', '', nm{1});
+        movefile(g, fullfile(here, 'img', [nm{1} '.png']), 'f');
+    end
+    close_system('W06_0_offline', 0);
+
     fprintf('\n완료. 생성된 모델:\n');
     d = dir('W06_*.slx');
     for k = 1:numel(d), fprintf('  %s\n', d(k).name); end
