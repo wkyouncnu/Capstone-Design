@@ -22,8 +22,12 @@ function n = tidy_model(m, varargin)
 %       켰는지 확인하는 도구가 `check_flow` 다. 합격선은 0 이다.
 %
 %   순서 / the order, and why
-%     1) mss_style        블록 크기를 먼저 정한다. 나중에 키우면 배치가 어긋난다
-%     2) arrangeSystem    Simulink 의 층 배치. 앞뒤 순서를 잡는 데는 이만한 것이 없다
+%     1) arrangeSystem    Simulink 의 층 배치. 앞뒤 순서를 잡는 데는 이만한 것이 없다
+%     2) mss_style        블록 크기를 **arrangeSystem 뒤, 선 손질 앞**에 정한다.
+%                         arrangeSystem 이 블록을 자기 기본 크기로 되돌리므로 그
+%                         앞에서 넓혀 두면 소용이 없고(게인이 다시 `-K-` 로 그려진다),
+%                         선을 다 놓은 뒤에 넓히면 선이 이웃 블록을 가로지른다.
+%                         이 자리여야 아래 lay_* 가 넓어진 크기를 보고 선을 놓는다
 %     3) lay_feedback     되돌아가는 선을 블록 아래 통로로 돌린다
 %     4) tag_feedback     그래도 세 번 꺾이면 Goto/From 한 쌍으로 바꾼다
 %     5) lay_sinks        갈라져 나온 종착 블록을 아래 한 열로 내린다
@@ -76,10 +80,15 @@ end
 
 load_system(m);
 keep_signals(m, sig);
+
 square_lines(m);        % 크기를 바꾼 블록 옆에 남은 사선 토막을 직각으로 (꺾임 수 그대로)
 lay_notes(m);           % arrangeSystem 은 주석을 옮기지 않는다 — 블록에 앉은 주석을 아래로
 save_system(m);
 close_system(m, 0);
+
+%  되돌림이 게인 폭까지 되돌려 놓았으면 여기서 되살린다. 폭은 고르는 것이 아니라
+%  지켜야 하는 것이다 — 자세한 이유는 fit_gains 의 머리글에 적어 두었다.
+try, fit_gains(m); close_system(m, 0); catch, end
 
 n = check_lines(m, verbose);
 close_system(m, 0);
@@ -183,7 +192,6 @@ function run_once(m, allSinks, keepRoot)
 %  견주는 것이 아니라 한쪽 위에 다른 쪽을 덧칠하게 된다.
 if bdIsLoaded(m), close_system(m, 0); end
 load_system(m);
-try, mss_style(m); catch, end
 sys = [{m}; find_system(m, 'LookUnderMasks','all', 'BlockType','SubSystem')];
 %  KeepRoot 이면 최상위는 빌더가 놓은 자리 그대로 둔다. arrangeSystem 은 단계
 %  순서를 모르므로 gnc_chain 으로 잡아 둔 열을 흩뜨린다 (check_flow 참조).
@@ -193,6 +201,17 @@ if keepRoot, arr = arr(2:end); end
 for s = 1:numel(arr)
     try, Simulink.BlockDiagram.arrangeSystem(arr{s}); catch, end
 end
+
+%  --- 크기는 arrangeSystem **뒤**, 선 손질 **앞**에 정한다 ----------------
+%  arrangeSystem 은 블록을 자기 기본 크기로 되돌린다 (게인은 40 px). 그래서
+%  그 앞에서 넓혀 두면 아무 소용이 없고, 식이 긴 게인은 다시 `-K-` 로 그려진다
+%  (2026-10-01: 전 주차에 26개가 그렇게 남았다).
+%  거꾸로 선을 다 놓은 뒤에 넓히면 선이 이웃 블록을 가로지르고 이름표를 밟는다
+%  (같은 날: W03_1_frame_check 블록관통 2 · SB9 이름표위선 1).
+%  답은 이 사이다 — arrangeSystem 이 자리를 잡은 뒤 넓히고, **그 넓어진 크기를
+%  보고** 아래 lay_* 가 선을 놓는다.
+try, mss_style(m); catch, end
+
 for s = 1:numel(sys)
     try, lay_feedback(sys{s});              catch, end
     try, tag_feedback(sys{s});              catch, end

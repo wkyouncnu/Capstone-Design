@@ -79,13 +79,15 @@ function wire(m, src, dst)
     add_line(m, src, dst, 'autorouting','on');
 end
 
-function nameLine(sys, blk, nm)
-%NAMELINE  그 블록의 1번 출력선에 **신호 이름**을 붙인다.
+function nameLine(sys, blk, nm, port)
+%NAMELINE  그 블록의 출력선에 **신호 이름**을 붙인다 (port 를 안 주면 1번).
 %   되돌아가는 선을 tidy_model 의 tag_feedback 이 Goto/From 으로 바꿀 때 이
 %   이름을 태그로 쓴다. 이름을 안 주면 블록 이름을 빌려 `SumA_1` · `ToDouble_1`
 %   같은 태그가 생기고 check_tags 가 그것을 잡는다 (0 이 합격선).
+    if nargin < 4, port = 1; end
     h = get_param([sys '/' blk], 'PortHandles');
-    l = get_param(h.Outport(1), 'Line');
+    if port > numel(h.Outport), return, end
+    l = get_param(h.Outport(port), 'Line');
     if l > 0, set_param(l, 'Name', nm); end
 end
 
@@ -668,6 +670,11 @@ function sb13_common(m, withStop)
     %  도착 판정이 차트로 돌아가는 되먹임이다. 선 이름이 없으면 tag_feedback 이
     %  블록 이름을 빌려 `ToDouble_1` 같은 태그를 만든다 (check_tags)
     nameLine(m,'ToDouble','reached');
+    %  차트가 내보내는 두 신호도 이름을 준다. 차트의 출력 이름(mode · u_cmd)을
+    %  그대로 쓴다 — 2026-10-01 에 게인이 넓어지며 mode 선이 세 번 꺾이자
+    %  tag_feedback 이 `Mission_1` 이라는 블록이름 꼴 태그를 만들었다
+    nameLine(m,'Mission','mode',  1);
+    nameLine(m,'Mission','u_cmd', 2);
 
     setSolverD(m,'30');
 end
