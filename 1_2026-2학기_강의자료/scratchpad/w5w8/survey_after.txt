@@ -1,0 +1,102 @@
+
+===== W05_0_offline =====
+  check_lines 일곱항목 = 0,  꺾임2회 = 12
+  채움비율 최상위 = 14.4 %
+  [흐름] W05_0_offline              통과
+  [태그] W05_0_offline              통과 (Goto 17 · From 34 · To Workspace 15)
+        To Workspace 가 15개다. 모델당 한 개가 규칙이다 — 이유를 적을 것
+  [색] W05_0_offline              통과
+  check_discrete W05_0_offline — 고쳐야 할 이산 블록 0개 (예외 1개는 뺌)
+      예외       UnitDelay              W05_0_offline/Guidance/IdxDly                      대수 루프 차단 + 사건 계수기 — 웨이포인트 번호는 정수이고, 유도부가 낸 값이 유도부로 되돌아온다. 미분방정식의 상태가 아니다.
+  -K- 로 숨을 Gain 0개
+
+===== W05_1_vrx =====
+  check_lines 일곱항목 = 0,  꺾임2회 = 13
+  채움비율 최상위 = 14.2 %
+  [흐름] W05_1_vrx                  통과
+  [태그] W05_1_vrx                  통과 (Goto 16 · From 33 · To Workspace 15)
+        To Workspace 가 15개다. 모델당 한 개가 규칙이다 — 이유를 적을 것
+  [색] W05_1_vrx                  통과
+  check_discrete W05_1_vrx — 고쳐야 할 이산 블록 0개 (예외 1개는 뺌)
+      예외       UnitDelay              W05_1_vrx/Guidance/IdxDly                          대수 루프 차단 + 사건 계수기 — 웨이포인트 번호는 정수이고, 유도부가 낸 값이 유도부로 되돌아온다. 미분방정식의 상태가 아니다.
+  -K- 로 숨을 Gain 0개
+
+===== W06_0_offline =====
+  check_lines 일곱항목 = 0,  꺾임2회 = 41
+  채움비율 최상위 = 16.1 %
+  [흐름] W06_0_offline              통과
+  [태그] W06_0_offline              통과 (Goto 21 · From 39 · To Workspace 16)
+        To Workspace 가 16개다. 모델당 한 개가 규칙이다 — 이유를 적을 것
+  [색] W06_0_offline              통과
+  check_discrete W06_0_offline — 고쳐야 할 이산 블록 0개 (예외 3개는 뺌)
+      예외       UnitDelay              W06_0_offline/Guidance/AccDly                      바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+      예외       UnitDelay              W06_0_offline/Guidance/ArmDly                      바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+      예외       UnitDelay              W06_0_offline/Guidance/ThDly                       바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+  -K- 로 숨을 Gain 0개
+
+===== W06_1_vrx =====
+  check_lines 일곱항목 = 0,  꺾임2회 = 42
+  채움비율 최상위 = 16.0 %
+  [흐름] W06_1_vrx                  통과
+  [태그] W06_1_vrx                  통과 (Goto 20 · From 38 · To Workspace 16)
+        To Workspace 가 16개다. 모델당 한 개가 규칙이다 — 이유를 적을 것
+  [색] W06_1_vrx                  통과
+  check_discrete W06_1_vrx — 고쳐야 할 이산 블록 0개 (예외 3개는 뺌)
+      예외       UnitDelay              W06_1_vrx/Guidance/AccDly                          바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+      예외       UnitDelay              W06_1_vrx/Guidance/ArmDly                          바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+      예외       UnitDelay              W06_1_vrx/Guidance/ThDly                           바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+  -K- 로 숨을 Gain 0개
+
+===== W07_0_offline =====
+  check_lines 일곱항목 = 0,  꺾임2회 = 28
+  채움비율 최상위 = 19.0 %
+  [흐름] W07_0_offline              어긋남 2건 (좌->우 단계 순서)
+        Guidance           (guidance)   x=  40  <  URf2               (command)    x= 825
+        Mission            (mission)    x= 515  <  URf2               (command)    x= 825
+  [태그] W07_0_offline              통과 (Goto 26 · From 46 · To Workspace 14)
+        To Workspace 가 14개다. 모델당 한 개가 규칙이다 — 이유를 적을 것
+  [색] W07_0_offline              통과
+  check_discrete W07_0_offline — 고쳐야 할 이산 블록 0개 (예외 5개는 뺌)
+      예외       UnitDelay              W07_0_offline/Guidance/AccDly                      바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+      예외       UnitDelay              W07_0_offline/Guidance/ArmDly                      바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+      예외       UnitDelay              W07_0_offline/Guidance/IdxDly                      대수 루프 차단 + 사건 계수기 — 웨이포인트 번호는 정수이고, 유도부가 낸 값이 유도부로 되돌아온다. 미분방정식의 상태가 아니다.
+      예외       UnitDelay              W07_0_offline/Guidance/ThDly                       바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+      예외       UnitDelay              W07_0_offline/Mission/ModeDly                      대수 루프 차단 + 사건 계수기 — FSM 이 낸 mode 가 유도부로 되돌아온다. mode 는 정수 상태라 적분할 것이 없다.
+  -K- 로 숨을 Gain 0개
+
+===== W07_1_vrx =====
+  check_lines 일곱항목 = 0,  꺾임2회 = 31
+  채움비율 최상위 = 19.0 %
+  [흐름] W07_1_vrx                  어긋남 2건 (좌->우 단계 순서)
+        Guidance           (guidance)   x=  40  <  URf2               (command)    x= 825
+        Mission            (mission)    x= 515  <  URf2               (command)    x= 825
+  [태그] W07_1_vrx                  통과 (Goto 25 · From 45 · To Workspace 14)
+        To Workspace 가 14개다. 모델당 한 개가 규칙이다 — 이유를 적을 것
+  [색] W07_1_vrx                  통과
+  check_discrete W07_1_vrx — 고쳐야 할 이산 블록 0개 (예외 5개는 뺌)
+      예외       UnitDelay              W07_1_vrx/Guidance/AccDly                          바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+      예외       UnitDelay              W07_1_vrx/Guidance/ArmDly                          바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+      예외       UnitDelay              W07_1_vrx/Guidance/IdxDly                          대수 루프 차단 + 사건 계수기 — 웨이포인트 번호는 정수이고, 유도부가 낸 값이 유도부로 되돌아온다. 미분방정식의 상태가 아니다.
+      예외       UnitDelay              W07_1_vrx/Guidance/ThDly                           바퀴 수 계수기 — 표본 사이의 각 변화를 모아 감기므로 바로 앞 표본이 있어야 한다. 또한 TurnCount 가 낸 값이 TurnCount 로 되돌아와 대수 루프가 된다.
+      예외       UnitDelay              W07_1_vrx/Mission/ModeDly                          대수 루프 차단 + 사건 계수기 — FSM 이 낸 mode 가 유도부로 되돌아온다. mode 는 정수 상태라 적분할 것이 없다.
+  -K- 로 숨을 Gain 0개
+
+===== W08_0_offline =====
+  check_lines 일곱항목 = 0,  꺾임2회 = 9
+  채움비율 최상위 = 21.1 %
+  [흐름] W08_0_offline              통과
+  [태그] W08_0_offline              통과 (Goto 25 · From 38 · To Workspace 15)
+        To Workspace 가 15개다. 모델당 한 개가 규칙이다 — 이유를 적을 것
+  [색] W08_0_offline              통과
+  check_discrete W08_0_offline — 고쳐야 할 이산 블록 0개
+  -K- 로 숨을 Gain 0개
+
+===== W08_1_vrx =====
+  check_lines 일곱항목 = 0,  꺾임2회 = 11
+  채움비율 최상위 = 21.9 %
+  [흐름] W08_1_vrx                  통과
+  [태그] W08_1_vrx                  통과 (Goto 23 · From 37 · To Workspace 15)
+        To Workspace 가 15개다. 모델당 한 개가 규칙이다 — 이유를 적을 것
+  [색] W08_1_vrx                  통과
+  check_discrete W08_1_vrx — 고쳐야 할 이산 블록 0개
+  -K- 로 숨을 Gain 0개

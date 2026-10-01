@@ -370,7 +370,7 @@ function addThrusters(m, x, y)
     add_block('simulink/Sources/In1', [ss '/FR_cmd'], 'Position',[40 140 75 170],'Port','2');
 
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [ss '/F2n'], 'Position', [170 70 320 160]);
+              [ss '/F2n'], 'Position', [170 70 320 266]);   % 포트 4개 — 52 px 간격 (52*3+40)
     setFcn(ss, 'F2n', [ ...
 'function n_cmd = F2n(FL, FR, k, n_max)'                              newline ...
 '%#codegen'                                                           newline ...
@@ -392,11 +392,19 @@ function addThrusters(m, x, y)
     add_block('simulink/Sources/Constant', [ss '/Nm'], ...
               'Position',[40 300 130 330], 'Value','n_max');
 
-    % 모터 1차 지연  n/n_cmd = 1/(tau_n*s + 1)  -- 연속 전달함수다 (교수 지시 2026-10-01)
-    add_block('simulink/Continuous/Transfer Fcn', [ss '/MotorLag'], ...
+    %  모터 1차 지연 — **연속 시간**이다 (교수 지시 2026-10-01).
+    %
+    %      dn/dt = (n_cmd - n) / tau_n        <=>   n/n_cmd = 1/(tau_n*s + 1)
+    %
+    %  전에는 num(z)/den(z) 꼴의 Discrete Transfer Fcn 이었다. 연속 Transfer Fcn
+    %  으로 바꾸려 했으나 **그 블록은 벡터 입력을 받지 않는다** — n 은 좌·우 두
+    %  축의 2원소 신호다. 그래서 같은 1차 지연을 상태공간 한 블록으로 적는다.
+    %  A = -I/tau_n, B = I/tau_n, C = I, D = 0 이 곧 위의 식이다 (대각이므로
+    %  좌·우가 서로 섞이지 않는다). 시상수 tau_n 은 그대로고 구현만 바뀌었다.
+    add_block('simulink/Continuous/State-Space', [ss '/MotorLag'], ...
               'Position',[380 85 500 145]);
-    set_param([ss '/MotorLag'], 'Numerator','1', ...
-              'Denominator','[tau_n, 1]');
+    set_param([ss '/MotorLag'], 'A','-eye(2)/tau_n', 'B','eye(2)/tau_n', ...
+              'C','eye(2)', 'D','zeros(2)', 'X0','zeros(2,1)');
 
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
               [ss '/n2F'], 'Position', [560 70 700 160]);
@@ -424,6 +432,14 @@ function addThrusters(m, x, y)
     add_line(ss,'MotorLag/1','n/1','autorouting','on');
 
     Simulink.BlockDiagram.arrangeSystem(ss);
+
+    %  설정 상수를 받는 포트 높이에 맞춘다 — 그러면 잇는 선이 직선 한 토막이다.
+    %  arrangeSystem 은 선 길이만 보지 높이를 맞춰 주지는 않는다 (꺾임 2회가 남는다)
+    align_to(ss, 'Kp', 'Outport', port_xy(ss, 'F2n', 'Inport', 3));
+    align_to(ss, 'FL_cmd', 'Outport', port_xy(ss, 'F2n', 'Inport', 1));
+    align_to(ss, 'FR_cmd', 'Outport', port_xy(ss, 'F2n', 'Inport', 2));
+    align_to(ss, 'Nm', 'Outport', port_xy(ss, 'F2n', 'Inport', 4));
+
 end
 
 % =====================================================================
