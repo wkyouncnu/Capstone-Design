@@ -842,7 +842,7 @@ t(find(t >= 10 & abs(v - 0.5) <= 0.05*0.5, 1))      % 닿은 시각
 | I | `Integrator` | **그대로 쓰임** — 운동방정식 적분(5\~7주 `MotionModel`). 배의 위치가 여기서 나옴 |
 | I | `Transfer Fcn` | 모터 1차 지연. 5주 `MotorLag`(`Discrete Transfer Fcn`)의 연속 버전 |
 | I | 적분기 출력 제한 | 물리 한계가 있는 상태 |
-| J | `Switch` | **그대로 쓰임** — 5주 `InnerLoop` 의 D 항 방식 선택(`Dsel`) |
+| J | `Switch` | 8주 `Alloc` 의 섹터 한계 처리처럼 "조건에 따라 다른 값" 을 고를 때 씀 (5주 `InnerLoop` 의 D 항 선택 스위치는 2026-10-01 에 없앰 — D 항은 요각속도 되먹임 하나임) |
 | J | `Multiport Switch` | 7주 `ModeSwitch`(MATLAB Function)와 같은 원리 — 유도법칙 갈아 끼우기 |
 | J | `Stop Simulation` | 임무 종료를 블록으로 거는 법. 6·7주는 `gate = 0` 으로 속도 지령을 끄고 고정 정지 시간까지 돎 |
 | K | `Enabled Subsystem` | "새 메시지가 왔을 때만 계산" (ROS `IsNew` 를 쓸 때의 구조) |

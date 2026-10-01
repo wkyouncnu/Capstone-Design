@@ -51,6 +51,10 @@ function build_w06_models()
         %  잇는 선이 통로로 내려가며 두 번 꺾인다. 마지막에 한 번 끌어오면 수평
         %  한 토막이 된다 (2026-10-01 교수 지시, line-routing.md §3)
         snug_tags(m);
+        %  snug_tags 가 태그를 끌어올린 **뒤에** 포트 없는 상자를 사슬 바로 아래로
+        %  당긴다. lay_chain 이 잡아 둔 태그 더미 깊이가 그대로 빈 칸이 되기 때문이다
+        %  (교수 지시 2026-10-01 — 빈 공간을 남기지 않는다)
+        pack_boxes(m, {'Animate','Logging'});
         save_system(m); check_lines(m, false); export_diagram(m);
         close_system(m, 0);
     end

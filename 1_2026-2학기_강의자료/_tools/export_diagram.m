@@ -38,7 +38,10 @@ if nargin < 3 || isempty(sub)
     f   = fullfile(folder, [mdl '.png']);
     tgt = mdl;
 else
-    f   = fullfile(folder, [mdl '__' sub '.png']);
+    %  SUB 는 'Mission/MissionFSM' 처럼 **여러 단 아래**를 가리킬 수 있다.
+    %  파일 이름에 슬래시를 그대로 두면 없는 폴더를 만들려 들다 실패하므로
+    %  '__' 로 바꾼다 (2026-10-01 W07 의 MissionFSM 에서 재현)
+    f   = fullfile(folder, [mdl '__' strrep(sub, '/', '__') '.png']);
     tgt = [mdl '/' sub];
 end
 

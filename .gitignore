@@ -68,3 +68,6 @@ desktop.ini
 
 # md2pdf.sh 의 임시 HTML — 중단되면 남는다
 .md2pdf_*.html
+
+# 작업용 임시 폴더 — 자동 커밋 훅이 쓸어 담지 않도록 (2026-10-01)
+/1_2026-2학기_강의자료/scratchpad/

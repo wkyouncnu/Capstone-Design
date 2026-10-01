@@ -43,9 +43,22 @@ function build_w08_models()
         %  잇는 선이 통로로 내려가며 두 번 꺾인다. 마지막에 한 번 끌어오면 수평
         %  한 토막이 된다 (2026-10-01 교수 지시, line-routing.md §3)
         snug_tags(m);
+        %  snug_tags 가 태그를 끌어올린 **뒤에** 포트 없는 상자를 사슬 바로 아래로
+        %  당긴다. lay_chain 이 잡아 둔 태그 더미 깊이가 그대로 빈 칸이 되기 때문이다
+        %  (교수 지시 2026-10-01 — 빈 공간을 남기지 않는다)
+        pack_boxes(m, {'ZeroThr','ZeroEnv','CmdPublisher','Animate','Logging'});
         save_system(m); check_lines(m, false); export_diagram(m);
         close_system(m, 0);
     end
+
+    %  서브시스템 도면도 모델과 함께 다시 뽑는다 — 모델이 바뀌면 도면도 바뀐다
+    %  (2026-10-01 상태를 연속 적분기로 바꾸면서 상자 속이 통째로 달라졌다)
+    load_system('W08_0_offline');
+    for nm = {'DPRef','WaveFilter','DPCtrl','Alloc','Thrusters','Env','MotionModel'}
+        g = export_diagram('W08_0_offline', '', nm{1});
+        movefile(g, fullfile(here, 'img', ['W08_' nm{1} '.png']), 'f');
+    end
+    close_system('W08_0_offline', 0);
 
     fprintf('\n완료. 생성된 모델:\n');
     d = dir('*.slx');
