@@ -1508,10 +1508,22 @@ function build_offline()
     % --- 2단 · 추진기 (모터 1차 지연) ---------------------------------
     add_block('simulink/Signal Routing/Mux', [m '/MuxF'], ...
               'Inputs','2', 'Position',[xT 175 xT+5 225]);
-    add_block('simulink/Discrete/Discrete Transfer Fcn', [m '/MotorLag'], ...
+
+    %  모터 1차 지연 1/(T_m s + 1) 을 **연속 시간**으로 적는다 (교수 지시 2026-10-01
+    %  — "이산 제어기든 전달함수든 전부 연속으로"). 전에는 전진 오일러로 이산화한
+    %  Discrete Transfer Fcn (분자 Ts/T_m, 분모 [1, Ts/T_m - 1], Ts = 0.05) 이었다.
+    %
+    %  연속 Transfer Fcn 은 **벡터 입력을 받지 못한다.** 여기 들어오는 것은 MuxF 가
+    %  묶은 (FL, FR) 두 원소다. 그래서 같은 법칙을 State-Space 한 블록으로 적는다 —
+    %  5~8주차의 MotorLag 과 같은 꼴이다.
+    %
+    %      xdot = -x/T_m + u/T_m ,  y = x      <=>   y/u = 1/(T_m s + 1)
+    %
+    %  시상수는 그대로 T_m = tau_m = 0.30 s 다 (W04_setup.m). 바꾼 것은 적는 방식뿐이다.
+    add_block('simulink/Continuous/State-Space', [m '/MotorLag'], ...
               'Position',[xT+70 175 xT+190 225]);
-    set_param([m '/MotorLag'], 'Numerator','0.05/0.30', ...
-              'Denominator','[1, 0.05/0.30 - 1]', 'SampleTime','0.05');
+    set_param([m '/MotorLag'], 'A','-eye(2)/tau_m', 'B','eye(2)/tau_m', ...
+              'C','eye(2)', 'D','zeros(2)', 'X0','zeros(2,1)');
 
     % --- 3단 · WAM-V 운동모델 -----------------------------------------
     add_block('simulink/User-Defined Functions/MATLAB Function', [m '/EOM'], ...
