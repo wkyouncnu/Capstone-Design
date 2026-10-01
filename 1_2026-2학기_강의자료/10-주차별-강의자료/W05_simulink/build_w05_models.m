@@ -42,7 +42,9 @@ function build_w05_models()
     chain = {'Guidance','InnerLoop','Thrusters','MotionModel'};
     %  Wrap — 사슬을 몇 칸에서 접을지. 도면이 정사각형에 가까울수록 같은 픽셀 안에
     %  크게 보인다. 값은 주차마다 재서 골랐다 (겹침 0 이 되는 것 중 가장 작은 쪽)
-    lay_chain('W05_0_offline', chain, 'Boxes', {'Animate','Logging'}, 'Wrap', 2);
+    %  Wrap 3 — VRX 쌍둥이와 같은 자리에서 줄을 바꾼다. 그 자리의 연결은 빌더가
+    %  이미 FL·FR 태그로 받아 두었으므로 lay_chain 이 새 태그를 만들 일이 없다
+    lay_chain('W05_0_offline', chain, 'Boxes', {'Animate','Logging'}, 'Wrap', 3);
     lay_chain('W05_1_vrx', {'Guidance','InnerLoop','Thrusters','CmdPublisher','PoseSubscriber'}, ...
               'Boxes', {'Animate','Logging'}, 'Wrap', 3);
     %  색 — 역할표는 _tools/gnc_roles.m 하나뿐이다. 빌더는 부르기만 한다
@@ -53,7 +55,12 @@ function build_w05_models()
         mss_style(m); save_system(m); close_system(m, 0);
         %  선 정리 — 포트가 늘면 전에 비어 있던 통로가 막힌다. 지적 0 까지
         settle_links(m);
-        load_system(m); check_lines(m, false); export_diagram(m);
+        %  태그를 신호 옆으로 — lay_chain 은 Goto 를 내는 블록 **아래**에 쌓는다.
+        %  그러면 잇는 선이 통로로 내려가며 두 번 꺾인다. 마지막에 한 번 끌어오면
+        %  수평 한 토막이 된다 (2026-10-01 교수 지시, line-routing.md §3).
+        %  tidy_model 을 쓰는 주차는 그것이 안에서 두 번 부른다. 이 주차는 직접 부른다
+        load_system(m); snug_tags(m); save_system(m);
+        check_lines(m, false); export_diagram(m);
         close_system(m, 0);
     end
 
@@ -582,11 +589,11 @@ function wireFront(m)
 %
 %   설정값(웨이포인트·Delta·R·mode·u_ref)은 각 서브시스템 **안에** 있다.
 %   최상위에 남는 것은 **되먹임 다섯 개**뿐이다 — 그것이 이 모델이 하는 일이다.
-    F(m,'x_n','a', 40,  65);
-    F(m,'y_n','a', 40, 110);
+    fx = F(m,'x_n', 40,  65);
+    fy = F(m,'y_n', 40, 110);
 
-    add_line(m,'Fr_x_n_a/1','Guidance/1','autorouting','on');
-    add_line(m,'Fr_y_n_a/1','Guidance/2','autorouting','on');
+    add_line(m,[fx '/1'],'Guidance/1','autorouting','on');
+    add_line(m,[fy '/1'],'Guidance/2','autorouting','on');
 
     % 유도 출력에 로깅용 Goto 를 붙인다 (본선은 그대로 InnerLoop 로 간다)
     G(m,'psi_ref', 560,  70);
@@ -599,19 +606,24 @@ function wireFront(m)
     add_line(m,'Guidance/4','Go_gate/1','autorouting','on');
 
     % 2단 입력: 자세·속도 되먹임
-    F(m,'psi','b', 560, 360);
-    F(m,'r',  'b', 560, 400);
-    F(m,'u',  'b', 560, 440);
+    fp = F(m,'psi', 560, 360);
+    fr = F(m,'r',   560, 400);
+    fu = F(m,'u',   560, 440);
 
     add_line(m,'Guidance/1','InnerLoop/1','autorouting','on');
     add_line(m,'Guidance/4','InnerLoop/2','autorouting','on');
-    add_line(m,'Fr_psi_b/1','InnerLoop/3','autorouting','on');
-    add_line(m,'Fr_r_b/1',  'InnerLoop/4','autorouting','on');
-    add_line(m,'Fr_u_b/1',  'InnerLoop/5','autorouting','on');
+    add_line(m,[fp '/1'],'InnerLoop/3','autorouting','on');
+    add_line(m,[fr '/1'],'InnerLoop/4','autorouting','on');
+    add_line(m,[fu '/1'],'InnerLoop/5','autorouting','on');
 end
 
-function F(m, tag, sfx, x, y)
-    add_block('simulink/Signal Routing/From', [m '/Fr_' tag '_' sfx], ...
+function nm = F(m, tag, x, y)
+%  From 블록 이름은 `Fr_<태그>` 다. 같은 태그를 여러 곳에서 받으면 **번호만** 붙인다
+%  (line-routing.md §3.1). 이름을 손으로 짓지 않는다 — `Fr_psi_b` 처럼 받는 쪽
+%  블록을 이름에 섞으면 이름표가 이웃을 덮고, 받는 블록을 바꿀 때 태그까지 손대야
+%  한다. `_tools/from_name.m` 이 비어 있는 이름을 돌려준다.
+    nm = from_name(m, tag);
+    add_block('simulink/Signal Routing/From', [m '/' nm], ...
               'Position', [x y x+70 y+25], 'GotoTag', tag);
 end
 
@@ -658,11 +670,17 @@ function build_offline()
 
     addMotionModel(m, 1450, 280);
 
-    add_line(m,'Thrusters/1','MotionModel/1','autorouting','on');
-    add_line(m,'Thrusters/2','MotionModel/2','autorouting','on');
-
     add_line(m,'InnerLoop/1','Thrusters/1','autorouting','on');
     add_line(m,'InnerLoop/2','Thrusters/2','autorouting','on');
+
+    %  사슬이 줄을 바꾸는 자리 — 선으로 이으면 오른쪽 끝에서 왼쪽 끝으로 거슬러
+    %  올라가 도면을 가로지른다. lay_chain 은 그런 연결을 Goto/From 한 쌍으로
+    %  바꾸는데, 이름을 몰라 `Thrusters_1` 처럼 **블록 이름 꼴 태그**를 만든다
+    %  (check_tags 가 잡는다). 추진기 출력에는 이미 FL·FR 태그가 붙어 있으므로
+    %  그것을 받는다 — 태그가 늘지 않고 이름이 신호 이름이다
+    ff = {F(m,'FL', 1380, 300), F(m,'FR', 1380, 345)};
+    add_line(m,[ff{1} '/1'],'MotionModel/1','autorouting','on');
+    add_line(m,[ff{2} '/1'],'MotionModel/2','autorouting','on');
 
     % --- 되먹임 태그 + 로깅 ---------------------------------------------
     tags = {'x_n','y_n','psi','u','r','beta','chi','U'};
@@ -701,8 +719,10 @@ function build_vrx()
         {'/wamv/thrusters/left/thrust','/wamv/thrusters/right/thrust'}, 'Ts_ctrl');
     add_line(m,'InnerLoop/1','Thrusters/1','autorouting','on');
     add_line(m,'InnerLoop/2','Thrusters/2','autorouting','on');
-    add_line(m,'Thrusters/1','CmdPublisher/1','autorouting','on');
-    add_line(m,'Thrusters/2','CmdPublisher/2','autorouting','on');
+    %  줄이 바뀌는 자리는 이미 있는 FL·FR 태그로 받는다 (W05_0_offline 과 같은 이유)
+    fc = {F(m,'FL', 1230, 280), F(m,'FR', 1230, 325)};
+    add_line(m,[fc{1} '/1'],'CmdPublisher/1','autorouting','on');
+    add_line(m,[fc{2} '/1'],'CmdPublisher/2','autorouting','on');
 
     % --- 5단 · 항법 (ENU -> NED 변환) -----------------------------------
     navCode = [ ...

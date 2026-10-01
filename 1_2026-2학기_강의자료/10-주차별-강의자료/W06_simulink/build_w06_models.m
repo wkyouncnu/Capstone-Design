@@ -32,9 +32,12 @@ function build_w06_models()
     build_vrx();
     % 최상위 배치 — autorouting 에 맡기지 않고 규칙대로 직접 놓는다.
     % check_lines 의 일곱 항목이 전부 0 이 합격선 (references/line-routing.md)
-    %  Wrap — 사슬을 접는 칸 수. 겹침 0 이 되는 것 중 가장 작은 쪽을 재서 골랐다
+    %  Wrap — 사슬을 접는 칸 수. 겹침 0 이 되는 것 중 가장 작은 쪽을 재서 골랐다.
+    %  Wrap 3 으로 두면 VRX 쌍둥이와 **같은 자리**에서 줄이 바뀌고, 그 자리의
+    %  연결은 빌더가 이미 FL·FR 태그로 받아 두었으므로 lay_chain 이 블록 이름 꼴
+    %  태그를 새로 만들지 않는다
     lay_chain('W06_0_offline', {'Guidance','InnerLoop','Thrusters','MotionModel'}, ...
-              'Boxes', {'Animate','Logging'}, 'Wrap', 2);
+              'Boxes', {'Animate','Logging'}, 'Wrap', 3);
     lay_chain('W06_1_vrx', {'Guidance','InnerLoop','Thrusters','CmdPublisher','PoseSubscriber'}, ...
               'Boxes', {'Animate','Logging'}, 'Wrap', 3);
 
@@ -43,7 +46,12 @@ function build_w06_models()
         m = mm{1}; load_system(m);
         paint_roles(m);
         check_colour(m);
-        mss_style(m); save_system(m); check_lines(m, false); export_diagram(m);
+        mss_style(m);
+        %  태그를 신호 옆으로 — lay_chain 은 Goto 를 내는 블록 **아래**에 쌓으므로
+        %  잇는 선이 통로로 내려가며 두 번 꺾인다. 마지막에 한 번 끌어오면 수평
+        %  한 토막이 된다 (2026-10-01 교수 지시, line-routing.md §3)
+        snug_tags(m);
+        save_system(m); check_lines(m, false); export_diagram(m);
         close_system(m, 0);
     end
     fprintf('\n완료. 생성된 모델:\n');
@@ -73,9 +81,21 @@ function C(m, name, value, x, y)
               'Position', [x y x+95 y+30], 'Value', value);
 end
 
-function F(m, tag, sfx, x, y)
-    add_block('simulink/Signal Routing/From', [m '/Fr_' tag '_' sfx], ...
+function nm = F(m, tag, x, y)
+%  From 블록 이름은 `Fr_<태그>` 다. 같은 태그를 여러 곳에서 받으면 **번호만** 붙인다
+%  (line-routing.md §3.1). `_tools/from_name.m` 이 비어 있는 이름을 돌려준다 —
+%  받는 쪽 블록을 이름에 섞으면(`Fr_psi_b`) 이름표가 이웃을 덮고, 받는 블록을
+%  바꿀 때 태그 이름까지 손대야 한다.
+    nm = from_name(m, tag);
+    add_block('simulink/Signal Routing/From', [m '/' nm], ...
               'Position', [x y x+70 y+25], 'GotoTag', tag);
+end
+
+function T(m, name, x, y)
+%  아무도 받지 않는 신호는 태그로 내보내지 않는다 — Terminator 로 끝낸다.
+%  받는 From 이 없는 Goto 는 도면만 늘린다 (check_tags 가 센다).
+    add_block('simulink/Sinks/Terminator', [m '/' name], ...
+              'Position', [x y x+30 y+30]);
 end
 
 function G(m, tag, x, y)
@@ -555,24 +575,24 @@ end
 %   설정값은 각 상자 안에 있다. 최상위에 남는 것은 되먹임뿐이다.
 % =====================================================================
 function wireFront(m)
-    F(m,'x_n','a',   40,  65);
-    F(m,'y_n','a',   40, 110);
-    F(m,'beta','g', 40, 155);
+    fx = F(m,'x_n',   40,  65);
+    fy = F(m,'y_n',   40, 110);
+    fb = F(m,'beta',  40, 155);
 
-    add_line(m,'Fr_x_n_a/1',  'Guidance/1','autorouting','on');
-    add_line(m,'Fr_y_n_a/1',  'Guidance/2','autorouting','on');
-    add_line(m,'Fr_beta_g/1','Guidance/3','autorouting','on');
+    add_line(m,[fx '/1'],'Guidance/1','autorouting','on');
+    add_line(m,[fy '/1'],'Guidance/2','autorouting','on');
+    add_line(m,[fb '/1'],'Guidance/3','autorouting','on');
 
     % 내부루프 입력 : 유도 출력 셋 + 자세·속도 되먹임 셋
-    F(m,'psi','b', 780, 560);
-    F(m,'r',  'b', 780, 600);
-    F(m,'u',  'b', 780, 640);
+    fp = F(m,'psi', 780, 560);
+    fr = F(m,'r',   780, 600);
+    fu = F(m,'u',   780, 640);
     add_line(m,'Guidance/1','InnerLoop/1','autorouting','on');   % psi_ref
     add_line(m,'Guidance/2','InnerLoop/2','autorouting','on');   % gate
     add_line(m,'Guidance/3','InnerLoop/3','autorouting','on');   % u_cmd
-    add_line(m,'Fr_psi_b/1','InnerLoop/4','autorouting','on');
-    add_line(m,'Fr_r_b/1',  'InnerLoop/5','autorouting','on');
-    add_line(m,'Fr_u_b/1',  'InnerLoop/6','autorouting','on');
+    add_line(m,[fp '/1'],'InnerLoop/4','autorouting','on');
+    add_line(m,[fr '/1'],'InnerLoop/5','autorouting','on');
+    add_line(m,[fu '/1'],'InnerLoop/6','autorouting','on');
 end
 
 % =====================================================================
@@ -600,19 +620,29 @@ function build_offline()
 
     add_line(m,'InnerLoop/1','Thrusters/1','autorouting','on');
     add_line(m,'InnerLoop/2','Thrusters/2','autorouting','on');
-    add_line(m,'Thrusters/1','MotionModel/1','autorouting','on');
-    add_line(m,'Thrusters/2','MotionModel/2','autorouting','on');
 
     G(m,'FL', 1500, 800);  G(m,'FR', 1500, 840);  G(m,'nprop', 1500, 880);
     add_line(m,'Thrusters/1','Go_FL/1','autorouting','on');
     add_line(m,'Thrusters/2','Go_FR/1','autorouting','on');
     add_line(m,'Thrusters/3','Go_nprop/1','autorouting','on');
 
-    tags = {'x_n','y_n','psi','u','r','beta','chi','U'};
+    %  사슬이 줄을 바꾸는 자리는 **이미 있는 FL·FR 태그**로 받는다. 선으로 이으면
+    %  lay_chain 이 그 연결을 Goto/From 으로 바꾸면서 이름을 몰라 `Thrusters_1`
+    %  같은 블록 이름 꼴 태그를 만든다 (check_tags 가 잡는다)
+    fl = F(m,'FL', 1540, 580);  fr2 = F(m,'FR', 1540, 625);
+    add_line(m,[fl  '/1'],'MotionModel/1','autorouting','on');
+    add_line(m,[fr2 '/1'],'MotionModel/2','autorouting','on');
+
+    %  상태 여덟 개 가운데 chi·U 는 이 모델이 쓰지 않는다 (로깅·화면 어디에도 없다).
+    %  태그로 내보내면 받는 From 이 없어 도면만 늘어난다 → Terminator 로 끝낸다
+    tags = {'x_n','y_n','psi','u','r','beta'};
     for k = 1:numel(tags)
         G(m, tags{k}, 1900, 560+(k-1)*40);
         add_line(m, sprintf('MotionModel/%d',k), ['Go_' tags{k} '/1'], 'autorouting','on');
     end
+    T(m,'EndChi', 1900, 840);  T(m,'EndU', 1900, 880);
+    add_line(m,'MotionModel/7','EndChi/1','autorouting','on');
+    add_line(m,'MotionModel/8','EndU/1','autorouting','on');
 
     addAnimate(m, 1900, 920);
     addLogging(m, 2350, 60);
@@ -645,13 +675,16 @@ function build_vrx()
         {'/wamv/thrusters/left/thrust','/wamv/thrusters/right/thrust'}, 'Ts_ctrl');
     add_line(m,'InnerLoop/1','Thrusters/1','autorouting','on');
     add_line(m,'InnerLoop/2','Thrusters/2','autorouting','on');
-    add_line(m,'Thrusters/1','CmdPublisher/1','autorouting','on');
-    add_line(m,'Thrusters/2','CmdPublisher/2','autorouting','on');
 
     G(m,'FL', 1500, 850);  G(m,'FR', 1500, 890);  G(m,'nprop', 1500, 930);
     add_line(m,'Thrusters/1','Go_FL/1','autorouting','on');
     add_line(m,'Thrusters/2','Go_FR/1','autorouting','on');
     add_line(m,'Thrusters/3','Go_nprop/1','autorouting','on');
+
+    %  줄이 바뀌는 자리는 이미 있는 FL·FR 태그로 받는다 (W06_0_offline 과 같은 이유)
+    fl = F(m,'FL', 1540, 500);  fr2 = F(m,'FR', 1540, 545);
+    add_line(m,[fl  '/1'],'CmdPublisher/1','autorouting','on');
+    add_line(m,[fr2 '/1'],'CmdPublisher/2','autorouting','on');
 
     % --- 5단 · 항법 (ENU -> NED 변환) -----------------------------------
     navCode = [ ...
@@ -682,11 +715,15 @@ function build_vrx()
         '/wamv/sensors/position/ground_truth_odometry', 'Ts_ctrl', navCode, ...
         {'x_n','y_n','psi','u','r','beta','chi','U'});
 
-    tags = {'x_n','y_n','psi','u','r','beta','chi','U'};
+    %  chi·U 는 이 모델이 쓰지 않는다 → Terminator (오프라인 쌍둥이와 같다)
+    tags = {'x_n','y_n','psi','u','r','beta'};
     for k = 1:numel(tags)
         G(m, tags{k}, 2300, 950+(k-1)*45);
         add_line(m, sprintf('PoseSubscriber/%d',k), ['Go_' tags{k} '/1'], 'autorouting','on');
     end
+    T(m,'EndChi', 2300, 1265);  T(m,'EndU', 2300, 1310);
+    add_line(m,'PoseSubscriber/7','EndChi/1','autorouting','on');
+    add_line(m,'PoseSubscriber/8','EndU/1','autorouting','on');
 
     addAnimate(m, 2200, 1320);
     addLogging(m, 2650, 60);
