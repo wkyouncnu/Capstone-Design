@@ -24,9 +24,14 @@ function build_w08_models()
     lay_chain('W08_0_offline', ...
               {'DPRef','WaveFilter','DPCtrl','Alloc','Thrusters','Env','MotionModel'}, ...
               'Boxes', {'Animate','Logging'}, 'Wrap', 2);
+    %  바닥 구역도 **단계 순서대로** 적는다. ZeroThr(추진기) · ZeroEnv(환경) 는
+    %  태그에만 0 을 주는 상수인데, 'Boxes' 에 적지 않으면 lay_chain 이 그것을
+    %  Animate · Logging **아래**에 놓는다. 그러면 사슬의 맨 아래가 로깅 상자보다
+    %  더 내려가, 종착 블록을 빼 주는 check_flow 의 예외가 걸리지 않는다
+    %  (2026-10-01 — Logging x=260 < ZeroEnv x=590 으로 어긋남 1건)
     lay_chain('W08_1_vrx', ...
               {'DPRef','WaveFilter','DPCtrl','Alloc','Thrusters','PoseSubscriber'}, ...
-              'Boxes', {'CmdPublisher','Animate','Logging'}, 'Wrap', 2);
+              'Boxes', {'ZeroThr','ZeroEnv','CmdPublisher','Animate','Logging'}, 'Wrap', 2);
 
     %  색 — 역할표는 _tools/gnc_roles.m 하나뿐이다. 빌더는 부르기만 한다
     for mm = {'W08_0_offline','W08_1_vrx'}

@@ -57,11 +57,20 @@ function build_w02_models()
 
             tidy_model(mName);
 
+            %  Animate · Logging 은 최상위에 선이 한 가닥도 없다 (안쪽에서 태그로
+            %  받는다). arrangeSystem 은 층을 신호로 정하므로 선 없는 상자를
+            %  **왼쪽 위**로 보내고, 그러면 사슬의 마지막 단계가 맨 왼쪽에 서서
+            %  도면이 오른쪽에서 왼쪽으로 읽힌다 (2026-10-01 W02_3 에서
+            %  Animate x=250 · Logging x=550 < PoseSubscriber x=850 — check_flow 2건).
+            %  선이 없으므로 내려도 배선은 한 가닥도 바뀌지 않는다
+            lay_boxes(mName, {'Animate','Logging'});
+
             paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
 
             check_colour(mName);       % 흰색으로 남은 블록 0 이 합격선
             check_lines(mName, false); % 일곱 항목이 전부 0 이 합격선
             check_tags(mName);         % 태그 이름이 신호 이름인가. 0 이 합격선
+            check_flow(mName);         % 좌 -> 우 단계 순서. 0 이 합격선
 
             export_model_pngs(mName);
 

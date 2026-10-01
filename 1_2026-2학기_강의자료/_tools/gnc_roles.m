@@ -138,8 +138,14 @@ case {'W05_0_offline','W05_1_vrx','W06_0_offline','W06_1_vrx', ...
       'W07_0_offline','W07_1_vrx'}
     role = GNC;
 case {'W08_0_offline','W08_1_vrx'}
+    %   ZeroThr · ZeroEnv 는 VRX 모델에만 있다. Gazebo 가 힘을 만들므로 추력·외란을
+    %   계산하지 않고 0 을 태그로 내보내, Logging 이 오프라인 모델과 **같은 신호**를
+    %   받게 하는 자리다. 지령이 아니다 — 자리는 각각 추진기(4) · 환경(5) 단계다.
+    %   Constant 라고 1단계(지령)로 짐작하면 로깅 상자보다 오른쪽에 섰다고
+    %   check_flow 가 잡는다 (2026-10-01. W04_P2 의 NoiseHF·SensorNoise 와 같은 원인)
     role = [GNC; {'DPRef','guidance'; 'WaveFilter','ros'; 'DPCtrl','control'; ...
-                  'Alloc','allocation'; 'Env','env'}];
+                  'Alloc','allocation'; 'Env','env'; ...
+                  'ZeroThr','thruster'; 'ZeroEnv','env'}];
 
 otherwise
     role = GNC;     % 이름이 관례를 따르면 그대로 맞는다
