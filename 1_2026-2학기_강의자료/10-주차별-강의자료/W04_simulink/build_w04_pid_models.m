@@ -331,11 +331,17 @@ function build_p2(ROW)
     goto(m, 'ym_lib', x(8), ROW);
 
     add_line(m, 'Ref/1', 'RefShape/1');
+    %  지령이 내려오는 통로는 되먹임 From 보다 **왼쪽**에 둔다. 같은 x 에 두면
+    %  포트 옆에 세운 From 의 수평선과 10 px 겹친다 (2026-10-02)
     ax = port_xy(m, 'RefShape', 'Outport', 1);
+    ax(1) = ax(1) - 40;
     lane_line(m, 'RefShape', 1, 'SumE_lib', 1, ax(1));  % 한 줄기에서 위아래로 갈라진다
     straight(m, {'SumE_lib','PID_lib'; 'PID_lib','Plant_lib'; ...
                  'Plant_lib','SumY_lib'; 'SumY_lib','Go_ym_lib'});
-    feed_from(m, 'ym_lib', 'SumE_lib', 2, 90);
+    %  되먹임은 **포트 바로 옆**에 세운다. 두 입력이 모두 왼쪽 가장자리로 오므로
+    %  (add_sum, 2026-10-02), 아래에서 끌어올리면 그 세로 토막이 RefShape 가
+    %  내려오는 통로와 같은 x 에서 90 px 겹친다
+    feed_from(m, 'ym_lib', 'SumE_lib', 2, 10);
     feed_from(m, 'noise',  'SumY_lib', 2, 90, '1');
     drop_tag(m, 'Plant_lib', 1, 'y_lib', -150);         % 로깅은 잡음 없는 참값으로
     drop_tag(m, 'PID_lib',   1, 'tau_lib', -150);
@@ -353,7 +359,7 @@ function build_p2(ROW)
     lane_line(m, 'RefShape', 1, 'SumE_hand', 1, ax(1));
     straight(m, {'SumE_hand','PID_byhand'; 'PID_byhand','Plant_hand'; ...
                  'Plant_hand','SumY_hand'; 'SumY_hand','Go_ym_hand'});
-    feed_from(m, 'ym_hand', 'SumE_hand', 2, 90);
+    feed_from(m, 'ym_hand', 'SumE_hand', 2, 10);
     feed_from(m, 'noise',   'SumY_hand', 2, 90, '2');
     drop_tag(m, 'Plant_hand', 1, 'y_hand', 170);
     drop_tag(m, 'PID_byhand', 1, 'tau_hand', 170);
@@ -601,9 +607,10 @@ function addPIDbyhand(mdl, name, pos, v)
     blk(s, 'simulink/Discontinuities/Saturation', 'Sat', 700, RP, 30, 30, ...
         {'UpperLimit', v.Lim, 'LowerLimit', ['-' v.Lim]});
 
-    %  1번(왼쪽)에 tau_raw, 2번(아래)에 tau_sat 을 넣는다. 아래쪽 포트는 밑에서만
-    %  접근할 수 있으므로, 위에 있는 Sat 이 그쪽으로 간다 — 그 한 선만 두 번 꺾인다.
-    add_sum(s, 'SumAW', '-+', [760 RAW]);         % -tau_raw + tau_sat
+    %  합산점의 두 입력은 **둘 다 왼쪽 가장자리**에 있다 (add_sum, 2026-10-02).
+    %  위가 1번(-tau_raw), 아래가 2번(+tau_sat) 이다. 둘 다 왼쪽에서 들어오므로
+    %  Sat 오른쪽으로 비켜 세워야 SumU 에서 오는 선이 Sat 을 가로지르지 않는다.
+    add_sum(s, 'SumAW', '-+', [860 RAW]);         % -tau_raw + tau_sat
     blk(s, 'simulink/Math Operations/Gain', 'Kb_gain', 560, RBK, 50, 36, ...
         {'Gain', v.Kb, 'Orientation','left'});    % 출력이 왼쪽을 본다
 
@@ -617,14 +624,17 @@ function addPIDbyhand(mdl, name, pos, v)
                  'Kp_gain','SumPI'; 'SumPI','SumU'; 'SumU','Sat'; 'Sat','tau'});
     lane_line(s, 'Integ',   1, 'SumPI', 2, 540);   % I 는 아래에서 올라온다
     lane_line(s, 'PseudoD', 1, 'SumU',  2, 620);   % D 도 아래에서 올라온다
-    %  tau_raw 는 왼쪽 포트로 곧장 — 꺾임 1회
-    ux = port_xy(s, 'SumU', 'Outport', 1);
-    lane_line(s, 'SumU', 1, 'SumAW', 1, ux(1));
+    %  두 입력 모두 왼쪽 가장자리로 들어온다 (add_sum, 2026-10-02).
+    %  각 선을 **그 포트의 높이로 바로 내려** 수평으로 달리게 한다. 통로 높이를
+    %  포트 높이와 같게 두면 포트 앞에 세로 토막이 남지 않아 두 선이 겹치지
+    %  않는다 (다른 높이의 통로를 쓰면 마지막 5 px 가 같은 x 에서 겹친다).
+    a = port_xy(s, 'SumU',  'Outport', 1);
+    b = port_xy(s, 'SumAW', 'Inport',  1);
+    add_line(s, [a; a(1) b(2); b]);
 
-    %  tau_sat 은 아래쪽 포트라 밑에서 올라와야 한다 — 이 모델에서 유일한 2회 꺾임
     a = port_xy(s, 'Sat',   'Outport', 1);
     b = port_xy(s, 'SumAW', 'Inport',  2);
-    add_line(s, [a; a(1) RDET; b(1) RDET; b]);
+    add_line(s, [a; a(1) b(2); b]);
 
     wx = port_xy(s, 'SumAW', 'Outport', 1);
     lane_line(s, 'SumAW', 1, 'Kb_gain', 1, wx(1));

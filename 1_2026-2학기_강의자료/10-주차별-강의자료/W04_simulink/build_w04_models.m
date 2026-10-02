@@ -160,8 +160,16 @@ function setSolver(m)
 %
 %  스텝은 0.05 s 그대로다. ROS Subscribe/Publish 는 이산 블록이라 major step
 %  에서만 돌므로 토픽 주기도 페이싱도 달라지지 않는다.
+%
+%  StopTime 은 **무한대로 두지 않는다** (교수 지시 2026-10-02).
+%  전에는 inf 였다. 그래서 학생이 Run 을 누르면 모델이 스스로 끝나지 않고,
+%  Stop 을 손으로 눌러야 했다 — 언제 눌러야 하는지는 아무도 알려 주지 않았다.
+%  게다가 Gazebo 가 떠 있지 않으면 토픽이 오지 않아 화면이 빈 채로 영원히
+%  돌았다 (2026-10-02 교수가 W04_4_inner_loop 에서 겪은 것이 이것이다).
+%  이제 시나리오 길이만큼만 돌고, 응답이 안정되면 그 전에 스스로 멈춘다
+%  (addAutoStop 참고).
     set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
-                 'FixedStep','0.05', 'StopTime','inf', 'SimulationMode','normal');
+                 'FixedStep','0.05', 'StopTime','T_run', 'SimulationMode','normal');
 end
 
 function setFcn(m, name, code)
@@ -615,6 +623,175 @@ function c = headingErrCode()
 end
 
 % =====================================================================
+% 자동 정지 — 할 일이 끝나면 모델이 스스로 Stop 을 누른다
+%
+%   교수 지시 2026-10-02. "inf 무한대까지 시뮬레이션 하지 말고, 끝나면
+%   Stop 버튼으로 시뮬링크에서 자동으로 멈추게 해 달라."
+%
+%   어떻게 끝났다고 아는가 / how it knows it is done
+%       선수각 오차가 settle_band [deg] 안에 들어와 settle_hold [s] 를
+%       버티면 끝난 것으로 본다. "들어왔다" 가 아니라 "버텼다" 로 재는 이유는,
+%       오버슈트로 지나가는 길에 한 번 스치는 것과 실제로 자리를 잡은 것을
+%       가르기 위해서다.
+%
+%   버틴 시간을 **연속으로** 센다
+%       적분기 하나면 된다. 입력은 1, 외부 리셋은 "오차가 띠 밖" 이다.
+%       띠 안에 있는 동안 적분기는 1초에 1씩 올라가고, 한 번이라도 벗어나면
+%       0 으로 떨어진다. 그 값이 settle_hold 를 넘으면 Stop 이다.
+%       Memory 나 Unit Delay 가 필요 없다 — 모델 전체를 연속으로 두는
+%       규칙(2026-10-01)을 깨지 않는다.
+%
+%   StopTime 은 그대로 T_run 으로 남는다. 영영 안정되지 않는 게인을 학생이
+%   넣어 보더라도 T_run 에서는 반드시 끝난다.
+function addAutoStop(m, x, y, withSpeed)
+    if nargin < 4, withSpeed = false; end
+    pin = {'psi_ref','psi'};
+    if withSpeed, pin = {'psi_ref','psi','u_ref','u'}; end
+    s = add_subsys(m, 'AutoStop', [x y x+150 y+90], pin, {}, ...
+                   gnc_colour('logging'));
+
+    %  오차는 여기서 직접 구한다. ssa 로 접어야 ±180 deg 이음매에서 340 deg 로
+    %  읽히지 않는다 (2-11 절). 제어기의 use_ssa 스위치와는 무관하다 —
+    %  **끝났는지 재는 자[尺]는 언제나 접은 값**이어야 한다
+    add_block('simulink/User-Defined Functions/MATLAB Function', [s '/ErrDeg'], ...
+              'Position',[60 85 190 135]);
+    setFcn(s, 'ErrDeg', [ ...
+'function e = ErrDeg(psi_ref, psi)'                              newline ...
+'%#codegen'                                                      newline ...
+'% 선수각 오차 [deg], ssa 로 접은 최단 각'                        newline ...
+'d = psi_ref - psi;'                                             newline ...
+'e = atan2(sin(d), cos(d)) * 180/pi;'                            newline]);
+
+    add_block('simulink/Math Operations/Abs', [s '/AbsE'], ...
+              'Position',[230 95 260 125]);
+    add_block('simulink/Sources/Constant', [s '/Band'], ...
+              'Value','settle_band', 'Position',[150 160 250 190]);
+    add_block('simulink/Logic and Bit Operations/Relational Operator', [s '/Outside'], ...
+              'Operator','>', 'Position',[280 100 310 130]);
+
+    %  띠 안에 머문 시간 [s] — 벗어나 있는 동안은 0 에 묶인다.
+    %
+    %  리셋은 **level** 이어야 한다. 'rising' 은 리셋 신호가 0 에서 1 로 올라가는
+    %  **순간**에만 한 번 리셋한다. 그런데 실행 시작부터 오차가 띠 밖이면 그
+    %  신호는 처음부터 1 이라 올라가는 모서리가 없다 — 리셋이 영영 안 걸리고
+    %  적분기는 그냥 경과 시간을 센다. 2026-10-02 에 이것 때문에 내부루프가
+    %  헤딩만 맞고 속도는 1.03 m/s 인 5.05 s 에 멈췄다. 'level' 은 신호가 1 인
+    %  **동안** 초기값에 붙들어 두므로, 띠 안에 들어온 뒤부터 비로소 올라간다.
+    add_block('simulink/Continuous/Integrator', [s '/HeldFor'], ...
+              'ExternalReset','level', 'InitialCondition','0', ...
+              'Position',[380 95 420 135]);
+    add_block('simulink/Sources/Constant', [s '/One'], ...
+              'Value','1', 'Position',[280 40 330 70]);
+
+    add_block('simulink/Sources/Constant', [s '/Hold'], ...
+              'Value','settle_hold', 'Position',[380 190 480 220]);
+    add_block('simulink/Logic and Bit Operations/Relational Operator', [s '/Done'], ...
+              'Operator','>=', 'Position',[520 110 550 140]);
+    add_block('simulink/Sinks/Stop Simulation', [s '/StopSim'], ...
+              'Position',[610 110 650 140]);
+
+    add_line(s,'psi_ref/1','ErrDeg/1','autorouting','on');
+    add_line(s,'psi/1',    'ErrDeg/2','autorouting','on');
+    add_line(s,'ErrDeg/1','AbsE/1','autorouting','on');
+    add_line(s,'AbsE/1','Outside/1','autorouting','on');
+    add_line(s,'Band/1','Outside/2','autorouting','on');
+    add_line(s,'One/1','HeldFor/1','autorouting','on');
+
+    if withSpeed
+        %  속도 루프도 자리를 잡아야 끝난 것이다. 헤딩만 보고 멈추면 내부루프
+        %  모델이 u = 1.03 m/s 인 채로 5 s 에 꺼진다 (2026-10-02 실측)
+        add_sum(s, 'SumUerr', '+-', [250 260]);
+        add_block('simulink/Math Operations/Abs', [s '/AbsU'], ...
+                  'Position',[300 245 330 275]);
+        add_block('simulink/Sources/Constant', [s '/BandU'], ...
+                  'Value','settle_band_u', 'Position',[300 310 400 340]);
+        add_block('simulink/Logic and Bit Operations/Relational Operator', [s '/OutsideU'], ...
+                  'Operator','>', 'Position',[420 250 450 280]);
+        add_block('simulink/Logic and Bit Operations/Logical Operator', [s '/AnyOut'], ...
+                  'Operator','OR', 'Inputs','2', 'Position',[500 170 530 210]);
+        add_line(s,'u_ref/1','SumUerr/1','autorouting','on');
+        add_line(s,'u/1',    'SumUerr/2','autorouting','on');
+        add_line(s,'SumUerr/1','AbsU/1','autorouting','on');
+        add_line(s,'AbsU/1','OutsideU/1','autorouting','on');
+        add_line(s,'BandU/1','OutsideU/2','autorouting','on');
+        add_line(s,'Outside/1', 'AnyOut/1','autorouting','on');
+        add_line(s,'OutsideU/1','AnyOut/2','autorouting','on');
+        add_line(s,'AnyOut/1','HeldFor/2','autorouting','on');
+    else
+        add_line(s,'Outside/1','HeldFor/2','autorouting','on');
+    end
+    add_line(s,'HeldFor/1','Done/1','autorouting','on');
+    add_line(s,'Hold/1','Done/2','autorouting','on');
+    add_line(s,'Done/1','StopSim/1','autorouting','on');
+end
+
+% =====================================================================
+% 서지 속도 제어기 — 헤딩 제어기와 같은 층위의 상자 하나
+% =====================================================================
+function addSpeedCtrl(m, x, y, withGate)
+% 속도 제어기를 **서브시스템 하나**로 만든다. 밖에서는 이 상자만 보인다.
+%
+%   입력  u_ref   [m/s]  목표 전진속도
+%         u       [m/s]  지금 전진속도
+%         gate    [0/1]  (VRX 만) 첫 odom 전에는 0 — 오차를 묶어 둔다
+%   출력  X       [N]    전진력 지령
+%
+%   제어식
+%
+%       X = Kp_u * e  +  Ki_u * INT(e),      e = u_ref - u
+%
+%   왜 상자로 묶는가 / why a subsystem
+%       전에는 SumU · GateE · PI_u 가 최상위에 흩어져 있었다. 바로 옆 헤딩
+%       제어기는 상자 하나인데 속도 쪽만 속이 드러나, 도면을 보면 제어기가
+%       몇 개인지 세기 어려웠다. 두 루프가 같은 층위의 상자 둘로 보여야
+%       "안쪽 루프 둘이 추력 배분 하나로 모인다" 는 구조가 한눈에 읽힌다.
+%       교수 지시 2026-10-02.
+%
+%   PI 는 **연속 시간**이다 (교수 지시 2026-10-01)
+%       전에는 Discrete PID (Ts = 0.05, Forward Euler) 였다. 검사 도구가
+%       이것을 놓치고 있었는데 (PID 블록의 BlockType 은 'SubSystem' 이다),
+%       2026-10-02 에 check_discrete 를 고치면서 드러났다. 게인 P · I 와
+%       출력 한계는 그대로 두고 시간 영역만 바꾼다.
+%
+%   예열 게이트 (VRX 만)
+%       첫 odom 메시지가 오기 전에는 u 가 0 으로 들어와 오차가 1.5 m/s 로
+%       잡힌다. 그대로 두면 적분기가 그 오차를 쌓아, 게이트가 열리는 순간
+%       포화 500 N 에서 출발한다 (u 가 63 % 에 1.4 s 만에 닿는다 — 오프라인은
+%       2.5 s, 2026-09-24 실측). 오차를 0 으로 묶어 두면 열린 뒤 오프라인과
+%       같은 0 에서 출발한다. 오프라인 모델에는 이 포트가 없다.
+
+    nIn = {'u_ref','u'};
+    if withGate, nIn = {'u_ref','u','gate'}; end
+    s = add_subsys(m, 'SpeedCtrl', [x y x+150 y+120], nIn, {'X'}, gnc_colour('control'));
+
+    %  합산점은 부호 둘 다 왼쪽 가장자리에 — add_sum 의 머리글 참고 (2026-10-02)
+    add_sum(s, 'SumU', '+-', [250 110]);
+
+    add_block('simulink/Continuous/PID Controller', [s '/PI_u'], ...
+              'Position',[430 80 530 140]);
+    %  게인과 한계는 **전과 같은 값**이다 (P 300 · I 40 · ±500 N).
+    %  바꾸는 것은 시간 영역뿐이다 — 값을 같이 건드리면 무엇 때문에 응답이
+    %  달라졌는지 가릴 수 없게 된다
+    set_param([s '/PI_u'], 'Controller','PI', 'TimeDomain','Continuous-time', ...
+              'P','300', 'I','40', 'LimitOutput','on', ...
+              'UpperSaturationLimit','500', 'LowerSaturationLimit','-500', ...
+              'AntiWindupMode','clamping');
+
+    add_line(s,'u_ref/1','SumU/1','autorouting','on');
+    add_line(s,'u/1',    'SumU/2','autorouting','on');
+    if withGate
+        add_block('simulink/Math Operations/Product', [s '/GateE'], ...
+                  'Position',[330 95 360 125]);
+        add_line(s,'SumU/1',  'GateE/1','autorouting','on');
+        add_line(s,'gate/1',  'GateE/2','autorouting','on');
+        add_line(s,'GateE/1', 'PI_u/1', 'autorouting','on');
+    else
+        add_line(s,'SumU/1','PI_u/1','autorouting','on');
+    end
+    add_line(s,'PI_u/1','X/1','autorouting','on');
+end
+
+% =====================================================================
 % 헤딩 제어기 (3·4단계 공통) — 독립 모듈 하나
 % =====================================================================
 function addHeadingCtrl(m, x, y)
@@ -889,6 +1066,63 @@ end
 %   로깅 블록이 사슬 한가운데로 끌려 들어가지 않는다.
 %
 %     out = sim('W04_3_heading_offline');   out.log.psi   out.log.N   ...
+% =====================================================================
+% 관찰용 Scope — 모델 하나에 **한 개**
+%
+%   교수 지시 2026-10-02. "scope 로 궤적은 필요 없다. 하나의 scope 에서
+%   각 제어 명령과 실제 값을 볼 수 있게 해 달라."
+%
+%   왜 하나인가 / why one
+%       전에는 Scope_u 와 Scope_psi 두 개였다. 창을 둘 띄워 놓고 눈이 왕복해야
+%       했고, 시간축을 맞춰 보려면 두 창을 나란히 끌어다 놓아야 했다. 한 창에
+%       칸을 나눠 쌓으면 **같은 시간축**에 전부 걸리므로, 속도가 흔들린 그 순간
+%       헤딩이 무엇을 하고 있었는지가 세로로 읽힌다.
+%
+%       궤적은 Scope 에 넣지 않는다. 궤적은 x-y 평면 그림이라 시간축 Scope 와
+%       축이 다르고, 실시간 화면(W04_animate)의 왼쪽 큰 칸이 이미 그 일을 한다.
+%
+%   PAIRS  {지령태그, 실제태그} 를 칸 순서대로. 지령이 없는 칸은 ''
+%
+%       addCompareScope(m, {'u_ref','u'; 'psi_ref','psi'; '','FL'; '','FR'}, x, y)
+%
+%   한 칸에 지령과 실제값을 겹쳐 놓으므로 오버슈트·정정시간·남는 오차가 그
+%   칸 안에서 바로 읽힌다. 지령이 없는 칸은 응답선 하나만 그린다.
+function addCompareScope(m, pairs, x, y)
+    nAx  = size(pairs,1);
+    sc   = [m '/Scope'];
+    add_block('simulink/Sinks/Scope', sc, 'Position',[x+170 y x+220 y+50*nAx]);
+
+    %  칸마다 포트 하나. 지령이 있는 칸은 Mux 로 두 선을 묶어 한 포트로 넣는다.
+    %  포트가 여럿이면 Scope 는 칸을 세로로 쌓아 같은 시간축에 걸어 준다
+    %  (칸 수를 따로 지정하는 LayoutDimensions 는 set_param 으로는 못 쓴다)
+    set_param(sc, 'NumInputPorts', num2str(nAx));
+
+    for i = 1:nAx
+        ref = pairs{i,1};  act = pairs{i,2};
+        yi  = y + 50*(i-1);
+        if isempty(ref)
+            fromTo(m, act, 'Scope', i, 110);
+        else
+            mx = sprintf('%s/MuxSc%d', m, i);
+            add_block('simulink/Signal Routing/Mux', mx, ...
+                      'Inputs','2', 'Position',[x+120 yi x+125 yi+40]);
+            dropFromInto(m, ref, mx, 1, x, yi);
+            dropFromInto(m, act, mx, 2, x, yi+22);
+            add_line(m, sprintf('MuxSc%d/1', i), sprintf('Scope/%d', i), ...
+                     'autorouting','on');
+        end
+    end
+end
+
+function dropFromInto(m, tag, mux, port, x, y)
+%  From 하나를 Mux 포트 바로 왼쪽에 세운다 (선이 수평 직선이 되게)
+    nm = from_name(m, tag);
+    add_block('simulink/Signal Routing/From', [m '/' nm], ...
+              'GotoTag', tag, 'Position',[x y x+70 y+20]);
+    add_line(m, [nm '/1'], sprintf('%s/%d', get_param(mux,'Name'), port), ...
+             'autorouting','on');
+end
+
 function addLogFromTags(m, names, x, y)
     n  = numel(names);
     bc = [m '/LogBus'];
@@ -1020,11 +1254,13 @@ function build_heading(offline)
         %  psi · r 태그는 addOdomReader 가 이미 걸어 두었다
     end
 
-    % 관찰용 — 사슬 오른쪽 끝 한 열. 전부 태그에서 받으므로 선이 짧다
-    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[xM 60 xM+50 110]);
-    set_param([m '/Scope_psi'],'NumInputPorts','2');
-    fromTo(m, 'psi',     'Scope_psi', 1, 110);
-    fromTo(m, 'psi_ref', 'Scope_psi', 2, 190);
+    % 관찰용 — **Scope 하나**에 지령과 실제값을 나란히 (교수 지시 2026-10-02)
+    addCompareScope(m, {'psi_ref','psi'; '','N'; '','FL'; '','FR'}, xM, 60);
+
+    %  헤딩이 자리를 잡으면 스스로 멈춘다 (속도 루프가 없으므로 헤딩만 본다)
+    addAutoStop(m, xM, 320);
+    fromTo(m, 'psi_ref', 'AutoStop', 1, 110);
+    fromTo(m, 'psi',     'AutoStop', 2, 190);
 
     %  로깅은 To Workspace **한 개**다. Bus Creator 가 다섯 신호를 묶고,
     %  꺼낼 때는 이름이 그대로 살아 있다 — out.log.psi · out.log.FL · ...
@@ -1104,22 +1340,18 @@ function build_inner_loop(offline)
     addHeadingCtrl(m, xK, 185);
 
     % --- 속도 루프 — 헤딩 제어기 상자(185~335) 아래 한 줄 ---
-    %  붙여 놓으면 HeadingCtrl 의 이름표가 SumU·GateE 에 가려진다 (여섯째 항목)
+    %  **서지 속도 제어도 서브시스템 하나다** (교수 지시 2026-10-02).
+    %  전에는 SumU·GateE·PI_u 세 블록이 최상위에 흩어져 있어, 바로 옆의
+    %  HeadingCtrl 은 상자 하나인데 속도 쪽만 속이 드러나 보였다. 두 제어기가
+    %  같은 층위로 보여야 "안쪽 루프 둘" 이라는 구조가 읽힌다.
     add_block('simulink/Sources/Constant', [m '/u_ref'], ...
               'Value','1.5', 'Position',[xC 440 xC+90 470]);
-    add_block('simulink/Math Operations/Sum', [m '/SumU'], ...
-              'Inputs','+-', 'Position',[xK 440 xK+30 470]);
-    add_block('simulink/Discrete/Discrete PID Controller', [m '/PI_u'], ...
-              'Position',[xK+250 430 xK+330 480]);
-    set_param([m '/PI_u'], 'Controller','PI', 'P','300', 'I','40', ...
-              'SampleTime','0.05', 'LimitOutput','on', ...
-              'UpperSaturationLimit','500', 'LowerSaturationLimit','-500', ...
-              'AntiWindupMode','clamping');
+    addSpeedCtrl(m, xK, 425, ~offline);
 
     addAllocator(m, xA, 250);
     add_line(m,'psi_ref_deg/1','deg2rad/1','autorouting','on');
     add_line(m,'deg2rad/1', 'HeadingCtrl/1','autorouting','on');
-    add_line(m,'u_ref/1','SumU/1','autorouting','on');
+    add_line(m,'u_ref/1','SpeedCtrl/1','autorouting','on');
 
     %  ---- 신호마다 태그 하나 (2026-10-01 교수 지시) -----------------------
     dropTag(m, 'deg2rad', 1, 'psi_ref', 120);
@@ -1128,23 +1360,12 @@ function build_inner_loop(offline)
     %  되먹임 psi · r · u 는 운동모델에서 제어기로 되돌아간다 — 태그로 남긴다
     fromTo(m, 'psi', 'HeadingCtrl', 2, 110);
     fromTo(m, 'r',   'HeadingCtrl', 3, 190);
-    fromTo(m, 'u',   'SumU',        2, 110);
-    if offline
-        add_line(m,'SumU/1','PI_u/1','autorouting','on');
-    else
-        %  추력을 막아 둔 예열 동안 PI_u 의 적분기가 오차 1.5 m/s 를 쌓지 않게 오차도 0 으로 묶는다.
-        %  묶지 않으면 게이트가 열리는 순간 포화 500 N 에서 출발해 u 가 63 % 에 1.4 s 만에 닿는다
-        %  (오프라인 2.5 s, 2026-09-24 실측). 열린 뒤에는 오프라인과 같은 0 에서 출발한다
-        frE = from_name(m, 'odom_ok');      % 'Fr_odom_ok_3' 꼴 — 번호만 붙는다
-        add_block('simulink/Signal Routing/From', [m '/' frE], ...
-                  'GotoTag','odom_ok', 'Position',[xK+50 530 xK+120 552]);
-        add_block('simulink/Math Operations/Product', [m '/GateE'], ...
-                  'Position',[xK+150 440 xK+170 480]);
-        add_line(m,'SumU/1',    'GateE/1','autorouting','on');
-        add_line(m,[frE '/1'],  'GateE/2','autorouting','on');
-        add_line(m,'GateE/1',   'PI_u/1', 'autorouting','on');
+    fromTo(m, 'u',   'SpeedCtrl',   2, 110);
+    if ~offline
+        %  예열 게이트 — 첫 odom 전에는 오차를 0 으로 묶는다 (addSpeedCtrl 설명 참고)
+        fromTo(m, 'odom_ok', 'SpeedCtrl', 3, 190);
     end
-    add_line(m,'PI_u/1','Alloc/1','autorouting','on');
+    add_line(m,'SpeedCtrl/1','Alloc/1','autorouting','on');
     add_line(m,'HeadingCtrl/1','Alloc/2','autorouting','on');
 
     if offline
@@ -1163,16 +1384,16 @@ function build_inner_loop(offline)
         %  psi · r · u 태그는 addOdomReader 가 이미 걸어 두었다
     end
 
-    % 관찰용 — 사슬 오른쪽 끝 한 열. 전부 태그에서 받으므로 선이 짧다
-    add_block('simulink/Sinks/Scope', [m '/Scope_u'], 'Position',[xM+150 60 xM+200 110]);
-    set_param([m '/Scope_u'],'NumInputPorts','2');
-    fromTo(m, 'u',     'Scope_u', 1, 110);
-    fromTo(m, 'u_ref', 'Scope_u', 2, 190);
+    % 관찰용 — **Scope 하나**에 지령과 실제값을 나란히 (교수 지시 2026-10-02)
+    addCompareScope(m, {'u_ref','u'; 'psi_ref','psi'; '','FL'; '','FR'}, xM+150, 60);
 
-    add_block('simulink/Sinks/Scope', [m '/Scope_psi'], 'Position',[xM+150 200 xM+200 250]);
-    set_param([m '/Scope_psi'],'NumInputPorts','2');
-    fromTo(m, 'psi',     'Scope_psi', 1, 110);
-    fromTo(m, 'psi_ref', 'Scope_psi', 2, 270);
+    %  할 일이 끝나면 스스로 멈춘다 — StopTime 은 T_run 이 뒤를 받친다.
+    %  내부루프는 **두 루프가 다 자리를 잡아야** 끝난 것이다
+    addAutoStop(m, xM+150, 420, true);
+    fromTo(m, 'psi_ref', 'AutoStop', 1, 110);
+    fromTo(m, 'psi',     'AutoStop', 2, 190);
+    fromTo(m, 'u_ref',   'AutoStop', 3, 270);
+    fromTo(m, 'u',       'AutoStop', 4, 350);
 
     %  로깅은 To Workspace **한 개**다 — out.log.psi · out.log.u · ...
     addLogFromTags(m, {'psi','u','FL','FR'}, xM, 340);

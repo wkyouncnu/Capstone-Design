@@ -62,22 +62,29 @@ for i = 1:numel(blocks)
             why    = reason_of(b);
             exempt = ~isempty(why);
 
-        case 'PID Controller'
+        case {'SubSystem','S-Function','M-S-Function'}
+            %  PID Controller 는 **마스크 씌운 서브시스템**이다. BlockType 이
+            %  'PID Controller' 가 아니라 'SubSystem' 으로 나오므로 그 이름으로
+            %  찾으면 하나도 걸리지 않는다. 2026-10-02 에 이것 때문에 4주차의
+            %  이산 PI 두 개(PI_u, Ts = 0.05)를 "이산 0" 으로 잘못 보고했다.
+            %  TimeDomain 파라미터가 있는 블록이 곧 PID 블록이다.
             try
-                if strcmp(get_param(b, 'TimeDomain'), 'Discrete-time')
+                td = get_param(b, 'TimeDomain');
+                if strcmpi(td, 'Discrete-time')
                     kind = 'PID(Discrete-time)';
                 end
             catch
             end
 
-        case {'SubSystem','S-Function','M-S-Function'}
             %  마스크 이름이 Discrete 로 시작하는 라이브러리 블록
-            try
-                r = get_param(b, 'ReferenceBlock');
-                if ~isempty(r) && contains(r, 'Discrete')
-                    kind = 'ref:Discrete';
+            if isempty(kind)
+                try
+                    r = get_param(b, 'ReferenceBlock');
+                    if ~isempty(r) && contains(r, 'Discrete')
+                        kind = 'ref:Discrete';
+                    end
+                catch
                 end
-            catch
             end
     end
 

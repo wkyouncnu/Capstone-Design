@@ -12,14 +12,13 @@ function blk = add_sum(sys, name, signs, centre)
 %              the centre of the circle, not a corner
 %
 %   포트가 어디에 붙는지 / where the ports end up
-%       입력이 둘인 둥근 합산점은 첫 입력을 왼쪽 가장자리에, 둘째 입력을 아래쪽
-%       가장자리에 놓는다. 되먹임이 아래에서 올라오는 MSS 데모의 모양이 이렇게
-%       나온다. 배선할 때 이것을 모르면 두 선을 같은 높이로 끌고 와 겹치게 된다.
+%       **두 입력이 모두 왼쪽 가장자리에 붙는다** — 위가 첫 입력(지령), 아래가
+%       둘째 입력(되먹임)이다. 오차가 만들어지는 자리를 한눈에 읽으려면 두 선이
+%       같은 쪽에서 들어와야 한다는 것이 교수 결정이다 (2026-10-02).
 %
-%       With two inputs, the round sum places the first on its left edge and
-%       the second underneath. That is how the MSS demonstration models come to
-%       have feedback entering from below, and not knowing it leads to both
-%       lines being brought in at the same height, where they overlap.
+%       Both inputs attach to the left edge, the first above the second. The
+%       error junction is the block a reader looks for first, and it reads
+%       fastest when the reference and the feedback arrive on the same side.
 %
 %   WHY THIS EXISTS
 %
@@ -31,16 +30,24 @@ function blk = add_sum(sys, name, signs, centre)
 %
 %   MSS uses a circle 20 x 20 throughout. Checked against
 %   Tools/MSS/SIMULINK/mssSimulinkDemos/demoOtterUSVHeadingControl.slx, whose
-%   eight Sum blocks are all IconShape 'round' at 20 x 20 with signs like
-%   '|+-'. This function reproduces that exactly.
+%   eight Sum blocks are all IconShape 'round' at 20 x 20. This function keeps
+%   that shape and size.
 %
-%   THE '|' IN THE SIGN STRING
+%   왜 '|' 를 넣지 않는가 / why no bar in the sign string
 %
-%   A bar is a port-position spacer, not a port. '|+-' puts the two inputs on
-%   different edges of the circle so their + and - are legible and the lines
-%   arrive from different directions. Without it both signs crowd the left
-%   edge and a small circle becomes unreadable. The bar is added here, so
-%   callers pass the signs alone.
+%   막대는 포트가 아니라 **포트 자리 띄우개**다. '|+-' 로 적으면 둘째 입력이
+%   원의 **아래쪽** 가장자리로 내려가고, 되먹임선이 밑에서 올라와 꺾인다.
+%   그냥 '+-' 로 적으면 두 입력이 **왼쪽 가장자리에 위아래로** 붙고, 지령과
+%   되먹임이 같은 쪽에서 나란히 들어온다.
+%
+%   2026-10-02 에 교수가 두 모양을 나란히 놓고 보고 **뒤쪽(막대 없는 것)**을
+%   골랐다. 오차가 만들어지는 자리는 도면에서 가장 먼저 찾는 곳이고, 두 선이
+%   같은 쪽에서 들어와야 "무엇에서 무엇을 빼는가" 가 한눈에 읽힌다.
+%
+%   The bar is a port-position spacer, not a port. With it the second input
+%   drops to the bottom edge and the feedback line has to come up from below.
+%   Without it both inputs sit on the left edge, one above the other, and the
+%   reference and the feedback arrive side by side.
 %
 %   The centre is the argument rather than a corner because a summing junction
 %   is placed to line up with the signal it interrupts. Aligning centres keeps
@@ -48,12 +55,12 @@ function blk = add_sum(sys, name, signs, centre)
 
 if nargin < 4, error('add_sum:args', 'add_sum(sys, name, signs, centre)'); end
 
-signs = strrep(signs, '|', '');            % tolerate a caller that passed one
+signs = strrep(signs, '|', '');            % 막대는 받아도 버린다 (위 설명)
 R     = 10;                                % half of the MSS 20 x 20
 
 blk = [sys '/' name];
 add_block('simulink/Math Operations/Sum', blk, ...
           'IconShape', 'round', ...
-          'Inputs',    ['|' signs], ...
+          'Inputs',    signs, ...
           'Position',  [centre(1)-R, centre(2)-R, centre(1)+R, centre(2)+R]);
 end

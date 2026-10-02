@@ -34,7 +34,7 @@ function f = W04_animate(x_n, y_n, psi, u, v, r, FL, FR, u_ref, psi_ref, t)
 %     왼쪽 큰 칸   궤적 + 선체 모양과 선수 방향. 가로축 y (동쪽), 세로축 x (북쪽)
 %     오른쪽 (1)   u_ref 와 u 를 겹쳐서 — 속도 지령 대비 응답
 %     오른쪽 (2)   psi_ref 와 psi 를 겹쳐서 [deg, ssa 적용] — 헤딩 지령 대비 응답
-%     오른쪽 (3)   v · r (왼쪽 축) 과 F_L · F_R (오른쪽 축). 범례로 구분한다
+%     오른쪽 (3)   F_L · F_R — 좌·우 추력 [N]. v · r 은 그리지 않는다 (2026-10-02)
 %
 %   왜 지령을 함께 그리는가
 %     3주차까지는 "추력을 주면 배가 어떻게 가는가" 만 보면 됐다. 4주차부터는
@@ -59,7 +59,7 @@ function f = W04_animate(x_n, y_n, psi, u, v, r, FL, FR, u_ref, psi_ref, t)
 
 persistent fig axXY axU axP axM ...
            hTrail hHull hHead hDot hInfo ...
-           hU hUref hP hPref hV hR hFL hFR ...
+           hU hUref hP hPref hFL hFR ...
            trX trY tv Du Dp Dm x0 y0 haveOrigin tLast tPrev
 
 %% ---- 인자 없이 부르면 창 핸들만 돌려준다 (캡처용) ----------------------
@@ -107,33 +107,28 @@ if newRun
     hP    = plot(axP, nan, nan, '-',  'Color',[0.85 0.33 0.10], 'LineWidth',1.6);
     ylabel(axP,'\psi [deg]');
 
-    % ---- 오른쪽 (3) : 나머지 상태와 추력 ----
-    %   v · r 은 m/s · deg/s, 추력은 N 이라 자릿수가 다르다. 한 축에 겹쳐 놓으면
-    %   v 가 0 인 직선으로 보인다. 그래서 축을 둘로 나누고 범례로 묶는다.
+    % ---- 오른쪽 (3) : 좌·우 추력 ----
+    %   전에는 v · r 을 추력과 한 칸에 겹쳐 그렸다. 단위가 m/s · deg/s · N 으로
+    %   자릿수가 달라 축을 둘로 나눠야 했고, 그래도 v 는 거의 0 인 직선이라
+    %   읽을 것이 없었다. 교수 지시 2026-10-02 로 **v 와 r 을 뺐다.**
+    %   이 칸은 이제 축이 하나다 — 좌·우 추력이 얼마나 갈렸는지만 본다.
+    %   요각속도가 궁금하면 선수각 칸의 기울기가 그것이고, 숫자가 필요하면
+    %   Logging 의 out.log.r 을 본다.
     axM = subplot(3,2,6, 'Parent', fig);
-    yyaxis(axM,'left');
     hold(axM,'on'); grid(axM,'on');
-    hV = plot(axM, nan, nan, '-',  'Color',[0.47 0.67 0.19], 'LineWidth',1.4);
-    hR = plot(axM, nan, nan, '-',  'Color',[0.49 0.18 0.56], 'LineWidth',1.4);
-    ylabel(axM,'v [m/s] · r [deg/s]');
-    yyaxis(axM,'right');
-    hold(axM,'on');
     hFL = plot(axM, nan, nan, '-',  'Color',[0.00 0.45 0.74], 'LineWidth',1.3);
     hFR = plot(axM, nan, nan, '--', 'Color',[0.85 0.33 0.10], 'LineWidth',1.3);
     ylabel(axM,'추력 [N]');
     xlabel(axM,'시간 [s]');
-    legend(axM, [hV hR hFL hFR], {'v','r','F_L','F_R'}, ...
+    legend(axM, [hFL hFR], {'F_L','F_R'}, ...
            'Location','southoutside', 'Orientation','horizontal', 'AutoUpdate','off');
-    %  yyaxis 는 두 축의 색을 제멋대로 칠한다. 범례가 색을 나르므로 축 글자는 검게 둔다
-    axM.YAxis(1).Color = [0.15 0.15 0.15];
-    axM.YAxis(2).Color = [0.15 0.15 0.15];
 
     %  오른쪽 세 칸의 y 이름표가 창 오른쪽 테두리에 잘리지 않게 폭을 조금 줄인다
     for a = [axU axP axM]
         p = get(a,'Position');  set(a, 'Position', [p(1) p(2) p(3)*0.90 p(4)]);
     end
 
-    tv = [];  Du = zeros(0,2);  Dp = zeros(0,2);  Dm = zeros(0,4);
+    tv = [];  Du = zeros(0,2);  Dp = zeros(0,2);  Dm = zeros(0,2);   % Dm = [FL FR]
     x0 = 0;  y0 = 0;  haveOrigin = false;
     tLast = -inf;
 end
@@ -158,7 +153,7 @@ trX(end+1) = dx;  trY(end+1) = dy;
 tv(end+1)  = t;
 Du(end+1,:) = [u_ref, u];
 Dp(end+1,:) = [ssa_deg(psi_ref), ssa_deg(psi)];
-Dm(end+1,:) = [v, r*180/pi, FL, FR];
+Dm(end+1,:) = [FL, FR];       % v · r 은 그리지 않는다 (위 "오른쪽 (3)" 참고)
 if numel(tv) > NMAX
     k = numel(tv) - NMAX + 1;
     trX(1:k) = [];  trY(1:k) = [];  tv(1:k) = [];
@@ -185,10 +180,8 @@ set(hU,    'XData', tv, 'YData', Du(:,2));
 set(hUref, 'XData', tv, 'YData', Du(:,1));
 set(hP,    'XData', tv, 'YData', Dp(:,2));
 set(hPref, 'XData', tv, 'YData', Dp(:,1));
-set(hV,    'XData', tv, 'YData', Dm(:,1));
-set(hR,    'XData', tv, 'YData', Dm(:,2));
-set(hFL,   'XData', tv, 'YData', Dm(:,3));
-set(hFR,   'XData', tv, 'YData', Dm(:,4));
+set(hFL,   'XData', tv, 'YData', Dm(:,1));
+set(hFR,   'XData', tv, 'YData', Dm(:,2));
 
 %  지령선이 그림의 맨 위 테두리에 딱 붙으면 읽기 어렵다. 위아래로 조금 띄운다
 pad_y(axU, Du);

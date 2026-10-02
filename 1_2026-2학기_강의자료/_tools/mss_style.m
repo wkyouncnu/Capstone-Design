@@ -117,14 +117,24 @@ end
 %  A round summing junction is the MSS signature. Any Sum still drawn as a
 %  rectangle is one a builder created without add_sum; fix it here rather than
 %  leaving one slab in an otherwise consistent diagram.
+%
+%  부호 문자열의 막대('|')는 **빼 둔다.** 막대가 있으면 둘째 입력이 원의 아래쪽
+%  가장자리로 내려가 되먹임선이 밑에서 올라온다. 빼면 두 입력이 왼쪽 가장자리에
+%  위아래로 붙어 지령과 되먹임이 같은 쪽에서 들어온다 — 교수 결정 2026-10-02.
+%  자세한 이유는 add_sum 의 머리글에 적어 두었다. 둥근 Sum 은 전부 여기를 지난다.
 sums = find_system(mdl, 'LookUnderMasks','all', 'BlockType','Sum');
 for i = 1:numel(sums)
+    changed = false;
     if ~strcmp(get_param(sums{i}, 'IconShape'), 'round')
         set_param(sums{i}, 'IconShape', 'round');
-        sg = strrep(get_param(sums{i}, 'Inputs'), '|', '');
-        set_param(sums{i}, 'Inputs', ['|' sg]);
-        n = n + 1;
+        changed = true;
     end
+    sg = get_param(sums{i}, 'Inputs');
+    if any(sg == '|')
+        set_param(sums{i}, 'Inputs', strrep(sg, '|', ''));
+        changed = true;
+    end
+    if changed, n = n + 1; end
 end
 
 %  크기를 바꾸면 Simulink 는 선의 끝점만 새 포트로 당기고 이웃 점은 두어 끝 토막이
