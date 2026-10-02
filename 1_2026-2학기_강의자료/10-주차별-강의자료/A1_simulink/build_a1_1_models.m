@@ -35,8 +35,18 @@ function build_a1_1_models()
             [~, mName] = fileparts(d(j).name);
             try
                 %  SB11 은 빌더가 좌표를 직접 준다. tidy 는 매번 다른 배치를 내며
-                %  0 과 1~3 건 사이를 오갔다 (2026-09-19). 손으로 놓은 쪽이 결정적이다
-                if ~strcmp(mName, 'SB11_enabled_done'), tidy_model(mName); end
+                %  0 과 1~3 건 사이를 오갔다 (2026-09-19). 손으로 놓은 쪽이 결정적이다.
+                %
+                %  다만 **선 정리는 걸어야 한다.** tidy 를 건너뛰면 square_lines 도
+                %  같이 건너뛰는데, 그 안에 블록 배치를 흔드는 것은 없다 — 잎 블록을
+                %  포트 높이에 맞춰 몇 px 올리고 내릴 뿐이다. 2026-10-02 에 합산점의
+                %  입력이 왼쪽 가장자리로 옮겨가며(add_sum) In1 -> SumA 가 10 px
+                %  사선이 됐는데, 이 모델만 그것을 고칠 기회가 없었다
+                if ~strcmp(mName, 'SB11_enabled_done')
+                    tidy_model(mName);
+                else
+                    load_system(mName);  square_lines(mName);  save_system(mName);
+                end
                 paint_roles(mName);        % 역할표는 _tools/gnc_roles.m 하나뿐이다
                 check_colour(mName);
                 export_model_pngs(mName);

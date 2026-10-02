@@ -59,6 +59,19 @@ if size(p,1) == 2
     return
 end
 
+%  첫 토막이 사선이고 출발 쪽이 **잎 블록**이면 그 블록을 옮겨 곧게 만든다.
+%  아래의 "안쪽 점을 옮기는" 방식은 이 경우에 듣지 않는다 — 옮길 수 있는 점이
+%  도착 포트에 붙은 끝점뿐이라, 고쳐 놓아도 Simulink 가 포트로 되snap 하면서
+%  사선이 되살아난다.
+%
+%  2026-10-02 SB11_enabled_done/EnSub 의 In1 -> SumA 가 그랬다. 합산점의 두
+%  입력이 왼쪽 가장자리로 올라오면서(add_sum) 포트가 원 바깥 ±(h/2+5) 에 서고,
+%  그 높이에 맞춰 놓이지 않은 Inport 와 10 px 어긋났다.
+if is_diag(p(1:2,:))
+    k = fix_straight(sys, h, p(1:2,:));
+    if k > 0, return, end
+end
+
 q = p;
 for pass = 1:3
     d = find(is_diag(q), 1);

@@ -1254,11 +1254,15 @@ function build_heading(offline)
         %  psi · r 태그는 addOdomReader 가 이미 걸어 두었다
     end
 
-    % 관찰용 — **Scope 하나**에 지령과 실제값을 나란히 (교수 지시 2026-10-02)
-    addCompareScope(m, {'psi_ref','psi'; '','N'; '','FL'; '','FR'}, xM, 60);
+    % 관찰용 — **Scope 하나**에 지령과 실제값을 나란히 (교수 지시 2026-10-02).
+    %  로깅·Scope·AutoStop 은 **열을 갈라** 놓는다. 셋을 같은 x 에 두면
+    %  lay_sinks 가 종착 블록을 한 줄로 쓸어 내리면서 서로 밀어내고, LogBus 에서
+    %  To Workspace 로 가는 선이 그 틈으로 되돌아와 From 선과 44 px 겹친다
+    %  (2026-10-02 W04_3_heading_offline)
+    addCompareScope(m, {'psi_ref','psi'; '','N'; '','FL'; '','FR'}, xM+330, 60);
 
     %  헤딩이 자리를 잡으면 스스로 멈춘다 (속도 루프가 없으므로 헤딩만 본다)
-    addAutoStop(m, xM, 320);
+    addAutoStop(m, xM+700, 60);
     fromTo(m, 'psi_ref', 'AutoStop', 1, 110);
     fromTo(m, 'psi',     'AutoStop', 2, 190);
 
@@ -1385,11 +1389,12 @@ function build_inner_loop(offline)
     end
 
     % 관찰용 — **Scope 하나**에 지령과 실제값을 나란히 (교수 지시 2026-10-02)
-    addCompareScope(m, {'u_ref','u'; 'psi_ref','psi'; '','FL'; '','FR'}, xM+150, 60);
+    %  로깅·Scope·AutoStop 은 **열을 갈라** 놓는다 (헤딩 모델의 설명 참고)
+    addCompareScope(m, {'u_ref','u'; 'psi_ref','psi'; '','FL'; '','FR'}, xM+330, 60);
 
     %  할 일이 끝나면 스스로 멈춘다 — StopTime 은 T_run 이 뒤를 받친다.
     %  내부루프는 **두 루프가 다 자리를 잡아야** 끝난 것이다
-    addAutoStop(m, xM+150, 420, true);
+    addAutoStop(m, xM+700, 60, true);
     fromTo(m, 'psi_ref', 'AutoStop', 1, 110);
     fromTo(m, 'psi',     'AutoStop', 2, 190);
     fromTo(m, 'u_ref',   'AutoStop', 3, 270);

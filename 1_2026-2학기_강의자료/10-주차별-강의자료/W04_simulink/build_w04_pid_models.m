@@ -331,17 +331,17 @@ function build_p2(ROW)
     goto(m, 'ym_lib', x(8), ROW);
 
     add_line(m, 'Ref/1', 'RefShape/1');
-    %  지령이 내려오는 통로는 되먹임 From 보다 **왼쪽**에 둔다. 같은 x 에 두면
-    %  포트 옆에 세운 From 의 수평선과 10 px 겹친다 (2026-10-02)
+    %  합산점의 두 입력은 **위·아래 가장자리**에 선다 (add_sum 의 '+-', 2026-10-02).
+    %  지령은 위에서 내려오고 되먹임은 아래에서 올라온다. 지령 통로를 합산점의
+    %  x 에 두면 그 세로선이 블록을 지나 아래쪽 포트 구역까지 내려가, 밑에서
+    %  올라오는 되먹임선과 같은 x 에서 겹친다. 그래서 **RefShape 자신의 x** 로
+    %  올려 보낸 뒤 가로로 건너와 위에서 꽂는다
     ax = port_xy(m, 'RefShape', 'Outport', 1);
-    ax(1) = ax(1) - 40;
-    lane_line(m, 'RefShape', 1, 'SumE_lib', 1, ax(1));  % 한 줄기에서 위아래로 갈라진다
+    ref_from_above(m, 'RefShape', 'SumE_lib');
     straight(m, {'SumE_lib','PID_lib'; 'PID_lib','Plant_lib'; ...
                  'Plant_lib','SumY_lib'; 'SumY_lib','Go_ym_lib'});
-    %  되먹임은 **포트 바로 옆**에 세운다. 두 입력이 모두 왼쪽 가장자리로 오므로
-    %  (add_sum, 2026-10-02), 아래에서 끌어올리면 그 세로 토막이 RefShape 가
-    %  내려오는 통로와 같은 x 에서 90 px 겹친다
-    feed_from(m, 'ym_lib', 'SumE_lib', 2, 10);
+    %  되먹임은 **아래쪽 포트**로 밑에서 곧장 올라온다
+    feed_from(m, 'ym_lib', 'SumE_lib', 2, 60);
     feed_from(m, 'noise',  'SumY_lib', 2, 90, '1');
     drop_tag(m, 'Plant_lib', 1, 'y_lib', -150);         % 로깅은 잡음 없는 참값으로
     drop_tag(m, 'PID_lib',   1, 'tau_lib', -150);
@@ -356,13 +356,14 @@ function build_p2(ROW)
     add_sum(m, 'SumY_hand', '++', [x(7) ROW2]);
     goto(m, 'ym_hand', x(8), ROW2);
 
-    lane_line(m, 'RefShape', 1, 'SumE_hand', 1, ax(1));
+    ref_from_above(m, 'RefShape', 'SumE_hand');
     straight(m, {'SumE_hand','PID_byhand'; 'PID_byhand','Plant_hand'; ...
                  'Plant_hand','SumY_hand'; 'SumY_hand','Go_ym_hand'});
-    feed_from(m, 'ym_hand', 'SumE_hand', 2, 10);
+    feed_from(m, 'ym_hand', 'SumE_hand', 2, 60);
     feed_from(m, 'noise',   'SumY_hand', 2, 90, '2');
     drop_tag(m, 'Plant_hand', 1, 'y_hand', 170);
     drop_tag(m, 'PID_byhand', 1, 'tau_hand', 170);
+    %  (지령을 위에서 꽂는 ref_from_above 는 이 파일 끝에 있다)
 
     addDcompare(m, [x(1) ROW2+200]);
     %  Dcompare 의 세 신호는 Scope 에는 안 그리고 **저장만** 한다 (그쪽 상자에
@@ -864,4 +865,25 @@ function finish(m)
     mss_style(m);
     save_system(m); close_system(m, 0);
     fprintf('  [OK] %s\n', m);
+end
+
+% -------------------------------------------------------------------------
+function ref_from_above(m, src, sumBlk)
+%REF_FROM_ABOVE  지령을 합산점의 **위쪽 포트**에 위에서 꽂는다.
+%
+%   add_sum 의 '+-' 는 두 입력을 원의 **위·아래 가장자리**에 세운다 (2026-10-02).
+%   그래서 지령은 위에서, 되먹임은 아래에서 들어와야 한다.
+%
+%   출발 블록이 합산점보다 **아래**에 있으면 (RefShape 가 그렇다) 곧장 세로로
+%   올리면 안 된다 — 그 세로선이 합산점의 x 를 타고 아래쪽 포트 구역을 지나,
+%   밑에서 올라오는 되먹임선과 같은 x 에서 겹친다 (2026-10-02 에 60 px).
+%   출발 블록 자신의 x 로 먼저 올린 뒤, 가로로 건너와 위에서 내려 꽂는다.
+    a = port_xy(m, src,    'Outport', 1);
+    b = port_xy(m, sumBlk, 'Inport',  1);     % 위쪽 가장자리
+    yTop = b(2) - 60;                         % 합산점 위의 가로 통로
+    if a(2) <= yTop                           % 이미 충분히 위면 한 번만 꺾는다
+        add_line(m, [a; a(1) b(2); b]);
+    else
+        add_line(m, [a; a(1) yTop; b(1) yTop; b]);
+    end
 end
