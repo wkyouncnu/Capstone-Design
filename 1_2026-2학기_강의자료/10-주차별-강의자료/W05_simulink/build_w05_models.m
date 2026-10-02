@@ -36,6 +36,7 @@ function build_w05_models()
 
     build_offline();
     build_vrx();
+    build_idx_memory();     % 실습 F — 웨이포인트 번호의 기억 (persistent vs Unit Delay)
 
     % 최상위 배치 — autorouting 에 맡기지 않고 규칙대로 직접 놓는다.
     % 겹침·블록관통 0, 꺾임 1회가 합격선이다 (references/line-routing.md)
@@ -44,9 +45,11 @@ function build_w05_models()
     %  크게 보인다. 값은 주차마다 재서 골랐다 (겹침 0 이 되는 것 중 가장 작은 쪽)
     %  Wrap 3 — VRX 쌍둥이와 같은 자리에서 줄을 바꾼다. 그 자리의 연결은 빌더가
     %  이미 FL·FR 태그로 받아 두었으므로 lay_chain 이 새 태그를 만들 일이 없다
-    lay_chain('W05_0_offline', chain, 'Boxes', {'Animate','Logging'}, 'Wrap', 3);
+    %  Observe(Scope) 와 AutoStop 도 **포트 없는 상자**라 Boxes 에 적는다.
+    %  적지 않으면 lay_chain 이 그 자리를 모르고 다른 블록을 겹쳐 놓는다
+    lay_chain('W05_0_offline', chain, 'Boxes', {'Animate','Logging','Observe','AutoStop'}, 'Wrap', 3);
     lay_chain('W05_1_vrx', {'Guidance','InnerLoop','Thrusters','CmdPublisher','PoseSubscriber'}, ...
-              'Boxes', {'Animate','Logging'}, 'Wrap', 3);
+              'Boxes', {'Animate','Logging','Observe','AutoStop'}, 'Wrap', 3);
     %  색 — 역할표는 _tools/gnc_roles.m 하나뿐이다. 빌더는 부르기만 한다
     for mm = {'W05_0_offline','W05_1_vrx'}
         m = mm{1}; load_system(m);
@@ -63,11 +66,17 @@ function build_w05_models()
         %  snug_tags 가 태그를 끌어올린 **뒤에** 포트 없는 상자를 사슬 바로 아래로
         %  당긴다. lay_chain 이 잡아 둔 태그 더미 깊이가 그대로 빈 칸이 되기 때문이다
         %  (교수 지시 2026-10-01 — 빈 공간을 남기지 않는다)
-        pack_boxes(m, {'Animate','Logging'});
+        pack_boxes(m, {'Animate','Logging','Observe','AutoStop'});
         save_system(m);
         check_lines(m, false); export_diagram(m);
         close_system(m, 0);
     end
+
+    %  실습 F 모델은 사슬 구조가 아니라 tidy_model 이 안에서 다 했다. 그림만 뽑는다
+    load_system('W05_2_idx_memory');
+    check_lines('W05_2_idx_memory', false);
+    export_diagram('W05_2_idx_memory');
+    close_system('W05_2_idx_memory', 0);
 
     %  강의노트가 쓰는 서브시스템 도면 (img/Guidance.png 등). 모델과 함께 다시 뽑는다
     for nm = {'Guidance','InnerLoop','MotionModel','Thrusters'}
@@ -124,8 +133,12 @@ function addGuidance(m, x, y)
 %
 %   웨이포인트 인덱스 되먹임(IdxDly)도 안에 있다. 유도부 **내부의 기억**이지
 %   모델의 되먹임이 아니기 때문이다.
+    %  wp_idx 도 **밖으로 낸다** (교수 지시 2026-10-02 — "scope 에 waypoint k
+    %  index 도"). 안쪽 되먹임용 태그는 로컬이라 최상위 Scope 가 받을 수 없다.
+    %  지금 몇 번째 구간을 달리는지는 그래프를 읽을 때 가장 먼저 찾는 값이다 —
+    %  y_e 가 튀는 순간이 구간이 바뀐 자리인지 아닌지가 그것으로 갈린다
     ss = add_subsys(m, 'Guidance', [x y x+190 y+150], {'x_n','y_n'}, ...
-                    {'psi_ref','y_e','x_e','gate'}, gnc_colour('guidance'));
+                    {'psi_ref','y_e','x_e','gate','wp_idx'}, gnc_colour('guidance'));
 
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
               [ss '/GuidanceLaw'], 'Position', [320 60 500 560]);
@@ -210,21 +223,25 @@ function addGuidance(m, x, y)
               'InitialCondition','1', 'SampleTime','Ts_ctrl');
     set_param([ss '/IdxDly'], 'Description', ...
         ['대수 루프 차단 + 사건 계수기 — 웨이포인트 번호는 정수이고, 유도부가 낸 값이 유도부로 되돌아온다. 미분방정식의 상태가 아니다.']);
-    add_block('simulink/Signal Routing/From', [ss '/Fr_wp_idx'], ...
-              'Position', [130 q(2)-11 200 q(2)+11], 'GotoTag','wp_idx');
-    add_line(ss, 'Fr_wp_idx/1', 'IdxDly/1');      % 직선
+    %  안쪽 되먹임 태그는 `wp_idx_prev` 다. 최상위에도 `wp_idx` Goto 가 생겼으므로
+    %  (Scope·로깅이 받는다) 같은 이름을 쓰면 Simulink 가 태그 충돌로 막는다.
+    %  이름이 뜻도 더 맞다 — IdxDly 로 들어가는 것은 **한 스텝 전의** 번호다
+    add_block('simulink/Signal Routing/From', [ss '/Fr_wp_idx_prev'], ...
+              'Position', [130 q(2)-11 200 q(2)+11], 'GotoTag','wp_idx_prev');
+    add_line(ss, 'Fr_wp_idx_prev/1', 'IdxDly/1');      % 직선
     add_line(ss, 'IdxDly/1', 'GuidanceLaw/9');    % 직선
 
-    % --- 출력: 본선 네 개는 포트로 -------------------------------------
-    outs = {'psi_ref',1; 'y_e',2; 'x_e',3; 'gate',5};
+    % --- 출력: 다섯 개를 포트로 ----------------------------------------
+    outs = {'psi_ref',1; 'y_e',2; 'x_e',3; 'gate',5; 'wp_idx',4};
     for k = 1:size(outs,1)
         q = port_xy(ss, 'GuidanceLaw', 'Outport', outs{k,2});
         set_param([ss '/' outs{k,1}], 'Position', [700 q(2)-7 730 q(2)+7]);
         add_line(ss, sprintf('GuidanceLaw/%d', outs{k,2}), [outs{k,1} '/1']);
     end
 
-    % 인덱스는 밖으로 나가지 않는다. 태그로 걸어 위의 IdxDly 가 받는다
-    drop_tag(ss, 'GuidanceLaw', 4, 'wp_idx', 120);
+    %  인덱스는 **안쪽 되먹임에도** 쓰인다. 포트로 나가는 그 선에서 갈라
+    %  태그를 하나 떨어뜨리고, 위의 IdxDly 가 그것을 받는다 (태그는 로컬이다)
+    drop_tag(ss, 'GuidanceLaw', 4, 'wp_idx_prev', 120);
 
     add_block('built-in/Note', [ss '/note'], 'Position', [130 700], 'Text', sprintf([ ...
         '유도 — 위치를 받아 목표 선수각을 낸다.\n' ...
@@ -622,10 +639,12 @@ function wireFront(m)
     G(m,'y_e',     560, 110);
     G(m,'x_e',     560, 150);
     G(m,'gate',    560, 190);
+    G(m,'wp_idx',  560, 230);
     add_line(m,'Guidance/1','Go_psi_ref/1','autorouting','on');
     add_line(m,'Guidance/2','Go_y_e/1','autorouting','on');
     add_line(m,'Guidance/3','Go_x_e/1','autorouting','on');
     add_line(m,'Guidance/4','Go_gate/1','autorouting','on');
+    add_line(m,'Guidance/5','Go_wp_idx/1','autorouting','on');
 
     % 2단 입력: 자세·속도 되먹임
     fp = F(m,'psi', 560, 360);
@@ -680,7 +699,7 @@ function build_offline()
     % 운동모델을 연속 적분기로 풀기 때문에 ode4 (4차 룽게쿠타) 를 쓴다.
     % 제어기·유도·추진기는 Ts_ctrl 로 도는 이산 블록이다 (하이브리드 구성).
     set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
-                 'FixedStep','Ts_ctrl', 'StopTime','600', 'SimulationMode','normal');
+                 'FixedStep','Ts_ctrl', 'StopTime','T_run', 'SimulationMode','normal');
 
     addGuidance(m, 250, 60);
     addInnerLoop(m, 720, 280);
@@ -713,6 +732,12 @@ function build_offline()
     addAnimate(m, 1760, 650);
     addLogging(m, 2250, 60);
 
+    %  관찰용 Scope 하나 + 자동 정지. 로깅(2250)과 **열을 갈라** 놓는다 —
+    %  같은 x 에 두면 lay_sinks 가 종착 블록을 한 줄로 쓸어 내리며 선이 겹친다
+    %  (2026-10-02 에 4주차에서 겪은 것과 같은 자리)
+    addCompareScope(m, {'psi_ref','psi'; '','y_e'; '','u'; '','wp_idx'}, 2600, 1500);
+    addAutoStop(m, 3100, 1500);
+
     note(m,'n1', ['W05 실습 B·C·D  —  오프라인 WAM-V (Gazebo 불필요)' newline ...
         'Guidance -> Inner Loop -> Thrusters -> 운동모델' newline ...
         '조류 실험은 이 모델에서만 가능하다.' newline ...
@@ -728,7 +753,9 @@ end
 function build_vrx()
     m = 'W05_1_vrx'; fresh(m);
     load_system('ros2lib');
-    setSolver(m, 'inf');
+    %  **inf 로 두지 않는다** (교수 지시 2026-10-02). 보통은 AutoStop 이 마지막
+    %  웨이포인트를 지난 뒤 스스로 멈추고, T_run 은 그래도 안 끝날 때를 받친다
+    setSolver(m, 'T_run');
 
     addGuidance(m, 250, 60);
     addInnerLoop(m, 720, 280);
@@ -792,6 +819,10 @@ function build_vrx()
     addAnimate(m, 2080, 1100);
     addLogging(m, 2400, 60);
 
+    %  Scope 하나 + 자동 정지 (오프라인 쌍둥이와 같은 구성·같은 자리 규칙)
+    addCompareScope(m, {'psi_ref','psi'; '','y_e'; '','u'; '','wp_idx'}, 2750, 1800);
+    addAutoStop(m, 3250, 1800);
+
     note(m,'n1', ['W05 실습 E  —  VRX 연동 (Gazebo 필요)' newline ...
         'Guidance -> Inner Loop -> Thrusters -> Gazebo -> Navigation' newline ...
         '유도부·내부루프·추진기·게인은 W05_0_offline 과 완전히 같다.' newline ...
@@ -828,7 +859,209 @@ end
 function addLogging(m, x, y)
 % 로깅 — 포트 없는 서브시스템 하나로 묶는다. W05_plot.m 이 이 변수들을 읽는다.
 %   신호 이름 = Goto 태그 이름 (n 만 nprop 태그를 쓴다)
-    sig = {'x_n','y_n','psi','psi_ref','y_e','x_e','beta','chi','u','r','U','gate','FL','FR','n'};
-    tag = {'x_n','y_n','psi','psi_ref','y_e','x_e','beta','chi','u','r','U','gate','FL','FR','nprop'};
+    %  wp_idx 도 기록한다 — 그래프에서 구간이 바뀐 자리를 숫자로 확인하려면
+    %  필요하다 (2026-10-02 에 Guidance 의 다섯째 출력으로 밖에 냈다)
+    sig = {'x_n','y_n','psi','psi_ref','y_e','x_e','beta','chi','u','r','U','gate','FL','FR','n','wp_idx'};
+    tag = {'x_n','y_n','psi','psi_ref','y_e','x_e','beta','chi','u','r','U','gate','FL','FR','nprop','wp_idx'};
     add_logging_box(m, sig, tag, [x y], 'Ts_ctrl');
+end
+
+% =====================================================================
+% 자동 정지 — 마지막 웨이포인트를 지나면 모델이 스스로 Stop 을 누른다
+%
+%   교수 지시 2026-10-02. "inf 무한대까지 시뮬레이션 하지 말고, waypoint
+%   끝나면 Stop 버튼으로 시뮬링크에서 자동으로 멈추게 해 달라."
+%
+%   끝났다는 것을 어떻게 아는가 / how it knows the mission is over
+%       `GuidanceLaw` 가 내는 `gate` 가 그 답이다. 마지막 구간을 지나면
+%       `wp_idx` 가 n 으로 **빗장이 걸리고**(latch), 그때 `gate` 가 0 이 된다.
+%       즉 gate 는 "아직 갈 구간이 남았는가" 를 그대로 말한다.
+%
+%   왜 바로 멈추지 않고 조금 기다리는가
+%       멈추는 순간까지의 몇 초가 그래프에 남아야 "도착해서 멈췄다" 가 보인다.
+%       `stop_hold` 초만 더 돌고 끝낸다. 4주차 AutoStop 과 같은 꼴이며,
+%       버틴 시간을 **연속 적분기**로 세는 것도 같다 (입력 1, 외부 리셋 = gate).
+%
+%   외부 리셋은 `level` 이다. `rising` 은 신호가 올라가는 순간만 리셋하므로,
+%   처음부터 gate = 1 이면 모서리가 없어 리셋이 영영 안 걸린다 (2026-10-02).
+function addAutoStop(m, x, y)
+%  **포트 없는 상자**로 만든다. gate 는 안에서 From 으로 받는다.
+%  lay_chain 의 'Boxes' 는 포트 없는 서브시스템만 자리를 잡아 주기 때문이다 —
+%  포트를 밖으로 내면 lay_chain 이 그 자리를 모르고 다른 블록을 겹쳐 놓는다
+%  (2026-10-02 에 블록겹침 7 이 그래서 났다). Animate·Logging 과 같은 꼴이다.
+    s = add_subsys(m, 'AutoStop', [x y x+150 y+80], {}, {}, ...
+                   gnc_colour('logging'));
+
+    add_block('simulink/Signal Routing/From', [s '/Fr_gate'], ...
+              'GotoTag','gate', 'Position',[40 100 110 125]);
+
+    %  gate 가 1 인 동안(아직 갈 구간이 있다) 적분기를 0 에 묶어 둔다.
+    %  0 이 되면(임무 끝) 그때부터 초를 센다
+    add_block('simulink/Sources/Constant', [s '/One'], ...
+              'Value','1', 'Position',[120 40 170 70]);
+    add_block('simulink/Continuous/Integrator', [s '/HeldFor'], ...
+              'ExternalReset','level', 'InitialCondition','0', ...
+              'Position',[240 95 280 135]);
+    add_block('simulink/Sources/Constant', [s '/Hold'], ...
+              'Value','stop_hold', 'Position',[240 190 340 220]);
+    add_block('simulink/Logic and Bit Operations/Relational Operator', [s '/Done'], ...
+              'Operator','>=', 'Position',[380 110 410 140]);
+    add_block('simulink/Sinks/Stop Simulation', [s '/StopSim'], ...
+              'Position',[470 110 510 140]);
+
+    add_line(s,'One/1','HeldFor/1','autorouting','on');
+    add_line(s,'Fr_gate/1','HeldFor/2','autorouting','on');
+    add_line(s,'HeldFor/1','Done/1','autorouting','on');
+    add_line(s,'Hold/1','Done/2','autorouting','on');
+    add_line(s,'Done/1','StopSim/1','autorouting','on');
+end
+
+% =====================================================================
+% 관찰용 Scope — 모델 하나에 **한 개**, 지령과 실제값을 나란히
+%
+%   교수 지시 2026-10-02. "scope 로 궤적은 필요 없다. 하나의 scope 에서 각
+%   제어 명령과 실제 값을 볼 수 있게. waypoint k index 도."
+%
+%   궤적은 넣지 않는다 — x-y 평면이라 시간축과 축이 다르고, 실시간 화면
+%   (W05_animate) 의 왼쪽 큰 칸이 이미 그 일을 한다.
+%
+%   PAIRS  {지령태그, 실제태그} 를 칸 순서대로. 지령이 없는 칸은 ''
+function addCompareScope(m, pairs, x, y)
+%  Animate·Logging 과 같이 **포트 없는 상자**다. 신호는 안에서 From 으로 받는다.
+%  그래야 lay_chain 의 'Boxes' 가 자리를 잡아 준다 (addAutoStop 의 설명 참고).
+    nAx = size(pairs,1);
+    s   = add_subsys(m, 'Observe', [x y x+170 y+90], {}, {}, gnc_colour('logging'));
+    sc  = [s '/Scope'];
+
+    %  From 블록은 25 px 높이이고, **그 아래에 이름표가 12 px** 더 붙는다.
+    %  그래서 한 칸 안의 두 From 은 25+12 보다 넓게 띄워야 하고 (GAP),
+    %  칸과 칸 사이는 GAP+25+12 보다 넓어야 한다 (ROW). 2026-10-02 에 22 px 로
+    %  두었다가 블록이 겹쳤고, 35 px 로는 이름표가 서로를 가렸다
+    ROW = 120;  GAP = 60;
+    add_block('simulink/Sinks/Scope', sc, 'Position',[360 60 410 60+ROW*nAx]);
+    set_param(sc, 'NumInputPorts', num2str(nAx));
+    for i = 1:nAx
+        ref = pairs{i,1};  act = pairs{i,2};  yi = 60 + ROW*(i-1);
+        if isempty(ref)
+            nm = from_name(s, act);
+            add_block('simulink/Signal Routing/From', [s '/' nm], ...
+                      'GotoTag', act, 'Position',[60 yi 130 yi+25]);
+            add_line(s, [nm '/1'], sprintf('Scope/%d', i), 'autorouting','on');
+        else
+            add_block('simulink/Signal Routing/Mux', sprintf('%s/MuxSc%d', s, i), ...
+                      'Inputs','2', 'Position',[250 yi 255 yi+GAP+25]);
+            n1 = from_name(s, ref);
+            add_block('simulink/Signal Routing/From', [s '/' n1], ...
+                      'GotoTag', ref, 'Position',[60 yi 130 yi+25]);
+            n2 = from_name(s, act);
+            add_block('simulink/Signal Routing/From', [s '/' n2], ...
+                      'GotoTag', act, 'Position',[60 yi+GAP 130 yi+GAP+25]);
+            add_line(s, [n1 '/1'], sprintf('MuxSc%d/1', i), 'autorouting','on');
+            add_line(s, [n2 '/1'], sprintf('MuxSc%d/2', i), 'autorouting','on');
+            add_line(s, sprintf('MuxSc%d/1', i), sprintf('Scope/%d', i), 'autorouting','on');
+        end
+    end
+end
+
+% =====================================================================
+% 실습 F — 웨이포인트 번호를 어디에 기억할 것인가
+%
+%   교수 지시 2026-10-02. "guidance 에서 k 값을 persistent 로 하지 말고
+%   unit delay 이용해서 기존 값 기억하게 하는 버전도 추가로 만들어 달라."
+%
+%   왜 이 모델이 따로 있는가 / why this is its own model
+%       `W05_matlab/LOSchi.m` 과 `Simple_guidance.m` 은 MATLAB 함수라 활성
+%       웨이포인트 번호 k 를 `persistent` 에 둔다. 함수를 거듭 부르는 동안
+%       값이 살아 있어야 하는데, 함수에는 그것을 둘 자리가 그곳뿐이기 때문이다.
+%
+%       Simulink 로 옮기면 선택지가 하나 더 생긴다 — **Unit Delay 블록**이다.
+%       본 모델(`W05_0_offline`·`W05_1_vrx`)의 Guidance 는 이미 그쪽을 쓴다
+%       (`IdxDly`). 이 실습 모델은 **두 방식을 나란히 돌려** 같은 답을 내는지
+%       눈으로 보고, 무엇이 다른지 짚는 자리다.
+%
+%       | | persistent | Unit Delay |
+%       |---|---|---|
+%       | 상태가 보이는가 | 아니다 — 코드 안에 숨는다 | 도면에 블록으로 보인다 |
+%       | 초기값 | 첫 호출 때 코드로 | 블록 파라미터로 |
+%       | 되돌리기 | `clear 함수이름` | Run 하면 저절로 |
+%       | 기록·관찰 | 밖에서 못 본다 | 신호라서 Scope·로깅에 걸린다 |
+%       | 대수 루프 | 막지 못한다 | **끊어 준다** |
+%
+%       마지막 줄이 Simulink 에서 결정적이다. 유도부가 낸 번호가 유도부로
+%       되돌아오므로 그대로 두면 대수 루프가 된다. Unit Delay 가 그 고리를 끊는다.
+function build_idx_memory()
+    m = 'W05_2_idx_memory'; fresh(m);
+    set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4', ...
+                 'FixedStep','Ts_ctrl', 'StopTime','20', 'SimulationMode','normal');
+
+    %  "구간을 하나 지났다" 를 흉내 내는 사건 — 4 초마다 한 번씩 1 이 된다
+    add_block('simulink/Sources/Pulse Generator', [m '/LegDone'], ...
+              'Amplitude','1', 'Period','4/Ts_ctrl', 'PulseWidth','1', ...
+              'PulseType','Sample based', 'SampleTime','Ts_ctrl', ...
+              'Position',[60 120 110 170]);
+
+    % --- 방식 A : persistent (MATLAB 함수가 혼자 기억한다) ----------------
+    add_block('simulink/User-Defined Functions/MATLAB Function', [m '/IdxPersistent'], ...
+              'Position',[260 60 430 130]);
+    setFcn(m, 'IdxPersistent', [ ...
+'function k = IdxPersistent(step)'                                      newline ...
+'%#codegen'                                                             newline ...
+'% 활성 웨이포인트 번호를 **함수 안에** 기억한다 (W05_matlab/LOSchi.m 방식).'  newline ...
+'% 상태가 코드 안에 숨어 도면에는 보이지 않는다.'                        newline ...
+'persistent k_mem'                                                      newline ...
+'if isempty(k_mem)'                                                     newline ...
+'    k_mem = 1;'                                                        newline ...
+'end'                                                                   newline ...
+'if step > 0.5'                                                         newline ...
+'    k_mem = k_mem + 1;'                                                newline ...
+'end'                                                                   newline ...
+'k = k_mem;']);
+
+    % --- 방식 B : Unit Delay (상태를 도면에 꺼내 놓는다) -------------------
+    add_block('simulink/User-Defined Functions/MATLAB Function', [m '/IdxStep'], ...
+              'Position',[260 260 430 330]);
+    setFcn(m, 'IdxStep', [ ...
+'function k = IdxStep(step, k_prev)'                                    newline ...
+'%#codegen'                                                             newline ...
+'% 기억하지 않는다 — **한 스텝 전의 값을 받아** 다음 값을 돌려줄 뿐이다.'  newline ...
+'% 기억은 밖의 Unit Delay 가 맡는다. 그래서 이 함수는 순수 함수다.'       newline ...
+'if step > 0.5'                                                         newline ...
+'    k = k_prev + 1;'                                                   newline ...
+'else'                                                                  newline ...
+'    k = k_prev;'                                                       newline ...
+'end']);
+
+    add_block('simulink/Discrete/Unit Delay', [m '/IdxDly'], ...
+              'InitialCondition','1', 'SampleTime','Ts_ctrl', ...
+              'Position',[300 400 370 450]);
+    set_param([m '/IdxDly'], 'Description', ...
+        ['웨이포인트 번호의 기억. 정수 사건 상태이고 대수 루프를 끊는다 — ' ...
+         '미분방정식의 상태가 아니므로 이산이 맞다.']);
+
+    add_block('simulink/Sinks/Scope', [m '/Scope'], 'Position',[620 170 670 270]);
+    set_param([m '/Scope'],'NumInputPorts','2');
+
+    add_line(m,'LegDone/1','IdxPersistent/1','autorouting','on');
+    add_line(m,'LegDone/1','IdxStep/1','autorouting','on');
+    %  되먹임 선에 **이름을 준다.** tidy_model 의 tag_feedback 이 이 고리를
+    %  Goto/From 으로 바꿀 때 그 이름을 태그로 쓴다. 이름이 없으면 블록 이름을
+    %  빌려 `IdxStep_1` 같은 태그가 생기고 check_tags 가 잡는다 (2026-10-02)
+    h = add_line(m,'IdxStep/1','IdxDly/1','autorouting','on');
+    set_param(h, 'Name', 'k');
+    h = add_line(m,'IdxDly/1','IdxStep/2','autorouting','on');
+    set_param(h, 'Name', 'k_prev');
+    add_line(m,'IdxPersistent/1','Scope/1','autorouting','on');
+    add_line(m,'IdxStep/1','Scope/2','autorouting','on');
+
+    note(m,'n1', ['W05 실습 F  —  웨이포인트 번호를 어디에 기억할 것인가' newline ...
+        '위: persistent (상태가 코드 안에 숨는다)' newline ...
+        '아래: Unit Delay (상태가 도면에 보이고 Scope 에 걸린다)' newline ...
+        '두 선이 겹친다 — 답은 같고 다른 것은 상태를 어디에 두느냐다.' newline ...
+        '실행 전 >> W05_setup'], 60, -60);
+
+    save_system(m); close_system(m);
+    tidy_model(m);            % 되먹임 고리가 있어 손으로 놓으면 세 번 꺾인다
+    load_system(m); paint_roles(m); check_colour(m);
+    save_system(m); close_system(m, 0);
+    fprintf('  W05_2_idx_memory  생성\n');
 end
