@@ -249,8 +249,20 @@ switch stage
         psi_init = atan2(y_d, x_d);          % 목표점을 향해 선다
 end
 
-% 접안 단계(5·6)의 유도부가 한 줄로 받는 설정 묶음 — 순서가 곧 q(1..13)
-task_mode = 3;
+% 과업 고르기 — 유도부(5단 이상)와 그림·애니메이션이 함께 읽는다
+%   1  한 점에 그 자세로 서 있기 (1·3·4단의 목표는 hold_*)
+%   2  순수 횡이동           (2단의 목표는 sway_*)
+%   3  접안                  (5단 이상, 목표는 dock_* 과 접근점)
+% 단계에 맞춰 두어야 W06_plot 과 W06_animate 가 **그 단계의 목표**를 그린다
+if stage == 2
+    task_mode = 2;
+elseif stage <= 4
+    task_mode = 1;
+else
+    task_mode = 3;
+end
+
+% 접안 단계의 유도부가 한 줄로 받는 설정 묶음 — 순서가 곧 q(1..13)
 task_q = [ hold_north;  hold_east;  deg2rad(hold_deg);
            sway_north;  sway_east;  deg2rad(sway_deg);
            dock_north;  dock_east;  deg2rad(dock_deg);

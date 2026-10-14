@@ -49,6 +49,11 @@ eN = xref - x_n;  eE = yref - y_n;
 d  = hypot(eN, eE);
 epsi = atan2(sin(pref - psi), cos(pref - psi)) * 180/pi;
 
+%  접안 단계의 목표 선수각은 유도부가 정한다 — 옆걸음 접안은 선석 방위
+%  그대로이지만 전진 접안(7단)은 거기서 90 deg 틀어진 값이다. 유도부가
+%  마지막에 내보낸 기준값이 곧 그 단계의 목표이므로 그것으로 센다
+if mode == 3, gpsi = pref(end); end
+
 %  목표 자세에 대한 오차 — 과업 전체의 성적은 최종 목표 기준으로 매긴다
 dg    = hypot(gx - x_n, gy - y_n);
 epsig = atan2(sin(gpsi - psi), cos(gpsi - psi)) * 180/pi;
