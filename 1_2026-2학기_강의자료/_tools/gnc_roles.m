@@ -139,7 +139,7 @@ case {'W05_0_offline','W05_1_vrx','W07_0_offline','W07_1_vrx', ...
       'W08_0_offline','W08_1_vrx'}
     role = GNC;
 case {'W06_1_point','W06_2_sway','W06_3_thrust','W06_4_stop', ...
-      'W06_5_dock','W06_6_vrx'}
+      'W06_5_dock','W06_6_vrx','W06_7_front','W06_8_ned'}
     %   6주차는 위치 고리가 하나 더 있다 — OuterLoop 이 위치 오차를 속도 지령으로
     %   바꾸는 자리이므로 제어(주황)다. 공통 표에는 없으므로 여기서 더한다
     role = [GNC; {'OuterLoop','control'}];

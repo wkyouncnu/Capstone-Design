@@ -50,17 +50,32 @@ function build_w06_models(stages)
         fprintf('  %-14s  생성 완료 — check_lines 지적 %d건\n', m, n);
     end
 
-    %  강의노트가 쓰는 서브시스템 도면 (img/Guidance.png 등). 가장 높은 단계의
-    %  것을 쓴다 — 그 단계가 모든 블록을 다 가지고 있기 때문이다
-    top = name{max(stages)};
-    load_system(top);
-    for nm = {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'}
-        if isempty(find_system(top, 'SearchDepth',1, 'Name',nm{1})), continue; end
-        f = export_diagram(top, '', nm{1});
-        if ~exist(fullfile(here,'img'),'dir'), mkdir(fullfile(here,'img')); end
-        movefile(f, fullfile(here, 'img', [nm{1} '.png']), 'f');
+    %  강의노트가 쓰는 서브시스템 도면 (img/Guidance.png 등)
+    %    선체고정 사슬(1~7단) 가운데 **가장 높은 단계**의 것을 쓴다 — 그 단계가
+    %    모든 블록을 다 가지고 있기 때문이다. 8단은 제어 좌표계가 달라 고리 둘의
+    %    속이 아예 다르므로 섞지 않고 OuterLoopNED · InnerLoopNED 로 따로 뽑는다
+    %    (8단의 유도부·추진기·운동모델은 5단과 같은 그림이다)
+    shots = cell(0,3);
+    body  = stages(stages <= 7);
+    if ~isempty(body)
+        shots = [shots; {name{max(body)}, '', ...
+                 {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'}}];
     end
-    close_system(top, 0);
+    if any(stages == 8)
+        shots = [shots; {'W06_8_ned', 'NED', {'OuterLoop','InnerLoop'}}];
+    end
+    if ~exist(fullfile(here,'img'),'dir'), mkdir(fullfile(here,'img')); end
+
+    for c = 1:size(shots,1)
+        top = shots{c,1};   sfx = shots{c,2};
+        load_system(top);
+        for nm = shots{c,3}
+            if isempty(find_system(top, 'SearchDepth',1, 'Name',nm{1})), continue; end
+            f = export_diagram(top, '', nm{1});
+            movefile(f, fullfile(here, 'img', [nm{1} sfx '.png']), 'f');
+        end
+        close_system(top, 0);
+    end
 
     fprintf('\n완료. 생성된 모델:\n');
     d = dir('W06_*.slx');

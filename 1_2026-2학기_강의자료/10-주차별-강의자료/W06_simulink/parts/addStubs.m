@@ -11,7 +11,10 @@ function addStubs(m, tags, x, y)
     if isempty(tags), return; end
     s = add_subsys(m, 'NotYet', [x y x+150 y+60], {}, {}, gnc_colour('logging'));
     for k = 1:numel(tags)
-        sl_const(s, ['Zero_' tags{k}], '0', 60, 70+70*(k-1));
+        %  nprop 은 추진기가 셋이라 3x1 이다. 0 을 흘릴 때도 **모양까지**
+        %  맞춰야 로깅·그림 상자가 단계를 가리지 않고 그대로 돌아간다
+        if strcmp(tags{k}, 'nprop'), z = '[0; 0; 0]'; else, z = '0'; end
+        sl_const(s, ['Zero_' tags{k}], z, 60, 70+70*(k-1));
         sl_goto (s, tags{k}, 230, 72+70*(k-1));
         add_line(s, ['Zero_' tags{k} '/1'], ['Go_' tags{k} '/1'], 'autorouting','on');
     end

@@ -7,6 +7,9 @@
 %     (3) 선수각 P-D     psi_ref -> N [N m]    5주차와 같다
 %   그 셋을 추력 배분이 받아 좌·우·선수 추진기의 힘으로 나눈다.
 %
+%   추력 배분 함수의 본문은 parts/allocFcn.m 에 있다 — NED 전략의 안쪽 고리
+%   (addInnerLoopNED) 가 같은 글을 쓰므로 한 곳에 두었다.
+%
 %   입력 포트 순서가 (지령, 되먹임) 짝으로 번갈아 든다 — u_cmd, u, v_cmd, v, ...
 %   합산점이 '|+-' 이므로 지령은 **왼쪽**에서, 되먹임은 **아래**에서 들어온다.
 %   짝을 붙여 놓으면 두 선이 짧고 꺾이지 않는다.
@@ -59,35 +62,7 @@ function addInnerLoop(m, x, y, bow)
     %  추력 배분 — 세 추진기가 X · Y · N 을 나눠 낸다
     add_block('simulink/User-Defined Functions/MATLAB Function', [ss '/Alloc'], ...
               'Position', [830 60 1010 460]);
-    sl_fcn(ss, 'Alloc', strjoin({
-      'function [FL, FR, FB] = Alloc(X, Y, N, p)'
-      '%#codegen'
-      '%  추력 배분 — 요구 힘·모멘트를 세 추진기로 나눈다.'
-      '%'
-      '%    X = FL + FR                      전후력 [N]'
-      '%    Y = FB                           횡력 [N]  — 선수추진기만 낸다'
-      '%    N = (FL - FR)*b + l3*FB          요 모멘트 [N m]'
-      '%'
-      '%  p = [b; l3; Fmax; Fbmax]'
-      '%    b     half_beam   좌·우 추진기까지의 반폭 [m]'
-      '%    l3    l_bow       무게중심에서 선수추진기까지 [m]'
-      '%    Fmax  선미 추진기 추력 한계 [N],  Fbmax 선수추진기 추력 한계 [N]'
-      '%'
-      '%  선수추진기가 횡력을 내면 요 모멘트 l3*FB 가 딸려 온다. 그것을 좌·우'
-      '%  추진기가 되받아 빼야 선수각이 돌아가지 않는다 — 아래 N - l3*FB 가 그것이다.'
-      'b = p(1);  l3 = p(2);  Fmax = p(3);  Fbmax = p(4);'
-      'FB = Y;'
-      'if FB >  Fbmax, FB =  Fbmax; end'
-      'if FB < -Fbmax, FB = -Fbmax; end'
-      '%  포화된 뒤의 FB 로 모멘트를 센다 — 실제로 딸려 온 만큼만 되받는다'
-      'M  = N - l3*FB;'
-      'FL = X/2 + M/(2*b);'
-      'FR = X/2 - M/(2*b);'
-      'if FL >  Fmax, FL =  Fmax; end'
-      'if FL < -Fmax, FL = -Fmax; end'
-      'if FR >  Fmax, FR =  Fmax; end'
-      'if FR < -Fmax, FR = -Fmax; end'
-      }, newline));
+    sl_fcn(ss, 'Alloc', allocFcn());
     add_line(ss, 'PI_u/1','Alloc/1');
     if bow
         sl_gain(ss, 'BowOn', 'bow_on', 700, 180);
