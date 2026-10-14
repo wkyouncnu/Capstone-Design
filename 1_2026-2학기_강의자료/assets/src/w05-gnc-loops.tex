@@ -1,0 +1,123 @@
+% assets/w05-gnc-loops.svg — 5주차 GNC 두 고리 (바깥 = 유도, 안쪽 = 제어)
+%
+%   bash _tools/tikz2svg.sh assets/src/w05-gnc-loops.tex assets/w05-gnc-loops.svg
+%   bash _tools/svg2png.sh  assets/w05-gnc-loops.svg
+%
+% 이 그림이 말하는 것 다섯 가지
+%   1) 바깥 고리(유도)가 내는 것은 **힘이 아니라 지령**이다 — psi_ref 와 u_ref
+%   2) 바깥 고리의 출력이 그대로 안쪽 고리의 입력이다 (그래서 두 고리가 맞물린다)
+%   3) 안쪽 고리는 3·4주차에 이미 만들었다. 이번 주차에 새로 만드는 칸은 왼쪽 하나다
+%   4) 배분이 내는 것은 좌우 추력 F_L, F_R 이고, 프로펠러 법칙은 그 **다음** 칸이다
+%   5) 되먹임이 둘이다 — 안쪽은 빠르고(u, psi, r) 바깥은 느리다(x_n, y_n, psi)
+%
+% 출처와 각색 (2026-10-14)
+%   원본은 센서신호처리(대학원) 과목의 Otter 용 그림이다. 이 자료에 맞추어
+%   고친 곳:
+%     - 배가 Otter -> **WAM-V** (VRX). 추진기가 후방 2개, 좌우 반폭 half_beam
+%     - 웨이포인트를 (N_k, E_k) -> **(x_k, y_k)**. 이 볼트에서 N 은 **요 모멘트**
+%       전용이라 위치에 N 을 쓰면 한 기호가 두 가지 뜻이 된다 (표기 규칙)
+%     - psi_d -> **psi_ref**, u_d -> **u_ref**. 모델의 신호 이름과 같게 맞춘다
+%     - 적분 LOS 항(kappa * y_int)을 **뺀다**. 5주차 모델에 없는 항이다
+%     - 배분 칸이 n 까지 내던 것을 갈라, 프로펠러 법칙을 **추진기** 칸으로 옮긴다.
+%       모델의 Alloc / Thrusters 서브시스템 경계와 같아진다
+%
+% 좌표 메모 — 블록 중심과 폭 (mm)
+%   gu (42,0) w44   hd (101,0) w52   su (97,-34) w46
+%   al (154,-17) w34   th (198,-17) w32   sh (240,-17) w26
+%   안쪽 되먹임 버스 y=-50, 바깥 되먹임 버스 y=-60
+%   되먹임 수직선은 **블록 폭 밖**으로 지나게 잡았다 (x=124 는 su 오른끝 120 밖,
+%   동시에 hd 폭 75..127 안이다). 이 값을 고치면 선이 상자를 관통한다
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===== 왼쪽 — 임무가 주는 것 (신호가 아니라 설정) ==========================
+\node[blk, minimum width=24mm, align=center, font=\scriptsize] at (0,0)
+      (wp) {\textbf{웨이포인트}\\$(x_k,\,y_k)$,\; $k=1\dots n$};
+\node[blk, minimum width=24mm, align=center, font=\scriptsize] at (0,-34)
+      (sp) {\textbf{목표 속도}\\$u_{\text{ref}} = 1.5$ m/s};
+
+% ===== 바깥 고리 — 유도 ====================================================
+\node[gblk, minimum width=44mm, minimum height=14mm, align=center, font=\scriptsize] at (42,0)
+      (gu) {\textbf{유도}\; {\itshape outer loop}\\[2pt]
+            $\psi_{\text{ref}} = \pi_p - \arctan\dfrac{y_e}{\Delta}$};
+
+% ===== 안쪽 고리 — 제어 (3·4주차에 만든 것) ================================
+\node[cblk, minimum width=52mm, minimum height=12mm, align=center, font=\scriptsize] at (101,0)
+      (hd) {\textbf{헤딩 고리}\\[2pt]
+            $N = K_{p\psi}\,\mathrm{ssa}(\psi_{\text{ref}}-\psi) - K_{d\psi}\,r$};
+\node[cblk, minimum width=46mm, minimum height=12mm, align=center, font=\scriptsize] at (97,-34)
+      (su) {\textbf{속도 고리}\\[2pt]
+            $X = K_{pu}(u_{\text{ref}}-u) + K_{iu}\!\displaystyle\int\!(u_{\text{ref}}-u)\,dt$};
+
+% ===== 배분 — X, N 을 좌우 추력으로 ========================================
+\node[tblk, minimum width=34mm, minimum height=19mm, align=center, font=\scriptsize] at (154,-17)
+      (al) {\textbf{배분}\\[2pt]
+            $\begin{bmatrix} F_L \\ F_R \end{bmatrix}
+             = \begin{bmatrix} \tfrac12 & \phantom{-}\tfrac{1}{2b} \\[2pt]
+                               \tfrac12 & -\tfrac{1}{2b} \end{bmatrix}
+               \begin{bmatrix} X \\ N \end{bmatrix}$\\[2pt]
+            $b = \texttt{half\_beam} = 1.027$ m};
+
+% ===== 추진기 — 프로펠러 법칙은 여기다 =====================================
+\node[tblk, minimum width=32mm, minimum height=19mm, align=center, font=\scriptsize] at (198,-17)
+      (th) {\textbf{추진기}\\[2pt]
+            $n = \pm\sqrt{|F|/k}$\\[1pt]
+            모터 지연 $\tau_n$\\[1pt]
+            $F = k\,n\,|n|$};
+
+% ===== 플랜트 ==============================================================
+\node[pblk, minimum width=26mm, minimum height=19mm, align=center, font=\scriptsize] at (240,-17)
+      (sh) {\textbf{WAM-V}\\운동 방정식\\[1pt]{\itshape 3자유도}};
+
+% ===== 앞먹임 배선 ==========================================================
+\draw[sig] (wp) -- (gu);
+\draw[sig] (gu) -- node[sname, above, font=\scriptsize] {$\psi_{\text{ref}}$} (hd);
+%  u_ref 이름표는 화살표 가운데가 아니라 끝쪽에 둔다. 가운데는 바깥 되먹임
+%  수직선(x=42)이 지나는 자리라 글자와 선이 겹친다
+\draw[sig] (sp) -- node[sname, above, pos=0.8, font=\scriptsize] {$u_{\text{ref}}$} (su);
+
+\draw[sig] (hd.east) -| node[sname, pos=0.2, above, font=\scriptsize] {$N$} (al.north);
+\draw[sig] (su.east) -| node[sname, pos=0.2, above, font=\scriptsize] {$X$} (al.south);
+\draw[sig] (al) -- node[sname, above, font=\scriptsize] {$F_L, F_R$} (th);
+\draw[sig] (th) -- node[sname, above, font=\scriptsize] {$F_L, F_R$} (sh);
+\draw[sig] (sh.east) -- ++(9,0)
+      node[sname, right, font=\scriptsize] {$x_n,\,y_n,\,\psi,\,u,\,v,\,r$};
+
+% ===== 되먹임 ==============================================================
+% 안쪽 — 빠르다. 제어기가 매 스텝 본다
+\draw[wire] (sh.south) -- (240,-60);
+\node[dot] at (240,-50) {};
+\draw[wire] (240,-50) -- (88,-50);
+\draw[sig]  (124,-50) -- (124,-6);
+\draw[sig]  (88,-50)  -- (88,-40);
+\node[sname, font=\scriptsize, anchor=west] at (125,-12) {$\psi,\;r$};
+\node[sname, font=\scriptsize, anchor=east] at (86.5,-45) {$u$};
+\node[wnote, anchor=south east, font=\scriptsize] at (238,-49.5) {안쪽 되먹임 — 빠름};
+
+% 바깥 — 느리다. 위치가 웨이포인트에 닿았는지만 본다
+\draw[wire] (240,-60) -- (42,-60);
+\draw[sig]  (42,-60) -- (42,-7);
+\node[note, above, font=\scriptsize] at (150,-60) {위치 $(x_n,\,y_n)$ 와 선수각 $\psi$};
+\node[wnote, anchor=south east, font=\scriptsize] at (238,-59.5) {바깥 되먹임 — 느림};
+
+% ===== 띠 제목 ==============================================================
+\draw[wire, soft] (-14,15) -- (70,15);
+\node[anchor=south west, font=\scriptsize\bfseries] at (-14,15.5)
+      {바깥 고리\; \mdseries 유도는 \textbf{지령}을 낸다 — 힘을 직접 내지 않음};
+\draw[wire, soft] (74,15) -- (253,15);
+\node[anchor=south west, font=\scriptsize\bfseries, warn] at (74,15.5)
+      {안쪽 고리\; \mdseries 3 · 4주차에 이미 만든 것};
+
+% ===== 설명 =================================================================
+\node[anote, anchor=south, font=\scriptsize] at (42,7.8) {이번 주차에 새로 만드는 칸};
+\node[wnote, anchor=north, align=center, text width=26mm, font=\scriptsize] at (70,-11)
+      {바깥 고리의 출력이\\곧 안쪽 고리의 입력임};
+\node[note, anchor=south, align=center, font=\scriptsize] at (240,-6)
+      {VRX 쌍둥이는 이 칸이\\Gazebo 로 바뀜};
+
+\end{tikzpicture}
+\end{document}

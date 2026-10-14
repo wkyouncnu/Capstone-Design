@@ -67,6 +67,10 @@ function build_w05_models()
         %  당긴다. lay_chain 이 잡아 둔 태그 더미 깊이가 그대로 빈 칸이 되기 때문이다
         %  (교수 지시 2026-10-01 — 빈 공간을 남기지 않는다)
         pack_boxes(m, {'Animate','Logging','Observe','AutoStop'});
+        %  Scope 범례 — **선을 다 놓은 뒤**에 켠다. 선을 다시 그으면 이름이
+        %  날아가므로 순서가 뒤바뀌면 범례가 "Signal 1" 로 나온다.
+        %  tidy_model 을 쓰는 주차는 그것이 안에서 부른다. 이 주차는 직접 부른다
+        scope_legend(m);
         save_system(m);
         check_lines(m, false); export_diagram(m);
         close_system(m, 0);
@@ -274,16 +278,19 @@ function addInnerLoop(m, x, y)
               'Position', [40 380 130 410], 'Value','u_ref');
 
     % ---------- 헤딩 제어 : tau_N = Kp*ssa(psi_ref - psi) - Kd*r ----------
-    add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [ss '/HeadingErr'], 'Position', [200 60 340 130]);
-    setFcn(ss, 'HeadingErr', [ ...
-'function e = HeadingErr(psi_ref, psi)'                          newline ...
-'%#codegen'                                                      newline ...
-'% Shortest signed angle (ssa). Without it a command of 179 deg' newline ...
-'% against a heading of -179 deg reads as a 358 deg error and'   newline ...
-'% the boat turns the long way round.'                           newline ...
-'d = psi_ref - psi;'                                             newline ...
-'e = atan2(sin(d), cos(d));']);
+    %  오차는 **합산점 하나와 Fcn 하나**로 적는다 (교수 지시 2026-10-14).
+    %
+    %      psi_ref --(+)
+    %                  >--> [ atan2(sin(u), cos(u)) ] --> e
+    %      psi -----(-)
+    %
+    %  전에는 이 자리에 MATLAB Function 블록이 있었고 그 안에서 빼기와 접기를
+    %  함께 했다. 돌아가기는 하지만 **도면에서 뺄셈이 사라진다** — 되먹임 제어
+    %  그림에서 가장 먼저 찾는 곳이 합산점인데 그것이 상자 안에 숨는다.
+    %  빼기를 밖으로 꺼내면 남는 일은 접기 하나뿐이고, 식 한 줄은 Fcn 이면 족하다.
+    %  값은 그대로다 — 같은 식을 같은 배정밀도로 센다 (add_ssa 머리글).
+    %  4주차 W04_3_heading 의 HeadingCtrl 이 본보기다.
+    add_ssa(ss, 'ErrPsi', 'Ssa', [230 80]);
 
     add_block('simulink/Math Operations/Gain', [ss '/Kp_psi'], ...
               'Position', [410 60 460 100], 'Gain','Kp_psi');
@@ -307,9 +314,9 @@ function addInnerLoop(m, x, y)
               'Position', [720 110 760 150], ...
               'UpperLimit','2*F_max*half_beam', 'LowerLimit','-2*F_max*half_beam');
 
-    add_line(ss,'psi_ref/1','HeadingErr/1','autorouting','on');
-    add_line(ss,'psi/1',    'HeadingErr/2','autorouting','on');
-    add_line(ss,'HeadingErr/1','Kp_psi/1','autorouting','on');
+    add_line(ss,'psi_ref/1','ErrPsi/1','autorouting','on');
+    add_line(ss,'psi/1',    'ErrPsi/2','autorouting','on');
+    add_line(ss,'Ssa/1',    'Kp_psi/1','autorouting','on');
     add_line(ss,'r/1',        'Kd_rate/1','autorouting','on');
     add_line(ss,'Kp_psi/1', 'SumN/1','autorouting','on');
     add_line(ss,'Kd_rate/1','SumN/2','autorouting','on');
@@ -1050,7 +1057,10 @@ function build_idx_memory()
     set_param(h, 'Name', 'k');
     h = add_line(m,'IdxDly/1','IdxStep/2','autorouting','on');
     set_param(h, 'Name', 'k_prev');
-    add_line(m,'IdxPersistent/1','Scope/1','autorouting','on');
+    %  범례에 쓰일 이름. 이름이 없으면 Scope 범례가 "Signal 1" 로 나온다.
+    %  아래 갈래는 이미 `k` 라는 이름이 붙어 있어 그대로 범례에 실린다
+    h = add_line(m,'IdxPersistent/1','Scope/1','autorouting','on');
+    set_param(h, 'Name', 'k_persistent');
     add_line(m,'IdxStep/1','Scope/2','autorouting','on');
 
     note(m,'n1', ['W05 실습 F  —  웨이포인트 번호를 어디에 기억할 것인가' newline ...

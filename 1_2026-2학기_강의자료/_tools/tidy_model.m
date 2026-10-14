@@ -34,6 +34,9 @@ function n = tidy_model(m, varargin)
 %     6) snug_tags        Goto/From 을 제 포트 옆으로 끌어온다 (배치기가 끌고 갔다)
 %     7) lay_links        남은 지저분한 선만 통로 하나로 다시 긋는다
 %     8) snug_tags        lay_links 가 길을 내느라 옮긴 태그를 한 번 더 끌어온다
+%     9) scope_legend     Scope 범례를 켜고 들어오는 선에 신호 이름을 붙인다.
+%                         선을 다 손질한 **뒤**라야 한다 — 선을 다시 그으면
+%                         이름이 함께 지워진다 (keep_signals 와 같은 이유)
 %
 %   왜 두 번 해 보는가 / why it tries twice
 %       lay_sinks 는 "이미 깨끗한 선은 두고 본다" 와 "종착 블록은 전부 내린다"
@@ -82,6 +85,7 @@ load_system(m);
 keep_signals(m, sig);
 
 square_lines(m);        % 크기를 바꾼 블록 옆에 남은 사선 토막을 직각으로 (꺾임 수 그대로)
+try, scope_legend(m); catch, end   % 범례는 **선을 다 놓은 뒤**에 켠다 (스킬 4-2)
 lay_notes(m);           % arrangeSystem 은 주석을 옮기지 않는다 — 블록에 앉은 주석을 아래로
 save_system(m);
 close_system(m, 0);

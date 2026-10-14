@@ -12,13 +12,20 @@ function blk = add_sum(sys, name, signs, centre)
 %              the centre of the circle, not a corner
 %
 %   포트가 어디에 붙는지 / where the ports end up
-%       **두 입력이 모두 왼쪽 가장자리에 붙는다** — 위가 첫 입력(지령), 아래가
-%       둘째 입력(되먹임)이다. 오차가 만들어지는 자리를 한눈에 읽으려면 두 선이
-%       같은 쪽에서 들어와야 한다는 것이 교수 결정이다 (2026-10-02).
+%       '+-' 는 두 입력을 원의 **위와 아래** 가장자리에 붙인다 — 첫 입력(지령)이
+%       위, 둘째 입력(되먹임)이 아래다. 출력은 오른쪽이다. 2026-10-02 에 세
+%       모양의 포트 좌표를 직접 재어 확인했다 (20 x 20 원 기준).
 %
-%       Both inputs attach to the left edge, the first above the second. The
-%       error junction is the block a reader looks for first, and it reads
-%       fastest when the reference and the feedback arrive on the same side.
+%           '+-'   입력1 (위)      입력2 (아래)     출력 (오른쪽)
+%           '|+-'  입력1 (왼쪽)    입력2 (아래)     출력 (오른쪽)
+%           '++|'  입력1 (위)      입력2 (왼쪽)     출력 (오른쪽)
+%
+%       **둘 다 왼쪽 가장자리에 붙이는 설정은 Simulink 에 없다.** 2026-10-02 에
+%       이 머리글이 그렇게 적혀 있었던 것은 잘못이다 (2026-10-14 바로잡음).
+%
+%       With '+-' the two inputs attach to the top and the bottom edge, the
+%       reference above and the feedback below. No sign string puts both on
+%       the left edge; the bar is a spacer, and it moves one port, not two.
 %
 %   WHY THIS EXISTS
 %
@@ -35,19 +42,19 @@ function blk = add_sum(sys, name, signs, centre)
 %
 %   왜 '|' 를 넣지 않는가 / why no bar in the sign string
 %
-%   막대는 포트가 아니라 **포트 자리 띄우개**다. '|+-' 로 적으면 둘째 입력이
-%   원의 **아래쪽** 가장자리로 내려가고, 되먹임선이 밑에서 올라와 꺾인다.
-%   그냥 '+-' 로 적으면 두 입력이 **왼쪽 가장자리에 위아래로** 붙고, 지령과
-%   되먹임이 같은 쪽에서 나란히 들어온다.
+%   막대는 포트가 아니라 **포트 자리 띄우개**다. '|+-' 로 적으면 첫 입력이 원의
+%   **왼쪽**에 남고 둘째 입력만 아래로 내려가, 지령과 되먹임이 서로 다른 쪽에서
+%   들어온다. 그냥 '+-' 로 적으면 둘이 **위와 아래로 마주 보고** 들어오고
+%   오차가 만들어지는 자리가 대칭으로 읽힌다.
 %
 %   2026-10-02 에 교수가 두 모양을 나란히 놓고 보고 **뒤쪽(막대 없는 것)**을
-%   골랐다. 오차가 만들어지는 자리는 도면에서 가장 먼저 찾는 곳이고, 두 선이
-%   같은 쪽에서 들어와야 "무엇에서 무엇을 빼는가" 가 한눈에 읽힌다.
+%   골랐다. 오차가 만들어지는 자리는 도면에서 가장 먼저 찾는 곳이고, 지령과
+%   되먹임이 **마주 보고** 들어와야 "무엇에서 무엇을 빼는가" 가 한눈에 읽힌다.
 %
-%   The bar is a port-position spacer, not a port. With it the second input
-%   drops to the bottom edge and the feedback line has to come up from below.
-%   Without it both inputs sit on the left edge, one above the other, and the
-%   reference and the feedback arrive side by side.
+%   The bar is a port-position spacer, not a port. With it the first input stays
+%   on the left edge while the second drops to the bottom, so the reference and
+%   the feedback arrive from two different sides. Without it the two face each
+%   other across the circle, top and bottom.
 %
 %   The centre is the argument rather than a corner because a summing junction
 %   is placed to line up with the signal it interrupts. Aligning centres keeps
