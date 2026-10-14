@@ -45,14 +45,14 @@ persistent fig axXY axP axE axM ...
 
 %% ---- 인자 없이 부르면 창 핸들만 돌려준다 (캡처용) ----------------------
 if nargin == 0
-    if \psisempty(fig) && isvalid(fig), f = fig; else, f = getappdata(0,'W06_anim_fig'); end
+    if ~isempty(fig) && isvalid(fig), f = fig; else, f = getappdata(0,'W06_anim_fig'); end
     return
 end
 
 NMAX = 40000;        % 되돌아보기 한계. VRX 는 StopTime inf 라 무한정 쌓일 수 있다
 
 %% ---- 새 실행이면 창을 다시 만든다 --------------------------------------
-newRun = isempty(tLast) || isempty(fig) || \psisvalid(fig) || t < tPrev;
+newRun = isempty(tLast) || isempty(fig) || ~isvalid(fig) || t < tPrev;
 if newRun
     q    = evalin('base', 'task_q');
     mode = evalin('base', 'task_mode');
@@ -69,7 +69,7 @@ if newRun
     apx = dx - sd*La*sin(dpsi);
     apy = dy + sd*La*cos(dpsi);
 
-    if \psisempty(fig) && isvalid(fig), close(fig); end
+    if ~isempty(fig) && isvalid(fig), close(fig); end
     fig = figure('Name','W06 실시간 위치제어 화면 — 항적과 위치·선수각 오차', ...
                  'NumberTitle','off', 'Color','w', 'Position',[50 50 1240 800]);
     setappdata(0, 'W06_anim_fig', fig);
@@ -218,11 +218,12 @@ set(hHull,  'XData', hY,   'YData', hX);
 set(hHead,  'XData', hdy,  'YData', hdx);
 set(hDot,   'XData', y_n,  'YData', x_n);
 
+%  아래 둘째 줄 — 해석기가 'tex' 이므로 \psi 가 ψ 로 그려진다. sprintf 가
+%  백슬래시를 먹지 않도록 \\psi 로 적는다 (\p 는 sprintf 의 이스케이프가
+%  아니라 경고가 난다)
 set(hInfo, 'String', { ...
     sprintf('실시간 항적 — 위쪽이 북쪽, 뾰족한 쪽이 선수.    단계: %s    gate = %d', ...
             phase_name(mode, phase), round(gate)), ...
-    %  제목의 해석기가 'tex' 이므로 \psi 가 ψ 로 그려진다. sprintf 가 백슬래시를
-    %  먹지 않도록 \\psi 로 적는다 (\p 는 sprintf 의 이스케이프가 아니라 경고가 난다)
     sprintf(['t = %5.1f s    x = %7.2f m    y = %7.2f m    \\psi = %6.1f°' ...
              '    목표까지 %5.2f m    \\psi 오차 %5.1f°    r = %5.1f °/s'], ...
             t, x_n, y_n, ssa_deg(psi), d, ssa_deg(psi_ref - psi), r*180/pi) });
@@ -286,7 +287,7 @@ end
 % ---- y 범위에 여백. 곡선이 테두리에 붙으면 읽히지 않는다 -----------------
 function pad_y(ax, D)
 lo = min(D(:), [], 'omitnan');  hi = max(D(:), [], 'omitnan');
-if isempty(lo) || \psisfinite(lo) || \psisfinite(hi), return, end
+if isempty(lo) || ~isfinite(lo) || ~isfinite(hi), return, end
 %  t = 0 에서는 값이 전부 같다 (lo == hi). 그때 여백을 비율로만 잡으면 위아래
 %  한계가 같은 수가 되어 ylim 이 거부한다. 바닥값을 둔다.
 d = max((hi - lo)*0.08, max(abs([lo hi]))*0.05 + 1e-3);
