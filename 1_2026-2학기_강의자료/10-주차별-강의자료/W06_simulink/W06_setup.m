@@ -263,6 +263,10 @@ else
             dock_north, dock_east, dock_deg);
     fprintf('  접근점     = (%g, %g) m,  전환반경 %g m\n', ...
             app_north, app_east, R_dock);
+    if stage == 7
+        fprintf('  접안 선수각 : %g deg  — 전진 접안이라 선석 방위에 수직\n', ...
+                dock_deg - berth_side*90);
+    end
 end
 if stage >= 2
     fprintf('  선수추진기 : bow_on = %d\n', bow_on);
