@@ -59,7 +59,7 @@ set_param(m, 'EnablePacing','on', 'PacingRate', num2str(RTF), ...
 out = sim(m);
 
 fprintf('4) 결과 그림\n');
-S     = W07_plot(out, 'VRX 미션 — WP -> 로이터 -> WP');
+S     = W07_plot(out, 'VRX 로이터링');
 S.RTF = RTF;
 saveFig(S.fig, 'W07_1_vrx_result.png');    % gcf 는 추진기 창이다 — 궤적 창을 저장한다
 
@@ -91,33 +91,19 @@ qn_i = interp1(t2, qn, tm, 'linear');
 qe_i = interp1(t2, qe, tm, 'linear');
 sep  = hypot(x_n(1:nm) - qn_i, y_n(1:nm) - qe_i);
 
-cn = evalin('base','loiter_xc');  ce = evalin('base','loiter_yc');
-rd = evalin('base','loiter_radius');
+cn = evalin('base','center_north');  ce = evalin('base','center_east');
+rd = evalin('base','r_d');
 S.sep_mean = mean(sep);   S.sep_max = max(sep);
-
-% 상태 전이 시각을 오프라인과 나란히 비교한다
-mo = out.log_mode.Data;   mf = o2.log_mode.Data;
-S.t_in_vrx  = firstAt(t,  mo, 2);   S.t_in_off  = firstAt(t2, mf, 2);
-S.t_out_vrx = lastAt(t,   mo, 2);   S.t_out_off = lastAt(t2, mf, 2);
+S.r_vrx    = mean(hypot(x_n - cn, y_n - ce));
+S.r_off    = mean(hypot(qn - cn, qe - ce));
 
 drawOverlay(y_n, x_n, qe, qn, tm, sep, S, T_end, cn, ce, rd);
 saveFig(gcf, 'W07_vrx_vs_offline.png');
 
 fprintf('\n  === 오프라인 ↔ VRX 대조 (%d초) ===\n', T_end);
-fprintf('  로이터 진입   오프라인 %6.1f s    VRX %6.1f s\n', S.t_in_off,  S.t_in_vrx);
-fprintf('  로이터 종료   오프라인 %6.1f s    VRX %6.1f s\n', S.t_out_off, S.t_out_vrx);
-fprintf('  임무 종료     오프라인 %6.1f s    VRX %6.1f s\n', So.t_finish, S.t_finish);
+fprintf('  평균 반경     오프라인 %6.2f m   VRX %6.2f m   (목표 %g)\n', ...
+        S.r_off, S.r_vrx, rd);
 fprintf('  궤적 평균 이격 %6.2f m,  최대 %6.2f m\n', S.sep_mean, S.sep_max);
-end
-
-function v = firstAt(t, m, val)
-k = find(round(m) == val, 1, 'first');
-if isempty(k), v = NaN; else, v = t(k); end
-end
-
-function v = lastAt(t, m, val)
-k = find(round(m) == val, 1, 'last');
-if isempty(k), v = NaN; else, v = t(k); end
 end
 
 % =====================================================================
@@ -135,19 +121,18 @@ RTF = (t1 - t0) / dw;
 end
 
 function drawOverlay(y_n, x_n, qe, qn, t, sep, S, T_end, cn, ce, rd)
-th  = linspace(0, 2*pi, 361);
-wpx = evalin('base','wp_north');   wpy = evalin('base','wp_east');
+th = linspace(0, 2*pi, 361);
 figure('Name','오프라인 vs VRX','Color','w','Position',[80 80 1000 440]);
 
 subplot(1,2,1);
-plot(wpy, wpx, 'ks--', 'MarkerFaceColor','w', 'LineWidth',1.0); hold on;
-plot(ce + rd*sin(th), cn + rd*cos(th), 'k:', 'LineWidth',1.0);
+plot(ce + rd*sin(th), cn + rd*cos(th), 'k--', 'LineWidth',1.0); hold on;
+plot(ce, cn, 'k+', 'MarkerSize',10, 'LineWidth',1.2);
 plot(qe, qn, 'b-', 'LineWidth',1.4);
 plot(y_n, x_n, 'r-', 'LineWidth',1.4);
 plot(y_n(1), x_n(1), 'ko', 'MarkerFaceColor','g', 'MarkerSize',8);
 axis equal; grid on; xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
-legend({'웨이포인트','로이터 원','오프라인','VRX','출발'}, 'Location','best');
-title(sprintf('미션 궤적 — %d초, 평균 이격 %.2f m', T_end, S.sep_mean));
+legend({'목표 원','중심','오프라인','VRX','출발'}, 'Location','best');
+title(sprintf('궤적 — 평균 반경 오프 %.2f / VRX %.2f m', S.r_off, S.r_vrx));
 
 subplot(1,2,2);
 plot(t, sep, 'k-', 'LineWidth',1.3); grid on;

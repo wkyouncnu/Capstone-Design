@@ -184,7 +184,7 @@ thruster_config       ├─> Xacro 처리 -> URDF -> SDF -> Gazebo에 스폰
 wamv_gazebo.urdf.xacro ┘
 ```
 
-- 실제 파일은 9주차에 열어 봄
+- 실제 파일은 10주차에 열어 봄
   - `src/vrx/vrx_urdf/wamv_gazebo/urdf/thruster_layouts/wamv_aft_thrusters.xacro`
 
 ---
@@ -229,7 +229,7 @@ wamv_gazebo.urdf.xacro ┘
 >
 > 북쪽 위치는 $x$, $N$ 은 요 모멘트
 
-- 힘·모멘트 기호 $X, Y, Z, K, M, N$ 은 8주차 추력 배분에서 그대로 씀.
+- 힘·모멘트 기호 $X, Y, Z, K, M, N$ 은 9주차 추력 배분에서 그대로 씀.
   거기서 $\boldsymbol{\tau} = [X,\ Y,\ N]^{\mathsf T}$ 로 묶이는 것이 이 표의 **1 · 2 · 6행**임
 
 ### 3자유도 근사
@@ -253,7 +253,7 @@ $$
 > [!note] 뺐다고 없어지는 것은 아니다
 > 제어 대상에서 뺄 뿐, 배는 여전히 그 방향으로 움직임
 > 파도가 커지면 Roll·Pitch 가 커지고, 그만큼 **Surge·Sway 측정값에 잡음이 섞임**
-> 바람·파랑이 켜진 월드(`practice_2023_wayfinding2_task`, 9주차 2-3 참조)로 바꿔 보면 이 영향이 눈에 보임
+> 바람·파랑이 켜진 월드(`practice_2023_wayfinding2_task`, 10주차 2-3 참조)로 바꿔 보면 이 영향이 눈에 보임
 - 이 세 자유도의 운동방정식은 1-8 절에서 VRX 계수로 세움 (Fossen 형식)
 
 ---
@@ -726,7 +726,7 @@ ros2 run tf2_ros tf2_echo 상위 하위      # 두 프레임 사이 변환을 �
 
 - Gazebo 는 매 스텝 **힘 → 가속도 → 속도 → 위치**를 적분함 (1-1)
 - 수평면만 보면 그 계산은 식 여섯 줄로 줄어듦. VRX 플러그인 파일의 계수를 그대로 넣으면 **Gazebo 없이 같은 답**이 나옴
-- 이 절의 식이 3부 `W03_0_offline` 의 `MotionModel` 이고, 4\~8주차 오프라인 모델도 같은 식을 씀
+- 이 절의 식이 3부 `W03_0_offline` 의 `MotionModel` 이고, 4\~9주차 오프라인 모델도 같은 식을 씀
 
 > [!important] 순서 — 운동모델로 먼저, Gazebo 는 그다음
 > 1. 운동모델(`W03_0_offline`)로 버튼을 눌러 보고 $u$, $r$ 이 몇이 나올지 **먼저 예측**
@@ -759,7 +759,7 @@ ros2 run tf2_ros tf2_echo 상위 하위      # 두 프레임 사이 변환을 �
 |---|---|---|---|
 | 좌 추진기 | $(-2.374,\ +1.027,\ 0.318)$ | $x_b = -2.374,\ y_b = -1.027$ | `wamv_aft_thrusters.xacro` |
 | 우 추진기 | $(-2.374,\ -1.027,\ 0.318)$ | $x_b = -2.374,\ y_b = +1.027$ | 〃 |
-| GPS 안테나 | $(-0.85,\ 0,\ 1.3)$ | $x_b = -0.85$ | 9주차 1-3 표 |
+| GPS 안테나 | $(-0.85,\ 0,\ 1.3)$ | $x_b = -0.85$ | 10주차 1-3 표 |
 
 - 추력은 두 대 모두 선체 $x_b$ 방향. 모멘트는 "팔 길이 × 힘" 이고, 팔은 $y_b$ 방향 거리 $b = 1.027$ m
 
@@ -780,7 +780,7 @@ $$
 | **합** | **211** | — | **655.0** |
 
 - 요 관성은 평행축 정리 $I = I_{\text{자체}} + m\,d^2$ 로 더함. 프로펠러는 엔진보다 $0.278$ m 뒤에 붙어 있음 (`engine.xacro`)
-- 본 과목 모델은 $I_z = 653$ 을 씀. 직접 더한 값 655.0 과 **0.3 %** 차이이고, 4\~8주차 모든 모델이 이 값을 공유하므로 그대로 둠
+- 본 과목 모델은 $I_z = 653$ 을 씀. 직접 더한 값 655.0 과 **0.3 %** 차이이고, 4\~9주차 모든 모델이 이 값을 공유하므로 그대로 둠
 - 부가질량은 **0** — VRX 설정 `xDotU = yDotV = nDotR = 0`. 실제 배와 다르지만 시뮬레이터와 같게 만드는 것이 목적임
 
 > [!note] 무게중심은 원점이 아니다 — 모델이 무시하는 한 가지
@@ -914,7 +914,7 @@ $$
 > |---|---|---|
 > | 상하 · 횡동요 · 종동요, 부력 | `Surface` 플러그인 | 수평 운동에는 거의 없음 |
 > | 무게중심 이동 $x_g$ | 있음 ($-0.350$ m) | 선회 반경이 조금 다름 (4주차 2-19절) |
-> | 파랑 · 바람 | 월드 설정에 따라 | 기본 `sydney_regatta` 는 약함. 8주차에서 바람을 모델에 넣음 |
+> | 파랑 · 바람 | 월드 설정에 따라 | 기본 `sydney_regatta` 는 약함. 9주차에서 바람을 모델에 넣음 |
 > | 센서 위치 · 잡음 | GPS 는 $x_b = -0.85$ m 에 달림 | 제자리 선회에서도 GPS 는 원을 그림 (3-4) |
 > | 추진기 반응 | 명령을 거의 즉시 추력으로 | 5주차에서 모터 지연을 **양쪽에** 붙임 |
 
@@ -1163,7 +1163,7 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | 보이는 것 | 설명 |
 |---|---|
 | 좌우로 나란한 **원통 선체 두 개** | 쌍동선(catamaran). 그래서 좌우 추력 차이로 회전함 |
-| 뒤쪽 아래 **프로펠러 두 개** | 후방 추진기. 9주차에서 위치를 실측함 |
+| 뒤쪽 아래 **프로펠러 두 개** | 후방 추진기. 10주차에서 위치를 실측함 |
 | 위쪽 **노란 상자** | 배터리 |
 | 마스트 위 **흰 반구** | GPS 안테나 |
 | 마스트 앞 작은 상자들 | 카메라와 LiDAR |
@@ -1185,8 +1185,8 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 > ```
 > - 저장소에 들어 있는 **센서 최소 WAM-V**(`wamv_lite.urdf`)를 **GUI 렌더 엔진 `ogre`** 로 띄움
 > - Intel 그래픽 노트북 실측: RTF **0.016 → 0.984**, 화면 **1.2 → 49.5 fps** (60 초 평균)
-> - 4\~8주차 제어 실습(GPS · IMU · 참값 오도메트리)이 그대로 돌아감
-> - 카메라·LiDAR 가 필요한 2-4 절 · 9주차 토픽 조사는 `bash run_vrx.sh full`
+> - 4\~9주차 제어 실습(GPS · IMU · 참값 오도메트리)이 그대로 돌아감
+> - 카메라·LiDAR 가 필요한 2-4 절 · 10주차 토픽 조사는 `bash run_vrx.sh full`
 
 - 아래 1\~7 은 **왜 느린지, 무엇을 바꾸는지, 얼마나 좋아지는지** 를 순서대로 설명함
 - 데스크톱처럼 이미 빠른 환경은 5 절의 진단만 해 보고 넘어가도 됨
@@ -1312,9 +1312,9 @@ ROS_DOMAIN_ID=7  (MATLAB W0X_setup 의 값과 같아야 함)
 
 | 명령 | URDF | 렌더 엔진 | 언제 |
 |---|---|---|---|
-| `bash run_vrx.sh` (= `lite`) | 저장소의 `wamv_lite.urdf` | GUI `ogre` | **3 · 4\~8주차 VRX 실습 기본** |
+| `bash run_vrx.sh` (= `lite`) | 저장소의 `wamv_lite.urdf` | GUI `ogre` | **3 · 4\~9주차 VRX 실습 기본** |
 | `bash run_vrx.sh mine` | 방법 B 로 만든 `~/capstone_ws/wamv/wamv_lite.urdf` | GUI `ogre`. 카메라·LiDAR 를 켰으면 서버도 `ogre` | 센서를 직접 고를 때 |
-| `bash run_vrx.sh full` | VRX 기본 (카메라 3대 + LiDAR) | 서버 · GUI `ogre` | 2-4 절, 9주차 토픽 조사 |
+| `bash run_vrx.sh full` | VRX 기본 (카메라 3대 + LiDAR) | 서버 · GUI `ogre` | 2-4 절, 10주차 토픽 조사 |
 | `bash run_vrx.sh original` | VRX 기본 | 기본 (`ogre2`) | 비교용. 느린 노트북에서는 화면이 멈춤 |
 
 - 명령만 보고 실행하지 않으려면 `DRY=1 bash run_vrx.sh mine`
@@ -1416,8 +1416,8 @@ xacro $(ros2 pkg prefix wamv_gazebo)/share/wamv_gazebo/urdf/wamv_gazebo.urdf.xac
 
 | 인자 | 값 | 이유 |
 |---|---|---|
-| `gps_enabled` · `imu_enabled` | `true` | 2-4 절 · 과제 3 · 9주차 2-8 이 씀 |
-| `ground_truth_enabled` | `true` | 3-5 절 · 4\~8주차 VRX 모델이 씀 |
+| `gps_enabled` · `imu_enabled` | `true` | 2-4 절 · 과제 3 · 10주차 2-8 이 씀 |
+| `ground_truth_enabled` | `true` | 3-5 절 · 4\~9주차 VRX 모델이 씀 |
 | `camera_enabled` · `lidar_enabled` | `false` | **렌더링 병목의 원인.** 제어 실습에는 안 씀 |
 
 3. 만든 파일로 띄움
@@ -1630,7 +1630,7 @@ u_ss =
 >   (경량 모델은 RTF 가 거의 1 이므로 `set_param(모델,'EnablePacing','on','PacingRate','0.99')`)
 > - 그래도 1.42 가 나오면 VRX 쪽 값(`ros2 topic echo --once /wamv/sensors/position/ground_truth_odometry --field twist.twist.linear`)을 기준으로 판정함
 
-- 3 · 4 의 결과가 둘 다 정상이면 4\~8주차 VRX 실습을 이 노트북에서 그대로 진행할 수 있음
+- 3 · 4 의 결과가 둘 다 정상이면 4\~9주차 VRX 실습을 이 노트북에서 그대로 진행할 수 있음
 
 ### 수업 모델이 쓰는 토픽 확인 — 센서 최소 구성
 
@@ -1644,15 +1644,15 @@ ros2 topic hz /wamv/sensors/imu/imu/data
 
 | 토픽 | 주기 | 쓰는 곳 |
 |---|---|---|
-| `/wamv/sensors/imu/imu/data` | 99.0 Hz | 2-4 절 · 과제 3 · 9주차 2-8 |
-| `/wamv/sensors/gps/gps/fix` | 19.8 Hz | 2-4 절 · 과제 3 · 9주차 2-8 |
-| `/wamv/sensors/position/ground_truth_odometry` | 9.9 Hz | 3주차 3-5 · 4\~8주차 VRX 모델 |
+| `/wamv/sensors/imu/imu/data` | 99.0 Hz | 2-4 절 · 과제 3 · 10주차 2-8 |
+| `/wamv/sensors/gps/gps/fix` | 19.8 Hz | 2-4 절 · 과제 3 · 10주차 2-8 |
+| `/wamv/sensors/position/ground_truth_odometry` | 9.9 Hz | 3주차 3-5 · 4\~9주차 VRX 모델 |
 | `/wamv/thrusters/left/thrust` · `right/thrust` | 구독자 1 | 모든 주차의 추력 명령 |
 
 - 추력 명령도 그대로 들음 — 좌우 200 N 을 6 초 주면 배가 약 7 m 나아감
 
 > [!note] 카메라 · LiDAR 가 다시 필요할 때
-> - 2-4 절 토픽 탐색, 9주차 토픽 전수조사 · 센서 배치 실습은 `bash run_vrx.sh full` 로 띄움
+> - 2-4 절 토픽 탐색, 10주차 토픽 전수조사 · 센서 배치 실습은 `bash run_vrx.sh full` 로 띄움
 > - 일부만 필요하면 `bash make_wamv_lite.sh camera` 로 만든 뒤 `bash run_vrx.sh mine`
 
 ---
@@ -1674,7 +1674,7 @@ ros2 topic list | grep thrusters
 
 ### 센서 확인
 
-- 필터링 정상 출력 (일부, 9주차 §2-2 실측)
+- 필터링 정상 출력 (일부, 10주차 §2-2 실측)
 
 ```
 /wamv/sensors/gps/gps/fix
@@ -1691,7 +1691,7 @@ ros2 topic list | grep thrusters
 ros2 topic echo /wamv/sensors/gps/gps/fix --once
 ```
 
-- 정상 출력 (일부, 9주차 §2-3 실측)
+- 정상 출력 (일부, 10주차 §2-3 실측)
 
 ```
 header:
@@ -1713,7 +1713,7 @@ ros2 topic hz /wamv/sensors/gps/gps/fix
 ros2 topic echo /wamv/sensors/imu/imu/data --once
 ```
 
-- 정상 출력 (일부, 9주차 §2-3 실측)
+- 정상 출력 (일부, 10주차 §2-3 실측)
 
 ```
 header:
@@ -1731,7 +1731,7 @@ orientation:
 ros2 topic hz /wamv/sensors/lidars/lidar_wamv_sensor/points
 ```
 
-- `hz` 정상 출력 기준 (9주차 §2-3 실측, `average rate` 값)
+- `hz` 정상 출력 기준 (10주차 §2-3 실측, `average rate` 값)
 
 | 토픽 | 데스크톱 (RTF 37 %) | 노트북 (RTF 84 %, `ogre` 옵션) | 설계값 |
 |---|---|---|---|
@@ -1751,7 +1751,7 @@ ros2 topic hz /wamv/sensors/lidars/lidar_wamv_sensor/points
 ros2 topic info /wamv/sensors/imu/imu/data --verbose
 ```
 
-- 정상 출력에서 볼 줄 (VRX 센서 토픽은 전부 `RELIABLE`, 9주차 §2-3 실측)
+- 정상 출력에서 볼 줄 (VRX 센서 토픽은 전부 `RELIABLE`, 10주차 §2-3 실측)
 
 ```
 Publisher count: 1
@@ -1759,7 +1759,7 @@ Publisher count: 1
 ```
 
 - `Reliability` 값을 **적어 둘 것**
-- 9주차 과제(토픽 전수조사표)의 한 열이 됨
+- 10주차 과제(토픽 전수조사표)의 한 열이 됨
 
 ---
 
@@ -1839,7 +1839,7 @@ ros2 topic pub --rate 10 /wamv/thrusters/right/thrust std_msgs/msg/Float64 "{dat
 
 - 자동차와 다름. **조향타가 없음.** 좌·우 추력의 **차이**가 곧 선회
 - 그림의 화살표는 프로펠러가 **물을 미는** 방향임. 배가 받는 힘은 반대 — 전진(`w`)에서 화살표가 뒤를 향하는 이유
-- 8주차에서 이 두 숫자를 **추력 배분(thrust allocation)** 으로 자동 계산하게 됨
+- 9주차에서 이 두 숫자를 **추력 배분(thrust allocation)** 으로 자동 계산하게 됨
 
 ### 1단계 — 코드 받기
 
@@ -1918,7 +1918,7 @@ def on_timer(self):
 |---|---|
 | 키 값을 **10 Hz 로 계속** 발행함 | 늦게 연결된 구독자나 유실된 메시지가 있어도 최신 명령이 곧 도착함 |
 | 종료(`q`) 할 때 **0 을 보냄** | 추진기 플러그인은 마지막 값을 유지함. 안 보내면 창을 닫아도 배가 계속 나아감 |
-| 토픽 이름을 **파라미터**로 뺐음 | 9주차에서 배 이름이 바뀌어도 코드를 안 고침 |
+| 토픽 이름을 **파라미터**로 뺐음 | 10주차에서 배 이름이 바뀌어도 코드를 안 고침 |
 
 - 엔터 없이 키 한 글자를 받기 위해 터미널을 **cbreak 모드**로 바꿈
 
@@ -2022,7 +2022,7 @@ ros2 run usv_basics wamv_teleop_key --ros-args -p thrust:=250.0
 
 - 250 N 은 본 과목이 쓰는 추진기 한 대의 상한임 (§2-5 참조)
 
-- 다른 배(9주차에서 이름을 바꾼 경우)에 붙이려면
+- 다른 배(10주차에서 이름을 바꾼 경우)에 붙이려면
 
 ```bash
 ros2 run usv_basics wamv_teleop_key --ros-args \
@@ -2078,12 +2078,12 @@ ls ~/vrx_ws/src/vrx/vrx_gz/worlds/ | head
 
 | 월드 | 본 과목에서 |
 |---|---|
-| `stationkeeping_task` | 8주차 동적위치유지 |
+| `stationkeeping_task` | 9주차 동적위치유지 |
 | `wayfinding_task` | 5주차 웨이포인트 유도 |
 | `navigation_task` | Term Project 1구간 |
 | `scan_dock_deliver_task` | Term Project 마지막 구간 |
 
-- 자세한 내용과 채점 토픽은 **9주차 §2-6** 에서 다룸
+- 자세한 내용과 채점 토픽은 **10주차 §2-6** 에서 다룸
 
 ---
 
@@ -2183,7 +2183,7 @@ rviz2
 
 > [!caution] `z_n` 이 음수인 것이 정상이다
 > NED 의 $z$ 는 **아래**가 양수임. 배가 기준 고도보다 위에 있으면 $z < 0$ 임
-> 부호를 바꿔 쓰면 8주차 DP 에서 깊이 방향이 뒤집힘
+> 부호를 바꿔 쓰면 9주차 DP 에서 깊이 방향이 뒤집힘
 
 ### 해 볼 것
 
@@ -2460,7 +2460,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 > - VRX 의 위치는 **GPS 안테나**(선체 $x_b = -0.85$ m)의 위치임. 배가 돌면 안테나가 회전 중심 둘레로 원을 그림
 >   - 실측 원 반경 0.69 m (GPS 잡음 포함), 원 중심은 25 초 동안 1.49 m 이동
 > - 운동모델의 $x$, $y$ 는 **선체 원점**의 위치라 제자리 선회에서 움직이지 않음
-> - 둘 다 틀리지 않음 — **무엇의 위치인가**가 다름. 9주차 1-3 의 센서 배치가 이 차이를 만듦
+> - 둘 다 틀리지 않음 — **무엇의 위치인가**가 다름. 10주차 1-3 의 센서 배치가 이 차이를 만듦
 
 ---
 

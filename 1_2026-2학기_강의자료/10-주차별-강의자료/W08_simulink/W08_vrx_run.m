@@ -59,19 +59,19 @@ set_param(m, 'EnablePacing','on', 'PacingRate', num2str(RTF), ...
 out = sim(m);
 
 fprintf('4) 결과 그림\n');
-S     = W08_plot(out, 'VRX DP');
+S     = W08_plot(out, 'VRX 미션 — WP -> 로이터 -> WP');
 S.RTF = RTF;
-saveFig(gcf, 'W08_1_vrx_result.png');
+saveFig(S.fig, 'W08_1_vrx_result.png');    % gcf 는 추진기 창이다 — 궤적 창을 저장한다
 
 if ~do_compare, return; end
 fprintf('5) 같은 초기 선수각으로 오프라인 모델 실행\n');
 
-t   = out.log_eta.Time;
-eta = squeeze(out.log_eta.Data)';
-% odom 이 오기 전의 샘플은 0 이다. 도착 시각은 실행마다 다르므로 처음으로 0 이 아닌 선수각을 쓴다
-k0   = find(abs(eta(:,3)) > 1e-9, 1);
+x_n = out.log_x_n.Data;  y_n = out.log_y_n.Data;  t = out.log_x_n.Time;
+% odom 이 오기 전의 샘플은 0 이다. 도착 시각은 실행마다 다르므로 (0.5 s 를 넘길 때도 있다)
+% 시각으로 자르지 않고 처음으로 0 이 아닌 선수각을 쓴다
+k0 = find(abs(out.log_psi.Data(:)) > 1e-9, 1);
 if isempty(k0), k0 = 1; end
-psi0 = eta(k0,3);
+psi0 = out.log_psi.Data(k0);
 fprintf('   VRX 초기 선수각 %.2f deg\n', rad2deg(psi0));
 
 x0old = evalin('base','x0');   x0 = x0old;   x0(6) = psi0;   assignin('base','x0', x0);
@@ -83,28 +83,41 @@ assignin('base','x0', x0old);   % 되돌린다 — 이 뒤에 오프라인을 �
 So = W08_plot(o2, '오프라인 대조 (VRX 초기 선수각)');   % 오프라인 지표를 같은 형식으로 찍는다
 S.offline = rmfield(So, intersect(fieldnames(So), {'fig'}));
 
-t2  = o2.log_eta.Time;
-eo  = squeeze(o2.log_eta.Data)';
-ee_v = squeeze(out.log_eta_e.Data)';
-ee_o = squeeze(o2.log_eta_e.Data)';
+qn = o2.log_x_n.Data;  qe = o2.log_y_n.Data;  t2 = o2.log_x_n.Time;
 
-% 두 시계가 겹치는 구간만 비교한다
+% 두 시계가 겹치는 구간만 비교한다 — 밖으로 나가면 외삽이 폭주한다
 tm   = t(t <= t2(end));   nm = numel(tm);
-qn_i = interp1(t2, eo(:,1), tm, 'linear');
-qe_i = interp1(t2, eo(:,2), tm, 'linear');
-sep  = hypot(eta(1:nm,1) - qn_i, eta(1:nm,2) - qe_i);
+qn_i = interp1(t2, qn, tm, 'linear');
+qe_i = interp1(t2, qe, tm, 'linear');
+sep  = hypot(x_n(1:nm) - qn_i, y_n(1:nm) - qe_i);
 
+cn = evalin('base','loiter_xc');  ce = evalin('base','loiter_yc');
+rd = evalin('base','loiter_radius');
 S.sep_mean = mean(sep);   S.sep_max = max(sep);
-S.epos_vrx = mean(hypot(ee_v(:,1), ee_v(:,2)));
-S.epos_off = mean(hypot(ee_o(:,1), ee_o(:,2)));
 
-drawOverlay(eta(:,2), eta(:,1), eo(:,2), eo(:,1), tm, sep, S, T_end, ...
-            squeeze(out.log_eta_d.Data)');
+% 상태 전이 시각을 오프라인과 나란히 비교한다
+mo = out.log_mode.Data;   mf = o2.log_mode.Data;
+S.t_in_vrx  = firstAt(t,  mo, 2);   S.t_in_off  = firstAt(t2, mf, 2);
+S.t_out_vrx = lastAt(t,   mo, 2);   S.t_out_off = lastAt(t2, mf, 2);
+
+drawOverlay(y_n, x_n, qe, qn, tm, sep, S, T_end, cn, ce, rd);
 saveFig(gcf, 'W08_vrx_vs_offline.png');
 
 fprintf('\n  === 오프라인 ↔ VRX 대조 (%d초) ===\n', T_end);
-fprintf('  평균 위치 오차  오프라인 %6.3f m   VRX %6.3f m\n', S.epos_off, S.epos_vrx);
+fprintf('  로이터 진입   오프라인 %6.1f s    VRX %6.1f s\n', S.t_in_off,  S.t_in_vrx);
+fprintf('  로이터 종료   오프라인 %6.1f s    VRX %6.1f s\n', S.t_out_off, S.t_out_vrx);
+fprintf('  임무 종료     오프라인 %6.1f s    VRX %6.1f s\n', So.t_finish, S.t_finish);
 fprintf('  궤적 평균 이격 %6.2f m,  최대 %6.2f m\n', S.sep_mean, S.sep_max);
+end
+
+function v = firstAt(t, m, val)
+k = find(round(m) == val, 1, 'first');
+if isempty(k), v = NaN; else, v = t(k); end
+end
+
+function v = lastAt(t, m, val)
+k = find(round(m) == val, 1, 'last');
+if isempty(k), v = NaN; else, v = t(k); end
 end
 
 % =====================================================================
@@ -121,28 +134,30 @@ t1 = double(m1.header.stamp.sec) + double(m1.header.stamp.nanosec)*1e-9;
 RTF = (t1 - t0) / dw;
 end
 
+function drawOverlay(y_n, x_n, qe, qn, t, sep, S, T_end, cn, ce, rd)
+th  = linspace(0, 2*pi, 361);
+wpx = evalin('base','wp_north');   wpy = evalin('base','wp_east');
+figure('Name','오프라인 vs VRX','Color','w','Position',[80 80 1000 440]);
+
+subplot(1,2,1);
+plot(wpy, wpx, 'ks--', 'MarkerFaceColor','w', 'LineWidth',1.0); hold on;
+plot(ce + rd*sin(th), cn + rd*cos(th), 'k:', 'LineWidth',1.0);
+plot(qe, qn, 'b-', 'LineWidth',1.4);
+plot(y_n, x_n, 'r-', 'LineWidth',1.4);
+plot(y_n(1), x_n(1), 'ko', 'MarkerFaceColor','g', 'MarkerSize',8);
+axis equal; grid on; xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
+legend({'웨이포인트','로이터 원','오프라인','VRX','출발'}, 'Location','best');
+title(sprintf('미션 궤적 — %d초, 평균 이격 %.2f m', T_end, S.sep_mean));
+
+subplot(1,2,2);
+plot(t, sep, 'k-', 'LineWidth',1.3); grid on;
+xlabel('시간 [s]'); ylabel('두 궤적 사이 거리 [m]');
+title(sprintf('이격거리 (평균 %.2f / 최대 %.2f m)', S.sep_mean, S.sep_max));
+end
 
 function saveFig(h, name)
 d = fullfile(fileparts(mfilename('fullpath')), 'img');
 if ~isfolder(d), mkdir(d); end
 exportgraphics(h, fullfile(d, name), 'Resolution', 130);
 fprintf('   그림 저장: img/%s\n', name);
-end
-
-function drawOverlay(y_n, x_n, qe, qn, t, sep, S, T_end, etd)
-figure('Name','오프라인 vs VRX','Color','w','Position',[80 80 1000 440]);
-
-subplot(1,2,1);
-plot(etd(:,2), etd(:,1), 'k--', 'LineWidth',1.1); hold on;
-plot(qe, qn, 'b-', 'LineWidth',1.4);
-plot(y_n, x_n, 'r-', 'LineWidth',1.4);
-plot(y_n(1), x_n(1), 'ko','MarkerFaceColor','g','MarkerSize',8);
-axis equal; grid on; xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
-legend({'DP 목표','오프라인','VRX','출발'}, 'Location','best');
-title(sprintf('DP 궤적 — %d초, 평균 이격 %.2f m', T_end, S.sep_mean));
-
-subplot(1,2,2);
-plot(t, sep, 'k-', 'LineWidth',1.3); grid on;
-xlabel('시간 [s]'); ylabel('두 궤적 사이 거리 [m]');
-title(sprintf('이격거리 (평균 %.2f / 최대 %.2f m)', S.sep_mean, S.sep_max));
 end

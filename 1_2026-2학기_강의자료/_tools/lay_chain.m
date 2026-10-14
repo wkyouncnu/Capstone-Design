@@ -50,7 +50,7 @@ function lay_chain(m, stages, varargin)
 %       Goto/From 한 쌍으로 바꾼다 — 선으로 이으면 오른쪽 끝에서 왼쪽 끝으로
 %       거슬러 올라가야 해서 도면을 가로지른다.
 %
-%       측정 (W08_0_offline, 39블록) — 한 줄 3660 x 624 에서 두 줄 1900 x 1290 으로.
+%       측정 (W09_0_offline, 39블록) — 한 줄 3660 x 624 에서 두 줄 1900 x 1290 으로.
 %       2000 px 안에 담을 때 39 dpi 에서 79 dpi 로, 글씨 크기가 두 배가 된다.
 
 p = inputParser;
@@ -121,7 +121,7 @@ end
 
 %  크기를 먼저 정하고, 줄마다 **가장 큰 블록**에 맞춰 높이를 잡는다. 한 블록의
 %  가운데에 맞춰 줄을 시작하면 그 줄의 키 큰 블록이 위아래로 삐져나와 옆 줄과
-%  겹친다 (2026-09-17 W06_0 에서 InnerLoop 와 MotionModel 이 40 px 겹쳤다).
+%  겹친다 (2026-09-17 W07_0 에서 InnerLoop 와 MotionModel 이 40 px 겹쳤다).
 W = zeros(1,numel(stages));  H = zeros(1,numel(stages));  D = zeros(1,numel(stages));
 for k = 1:numel(stages)
     r  = get_param([m '/' stages{k}], 'Position');
@@ -163,7 +163,7 @@ for rr = 1:nRow
         %  간격은 **그 칸에 실제로 들어가야 하는 것**에 맞춘다. 태그가 여덟 개인
         %  블록 하나 때문에 모든 칸을 넓히면 도면이 통째로 늘어난다 (W05_1_vrx 가
         %  그랬다). 그렇다고 한 값으로 못박으면 빽빽한 칸에서 통로가 포개진다
-        %  (2026-10-01 W06·W07 의 `Guidance -> InnerLoop` 두 가닥이 그랬다).
+        %  (2026-10-01 W07·W08 의 `Guidance -> InnerLoop` 두 가닥이 그랬다).
         %
         %  한 칸에 들어가는 것은 셋이다 — 왼쪽부터
         %    1) 내는 블록 아래로 내려가는 **Goto 통로**   18 + TAG_LANE*(태그수-1)
@@ -209,7 +209,7 @@ end
 
 % --- 4) 포트 없는 상자는 맨 아래에 --------------------------------------
 %   아래 줄도 사슬 폭을 넘으면 접는다. 상자 몇 개 때문에 도면 전체가 옆으로
-%   늘어나면 사슬을 접은 뜻이 없다 (2026-09-17 W08_1 이 그랬다).
+%   늘어나면 사슬을 접은 뜻이 없다 (2026-09-17 W09_1 이 그랬다).
 xLim = o.X0;
 for k = 1:numel(stages)
     r    = get_param([m '/' stages{k}], 'Position');
@@ -229,11 +229,11 @@ end
 
 %  사슬에도 상자에도 들지 않은 블록 — 태그에만 신호를 주는 상수 따위. 자리를 정해
 %  주지 않으면 빌더가 놓았던 자리에 그대로 남아 도면을 옆으로 늘린다
-%  (2026-09-17 W08_1 의 ZeroEnv·ZeroThr 가 x=2440 에 남아 폭이 2685 였다).
+%  (2026-09-17 W09_1 의 ZeroEnv·ZeroThr 가 x=2440 에 남아 폭이 2685 였다).
 %
 %  **사슬로 신호를 주는 블록은 내리지 않는다.** 그런 블록은 받는 포트 옆에 있어야
 %  선이 곧다. 아래로 내리면 화면을 가로질러 올라오며 남의 태그를 뚫는다
-%  (2026-09-17 W07_1 의 URf2 가 Go_chi 를 뚫었다).
+%  (2026-09-17 W08_1 의 URf2 가 Go_chi 를 뚫었다).
 rest = find_system(m, 'SearchDepth',1, 'Type','Block');
 for k = 1:numel(rest)
     nmk = get_param(rest{k}, 'Name');
@@ -249,7 +249,7 @@ for k = 1:numel(rest)
     %  **받기만 하는 종착 블록**(Terminator·Display)은 바닥으로 쓸어내리지 않는다.
     %  내는 포트 바로 오른쪽에 두면 잇는 선이 수평 한 토막, 꺾임 0회다. 바닥으로
     %  내리면 두 종착이 같은 통로로 나란히 내려가 서로 겹치고 상대를 관통한다
-    %  (2026-10-01 W06_1_vrx 의 EndChi·EndU 가 그랬다).
+    %  (2026-10-01 W07_1_vrx 의 EndChi·EndU 가 그랬다).
     ph = get_param(rest{k}, 'PortHandles');
     if isempty(ph.Outport) && numel(ph.Inport) == 1
         srcNm = '';  srcPt = 0;
@@ -321,7 +321,7 @@ for i = 1:numel(conn)
         move_to(m, c.src, x, y, 'right');                 % 출력이 오른쪽 테두리
         %  이 태그 열의 **이름표까지**가 사슬 통로의 오른쪽 한계다. 통로를 그
         %  안쪽에 두면 세로 토막이 태그 이름 위를 지나 이름을 읽을 수 없게 된다
-        %  (2026-09-21 W06_0·W06_1 의 Fr_psi_b — check_lines 의 (7) 이름표 위 선).
+        %  (2026-09-21 W07_0·W07_1 의 Fr_psi_b — check_lines 의 (7) 이름표 위 선).
         rr = get_param([m '/' c.src], 'Position');
         tt = name_box([m '/' c.src]);
         xl = rr(1);

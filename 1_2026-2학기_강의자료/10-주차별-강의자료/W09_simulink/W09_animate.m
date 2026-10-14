@@ -1,71 +1,53 @@
-function f = W09_animate(lat, lon, qz, qw, wz, hz_gps, hz_imu, x_true, y_true, r_true, t)
-% W09_ANIMATE  9주차 센서 조사 모델의 실시간 화면 — 센서가 무엇을 얼마나 자주 주는가.
+function f = W09_animate(eta, eta_d, eta_raw, Dact, Tact, t)
+% W09_ANIMATE  9주차 DP 모델의 실시간 화면 — 한 창에 위치 평면과 DP 지표 셋.
 %
 %   Simulink 의 Animate 상자가 매 스텝 이 함수를 부른다. 직접 부를 일은 없다.
 %   **오프라인 모델과 VRX 쌍둥이가 이 함수 하나를 같이 쓴다.** 바뀌는 것은
-%   들어오는 값을 어디서 뽑았는지뿐이다 (센서 모델 vs VRX 토픽).
+%   들어오는 신호를 어디서 뽑았는지뿐이다 (운동방정식 vs ground truth odometry).
 %
 %   f = W09_animate()        인자 없이 부르면 지금 열려 있는 창의 핸들을 돌려준다.
 %                            캡처할 때 쓴다 — gcf 를 쓰면 안 된다 (창이 여럿이다)
 %
-%   입력 — 전부 **모델이 이미 내고 있는 신호**다. 새 가지를 치지 않았다
-%     lat, lon   : GPS 가 준 위도 · 경도 [deg]     (태그 lat · lon)
-%     qz, qw     : IMU 자세 쿼터니언의 z · w        (태그 qz · qw, ENU)
-%     wz         : 자이로 z 각속도 [rad/s]          (태그 wz, ENU. 잡음 + 바이어스 포함)
-%     hz_gps     : RateMeter 가 센 GPS 수신 주기 [Hz]
-%     hz_imu     : RateMeter 가 센 IMU 수신 주기 [Hz]
-%     x_true, y_true, r_true : 운동모델의 참값 [m, m, rad/s]. **VRX 에는 없다 -> NaN**
-%     t          : 시뮬레이션 시각 [s]
+%   입력
+%     eta      : [x_n; y_n; psi]  현재 자세 [m, m, rad] (NED)
+%     eta_d    : [x_n; y_n; psi]  **기준모델이 매끈하게 만든** 목표 자세
+%     eta_raw  : [x_n; y_n; psi]  **계단 목표** (dp_step 표가 시킨 값)
+%     Dact     : [2x1] 추진기 방위각 [rad] (선체계, y 우현이 +)
+%     Tact     : [2x1] 추진기 추력   [N]
+%     t        : 시뮬레이션 시각 [s]
 %
-%   화면 배치 — 4·5주차 규약과 같은 네 칸, 내용만 이 주차의 것이다
-%     왼쪽 큰 칸   참값 항적 + **GPS 로 본 위치 점** + 선체와 선수 방향
-%                  가로축 y (동쪽), 세로축 x (북쪽)
-%     오른쪽 (1)   수신 주기 — hz_gps · hz_imu 와 설계값 20 · 100 Hz (점선)
-%     오른쪽 (2)   센서 대 참값 — 자이로가 준 r 과 참값 r 을 겹쳐서
-%     오른쪽 (3)   GPS 점이 있어야 할 자리에서 얼마나 벗어나는가
-%                  참값이 있으면(오프라인) **안테나 레버암** — GPS 점과 참값의 차이
-%                  참값이 없으면(VRX)      **흩어짐** — 지금까지 평균에서의 차이
+%   화면 배치 — 4~8주차 규약과 같은 네 칸. 오른쪽 세 칸의 내용만 9주차 것이다
+%     왼쪽 큰 칸   위치 평면. 목표 자세와 현재 자세, 선체와 선수 방향,
+%                  그 위에 **추진기의 방위각·추력 화살표**
+%                  가로축 y (동쪽), 세로축 x (북쪽) — 위쪽이 북쪽, 해도와 같다
+%     오른쪽 (1)   **위치 오차** e_x · e_y 와 거리 |e|, 그리고 0 선 — DP 의 핵심 지표
+%     오른쪽 (2)   psi_ref 와 psi 를 겹쳐서 [deg, ssa 적용] — 지령 대비 응답
+%     오른쪽 (3)   추진기 추력 T_i (왼쪽 축) 과 방위각 delta_i (오른쪽 축)
 %
-%   왜 이 네 칸인가
-%     9주차는 제어 주차가 아니다. 화면이 답해야 하는 질문은 "시킨 대로 갔는가"
-%     가 아니라 **"센서가 제대로 오고 있는가"** 다. 그래서 지령 대비 응답 대신
-%     ① 얼마나 자주 오는가 ② 오는 값이 참값과 얼마나 다른가 ③ 센서가 달린
-%     자리 때문에 얼마나 어긋나는가 — 1-5 절과 2-8-0 절이 재는 바로 그 세 가지를
-%     칸에 그대로 앉혔다.
+%   왜 위치 오차에 칸 하나를 통째로 주는가
+%     9주차가 답해야 하는 질문은 "제자리를 지키고 있는가" 하나다. 그 답이
+%     위치 오차다. 평면 그림만 보면 "대충 목표 근처" 에서 멈추고 몇 cm 인지
+%     읽을 수 없다. 5주차가 y_e 에 칸을 준 것과 같은 이유다.
 %
-%   왜 오른쪽 ③ 의 기준이 모델마다 다른가
-%     VRX 에는 참값이 없다. `W09_1_sensor_rates` 는 센서 토픽 세 개만 구독하고
-%     ground truth 는 구독하지 않는다 — 그것이 이 모델의 목적이기 때문이다.
-%     칸의 뜻은 양쪽이 같다 ("GPS 점이 있어야 할 자리에서 얼마나 벗어나는가").
-%     기준만 참값 -> 지금까지의 평균으로 바뀐다. 배가 서 있으면 GPS 잡음의
-%     흩어짐이, 움직이면 GPS 로 본 이동이 그대로 나온다.
+%   추진기는 **두 기**다 — 힘 성분이 넷일 뿐이다
+%     VRX 의 WAM-V 는 후방 방위추진기 2기를 단다 (wamv_aft_thrusters.xacro).
+%     배분 행렬 T_e 가 4열인 것은 추진기가 넷이어서가 아니라, 한 기의 힘을
+%     (F_x, F_y) 두 성분으로 쪼개 두었기 때문이다 — 제어입력 4개, 추진기 2기.
+%     그래서 화살표도 둘, 오른쪽 ③ 의 곡선도 추력 둘 · 방위각 둘이다.
+%     (W09_setup §1~2 와 같은 이야기. 넷을 그리면 없는 추진기를 그리는 것이다)
 %
-%     수신 건수로 하지 않은 이유 — 화면을 켜면 그리는 일이 벽시계를 먹어
-%     페이싱이 밀린다. 그 순간 "설계 건수 대비 몇 건"은 화면을 켰다는 사실만
-%     재게 된다 (2026-09-25 첫 VRX 캡처에서 GPS 가 22.8 Hz 로 **올라갔다**).
-%     화면에는 벽시계와 무관한 양만 그린다. 건수는 W09_rates_run 이 화면을
-%     끄고 잰다.
-%
-%   선체를 어디에 그리는가
-%     GPS 점은 **안테나 자리**다. 선체 원점이 아니다 (1-3 절). 그래서 IMU 선수각으로
-%     레버암을 되돌린 자리에 선체를 그리고, 날것의 GPS 점은 따로 찍는다.
-%     두 점이 떨어져 보이는 것이 이 주차가 가르치려는 그림이다.
-%
-%   출발점
-%     첫 쓸모 있는 GPS 점을 원점으로 잡고 거기서부터 상대좌표로 그린다.
-%     참값에도 **같은** 원점을 빼므로 둘 사이의 차이는 그대로 남는다.
-%     VRX 의 위경도는 기준점에서 수백 m 떨어져 있고, Subscribe 블록은 첫 메시지
-%     전에 0 으로 채운 버스를 내므로 (CLAUDE.md §11) 맨 앞 몇 샘플을 버려야 한다.
+%   목표가 둘인 이유
+%     dp_step 표는 목표를 **계단**으로 옮긴다 (eta_raw). 그대로 좇으면 배가
+%     낼 수 없는 가속을 요구하므로 DPRef 의 기준모델이 매끈한 궤적 eta_d 로
+%     바꾼다. 평면에는 둘 다 찍는다 — 회색 사각형이 시킨 곳, 초록 원이
+%     지금 좇는 곳이다. 오차 칸은 **기준모델 목표 eta_d 기준**으로 잰다.
 %
 %   그림이 느리면 W09_setup.m 에서 animate = 0 또는 animate_every 를 키운다.
-%   **수신 주기를 재는 실행에서는 화면을 끈다** — 그리는 일이 벽시계를 먹는다
-%   (W09_rates_run 이 알아서 끄고 되돌린다).
 
-persistent fig axXY axHz axR axD ...
-           hTrue hGps hHull hHead hDot hInfo ...
-           hHzG hHzI hDesG hDesI hRm hRt hD1 hD2 hD3 ...
-           tX tY gX gY tv Dhz Dr Dd x0 y0 haveOrigin hasTruth tLast tPrev ...
-           latRef lonRef Rm_ Rn_ bx_ by_ hzDg hzDi
+persistent fig axXY axE axP axT ...
+           hTrail hHull hHead hDot hTgt hTgtHead hRaw hInfo hArr ...
+           hEx hEy hEn hPref hP hT1 hT2 hD1 hD2 ...
+           trX trY tv De Dp Dt xt yt Fmax delMax scale tLast tPrev
 
 %% ---- 인자 없이 부르면 창 핸들만 돌려준다 (캡처용) ----------------------
 if nargin == 0
@@ -73,126 +55,138 @@ if nargin == 0
     return
 end
 
-NMAX = 40000;        % 되돌아보기 한계. VRX 는 길게 돌 수 있다
+NMAX = 40000;        % 되돌아보기 한계. VRX 는 StopTime 을 길게 주면 무한정 쌓인다
 
 %% ---- 새 실행이면 창을 다시 만든다 --------------------------------------
 newRun = isempty(tLast) || isempty(fig) || ~isvalid(fig) || t < tPrev;
 if newRun
+    xt     = evalin('base','thr_x');
+    yt     = evalin('base','thr_y');
+    Fmax   = evalin('base','F_max');
+    delMax = evalin('base','del_max');
+    scale  = 2;
+    try, scale = evalin('base','boat_scale'); catch, end
+
     if ~isempty(fig) && isvalid(fig), close(fig); end
-    fig = figure('Name','W09 실시간 센서 화면 — 얼마나 자주, 얼마나 정확히 오는가', ...
+    fig = figure('Name','W09 실시간 DP 화면 — 위치 평면과 오차·지령·추진기', ...
                  'NumberTitle','off', 'Color','w', 'Position',[50 50 1240 800]);
     setappdata(0, 'W09_anim_fig', fig);
 
-    %  설계값과 기준점은 W09_setup 이 base workspace 에 올려 둔 것을 읽는다.
-    %  화면 함수가 제 값을 따로 들고 있으면 setup 과 어긋난다
-    latRef = bw('lat0', 0);         lonRef = bw('lon0', 0);
-    bx_    = bw('gps_x', 0);        by_    = bw('gps_y', 0);
-    hzDg   = bw('hz_design_gps',  20);
-    hzDi   = bw('hz_design_imu', 100);
-    a  = 6378137.0;  e2 = 6.69437999014e-3;  s2 = sind(latRef)^2;
-    Rm_ = a*(1-e2)/(1-e2*s2)^1.5;              % 자오선 곡률반경
-    Rn_ = a/sqrt(1-e2*s2)*cosd(latRef);        % 묘유선 곡률반경 x cos(lat)
-
-    % ---- 왼쪽 큰 칸 : 참값 항적 + GPS 점 + 선체 ----
+    % ---- 왼쪽 큰 칸 : 위치 평면 -------------------------------------
     axXY = subplot(3,2,[1 3 5], 'Parent', fig);
     hold(axXY,'on'); grid(axXY,'on'); axis(axXY,'equal');
     xlabel(axXY,'y (동쪽) [m]');  ylabel(axXY,'x (북쪽) [m]');
-    %  선체를 **맨 아래에, 비치게** 깐다. 이 주차의 기본 시나리오는 제자리
-    %  선회라 항적이 선체보다 작다 — 불투명하게 그리면 GPS 점이 가려진다
+
+    %  그리는 차례가 곧 위아래 차례다 (나중에 그린 것이 위로 온다).
+    %  DP 는 **목표 위에 배가 겹쳐 있는** 것이 정상이므로, 목표 표식을 선체보다
+    %  먼저 그리면 성공했을 때 목표가 선체 밑으로 사라진다. 그래서
+    %  항적 -> 선체 -> 목표 -> 추진기 화살표 차례로 그린다.
+    trX = [];  trY = [];
+    hTrail = plot(axXY, nan, nan, '-', 'Color',[0 0.45 0.74], 'LineWidth',1.5);
+
     hHull = patch('Parent',axXY, 'XData',nan, 'YData',nan, ...
-                  'FaceColor',[0.13 0.55 0.13], 'FaceAlpha',0.25, ...
-                  'EdgeColor',[0.13 0.45 0.13], 'LineWidth',1.0);
-    hHead = plot(axXY, nan, nan, '-', 'Color',[0.35 0.35 0.35], 'LineWidth',1.6);
-    hTrue = plot(axXY, nan, nan, '-', 'Color',[0.00 0.45 0.74], 'LineWidth',1.8, ...
-                 'Marker','o', 'MarkerSize',5, 'MarkerIndices',1, ...
-                 'MarkerFaceColor',[0.00 0.45 0.74]);
-    hGps  = plot(axXY, nan, nan, '.', 'Color',[0.85 0.33 0.10], 'MarkerSize',9);
-    hDot  = plot(axXY, nan, nan, 'k.', 'MarkerSize',14);
-    hInfo = title(axXY, '', 'FontWeight','normal', 'Interpreter','tex');
+                  'FaceColor',[0.85 0.92 1.00], 'FaceAlpha',0.55, ...
+                  'EdgeColor',[0.10 0.20 0.50], 'LineWidth',1.3);
+    hHead = plot(axXY, nan, nan, '-', 'Color',[0.10 0.20 0.50], 'LineWidth',1.6);
 
-    % ---- 오른쪽 (1) : 수신 주기 ----
-    %  누적 평균이라 t 가 아주 작을 때는 값이 크게 튄다. 아래에서 y 한계를 묶는다
-    axHz = subplot(3,2,2, 'Parent', fig);
-    hold(axHz,'on'); grid(axHz,'on');
-    hDesG = plot(axHz, nan, nan, '--', 'Color',[0.75 0.55 0.45], 'LineWidth',1.2);
-    hDesI = plot(axHz, nan, nan, '--', 'Color',[0.45 0.60 0.75], 'LineWidth',1.2);
-    hHzG  = plot(axHz, nan, nan, '-',  'Color',[0.85 0.33 0.10], 'LineWidth',1.6);
-    hHzI  = plot(axHz, nan, nan, '-',  'Color',[0.00 0.45 0.74], 'LineWidth',1.6);
-    ylabel(axHz,'수신 주기 [Hz]');
-    title(axHz,'수신 주기 — 실측과 설계값(점선)', 'FontWeight','normal');
-    legend(axHz, [hHzG hHzI hDesG hDesI], ...
-           {'GPS 실측','IMU 실측', sprintf('GPS 설계 %g Hz', hzDg), ...
-            sprintf('IMU 설계 %g Hz', hzDi)}, ...
-           'Location','southoutside', 'NumColumns',2, 'AutoUpdate','off');
+    % 계단 목표 — 시킨 곳
+    hRaw = plot(axXY, nan, nan, 's', 'MarkerEdgeColor',[0.35 0.35 0.35], ...
+                'MarkerFaceColor','none', 'MarkerSize',14, 'LineWidth',1.6);
 
-    % ---- 오른쪽 (2) : 센서 대 참값 ----
-    axR = subplot(3,2,4, 'Parent', fig);
-    hold(axR,'on'); grid(axR,'on');
-    hRt = plot(axR, nan, nan, '-', 'Color',[0.45 0.45 0.45], 'LineWidth',3.2);
-    hRm = plot(axR, nan, nan, '-', 'Color',[0.49 0.18 0.56], 'LineWidth',1.1);
-    ylabel(axR,'r [deg/s]');
+    % 기준모델 목표 — 지금 좇는 곳. 그 자리의 목표 선수각도 함께 그린다
+    hTgtHead = plot(axXY, nan, nan, '--', 'Color',[0.00 0.50 0.00], 'LineWidth',1.6);
+    hTgt     = plot(axXY, nan, nan, 'o', 'MarkerEdgeColor',[0.00 0.50 0.00], ...
+                    'MarkerSize',18, 'LineWidth',2.0);
+    hDot  = plot(axXY, nan, nan, 'k.', 'MarkerSize',10);
 
-    % ---- 오른쪽 (3) : 레버암 차이 또는 못 받은 건수 ----
-    axD = subplot(3,2,6, 'Parent', fig);
-    hold(axD,'on'); grid(axD,'on');
-    hD1 = plot(axD, nan, nan, '-', 'Color',[0.85 0.33 0.10], 'LineWidth',1.3);
-    hD2 = plot(axD, nan, nan, '-', 'Color',[0.00 0.45 0.74], 'LineWidth',1.3);
-    hD3 = plot(axD, nan, nan, '-', 'Color',[0.15 0.15 0.15], 'LineWidth',1.8);
-    xlabel(axD,'시간 [s]');
+    % 추진기 화살표 둘 — 좌현 빨강, 우현 자홍 (오른쪽 ③ 의 범례와 같은 색)
+    hArr(1) = plot(axXY, nan, nan, '-', 'Color',[0.85 0.10 0.10], 'LineWidth',2.5);
+    hArr(2) = plot(axXY, nan, nan, '-', 'Color',[0.75 0.10 0.75], 'LineWidth',2.5);
 
-    %  오른쪽 세 칸 — y 이름표가 창 테두리에 잘리지 않게 폭을 줄이고,
-    %  범례를 칸 **아래**에 두므로 위 두 칸은 높이도 줄여 자리를 비운다.
-    %  줄이지 않으면 범례가 아래 칸의 제목 위에 얹힌다 (2026-09-25 첫 캡처)
-    for ax = [axHz axR]
-        p = get(ax,'Position');
-        set(ax, 'Position', [p(1) p(2)+0.26*p(4) p(3)*0.90 p(4)*0.74]);
+    legend(axXY, [hRaw hTgt hTrail hArr(1) hArr(2)], ...
+           {'계단 목표 \eta_{raw}','기준모델 목표 \eta_d','항적', ...
+            '좌현 추진기','우현 추진기'}, ...
+           'Location','southoutside', 'Orientation','horizontal', ...
+           'NumColumns',3, 'AutoUpdate','off');
+
+    hInfo = title(axXY, '', 'FontSize',10, 'FontWeight','normal', 'Interpreter','tex');
+
+    % ---- 오른쪽 (1) : 위치 오차 -------------------------------------
+    %   9주차의 핵심 지표다. 0 선을 함께 그려야 "제자리를 지켰다" 를 눈으로
+    %   판정할 수 있다. 거리 |e| 는 굵게 — 한 숫자로 답하는 선이다
+    axE = subplot(3,2,2, 'Parent', fig);
+    hold(axE,'on'); grid(axE,'on');
+    yline(axE, 0, '-', 'Color',[0.40 0.40 0.40], 'LineWidth',1.2);
+    hEx = plot(axE, nan, nan, '-', 'Color',[0.00 0.45 0.74], 'LineWidth',1.3);
+    hEy = plot(axE, nan, nan, '-', 'Color',[0.85 0.33 0.10], 'LineWidth',1.3);
+    hEn = plot(axE, nan, nan, '-', 'Color',[0.20 0.20 0.20], 'LineWidth',1.8);
+    ylabel(axE,'위치 오차 [m]');
+    title(axE, '위치 오차 — 0 으로 내려와 붙으면 DP 성공', 'FontWeight','normal');
+    legend(axE, [hEx hEy hEn], {'e_x (북)','e_y (동)','|e| (거리)'}, ...
+           'Location','northeast', 'Orientation','horizontal', 'AutoUpdate','off');
+
+    % ---- 오른쪽 (2) : 선수각 지령 대비 응답 --------------------------
+    axP = subplot(3,2,4, 'Parent', fig);
+    hold(axP,'on'); grid(axP,'on');
+    hPref = plot(axP, nan, nan, '--', 'Color',[0.60 0.60 0.60], 'LineWidth',1.6);
+    hP    = plot(axP, nan, nan, '-',  'Color',[0.85 0.33 0.10], 'LineWidth',1.6);
+    ylabel(axP,'\psi [deg]');
+    title(axP, '선수각 — 지령 대비 응답 (ssa 로 접은 값)', 'FontWeight','normal');
+    legend(axP, [hPref hP], {'\psi_{ref} (DP 목표)','\psi (응답)'}, ...
+           'Location','southeast', 'Orientation','horizontal', 'AutoUpdate','off');
+
+    % ---- 오른쪽 (3) : 추진기 추력과 방위각 ---------------------------
+    %   추력은 수백 N, 방위각은 ±45° 라 자릿수가 다르다. 한 축에 겹쳐 놓으면
+    %   방위각이 0 인 직선으로 보인다. 그래서 축을 둘로 나누고 범례로 묶는다.
+    axT = subplot(3,2,6, 'Parent', fig);
+    yyaxis(axT,'left');
+    hold(axT,'on'); grid(axT,'on');
+    hT1 = plot(axT, nan, nan, '-', 'Color',[0.85 0.10 0.10], 'LineWidth',1.5);
+    hT2 = plot(axT, nan, nan, '-', 'Color',[0.75 0.10 0.75], 'LineWidth',1.5);
+    ylabel(axT,'추력 T_i [N]');
+    yyaxis(axT,'right');
+    hold(axT,'on');
+    hD1 = plot(axT, nan, nan, '--', 'Color',[0.85 0.10 0.10], 'LineWidth',1.2);
+    hD2 = plot(axT, nan, nan, '--', 'Color',[0.75 0.10 0.75], 'LineWidth',1.2);
+    ylabel(axT,'방위각 \delta_i [deg]');
+    ylim(axT, [-rad2deg(delMax)*1.25, rad2deg(delMax)*1.25]);   % ±45° 한계가 보이게
+    yline(axT,  rad2deg(delMax), ':', 'Color',[0.45 0.45 0.45]);
+    yline(axT, -rad2deg(delMax), ':', 'Color',[0.45 0.45 0.45]);
+    xlabel(axT,'시간 [s]');
+    title(axT, sprintf('방위추진기 2기 — 추력과 방위각 (한계 ±%.0f°)', ...
+                       rad2deg(delMax)), 'FontWeight','normal');
+    legend(axT, [hT1 hT2 hD1 hD2], {'T_1 (좌현)','T_2 (우현)','\delta_1','\delta_2'}, ...
+           'Location','southoutside', 'Orientation','horizontal', 'AutoUpdate','off');
+    %  yyaxis 는 두 축의 색을 제멋대로 칠한다. 범례가 색을 나르므로 축 글자는 검게 둔다
+    axT.YAxis(1).Color = [0.15 0.15 0.15];
+    axT.YAxis(2).Color = [0.15 0.15 0.15];
+
+    %  오른쪽 세 칸의 y 이름표가 창 오른쪽 테두리에 잘리지 않게 폭을 줄인다.
+    %  ③ 칸은 **오른쪽에도 축 이름표가 있으므로**(yyaxis) 더 줄인다 —
+    %  4~8주차처럼 0.90 으로 두면 '방위각 \delta_i' 가 테두리에 잘린다
+    for a = [axE axP axT]
+        p = get(a,'Position');  set(a, 'Position', [p(1) p(2) p(3)*0.86 p(4)]);
     end
-    p = get(axD,'Position');  set(axD, 'Position', [p(1) p(2) p(3)*0.90 p(4)]);
 
-    tX = [];  tY = [];  gX = [];  gY = [];  tv = [];
-    Dhz = zeros(0,2);  Dr = zeros(0,2);  Dd = zeros(0,3);
-    x0 = 0;  y0 = 0;  haveOrigin = false;  hasTruth = false;
+    tv = [];  De = zeros(0,3);  Dp = zeros(0,2);  Dt = zeros(0,4);
     tLast = -inf;
 end
 tPrev = t;
 
-%% ---- 출발점 잡기 — 0 으로 채운 첫 버스를 버린다 -------------------------
-%  참값이 있는 모델인지(오프라인) 없는 모델인지(VRX)도 여기서 한 번만 정한다.
-%  빌더가 NaN 을 고정으로 넣으므로 한 실행 안에서 바뀌지 않는다.
-if ~haveOrigin
-    if lat ~= 0 || lon ~= 0
-        [x0, y0]   = ll2ned(lat, lon, latRef, lonRef, Rm_, Rn_);
-        haveOrigin = true;
-        hasTruth   = ~isnan(x_true) && ~isnan(r_true);
-        label_panels(axXY, axR, axD, hTrue, hGps, hRt, hRm, hD1, hD2, hD3, ...
-                     hasTruth, hypot(bx_, by_));
-    else
-        return                    % 아직 첫 메시지가 오지 않았다. 그리지 않는다
-    end
-end
-
 %% ---- 값 모으기 (그리기는 animate_every 마다) ---------------------------
-[xg, yg] = ll2ned(lat, lon, latRef, lonRef, Rm_, Rn_);
-xg = xg - x0;   yg = yg - y0;
-psi = pi/2 - 2*atan2(qz, qw);       % ENU yaw -> NED 선수각 (롤·피치는 작다고 본다)
+x_n = eta(1);  y_n = eta(2);  psi = eta(3);
+ex  = eta_d(1) - x_n;
+ey  = eta_d(2) - y_n;
 
-gX(end+1) = xg;   gY(end+1) = yg;
-tv(end+1) = t;
-Dhz(end+1,:) = [hz_gps, hz_imu];
-Dr(end+1,:)  = [-wz*180/pi, r_true*180/pi];    % r_ENU = -r_NED (1-5 절)
-if hasTruth
-    xt = x_true - x0;   yt = y_true - y0;
-    tX(end+1) = xt;     tY(end+1) = yt;
-    Dd(end+1,:) = [xg - xt, yg - yt, hypot(xg - xt, yg - yt)];
-else
-    %  참값이 없다 -> 기준을 **지금까지의 평균**으로 바꾼다. 그릴 때 다시 잰다
-    Dd(end+1,:) = [NaN, NaN, NaN];
-end
+trX(end+1) = x_n;  trY(end+1) = y_n;
+tv(end+1)  = t;
+De(end+1,:) = [ex, ey, hypot(ex, ey)];
+Dp(end+1,:) = [ssa_deg(eta_d(3)), ssa_deg(psi)];
+Dt(end+1,:) = [Tact(1), Tact(2), rad2deg(Dact(1)), rad2deg(Dact(2))];
 if numel(tv) > NMAX
     k = numel(tv) - NMAX + 1;
-    gX(1:k) = [];  gY(1:k) = [];  tv(1:k) = [];
-    Dhz(1:k,:) = [];  Dr(1:k,:) = [];  Dd(1:k,:) = [];
-    if hasTruth, tX(1:k) = [];  tY(1:k) = []; end
+    trX(1:k) = [];  trY(1:k) = [];  tv(1:k) = [];
+    De(1:k,:) = [];  Dp(1:k,:) = [];  Dt(1:k,:) = [];
 end
 
 every = 0.25;
@@ -200,70 +194,88 @@ try, every = evalin('base','animate_every'); catch, end
 if t - tLast < every, return; end
 tLast = t;
 
-%% ---- 왼쪽 : 항적과 선체 ------------------------------------------------
-%  GPS 점은 안테나 자리다. IMU 선수각으로 레버암을 되돌려 선체 원점을 찾는다
-xh = xg - bx_*cos(psi) + by_*sin(psi);
-yh = yg - bx_*sin(psi) - by_*cos(psi);
-[hX, hY, hdx, hdy] = hull_ned(xh, yh, psi);
-set(hTrue, 'XData', tY,  'YData', tX);
-set(hGps,  'XData', gY,  'YData', gX);
-set(hHull, 'XData', hY,  'YData', hX);
-set(hHead, 'XData', hdy, 'YData', hdx);
-set(hDot,  'XData', yg,  'YData', xg);
-set(hInfo, 'String', { '항적 — 위쪽이 북쪽. 주황 점이 GPS, 초록이 IMU 자세로 되돌린 선체', ...
-    sprintf(['t = %5.1f s    GPS %5.2f Hz    IMU %6.2f Hz    ' ...
-             '\\psi_{IMU} = %6.1f°    r_{자이로} = %6.2f °/s'], ...
-            t, hz_gps, hz_imu, ssa_deg(psi), -wz*180/pi) });
+%% ---- 왼쪽 : 위치 평면 --------------------------------------------------
+L = 4.9*scale/2;  B = 2.44*scale/2;
+hull = [ L 0; 0.4*L B; -L B; -L -B; 0.4*L -B ];
+R = [cos(psi) -sin(psi); sin(psi) cos(psi)];
+hb = (R*hull')';
+set(hHull, 'XData', y_n + hb(:,2), 'YData', x_n + hb(:,1));
+set(hHead, 'XData', [y_n, y_n + 2.2*L*sin(psi)], ...
+           'YData', [x_n, x_n + 2.2*L*cos(psi)]);
+set(hDot,  'XData', y_n, 'YData', x_n);
+set(hTrail,'XData', trY, 'YData', trX);
+
+% 목표 — 계단 목표(시킨 곳)와 기준모델 목표(지금 좇는 곳), 그리고 목표 선수각
+set(hRaw,  'XData', eta_raw(2), 'YData', eta_raw(1));
+set(hTgt,  'XData', eta_d(2),   'YData', eta_d(1));
+set(hTgtHead, 'XData', [eta_d(2), eta_d(2) + 2.2*L*sin(eta_d(3))], ...
+              'YData', [eta_d(1), eta_d(1) + 2.2*L*cos(eta_d(3))]);
+
+% 추진기 화살표 — NED 선체계: 좌현 y = -yt, 우현 y = +yt
+%   길이 기준은 선체 반길이 L 의 1.6 배 = 추력 한계 F_max 일 때의 길이다.
+%   선체 크기에 매여 있으므로 boat_scale 을 바꿔도 비율이 그대로다.
+a1 = arrowPts([xt -yt], Dact(1), Tact(1), Fmax, 1.6*L, R, x_n, y_n);
+a2 = arrowPts([xt  yt], Dact(2), Tact(2), Fmax, 1.6*L, R, x_n, y_n);
+set(hArr(1), 'XData', a1(:,1), 'YData', a1(:,2));
+set(hArr(2), 'XData', a2(:,1), 'YData', a2(:,2));
+
+% 축 범위 — 배·항적·두 목표가 모두 들어오게. 최소 30 m 는 확보한다
+allY = [trY, eta_d(2), eta_raw(2)];
+allX = [trX, eta_d(1), eta_raw(1)];
+span = max([max(allY)-min(allY), max(allX)-min(allX), 30]) * 1.30;
+cy = (max(allY)+min(allY))/2;  cx = (max(allX)+min(allX))/2;
+axis(axXY, [cy-span/2, cy+span/2, cx-span/2, cx+span/2]);
+
+epsi = ssa_deg(psi - eta_d(3));
+set(hInfo, 'String', { ...
+    ['실시간 DP — 위쪽이 북쪽, 뾰족한 쪽이 선수.  ' ...
+     '화살표 = 방위추진기 2기의 추력 방향 (길이는 \surd(T/F_{max}) 비례)'], ...
+    sprintf(['t = %5.1f s    x = %7.2f m    y = %7.2f m    \\psi = %6.1f°    ' ...
+             '|e| = %5.2f m    \\Delta\\psi = %5.1f°'], ...
+            t, x_n, y_n, ssa_deg(psi), De(end,3), epsi), ...
+    sprintf('좌현 %+6.1f N @ %+5.1f°      우현 %+6.1f N @ %+5.1f°', ...
+            Tact(1), rad2deg(Dact(1)), Tact(2), rad2deg(Dact(2))) });
 
 %% ---- 오른쪽 세 칸 ------------------------------------------------------
-set(hHzG,  'XData', tv, 'YData', Dhz(:,1));
-set(hHzI,  'XData', tv, 'YData', Dhz(:,2));
-set(hDesG, 'XData', [tv(1) tv(end)], 'YData', [hzDg hzDg]);
-set(hDesI, 'XData', [tv(1) tv(end)], 'YData', [hzDi hzDi]);
-set(hRm,   'XData', tv, 'YData', Dr(:,1));
-set(hRt,   'XData', tv, 'YData', Dr(:,2));
-if ~hasTruth
-    %  참값이 없으면 **지금까지의 평균**이 기준이다. 배가 서 있으면 GPS 잡음의
-    %  흩어짐이, 움직이면 GPS 로 본 이동이 그대로 보인다. 벽시계와 무관하다
-    mx = mean(gX);  my = mean(gY);
-    Dd = [gX(:) - mx, gY(:) - my, hypot(gX(:) - mx, gY(:) - my)];
-end
-set(hD1,   'XData', tv, 'YData', Dd(:,1));
-set(hD2,   'XData', tv, 'YData', Dd(:,2));
-set(hD3,   'XData', tv, 'YData', Dd(:,3));
+set(hEx,   'XData', tv, 'YData', De(:,1));
+set(hEy,   'XData', tv, 'YData', De(:,2));
+set(hEn,   'XData', tv, 'YData', De(:,3));
+set(hPref, 'XData', tv, 'YData', Dp(:,1));
+set(hP,    'XData', tv, 'YData', Dp(:,2));
+set(hT1,   'XData', tv, 'YData', Dt(:,1));
+set(hT2,   'XData', tv, 'YData', Dt(:,2));
+set(hD1,   'XData', tv, 'YData', Dt(:,3));
+set(hD2,   'XData', tv, 'YData', Dt(:,4));
 
-%  수신 주기는 누적 평균이라 t 가 0 에 가까울 때 수백 Hz 로 튄다. 설계값이
-%  보이는 자리로 y 한계를 묶지 않으면 그림이 첫 몇 스텝에 잡아먹힌다
-ylim(axHz, [0, 1.35*max([hzDg, hzDi])]);
-pad_y(axR, Dr);
-pad_y(axD, Dd);
+%  곡선이 그림의 맨 위 테두리에 딱 붙으면 읽기 어렵다. 위아래로 조금 띄운다
+pad_y(axE, De);
+pad_y(axP, Dp);
+yyaxis(axT,'left');   pad_y(axT, Dt(:,1:2));   yyaxis(axT,'right');
 
 drawnow limitrate
 if nargout > 0, f = fig; end
 end
 
 % =====================================================================
-% 위경도 -> 기준점 기준 북 · 동 [m]  (1-5 절 식, W09_offline_run 과 같은 식)
+% 추진기 화살표 — 추진기 자리에서 추력 방향으로 뻗는다. 선체 좌표계에서
+% 만든 뒤 NED 로 돌린다. 추력이 음수면 화살표가 반대로 향한다.
+%
+%   길이는 sqrt(|T|/F_max) 에 비례시킨다. 길이에 그대로 비례시키면
+%   DP 의 정상상태 추력(수십 N)이 한계 500 N 의 몇 %밖에 안 되어 화살표가
+%   선체 안에 파묻힌다 — 정작 "외란에 맞서 어느 쪽을 미는가" 를 보여야 하는
+%   구간에서 아무것도 안 보인다 (2026-09-25 첫 캡처에서 확인).
+%   제곱근을 쓰면 작은 추력도 눈에 보이면서 큰 추력과의 차례는 그대로다.
+%   **정확한 크기는 제목 줄의 숫자와 오른쪽 ③ 칸에서 읽는다.**
 % =====================================================================
-function [xn, yn] = ll2ned(lat, lon, lat0, lon0, Rm, Rn)
-xn = deg2rad(lat - lat0)*Rm;
-yn = deg2rad(lon - lon0)*Rn;
-end
-
-% =====================================================================
-% 선체 다각형 — 선미는 네모, 선수는 뾰족하다 (4주차 W04_animate 와 같은 모양)
-%     N = x + bx cos(psi) - by sin(psi)
-%     E = y + bx sin(psi) + by cos(psi)
-% =====================================================================
-function [X, Y, hx, hy] = hull_ned(x, y, psi)
-L = 1.6;  B = 0.45*L;                            % 반길이 · 반폭 [m]
-bx = L * [ -1   -1    0.35   1    0.35  -1 ];    % 선미 -> 선수 -> 선미 (닫힌 도형)
-by = B * [  1   -1   -1      0    1      1 ];
-c = cos(psi);  s = sin(psi);
-X = x + bx*c - by*s;
-Y = y + bx*s + by*c;
-hx = [x, x + 2.2*L*c];                           % 선수 방향선
-hy = [y, y + 2.2*L*s];
+function p = arrowPts(pos, delta, T, Fmax, Lfull, R, x_n, y_n)
+len = Lfull * sign(T) * min(sqrt(abs(T)/max(Fmax,1)), 1);
+tip = pos + len*[cos(delta) sin(delta)];
+hd  = 0.25*abs(len);                                  % 화살촉
+a1  = tip - hd*[cos(delta+0.4) sin(delta+0.4)]*sign(len+eps);
+a2  = tip - hd*[cos(delta-0.4) sin(delta-0.4)]*sign(len+eps);
+body = [pos; tip; a1; tip; a2];
+b = (R*body')';
+p = [y_n + b(:,2), x_n + b(:,1)];
 end
 
 % ---- ssa : 최단 부호각으로 접어 deg 로 -----------------------------------
@@ -271,44 +283,7 @@ function d = ssa_deg(a)
 d = atan2(sin(a), cos(a)) * 180/pi;
 end
 
-% ---- base workspace 값 읽기. 없으면 기본값 (W09_setup 을 안 돌린 경우) ----
-function v = bw(name, dflt)
-v = dflt;
-try, v = evalin('base', name); catch, end
-end
-
-% =====================================================================
-% 아래 두 칸의 제목과 범례 — 참값이 있는 모델인지 첫 샘플에서 한 번만 정한다
-%
-%   빈 칸으로 두거나 그리지 않는 선을 범례에 남기면 학생은 그림이 고장난 줄
-%   안다 (4주차 W04_animate 와 같은 이유). 무엇이 없는지 제목에 적는다.
-% =====================================================================
-function label_panels(axXY, axR, axD, hTrue, hGps, hRt, hRm, hD1, hD2, hD3, ...
-                      hasTruth, dDesign)
-if hasTruth
-    legend(axXY, [hTrue hGps], {'참값 항적','GPS 위치 점'}, ...
-           'Location','best', 'AutoUpdate','off');
-    title(axR, '센서 대 참값 — 자이로가 준 r 과 참값 r', 'FontWeight','normal');
-    legend(axR, [hRt hRm], {'r 참값','r 자이로 (잡음 + 바이어스)'}, ...
-           'Location','southoutside', 'NumColumns',2, 'AutoUpdate','off');
-    title(axD, sprintf('GPS 안테나 레버암 — 설계 %.2f m', dDesign), 'FontWeight','normal');
-    ylabel(axD, 'GPS - 참값 [m]');
-    legend(axD, [hD1 hD2 hD3], {'북쪽 차이','동쪽 차이','거리'}, ...
-           'Location','southoutside', 'NumColumns',3, 'AutoUpdate','off');
-else
-    legend(axXY, hGps, {'GPS 위치 점 (참값 없음 — VRX)'}, ...
-           'Location','best', 'AutoUpdate','off');
-    title(axR, '센서 값 — 자이로가 준 r (참값 없음 — VRX)', 'FontWeight','normal');
-    legend(axR, hRm, {'r 자이로'}, 'Location','southoutside', 'AutoUpdate','off');
-    title(axD, 'GPS 흩어짐 — 지금까지 평균에서의 차 (참값 없음 — VRX)', ...
-          'FontWeight','normal');
-    ylabel(axD, 'GPS - 평균 [m]');
-    legend(axD, [hD1 hD2 hD3], {'북쪽 차이','동쪽 차이','거리'}, ...
-           'Location','southoutside', 'NumColumns',3, 'AutoUpdate','off');
-end
-end
-
-% ---- y 범위에 여백. 선이 테두리에 붙으면 읽히지 않는다 -------------------
+% ---- y 범위에 여백. 곡선이 테두리에 붙으면 읽히지 않는다 -----------------
 function pad_y(ax, D)
 lo = min(D(:), [], 'omitnan');  hi = max(D(:), [], 'omitnan');
 if isempty(lo) || ~isfinite(lo) || ~isfinite(hi), return, end

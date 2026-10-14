@@ -4,7 +4,7 @@ function build_a1_1_models()
 %   >> build_a1_1_models
 %
 %   1일차 모델(SB1~SB6)은 build_a1_0_models.m 이 만든다.
-%   여기서 만드는 것은 SB7~SB13 이며, 5~7주차에서 **실제로 쓰는** 블록들이다.
+%   여기서 만드는 것은 SB7~SB13 이며, 5~8주차에서 **실제로 쓰는** 블록들이다.
 %
 %     SB7  신호 묶기·풀기      Mux / Demux / Selector / Reshape
 %     SB8  이산 시스템         샘플타임 / Unit Delay / 멀티레이트
@@ -12,7 +12,7 @@ function build_a1_1_models()
 %     SB10 판단                Relational / Switch / Multiport Switch / Stop
 %     SB11 조건부 실행         Enabled / Triggered Subsystem
 %     SB12 재사용              Mask / 라이브러리
-%     SB13 상태기계            Stateflow 첫걸음 (7주차 미션 차트의 축소판)
+%     SB13 상태기계            Stateflow 첫걸음 (8주차 미션 차트의 축소판)
 %
 %   각 주제마다 `_done` (완성본) 과 `_todo` (학생이 채울 것) 두 개가 나온다.
 
@@ -335,7 +335,7 @@ function build_SB10_done()
     set_param([m '/Sw'],'Criteria','u2 > Threshold','Threshold','0.5');
     B(m,'simulink/Sinks/Scope','ScSw',[420 175 460 225]);
 
-    % Multiport Switch — 7주차 ModeSwitch 의 원리
+    % Multiport Switch — 8주차 ModeSwitch 의 원리
     B(m,'simulink/Sources/Constant','Mode',[40 380 90 410],'Value','2');
     B(m,'simulink/Sources/Constant','A',[40 450 90 480],'Value','10');
     B(m,'simulink/Sources/Constant','Bc',[40 510 90 540],'Value','20');
@@ -344,7 +344,7 @@ function build_SB10_done()
     set_param([m '/MSw'],'Inputs','3','DataPortOrder','One-based contiguous');
     B(m,'simulink/Sinks/Display','DMs',[360 475 430 505]);
 
-    % Stop Simulation — 조건이 참이 되면 시뮬레이션을 멈춘다 (6·7주차는 gate = 0 으로 멈추고 정지 시간은 고정)
+    % Stop Simulation — 조건이 참이 되면 시뮬레이션을 멈춘다 (6·8주차는 gate = 0 으로 멈추고 정지 시간은 고정)
     B(m,'simulink/Sources/Digital Clock','Clk',[40 680 90 710],'SampleTime','0.05');
     B(m,'simulink/Sources/Constant','T15',[40 750 90 780],'Value','15');
     B(m,'simulink/Logic and Bit Operations/Relational Operator','RelT',[200 695 240 735], ...
@@ -372,7 +372,7 @@ function build_SB10_done()
         'Switch: 가운데 입력이 조건을 만족하면 위, 아니면 아래를 내보낸다\n' ...
         '  -> 사인파의 부호에 따라 +1 / -1 이 나온다\n' ...
         'Multiport Switch: 첫 입력이 번호. Mode=2 이므로 두 번째 값 20 이 나온다\n' ...
-        '  -> 7주차 ModeSwitch(MATLAB Function)가 같은 일을 코드로 한다\n' ...
+        '  -> 8주차 ModeSwitch(MATLAB Function)가 같은 일을 코드로 한다\n' ...
         'Stop Simulation: 입력이 0 이 아니면 시뮬레이션을 멈춘다\n' ...
         '  정지 시간을 60 으로 뒀지만 15초에서 멈춘다']), ...
         40, 830);
@@ -577,12 +577,12 @@ function makeLagSubsystem(m, name, tauVal, pos)
 end
 
 % =====================================================================
-% M. SB13 — Stateflow 첫걸음 (7주차 미션 차트의 축소판)
+% M. SB13 — Stateflow 첫걸음 (8주차 미션 차트의 축소판)
 % =====================================================================
 %   대기 -> 전진 -> 정지. 상태 셋, 전이 둘.
 %     대기 -> 전진  : after(3, sec)        — 시간이 조건이다 (타이머)
 %     전진 -> 정지  : [arrived > 0.5]      — 신호가 조건이다
-%   두 번째 조건이 7주차 [at_end > 0.5] 와 같은 모양이다. 도착 여부가
+%   두 번째 조건이 8주차 [at_end > 0.5] 와 같은 모양이다. 도착 여부가
 %   0/1 의 double 로 들어오기 때문에 > 0.5 로 읽는다.
 function build_SB13_done()
     m = 'SB13_stateflow_done'; fresh(m);
@@ -595,7 +595,7 @@ function build_SB13_done()
         'en: 는 그 상태에 들어가는 순간 한 번 실행된다\n' ...
         '\n' ...
         'arrived 는 0 또는 1 인 double 이다. 그래서 > 0.5 로 읽는다.\n' ...
-        '7주차 MissionFSM 의 [at_end > 0.5] 와 같은 이유다.']), 40, 420);
+        '8주차 MissionFSM 의 [at_end > 0.5] 와 같은 이유다.']), 40, 420);
     finish(m);
 end
 

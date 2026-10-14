@@ -1,120 +1,135 @@
 function S = W07_plot(out, ttl)
-% W07_PLOT  미션 결과를 그리고 상태별 성능 지표를 낸다.
+% W07_PLOT  로이터링 결과를 그림 6장으로 그리고 성능 지표를 낸다.
+%
+%   >> W07_setup            % 실행하면 자동으로 이 함수가 불린다
+%   >> W07_plot(out, '설명')
 %
 %   반환값 S
-%     S.t_loiter_in   로이터 진입 시각 [s]
-%     S.t_loiter_out  로이터 종료 시각 [s]
-%     S.t_finish      임무 종료 시각 [s]
-%     S.turns         로이터 회전수
-%     S.mean_ye_wp    웨이포인트 구간 평균 |y_e| [m]
-%     S.mean_re_lo    로이터 구간 평균 반경오차 [m]
+%     S.mean_re    정착 후 평균 반경 오차 |r - r_d| [m]
+%     S.max_re     최대 반경 오차 [m]
+%     S.std_re     반경 오차 표준편차 [m]
+%     S.t_enter    원에 도달한 시각 [s]
+%     S.turns      총 회전수
+%     S.t_done     정지 시각 [s] (미완료면 NaN)
+%     S.mean_u     정상상태 속도 [m/s]
 
 if nargin < 2, ttl = ''; end
 
-wpx = evalin('base','wp_north');
-wpy = evalin('base','wp_east');
-lxc = evalin('base','loiter_xc');
-lyc = evalin('base','loiter_yc');
-lrd = evalin('base','loiter_radius');
+cn = evalin('base','center_north');
+ce = evalin('base','center_east');
+rd = evalin('base','r_d');
+req = evalin('base','required_turns');
 
-t    = out.log_x_n.Time;
-x_n   = out.log_x_n.Data;    y_n   = out.log_y_n.Data;
-psi  = out.log_psi.Data;   pref = out.log_psi_ref.Data;
-ye   = out.log_y_e.Data;   idx  = out.log_idx.Data;
-mode = out.log_mode.Data;  turns= out.log_turns.Data;
-u    = out.log_u.Data;     rlo  = out.log_r_lo.Data;
-FL   = out.log_FL.Data;    FR   = out.log_FR.Data;
+t     = out.log_x_n.Time;
+x_n    = out.log_x_n.Data;      y_n   = out.log_y_n.Data;
+psi   = out.log_psi.Data;     pref = out.log_psi_ref.Data;
+rdist = out.log_r_dist.Data;  turns= out.log_turns.Data;
+gate  = out.log_gate.Data;    u    = out.log_u.Data;
+ucmd  = out.log_u_cmd.Data;   beta = out.log_beta.Data;
+FL    = out.log_FL.Data;      FR   = out.log_FR.Data;
 
-i_lo = find(mode > 1.5 & mode < 2.5);
-i_wp = find(mode < 1.5);
-i_fi = find(mode > 2.5, 1);
+% 원에 도달한 시각 = 반경 오차가 처음으로 r_d 의 30 % 안에 든 때 (회전수 세기 시작)
+tol = 0.3*rd;          % 원 도달 판정 — 모델의 TurnCount 와 같은 값
+k_in = find(abs(rdist - rd) <= tol, 1);
+if isempty(k_in), S.t_enter = NaN; k_in = 1; else, S.t_enter = t(k_in); end
 
-if isempty(i_lo), S.t_loiter_in = NaN; S.t_loiter_out = NaN;
-else,             S.t_loiter_in = t(i_lo(1)); S.t_loiter_out = t(i_lo(end)); end
-if isempty(i_fi), S.t_finish = NaN; k_end = numel(t);
-else,             S.t_finish = t(i_fi); k_end = i_fi; end
+% 정지 시각
+k_done = find(gate < 0.5, 1);
+if isempty(k_done), S.t_done = NaN; k_end = numel(t); else, S.t_done = t(k_done); k_end = k_done; end
 
-S.turns = max(turns);
-S.mean_ye_wp = mean(abs(ye(i_wp(i_wp <= k_end))));
-if isempty(i_lo)
-    S.mean_re_lo = NaN;
-else
-    j = i_lo(round(0.3*numel(i_lo)):end);      % 진입 과도구간 제외
-    S.mean_re_lo = mean(abs(rlo(j) - lrd));
-end
+% 정착 구간 = 도달 후 30초 뒤부터 정지 전까지
+k0 = min(k_in + round(30/(t(2)-t(1))), k_end);
+seg = k0:k_end;
+if numel(seg) < 10, seg = k_in:k_end; end
 
-S.fig = figure('Name',['W07  ' ttl], 'Position',[60 40 1240 820], 'Color','w');
+re = rdist(seg) - rd;
+S.mean_re = mean(abs(re));
+S.max_re  = max(abs(re));
+S.std_re  = std(re);
+S.turns   = turns(k_end);
+S.mean_u  = mean(u(seg));
 
-% ---- 1. 궤적 (모드별 색) ----------------------------------------------
-subplot(2,3,[1 4]); hold on; grid on; axis equal;
-plot(wpy, wpx, '--', 'Color',[0.4 0.4 0.4], 'LineWidth',1.2);
+S.fig = figure('Name',['W07  ' ttl], 'Position',[70 50 1220 800], 'Color','w');
+
+% ---- 1. 궤적 --------------------------------------------------------
+subplot(2,3,[1 4]);
 th = linspace(0,2*pi,200);
-plot(lyc + lrd*cos(th), lxc + lrd*sin(th), '--', 'Color',[0.85 0.33 0.10], 'LineWidth',1.5);
-plot(lyc, lxc, 'p', 'MarkerEdgeColor',[0.85 0.33 0.10], ...
-     'MarkerFaceColor',[1 0.85 0.2], 'MarkerSize',14);
-k1 = i_wp(i_wp <= k_end);
-plot(y_n(k1), x_n(k1), '.', 'Color',[0 0.45 0.74], 'MarkerSize',4);
-if ~isempty(i_lo), plot(y_n(i_lo), x_n(i_lo), '.', 'Color',[0.95 0.45 0.20], 'MarkerSize',4); end
-plot(wpy, wpx, 's', 'MarkerEdgeColor',[0.75 0.1 0.1], ...
-     'MarkerFaceColor','w', 'MarkerSize',10, 'LineWidth',1.6);
-for i = 1:numel(wpx), text(wpy(i)+4, wpx(i)+5, sprintf('%d',i), ...
-    'Color',[0.75 0.1 0.1], 'FontWeight','bold'); end
+plot(ce + rd*cos(th), cn + rd*sin(th), '--', 'Color',[0.75 0.1 0.1], 'LineWidth',1.6);
+hold on; grid on; axis equal;
+plot(ce, cn, 'p', 'MarkerEdgeColor',[0.75 0.1 0.1], ...
+     'MarkerFaceColor',[1 0.85 0.2], 'MarkerSize',16);
+plot(y_n(1:k_end), x_n(1:k_end), '-', 'Color',[0 0.45 0.74], 'LineWidth',1.5);
 plot(y_n(1), x_n(1), 'go', 'MarkerFaceColor','g', 'MarkerSize',9);
-plot(y_n(k_end), x_n(k_end), 'ko', 'MarkerFaceColor','k', 'MarkerSize',9);
+plot(y_n(k_end), x_n(k_end), 'ro', 'MarkerFaceColor','r', 'MarkerSize',9);
 xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
-title('궤적  (파랑 = 웨이포인트, 주황 = 로이터)');
+title(sprintf('궤적   (평균 반경오차 %.2f m)', S.mean_re));
+legend({'목표 원','중심','항적','출발','종료'}, 'Location','best','FontSize',8);
 
-% ---- 2. 미션 상태 -----------------------------------------------------
+% ---- 2. 반경 오차 ----------------------------------------------------
 subplot(2,3,2);
-stairs(t(1:k_end), mode(1:k_end), 'k', 'LineWidth',1.6); grid on;
-ylim([0.5 3.5]); yticks([1 2 3]);
-yticklabels({'1 WP','2 Loiter','3 Finish'});
-xlabel('시간 [s]'); title('미션 상태');
+plot(t(1:k_end), rdist(1:k_end), 'LineWidth',1.4); hold on; grid on;
+yline(rd, 'r--', 'LineWidth',1.3);
+if ~isnan(S.t_enter), xline(S.t_enter, ':', '원 도달', 'LineWidth',1.2); end
+xlabel('시간 [s]'); ylabel('중심까지 거리 [m]');
+title('반경 수렴');
 
-% ---- 3. 웨이포인트 인덱스 ---------------------------------------------
+% ---- 3. 누적 회전수 --------------------------------------------------
 subplot(2,3,3);
-stairs(t(1:k_end), idx(1:k_end), 'LineWidth',1.6); grid on;
-xlabel('시간 [s]'); ylabel('leg 시작 인덱스');
-title('웨이포인트 진행');
+plot(t(1:k_end), turns(1:k_end), 'k', 'LineWidth',1.5); hold on; grid on;
+if req > 0, yline(req, 'm--', sprintf('%g 바퀴', req), 'LineWidth',1.2); end
+xlabel('시간 [s]'); ylabel('누적 회전수');
+title(sprintf('회전수  (총 %.2f 바퀴)', S.turns));
 
-% ---- 4. 오차 ----------------------------------------------------------
-subplot(2,3,5); hold on; grid on;
-plot(t(k1), ye(k1), '.', 'Color',[0 0.45 0.74], 'MarkerSize',4);
-if ~isempty(i_lo)
-    plot(t(i_lo), rlo(i_lo)-lrd, '.', 'Color',[0.95 0.45 0.20], 'MarkerSize',4);
-end
-yline(0,'k:');
-xlabel('시간 [s]'); ylabel('오차 [m]');
-legend({'y_e (WP)','r - r_d (로이터)'}, 'Location','best','FontSize',8);
-title(sprintf('경로 오차   WP %.2f m / 로이터 %.2f m', S.mean_ye_wp, S.mean_re_lo));
+% ---- 4. 헤딩 추종 ----------------------------------------------------
+subplot(2,3,5);
+w = @(a) mod(a*180/pi + 180, 360) - 180;
+plot(t(1:k_end), w(pref(1:k_end)), '--', 'LineWidth',1.3); hold on;
+plot(t(1:k_end), w(psi(1:k_end)),  '-',  'LineWidth',1.1);
+grid on; xlabel('시간 [s]'); ylabel('각도 [deg]');
+legend({'\psi_{ref}','\psi'}, 'Location','best','FontSize',8);
+title('헤딩 추종');
 
-% ---- 5. 회전수와 속도 --------------------------------------------------
+% ---- 5. 속도 ---------------------------------------------------------
 subplot(2,3,6);
-yyaxis left;  plot(t(1:k_end), turns(1:k_end), 'LineWidth',1.5); ylabel('회전수');
-yyaxis right; plot(t(1:k_end), u(1:k_end), 'LineWidth',1.2);     ylabel('u [m/s]');
-grid on; xlabel('시간 [s]'); title('회전수와 속도');
+plot(t(1:k_end), u(1:k_end), 'LineWidth',1.4); hold on;
+plot(t(1:k_end), ucmd(1:k_end).*gate(1:k_end), '--', 'LineWidth',1.2);
+grid on; xlabel('시간 [s]'); ylabel('u [m/s]');
+legend({'u 실제','u 지령'}, 'Location','best','FontSize',8);
+title(sprintf('속도  (정상상태 %.3f m/s)', S.mean_u));
 
-% ---- 추력 -------------------------------------------------------------
-figure('Name',['W07 추진기  ' ttl], 'Position',[120 100 900 360], 'Color','w');
-plot(t(1:k_end), FL(1:k_end), 'LineWidth',1.1); hold on;
-plot(t(1:k_end), FR(1:k_end), 'LineWidth',1.1);
-Fm = evalin('base','F_max'); yline(Fm,'r:'); yline(-Fm,'r:');
-if ~isnan(S.t_loiter_in),  xline(S.t_loiter_in, 'k--', '로이터 시작'); end
-if ~isnan(S.t_loiter_out), xline(S.t_loiter_out,'k--', '로이터 종료'); end
+% ---- 6. 추력과 크랩각 -------------------------------------------------
+figure('Name',['W07 추진기  ' ttl], 'Position',[130 110 950 380], 'Color','w');
+subplot(1,2,1);
+plot(t(1:k_end), FL(1:k_end), 'LineWidth',1.2); hold on;
+plot(t(1:k_end), FR(1:k_end), 'LineWidth',1.2);
+Fm = evalin('base','F_max');
+yline(Fm,'r:'); yline(-Fm,'r:');
 grid on; xlabel('시간 [s]'); ylabel('추력 [N]');
-legend({'F_L','F_R'}, 'Location','best','FontSize',8);
+legend({'F_L','F_R','포화'}, 'Location','best','FontSize',8);
 title('추력');
 
-% ---- 지표 -------------------------------------------------------------
+subplot(1,2,2);
+plot(t(1:k_end), beta(1:k_end)*180/pi, 'LineWidth',1.3); grid on; hold on;
+yline(0,'k:');
+xlabel('시간 [s]'); ylabel('\beta [deg]');
+title('크랩각');
+
+% ---- 지표 -----------------------------------------------------------
 fprintf('\n===== %s =====\n', ttl);
-fprintf('  로이터 진입          %8.1f s\n', S.t_loiter_in);
-fprintf('  로이터 종료          %8.1f s   (%.2f 바퀴)\n', S.t_loiter_out, S.turns);
-if isnan(S.t_finish)
-    fprintf('  임무 종료                미완료\n');
+if isnan(S.t_enter)
+    fprintf('  원 도달                    실패\n');
 else
-    fprintf('  임무 종료            %8.1f s\n', S.t_finish);
+    fprintf('  원 도달 시각          %8.1f s\n', S.t_enter);
 end
-fprintf('  WP 구간 평균 |y_e|   %8.3f m\n', S.mean_ye_wp);
-fprintf('  로이터 평균 반경오차 %8.3f m\n', S.mean_re_lo);
+fprintf('  정착 후 평균 반경오차  %8.3f m   <- 과제에 쓸 값\n', S.mean_re);
+fprintf('  정착 후 최대 반경오차  %8.3f m\n', S.max_re);
+fprintf('  반경오차 표준편차      %8.3f m\n', S.std_re);
+fprintf('  총 회전수              %8.2f 바퀴\n', S.turns);
+if isnan(S.t_done)
+    fprintf('  정지                       미정지\n');
+else
+    fprintf('  정지 시각             %8.1f s\n', S.t_done);
+end
+fprintf('  정상상태 속도          %8.3f m/s\n', S.mean_u);
 
 end

@@ -1,7 +1,7 @@
 function moved = lay_sinks(sys, varargin)
 %LAY_SINKS  선이 지저분해진 종착 블록만 아래 한 열로 내리고, 갈래마다 제 통로를 준다.
 %
-%   lay_sinks('W09_1_sensor_rates')
+%   lay_sinks('W10_1_sensor_rates')
 %   n = lay_sinks(m, 'Band', 120, 'Row', 45, 'Lane', 26)
 %
 %   종착 블록 / a sink
@@ -29,7 +29,7 @@ function moved = lay_sinks(sys, varargin)
 %       **이미 깨끗한 선은 손대지 않는다.** 깨끗하다는 것은 두 포트의 높이가
 %       같아 직선 한 토막이고, 그 토막이 어떤 블록도 지나지 않는다는 뜻이다.
 %       1:1 로 곧게 이어진 선까지 아래로 내리면 내려간 선들이 통로에 몰려
-%       서로 겹친다 (2026-09-17 에 W09 Logging 에서 15건 재현).
+%       서로 겹친다 (2026-09-17 에 W10 Logging 에서 15건 재현).
 %
 %       사슬 블록과 사슬 선은 그대로 두므로
 %       Simulink.BlockDiagram.arrangeSystem 뒤에 이어서 부를 수 있다.

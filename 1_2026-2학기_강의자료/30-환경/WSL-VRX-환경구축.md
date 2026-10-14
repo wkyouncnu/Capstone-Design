@@ -317,7 +317,7 @@ ros2 launch vrx_gz competition.launch.py world:=sydney_regatta
 > - 모델 — `custom_docking_station`
 >
 > **전부 연구실이 upstream 에 얹은 파일임.** 2026-09-03 기준 osrf/vrx `humble` 브랜치에 없음을 확인함.
-> 8주차 전에 배포 파일을 받아 아래처럼 덮어쓴 뒤 재빌드할 것.
+> 9주차 전에 배포 파일을 받아 아래처럼 덮어쓴 뒤 재빌드할 것.
 
 ```bash
 # 배포 파일(vrx_overlay.tar.gz)을 받았다고 가정

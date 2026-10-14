@@ -1,5 +1,5 @@
-function f = W08_animate(eta, eta_d, eta_raw, Dact, Tact, t)
-% W08_ANIMATE  8주차 DP 모델의 실시간 화면 — 한 창에 위치 평면과 DP 지표 셋.
+function f = W08_animate(x_n, y_n, psi, mode, turns, psi_ref, u, gate, FL, FR, idx, t)
+% W08_ANIMATE  8주차 미션 모델의 실시간 화면 — 한 창에 항적과 상태기계.
 %
 %   Simulink 의 Animate 상자가 매 스텝 이 함수를 부른다. 직접 부를 일은 없다.
 %   **오프라인 모델과 VRX 쌍둥이가 이 함수 하나를 같이 쓴다.** 바뀌는 것은
@@ -9,45 +9,56 @@ function f = W08_animate(eta, eta_d, eta_raw, Dact, Tact, t)
 %                            캡처할 때 쓴다 — gcf 를 쓰면 안 된다 (창이 여럿이다)
 %
 %   입력
-%     eta      : [x_n; y_n; psi]  현재 자세 [m, m, rad] (NED)
-%     eta_d    : [x_n; y_n; psi]  **기준모델이 매끈하게 만든** 목표 자세
-%     eta_raw  : [x_n; y_n; psi]  **계단 목표** (dp_step 표가 시킨 값)
-%     Dact     : [2x1] 추진기 방위각 [rad] (선체계, y 우현이 +)
-%     Tact     : [2x1] 추진기 추력   [N]
+%     x_n, y_n : 북쪽 x · 동쪽 y [m]   (출발점 기준 상대좌표)
+%     psi      : 선수각 [rad]          (북 기준 시계방향 +, NED)
+%     mode     : 미션 상태 1/2/3       (1 WpFollow · 2 Loiter · 3 Finish)
+%     turns    : 로이터 회전수 [바퀴]
+%     psi_ref  : 미션이 고른 목표 선수각 [rad] (모드에 따라 LOS 또는 벡터필드)
+%     u        : 서지 속도 [m/s]
+%     gate     : 주행 허가 0/1         (Finish 에서 0 이 되어 배가 선다)
+%     FL, FR   : 좌 · 우 추진기 추력 [N]
+%     idx      : 지금 달리는 구간의 시작 웨이포인트 번호 (WpManager 가 기억하는 값)
 %     t        : 시뮬레이션 시각 [s]
 %
-%   화면 배치 — 4~7주차 규약과 같은 네 칸. 오른쪽 세 칸의 내용만 8주차 것이다
-%     왼쪽 큰 칸   위치 평면. 목표 자세와 현재 자세, 선체와 선수 방향,
-%                  그 위에 **추진기의 방위각·추력 화살표**
+%   화면 배치 — 4·5·7주차와 같은 네 칸. 오른쪽 세 칸의 내용만 8주차 것이다
+%     왼쪽 큰 칸   항적 + 웨이포인트 · 수락반경 + 로이터 중심과 반경 원
+%                  + 선체 모양과 선수 방향. 선체 색이 곧 지금 상태다
 %                  가로축 y (동쪽), 세로축 x (북쪽) — 위쪽이 북쪽, 해도와 같다
-%     오른쪽 (1)   **위치 오차** e_x · e_y 와 거리 |e|, 그리고 0 선 — DP 의 핵심 지표
+%     오른쪽 (1)   **상태 타임라인** — mode 가 시간에 따라 어떻게 바뀌는지 계단으로
 %     오른쪽 (2)   psi_ref 와 psi 를 겹쳐서 [deg, ssa 적용] — 지령 대비 응답
-%     오른쪽 (3)   추진기 추력 T_i (왼쪽 축) 과 방위각 delta_i (오른쪽 축)
+%     오른쪽 (3)   u_ref · u (왼쪽 축) 과 F_L · F_R (오른쪽 축)
 %
-%   왜 위치 오차에 칸 하나를 통째로 주는가
-%     8주차가 답해야 하는 질문은 "제자리를 지키고 있는가" 하나다. 그 답이
-%     위치 오차다. 평면 그림만 보면 "대충 목표 근처" 에서 멈추고 몇 cm 인지
-%     읽을 수 없다. 5주차가 y_e 에 칸을 준 것과 같은 이유다.
+%   왜 상태 타임라인에 칸 하나를 통째로 주는가
+%     8주차가 답해야 하는 질문은 "지금 무엇을 할 차례인가, 그리고 언제 바뀌었는가"
+%     하나다. 그 답이 mode 계단이다. 배 색만 보면 "지금" 은 알아도 "언제" 를
+%     읽을 수 없다. 미션 모델에서 가장 중요한 수치는 궤적 오차가 아니라
+%     **전이 시각**이므로, 그 시각을 화면에서 바로 읽게 한다.
+%     계단은 mode 가 바뀐 점만 모아 그린다 — 매 스텝을 다 그리면 느려진다.
 %
-%   추진기는 **두 기**다 — 힘 성분이 넷일 뿐이다
-%     VRX 의 WAM-V 는 후방 방위추진기 2기를 단다 (wamv_aft_thrusters.xacro).
-%     배분 행렬 T_e 가 4열인 것은 추진기가 넷이어서가 아니라, 한 기의 힘을
-%     (F_x, F_y) 두 성분으로 쪼개 두었기 때문이다 — 제어입력 4개, 추진기 2기.
-%     그래서 화살표도 둘, 오른쪽 ③ 의 곡선도 추력 둘 · 방위각 둘이다.
-%     (W08_setup §1~2 와 같은 이야기. 넷을 그리면 없는 추진기를 그리는 것이다)
+%   오른쪽 (2) 의 지령선은 모드에 따라 **다른 유도법칙이 낸 값**이다
+%     mode 1 이면 WpManager 의 LOS, mode 2 면 LoiterVF 의 벡터필드다.
+%     ModeSwitch 가 고른 뒤의 psi_ref 태그를 받으므로 이 한 선에 둘이 섞여 있다.
+%     전이 순간에 지령선이 툭 튀는 것이 정상이다 — 법칙이 갈린 지점이다.
 %
-%   목표가 둘인 이유
-%     dp_step 표는 목표를 **계단**으로 옮긴다 (eta_raw). 그대로 좇으면 배가
-%     낼 수 없는 가속을 요구하므로 DPRef 의 기준모델이 매끈한 궤적 eta_d 로
-%     바꾼다. 평면에는 둘 다 찍는다 — 회색 사각형이 시킨 곳, 초록 원이
-%     지금 좇는 곳이다. 오차 칸은 **기준모델 목표 eta_d 기준**으로 잰다.
+%   속도 지령 — 설정값 u_ref 가 아니라 u_ref × gate 를 그린다
+%     내부루프의 Gate 블록이 하는 곱이 그것이다. Finish 로 들어가면 gate = 0 이
+%     되어 지령이 0 으로 떨어지고 배가 선다. 설정값을 그대로 그리면 임무가
+%     끝난 뒤에도 1.5 m/s 지령이 남아 있는 것처럼 보인다. 곱은 여기서 한다 —
+%     모델에서 Gate 출력에 가지를 치면 Simulink 가 본선을 사선으로 다시 그어
+%     배선 검사가 걸린다 (5주차 2026-09-24). gate 는 이미 태그가 있다.
+%
+%   출발점
+%     오프라인 모델은 (0,0) 에서 출발한다. VRX 는 Nav 가 스폰 원점을 빼 주므로
+%     역시 (0,0) 근처에서 시작한다. Subscribe 블록이 첫 메시지 전에 내는
+%     0 으로 채운 버스도 Nav 가 걸러낸다.
 %
 %   그림이 느리면 W08_setup.m 에서 animate = 0 또는 animate_every 를 키운다.
 
-persistent fig axXY axE axP axT ...
-           hTrail hHull hHead hDot hTgt hTgtHead hRaw hInfo hArr ...
-           hEx hEy hEn hPref hP hT1 hT2 hD1 hD2 ...
-           trX trY tv De Dp Dt xt yt Fmax delMax scale tLast tPrev
+persistent fig axXY axM axP axU ...
+           hTrail hHull hHead hDot hInfo hTgt hLoi ...
+           hM hP hPref hU hUcmd hFL hFR hTrLine ...
+           trX trY tv Dp Dm mSeg wpx wpy R nwp uRef reqTurns tMax ...
+           lxc lyc lrd tLast tPrev
 
 %% ---- 인자 없이 부르면 창 핸들만 돌려준다 (캡처용) ----------------------
 if nargin == 0
@@ -55,138 +66,165 @@ if nargin == 0
     return
 end
 
-NMAX = 40000;        % 되돌아보기 한계. VRX 는 StopTime 을 길게 주면 무한정 쌓인다
+NMAX = 40000;        % 되돌아보기 한계. VRX 는 StopTime inf 라 무한정 쌓일 수 있다
 
 %% ---- 새 실행이면 창을 다시 만든다 --------------------------------------
 newRun = isempty(tLast) || isempty(fig) || ~isvalid(fig) || t < tPrev;
 if newRun
-    xt     = evalin('base','thr_x');
-    yt     = evalin('base','thr_y');
-    Fmax   = evalin('base','F_max');
-    delMax = evalin('base','del_max');
-    scale  = 2;
-    try, scale = evalin('base','boat_scale'); catch, end
+    wpx = evalin('base','wp_north');
+    wpy = evalin('base','wp_east');
+    R   = evalin('base','R_LOS');
+    lxc = evalin('base','loiter_xc');
+    lyc = evalin('base','loiter_yc');
+    lrd = evalin('base','loiter_radius');
+    nwp = numel(wpx);
+    uRef     = evalin('base','u_ref');        % 설정값. gate 를 곱해 지령선을 만든다
+    reqTurns = evalin('base','loiter_turns');
 
     if ~isempty(fig) && isvalid(fig), close(fig); end
-    fig = figure('Name','W08 실시간 DP 화면 — 위치 평면과 오차·지령·추진기', ...
+    fig = figure('Name','W08 실시간 미션 화면 — 항적과 상태 타임라인', ...
                  'NumberTitle','off', 'Color','w', 'Position',[50 50 1240 800]);
     setappdata(0, 'W08_anim_fig', fig);
 
-    % ---- 왼쪽 큰 칸 : 위치 평면 -------------------------------------
+    % ---- 왼쪽 큰 칸 : 항적 + 웨이포인트 + 로이터 원 + 선체 ----
     axXY = subplot(3,2,[1 3 5], 'Parent', fig);
     hold(axXY,'on'); grid(axXY,'on'); axis(axXY,'equal');
     xlabel(axXY,'y (동쪽) [m]');  ylabel(axXY,'x (북쪽) [m]');
 
-    %  그리는 차례가 곧 위아래 차례다 (나중에 그린 것이 위로 온다).
-    %  DP 는 **목표 위에 배가 겹쳐 있는** 것이 정상이므로, 목표 표식을 선체보다
-    %  먼저 그리면 성공했을 때 목표가 선체 밑으로 사라진다. 그래서
-    %  항적 -> 선체 -> 목표 -> 추진기 화살표 차례로 그린다.
+    % 계획 경로와 수락반경 — 항적보다 먼저 그려 아래에 깔리게 한다
+    plot(axXY, wpy, wpx, '--', 'Color',[0.35 0.35 0.35], 'LineWidth',1.3);
+    th = linspace(0, 2*pi, 96);
+    for i = 1:nwp
+        plot(axXY, wpy(i)+R*cos(th), wpx(i)+R*sin(th), ':', 'Color',[0.6 0.6 0.6]);
+    end
+
+    % 로이터 중심과 반경 원 — 8주차에서 새로 생긴 것이라 굵은 주황으로 둔다
+    plot(axXY, lyc + lrd*cos(th), lxc + lrd*sin(th), '--', ...
+         'Color',[0.95 0.45 0.20], 'LineWidth',1.6);
+    plot(axXY, lyc, lxc, 'p', 'MarkerEdgeColor',[0.85 0.33 0.10], ...
+         'MarkerFaceColor',[1 0.85 0.2], 'MarkerSize',15, 'LineWidth',1.2);
+    %  글자가 항적 위에 얹히면 읽히지 않는다. 흰 바탕을 깔아 둔다
+    text(axXY, lyc, lxc - 0.55*lrd, sprintf('로이터 반경 r_d = %g m', lrd), ...
+         'FontSize',9.5, 'Color',[0.85 0.33 0.10], 'HorizontalAlignment','center', ...
+         'BackgroundColor','w', 'Margin',1.5);
+
     trX = [];  trY = [];
     hTrail = plot(axXY, nan, nan, '-', 'Color',[0 0.45 0.74], 'LineWidth',1.5);
 
-    hHull = patch('Parent',axXY, 'XData',nan, 'YData',nan, ...
-                  'FaceColor',[0.85 0.92 1.00], 'FaceAlpha',0.55, ...
-                  'EdgeColor',[0.10 0.20 0.50], 'LineWidth',1.3);
-    hHead = plot(axXY, nan, nan, '-', 'Color',[0.10 0.20 0.50], 'LineWidth',1.6);
+    % 지금 겨누는 표적 — 웨이포인트(초록 원) 또는 로이터 중심(주황 원)
+    hTgt = plot(axXY, nan, nan, 'o', 'MarkerEdgeColor',[0.00 0.50 0.00], ...
+                'MarkerSize',20, 'LineWidth',2.0);
+    hLoi = plot(axXY, nan, nan, 'o', 'MarkerEdgeColor',[0.85 0.33 0.10], ...
+                'MarkerSize',20, 'LineWidth',2.0);
 
-    % 계단 목표 — 시킨 곳
-    hRaw = plot(axXY, nan, nan, 's', 'MarkerEdgeColor',[0.35 0.35 0.35], ...
-                'MarkerFaceColor','none', 'MarkerSize',14, 'LineWidth',1.6);
+    % 웨이포인트 표식과 번호는 항적 위에 그린다
+    for i = 1:nwp
+        plot(axXY, wpy(i), wpx(i), 's', 'MarkerEdgeColor',[0.75 0.10 0.10], ...
+             'MarkerFaceColor','w', 'MarkerSize',11, 'LineWidth',1.8);
+        text(axXY, wpy(i)+4, wpx(i)+5, sprintf('%d', i), ...
+             'FontSize',12, 'Color',[0.75 0.10 0.10], 'FontWeight','bold');
+    end
 
-    % 기준모델 목표 — 지금 좇는 곳. 그 자리의 목표 선수각도 함께 그린다
-    hTgtHead = plot(axXY, nan, nan, '--', 'Color',[0.00 0.50 0.00], 'LineWidth',1.6);
-    hTgt     = plot(axXY, nan, nan, 'o', 'MarkerEdgeColor',[0.00 0.50 0.00], ...
-                    'MarkerSize',18, 'LineWidth',2.0);
-    hDot  = plot(axXY, nan, nan, 'k.', 'MarkerSize',10);
+    hHull  = patch('Parent',axXY, 'XData',nan, 'YData',nan, ...
+                   'FaceColor', mode_colour(1), 'FaceAlpha',0.90, ...
+                   'EdgeColor',[0.15 0.15 0.15], 'LineWidth',1.2);
+    hHead  = plot(axXY, nan, nan, '-', 'Color',[0.15 0.15 0.15], 'LineWidth',1.6);
+    hDot   = plot(axXY, nan, nan, 'k.', 'MarkerSize',10);
 
-    % 추진기 화살표 둘 — 좌현 빨강, 우현 자홍 (오른쪽 ③ 의 범례와 같은 색)
-    hArr(1) = plot(axXY, nan, nan, '-', 'Color',[0.85 0.10 0.10], 'LineWidth',2.5);
-    hArr(2) = plot(axXY, nan, nan, '-', 'Color',[0.75 0.10 0.75], 'LineWidth',2.5);
+    % 상태 이름 범례 — 배 색이 무슨 뜻인지 그림 안에서 읽히게 한다.
+    %   보이지 않는 자리에 색 견본 셋을 만들어 범례만 가져간다
+    hL = gobjects(1,3);
+    for i = 1:3
+        hL(i) = patch('Parent',axXY, 'XData',nan, 'YData',nan, ...
+                      'FaceColor', mode_colour(i), 'EdgeColor',[0.15 0.15 0.15]);
+    end
+    legend(axXY, hL, mode_names(), 'Location','southoutside', ...
+           'Orientation','horizontal', 'AutoUpdate','off');
 
-    legend(axXY, [hRaw hTgt hTrail hArr(1) hArr(2)], ...
-           {'계단 목표 \eta_{raw}','기준모델 목표 \eta_d','항적', ...
-            '좌현 추진기','우현 추진기'}, ...
-           'Location','southoutside', 'Orientation','horizontal', ...
-           'NumColumns',3, 'AutoUpdate','off');
+    % 여백을 둔 축 범위 (실행 중에 바뀌지 않게 고정)
+    mY = [min([wpy, lyc-lrd]) max([wpy, lyc+lrd])];
+    mX = [min([wpx, lxc-lrd]) max([wpx, lxc+lrd])];
+    pad = 0.20*max([diff(mY) diff(mX) 20]);
+    axis(axXY, [mY(1)-pad mY(2)+pad mX(1)-pad mX(2)+pad]);
 
+    % 상태 표시는 제목에 둔다. 그림 위에 얹으면 웨이포인트를 가린다
     hInfo = title(axXY, '', 'FontSize',10, 'FontWeight','normal', 'Interpreter','tex');
 
-    % ---- 오른쪽 (1) : 위치 오차 -------------------------------------
-    %   8주차의 핵심 지표다. 0 선을 함께 그려야 "제자리를 지켰다" 를 눈으로
-    %   판정할 수 있다. 거리 |e| 는 굵게 — 한 숫자로 답하는 선이다
-    axE = subplot(3,2,2, 'Parent', fig);
-    hold(axE,'on'); grid(axE,'on');
-    yline(axE, 0, '-', 'Color',[0.40 0.40 0.40], 'LineWidth',1.2);
-    hEx = plot(axE, nan, nan, '-', 'Color',[0.00 0.45 0.74], 'LineWidth',1.3);
-    hEy = plot(axE, nan, nan, '-', 'Color',[0.85 0.33 0.10], 'LineWidth',1.3);
-    hEn = plot(axE, nan, nan, '-', 'Color',[0.20 0.20 0.20], 'LineWidth',1.8);
-    ylabel(axE,'위치 오차 [m]');
-    title(axE, '위치 오차 — 0 으로 내려와 붙으면 DP 성공', 'FontWeight','normal');
-    legend(axE, [hEx hEy hEn], {'e_x (북)','e_y (동)','|e| (거리)'}, ...
-           'Location','northeast', 'Orientation','horizontal', 'AutoUpdate','off');
+    % ---- 오른쪽 (1) : 상태 타임라인 — 8주차의 핵심 -----------------------
+    axM = subplot(3,2,2, 'Parent', fig);
+    hold(axM,'on'); grid(axM,'on');
+    hM = stairs(axM, nan, nan, '-', 'Color',[0.49 0.18 0.56], 'LineWidth',2.0);
+    ylim(axM, [0.6 3.4]);
+    yticks(axM, 1:3);  yticklabels(axM, mode_names());
+    ylabel(axM,'mode');
+    title(axM, '미션 상태 — 계단이 곧 전이 시각', 'FontWeight','normal');
 
-    % ---- 오른쪽 (2) : 선수각 지령 대비 응답 --------------------------
+    % ---- 오른쪽 (2) : 헤딩 지령 대비 응답 --------------------------------
     axP = subplot(3,2,4, 'Parent', fig);
     hold(axP,'on'); grid(axP,'on');
     hPref = plot(axP, nan, nan, '--', 'Color',[0.60 0.60 0.60], 'LineWidth',1.6);
     hP    = plot(axP, nan, nan, '-',  'Color',[0.85 0.33 0.10], 'LineWidth',1.6);
     ylabel(axP,'\psi [deg]');
     title(axP, '선수각 — 지령 대비 응답 (ssa 로 접은 값)', 'FontWeight','normal');
-    legend(axP, [hPref hP], {'\psi_{ref} (DP 목표)','\psi (응답)'}, ...
+    legend(axP, [hPref hP], {'\psi_{ref} (지령)','\psi (응답)'}, ...
            'Location','southeast', 'Orientation','horizontal', 'AutoUpdate','off');
 
-    % ---- 오른쪽 (3) : 추진기 추력과 방위각 ---------------------------
-    %   추력은 수백 N, 방위각은 ±45° 라 자릿수가 다르다. 한 축에 겹쳐 놓으면
-    %   방위각이 0 인 직선으로 보인다. 그래서 축을 둘로 나누고 범례로 묶는다.
-    axT = subplot(3,2,6, 'Parent', fig);
-    yyaxis(axT,'left');
-    hold(axT,'on'); grid(axT,'on');
-    hT1 = plot(axT, nan, nan, '-', 'Color',[0.85 0.10 0.10], 'LineWidth',1.5);
-    hT2 = plot(axT, nan, nan, '-', 'Color',[0.75 0.10 0.75], 'LineWidth',1.5);
-    ylabel(axT,'추력 T_i [N]');
-    yyaxis(axT,'right');
-    hold(axT,'on');
-    hD1 = plot(axT, nan, nan, '--', 'Color',[0.85 0.10 0.10], 'LineWidth',1.2);
-    hD2 = plot(axT, nan, nan, '--', 'Color',[0.75 0.10 0.75], 'LineWidth',1.2);
-    ylabel(axT,'방위각 \delta_i [deg]');
-    ylim(axT, [-rad2deg(delMax)*1.25, rad2deg(delMax)*1.25]);   % ±45° 한계가 보이게
-    yline(axT,  rad2deg(delMax), ':', 'Color',[0.45 0.45 0.45]);
-    yline(axT, -rad2deg(delMax), ':', 'Color',[0.45 0.45 0.45]);
-    xlabel(axT,'시간 [s]');
-    title(axT, sprintf('방위추진기 2기 — 추력과 방위각 (한계 ±%.0f°)', ...
-                       rad2deg(delMax)), 'FontWeight','normal');
-    legend(axT, [hT1 hT2 hD1 hD2], {'T_1 (좌현)','T_2 (우현)','\delta_1','\delta_2'}, ...
+    % ---- 오른쪽 (3) : 속도 지령 대비 응답과 추력 -------------------------
+    %   u 는 1.x m/s, 추력은 수백 N 이라 자릿수가 다르다. 한 축에 겹쳐 놓으면
+    %   u 가 0 인 직선으로 보인다. 그래서 축을 둘로 나누고 범례로 묶는다.
+    axU = subplot(3,2,6, 'Parent', fig);
+    yyaxis(axU,'left');
+    hold(axU,'on'); grid(axU,'on');
+    hUcmd = plot(axU, nan, nan, '--', 'Color',[0.60 0.60 0.60], 'LineWidth',1.6);
+    hU    = plot(axU, nan, nan, '-',  'Color',[0.00 0.45 0.74], 'LineWidth',1.6);
+    ylabel(axU,'u [m/s]');
+    yyaxis(axU,'right');
+    hold(axU,'on');
+    hFL = plot(axU, nan, nan, '-',  'Color',[0.47 0.67 0.19], 'LineWidth',1.3);
+    hFR = plot(axU, nan, nan, '--', 'Color',[0.49 0.18 0.56], 'LineWidth',1.3);
+    ylabel(axU,'추력 [N]');
+    xlabel(axU,'시간 [s]');
+    legend(axU, [hUcmd hU hFL hFR], {'u_{ref} (지령)','u (응답)','F_L','F_R'}, ...
            'Location','southoutside', 'Orientation','horizontal', 'AutoUpdate','off');
     %  yyaxis 는 두 축의 색을 제멋대로 칠한다. 범례가 색을 나르므로 축 글자는 검게 둔다
-    axT.YAxis(1).Color = [0.15 0.15 0.15];
-    axT.YAxis(2).Color = [0.15 0.15 0.15];
+    axU.YAxis(1).Color = [0.15 0.15 0.15];
+    axU.YAxis(2).Color = [0.15 0.15 0.15];
 
-    %  오른쪽 세 칸의 y 이름표가 창 오른쪽 테두리에 잘리지 않게 폭을 줄인다.
-    %  ③ 칸은 **오른쪽에도 축 이름표가 있으므로**(yyaxis) 더 줄인다 —
-    %  4~7주차처럼 0.90 으로 두면 '방위각 \delta_i' 가 테두리에 잘린다
-    for a = [axE axP axT]
-        p = get(a,'Position');  set(a, 'Position', [p(1) p(2) p(3)*0.86 p(4)]);
+    %  오른쪽 세 칸의 y 이름표가 창 오른쪽 테두리에 잘리지 않게 폭을 조금 줄인다
+    for a = [axP axU]
+        p = get(a,'Position');  set(a, 'Position', [p(1) p(2) p(3)*0.90 p(4)]);
     end
+    %  상태 타임라인은 눈금이 '1 WpFollow' 처럼 길어 왼쪽 자리를 더 먹는다.
+    %  오른쪽으로 밀고 폭을 더 줄여야 세 칸의 **시간축 오른쪽 끝**이 맞는다
+    p = get(axM,'Position');  set(axM, 'Position', [p(1)+0.038 p(2) p(3)*0.827 p(4)]);
 
-    tv = [];  De = zeros(0,3);  Dp = zeros(0,2);  Dt = zeros(0,4);
+    tv = [];  Dp = zeros(0,2);  Dm = zeros(0,4);  mSeg = zeros(0,2);
+    hTrLine = gobjects(0);  tMax = 0;
     tLast = -inf;
 end
 tPrev = t;
 
 %% ---- 값 모으기 (그리기는 animate_every 마다) ---------------------------
-x_n = eta(1);  y_n = eta(2);  psi = eta(3);
-ex  = eta_d(1) - x_n;
-ey  = eta_d(2) - y_n;
-
 trX(end+1) = x_n;  trY(end+1) = y_n;
 tv(end+1)  = t;
-De(end+1,:) = [ex, ey, hypot(ex, ey)];
-Dp(end+1,:) = [ssa_deg(eta_d(3)), ssa_deg(psi)];
-Dt(end+1,:) = [Tact(1), Tact(2), rad2deg(Dact(1)), rad2deg(Dact(2))];
+Dp(end+1,:) = [ssa_deg(psi_ref), ssa_deg(psi)];
+Dm(end+1,:) = [uRef*gate, u, FL, FR];    % 지령 = u_ref × gate (InnerLoop 의 Gate)
+
+%  상태 계단은 **바뀐 점만** 모은다. 매 스텝을 다 모아 그리면 300 초에 6000 점이고
+%  그 점을 0.25 초마다 다시 그리게 되어 화면이 느려진다. 전이는 서너 번뿐이다
+mNow = min(max(round(mode), 1), 3);
+if isempty(mSeg) || mSeg(end,2) ~= mNow
+    mSeg(end+1,:) = [t, mNow];   %#ok<AGROW>
+end
+
+%  TurnCount 는 로이터에서 빠져나오면 0 으로 되돌아간다. 그대로 쓰면 캡처한
+%  화면에 "0.00 바퀴" 가 남아, 몇 바퀴를 돌고 나왔는지 읽을 수 없다. 최댓값을 쥔다
+tMax = max(tMax, turns);
+
 if numel(tv) > NMAX
     k = numel(tv) - NMAX + 1;
     trX(1:k) = [];  trY(1:k) = [];  tv(1:k) = [];
-    De(1:k,:) = [];  Dp(1:k,:) = [];  Dt(1:k,:) = [];
+    Dp(1:k,:) = [];  Dm(1:k,:) = [];
 end
 
 every = 0.25;
@@ -194,88 +232,127 @@ try, every = evalin('base','animate_every'); catch, end
 if t - tLast < every, return; end
 tLast = t;
 
-%% ---- 왼쪽 : 위치 평면 --------------------------------------------------
-L = 4.9*scale/2;  B = 2.44*scale/2;
-hull = [ L 0; 0.4*L B; -L B; -L -B; 0.4*L -B ];
-R = [cos(psi) -sin(psi); sin(psi) cos(psi)];
-hb = (R*hull')';
-set(hHull, 'XData', y_n + hb(:,2), 'YData', x_n + hb(:,1));
-set(hHead, 'XData', [y_n, y_n + 2.2*L*sin(psi)], ...
-           'YData', [x_n, x_n + 2.2*L*cos(psi)]);
-set(hDot,  'XData', y_n, 'YData', x_n);
-set(hTrail,'XData', trY, 'YData', trX);
+%% ---- 왼쪽 : 항적 · 선체 · 지금 겨누는 표적 ------------------------------
+sc = 2;
+try, sc = evalin('base','boat_scale'); catch, end
+[hX, hY, hdx, hdy] = hull_ned(x_n, y_n, psi, sc);
+set(hTrail, 'XData', trY,  'YData', trX);
+set(hHull,  'XData', hY,   'YData', hX, 'FaceColor', mode_colour(mNow));
+set(hHead,  'XData', hdy,  'YData', hdx);
+set(hDot,   'XData', y_n,  'YData', x_n);
 
-% 목표 — 계단 목표(시킨 곳)와 기준모델 목표(지금 좇는 곳), 그리고 목표 선수각
-set(hRaw,  'XData', eta_raw(2), 'YData', eta_raw(1));
-set(hTgt,  'XData', eta_d(2),   'YData', eta_d(1));
-set(hTgtHead, 'XData', [eta_d(2), eta_d(2) + 2.2*L*sin(eta_d(3))], ...
-              'YData', [eta_d(1), eta_d(1) + 2.2*L*cos(eta_d(3))]);
+names = mode_names();
+st = names{mNow};
 
-% 추진기 화살표 — NED 선체계: 좌현 y = -yt, 우현 y = +yt
-%   길이 기준은 선체 반길이 L 의 1.6 배 = 추력 한계 F_max 일 때의 길이다.
-%   선체 크기에 매여 있으므로 boat_scale 을 바꿔도 비율이 그대로다.
-a1 = arrowPts([xt -yt], Dact(1), Tact(1), Fmax, 1.6*L, R, x_n, y_n);
-a2 = arrowPts([xt  yt], Dact(2), Tact(2), Fmax, 1.6*L, R, x_n, y_n);
-set(hArr(1), 'XData', a1(:,1), 'YData', a1(:,2));
-set(hArr(2), 'XData', a2(:,1), 'YData', a2(:,2));
+%  WpManager 의 idx 는 **구간의 시작** 번호다. 겨누는 것은 그다음 점이다
+k = min(max(round(idx), 1), nwp);
+if mNow == 2
+    set(hTgt, 'XData', nan, 'YData', nan);
+    set(hLoi, 'XData', lyc, 'YData', lxc);
+    goal = sprintf('로이터 중심 (%g, %g)    반경 %g m    %.2f / %g 바퀴', ...
+                   lxc, lyc, lrd, tMax, reqTurns);
+elseif mNow >= 3 || k >= nwp
+    set(hTgt, 'XData', nan, 'YData', nan);
+    set(hLoi, 'XData', nan, 'YData', nan);
+    goal = sprintf('임무 완료 (웨이포인트 %d 통과, 로이터 %.2f 바퀴)', nwp, tMax);
+else
+    set(hLoi, 'XData', nan, 'YData', nan);
+    set(hTgt, 'XData', wpy(k+1), 'YData', wpx(k+1));
+    d = hypot(wpx(k+1)-x_n, wpy(k+1)-y_n);
+    goal = sprintf('구간 %d\\rightarrow%d    목표까지 %5.1f m    수락반경 %g m', ...
+                   k, k+1, d, R);
+end
 
-% 축 범위 — 배·항적·두 목표가 모두 들어오게. 최소 30 m 는 확보한다
-allY = [trY, eta_d(2), eta_raw(2)];
-allX = [trX, eta_d(1), eta_raw(1)];
-span = max([max(allY)-min(allY), max(allX)-min(allX), 30]) * 1.30;
-cy = (max(allY)+min(allY))/2;  cx = (max(allX)+min(allX))/2;
-axis(axXY, [cy-span/2, cy+span/2, cx-span/2, cx+span/2]);
-
-epsi = ssa_deg(psi - eta_d(3));
 set(hInfo, 'String', { ...
-    ['실시간 DP — 위쪽이 북쪽, 뾰족한 쪽이 선수.  ' ...
-     '화살표 = 방위추진기 2기의 추력 방향 (길이는 \surd(T/F_{max}) 비례)'], ...
-    sprintf(['t = %5.1f s    x = %7.2f m    y = %7.2f m    \\psi = %6.1f°    ' ...
-             '|e| = %5.2f m    \\Delta\\psi = %5.1f°'], ...
-            t, x_n, y_n, ssa_deg(psi), De(end,3), epsi), ...
-    sprintf('좌현 %+6.1f N @ %+5.1f°      우현 %+6.1f N @ %+5.1f°', ...
-            Tact(1), rad2deg(Dact(1)), Tact(2), rad2deg(Dact(2))) });
+    sprintf('실시간 항적 — 위쪽이 북쪽, 뾰족한 쪽이 선수.    %s', goal), ...
+    sprintf(['t = %5.1f s    x = %7.2f m    y = %7.2f m    \\psi = %6.1f°' ...
+             '    상태 = %s    로이터 %.2f / %g 바퀴'], ...
+            t, x_n, y_n, ssa_deg(psi), st, tMax, reqTurns) });
 
-%% ---- 오른쪽 세 칸 ------------------------------------------------------
-set(hEx,   'XData', tv, 'YData', De(:,1));
-set(hEy,   'XData', tv, 'YData', De(:,2));
-set(hEn,   'XData', tv, 'YData', De(:,3));
+%% ---- 오른쪽 (1) : 상태 계단 -------------------------------------------
+[sx, sy] = stair_xy(mSeg, t);
+set(hM, 'XData', sx, 'YData', sy);
+nTr = size(mSeg,1) - 1;
+if nTr > 0
+    title(axM, sprintf('미션 상태 — 전이 %d회  (%s s)    로이터 %.2f / %g 바퀴', ...
+          nTr, strjoin(compose('%.1f', mSeg(2:end,1)'), ' \\rightarrow '), ...
+          tMax, reqTurns), 'FontWeight','normal', 'Interpreter','tex');
+else
+    title(axM, sprintf('미션 상태 — 아직 전이 없음    로이터 %.2f / %g 바퀴', ...
+          tMax, reqTurns), 'FontWeight','normal');
+end
+
+%  전이 시각에 세로 안내선을 긋는다 — 상태가 바뀐 순간 지령과 추력이 어떻게
+%  움직였는지 세 칸을 위아래로 훑어 읽게 한다. 전이는 서너 번뿐이라 값이 싸다
+for j = (numel(hTrLine)+1) : nTr
+    tt = mSeg(j+1,1);
+    hTrLine(j) = xline(axP, tt, ':', 'Color',[0.45 0.45 0.45], 'LineWidth',1.1); %#ok<AGROW>
+    xline(axU, tt, ':', 'Color',[0.45 0.45 0.45], 'LineWidth',1.1);
+end
+
+%  오른쪽 세 칸의 시간축을 맞춘다. 어긋나면 계단과 아래 두 칸을 겹쳐 읽을 수 없다
+tEnd = max(t, 1);
+xlim(axM, [0 tEnd]);  xlim(axP, [0 tEnd]);  xlim(axU, [0 tEnd]);
+
+%% ---- 오른쪽 (2) · (3) --------------------------------------------------
 set(hPref, 'XData', tv, 'YData', Dp(:,1));
 set(hP,    'XData', tv, 'YData', Dp(:,2));
-set(hT1,   'XData', tv, 'YData', Dt(:,1));
-set(hT2,   'XData', tv, 'YData', Dt(:,2));
-set(hD1,   'XData', tv, 'YData', Dt(:,3));
-set(hD2,   'XData', tv, 'YData', Dt(:,4));
+set(hUcmd, 'XData', tv, 'YData', Dm(:,1));
+set(hU,    'XData', tv, 'YData', Dm(:,2));
+set(hFL,   'XData', tv, 'YData', Dm(:,3));
+set(hFR,   'XData', tv, 'YData', Dm(:,4));
 
 %  곡선이 그림의 맨 위 테두리에 딱 붙으면 읽기 어렵다. 위아래로 조금 띄운다
-pad_y(axE, De);
 pad_y(axP, Dp);
-yyaxis(axT,'left');   pad_y(axT, Dt(:,1:2));   yyaxis(axT,'right');
 
 drawnow limitrate
 if nargout > 0, f = fig; end
 end
 
 % =====================================================================
-% 추진기 화살표 — 추진기 자리에서 추력 방향으로 뻗는다. 선체 좌표계에서
-% 만든 뒤 NED 로 돌린다. 추력이 음수면 화살표가 반대로 향한다.
-%
-%   길이는 sqrt(|T|/F_max) 에 비례시킨다. 길이에 그대로 비례시키면
-%   DP 의 정상상태 추력(수십 N)이 한계 500 N 의 몇 %밖에 안 되어 화살표가
-%   선체 안에 파묻힌다 — 정작 "외란에 맞서 어느 쪽을 미는가" 를 보여야 하는
-%   구간에서 아무것도 안 보인다 (2026-09-25 첫 캡처에서 확인).
-%   제곱근을 쓰면 작은 추력도 눈에 보이면서 큰 추력과의 차례는 그대로다.
-%   **정확한 크기는 제목 줄의 숫자와 오른쪽 ③ 칸에서 읽는다.**
+% 상태 색과 이름 — 이 둘이 한 곳에 있어야 범례와 선체 색이 어긋나지 않는다
 % =====================================================================
-function p = arrowPts(pos, delta, T, Fmax, Lfull, R, x_n, y_n)
-len = Lfull * sign(T) * min(sqrt(abs(T)/max(Fmax,1)), 1);
-tip = pos + len*[cos(delta) sin(delta)];
-hd  = 0.25*abs(len);                                  % 화살촉
-a1  = tip - hd*[cos(delta+0.4) sin(delta+0.4)]*sign(len+eps);
-a2  = tip - hd*[cos(delta-0.4) sin(delta-0.4)]*sign(len+eps);
-body = [pos; tip; a1; tip; a2];
-b = (R*body')';
-p = [y_n + b(:,2), x_n + b(:,1)];
+function c = mode_colour(m)
+switch min(max(round(m),1),3)
+    case 1, c = [0.00 0.45 0.74];    % WpFollow  파랑
+    case 2, c = [0.95 0.45 0.20];    % Loiter    주황
+    otherwise, c = [0.55 0.55 0.55]; % Finish    회색
+end
+end
+
+function n = mode_names()
+n = {'1 WpFollow', '2 Loiter', '3 Finish'};
+end
+
+% ---- 바뀐 점만 모은 목록을 계단 좌표로 편다 ------------------------------
+%   seg = [t_k, mode_k] (mode 가 바뀐 시각만). 마지막 칸은 지금 시각까지 끈다
+function [x, y] = stair_xy(seg, tNow)
+if isempty(seg), x = nan; y = nan; return, end
+n = size(seg,1);
+x = zeros(1, 2*n);  y = zeros(1, 2*n);
+x(1) = seg(1,1);  y(1) = seg(1,2);
+for k = 2:n
+    x(2*k-2) = seg(k,1);   y(2*k-2) = seg(k-1,2);   % 수직으로 올라가기 직전
+    x(2*k-1) = seg(k,1);   y(2*k-1) = seg(k,2);     % 올라간 뒤
+end
+x(2*n) = max(tNow, seg(n,1));  y(2*n) = seg(n,2);
+end
+
+% =====================================================================
+% 선체 다각형 — 선미는 네모, 선수는 뾰족하다 (W05_matlab/shipModel.m 과 같은 모양)
+%   NED 그대로 계산한다.
+%     N = x + bx cos(psi) - by sin(psi)
+%     E = y + bx sin(psi) + by cos(psi)
+% =====================================================================
+function [X, Y, hx, hy] = hull_ned(x, y, psi, sc)
+L = 2.45 * sc;  B = 1.03 * sc;                % 반길이 · 반폭 [m] (WAM-V 전장 4.9 m)
+bx = L * [ -1   -1    0.5   1    0.5 ];       % 선미 -> 선수
+by = B * [  1   -1   -1     0    1   ];
+c = cos(psi);  s = sin(psi);
+X = x + bx*c - by*s;
+Y = y + bx*s + by*c;
+hx = [x, x + 2.2*L*c];                        % 선수 방향선
+hy = [y, y + 2.2*L*s];
 end
 
 % ---- ssa : 최단 부호각으로 접어 deg 로 -----------------------------------

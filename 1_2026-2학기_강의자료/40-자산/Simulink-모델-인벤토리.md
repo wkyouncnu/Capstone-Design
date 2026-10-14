@@ -61,7 +61,7 @@ Docking_Approach    -> Docking_Final       [approach_finished == 1]
 |---|---|
 | `VRX_SHIFT_MINI_Full.m` | **마스터 실행 스크립트**. 위성지도 `ginput` 으로 7점 미션 클릭(이안 / WP×3 / DP / 접근 / 도킹), 추진기 기하와 전 게인 정의 |
 | `VRX_SHIFT_MINI_Unberthing.m` | 축약판. 1점만 클릭 |
-| `WAMV_USV_Control_Allocation.m` | **독립 실행형 추력배분 교재**. 로직 스윕 · 4시나리오 벡터도 · Monte-Carlo 도달가능 제어집합 그림 자동 생성 → 8주차 |
+| `WAMV_USV_Control_Allocation.m` | **독립 실행형 추력배분 교재**. 로직 스윕 · 4시나리오 벡터도 · Monte-Carlo 도달가능 제어집합 그림 자동 생성 → 9주차 |
 | `USV_display.m` · `USV_draw.m` · `circle_draw.m` | 위성지도 위 실시간 항적 애니메이션 (7 웨이포인트 라벨링 지원) |
 | `deg2utm.m` · `utm2deg.m` | WGS84 UTM 변환 유틸 |
 | `mission_points.mat` | 저장된 7점 미션 |

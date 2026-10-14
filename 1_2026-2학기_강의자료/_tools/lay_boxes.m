@@ -15,7 +15,7 @@ function moved = lay_boxes(sys, names, varargin)
 %       상자는 어느 층에도 속하지 않으므로 **왼쪽 위 빈자리**로 간다.
 %       2026-10-01 에 이렇게 나왔다 —
 %
-%         W09_0_offline   Logging x =  15 · Animate x = 30
+%         W10_0_offline   Logging x =  15 · Animate x = 30
 %                         (MotionModel 220 · SensorModel 450 · RateMeter 700)
 %         W02_3_goto_…    Animate x = 250 · Logging x = 550
 %                         (PoseSubscriber 850)
@@ -26,7 +26,7 @@ function moved = lay_boxes(sys, names, varargin)
 %       선 검사는 이것을 보지 못한다 — 옮길 선이 없기 때문이다.
 %
 %       `lay_chain` 의 'Boxes' 가 하는 일이 바로 이것인데, `lay_chain` 을 쓰지 않는
-%       빌더(W02 · W03 · W09)는 그 기능에 손이 닿지 않았다. 그래서 따로 둔다.
+%       빌더(W02 · W03 · W10)는 그 기능에 손이 닿지 않았다. 그래서 따로 둔다.
 %
 %   어디에 놓는가 / where they go
 %       도면에 있는 **모든 것**(블록 사각형 · 블록 이름표 · 선의 점)보다 아래로

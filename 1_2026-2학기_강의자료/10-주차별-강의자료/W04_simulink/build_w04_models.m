@@ -1741,7 +1741,7 @@ function build_offline()
     %
     %  연속 Transfer Fcn 은 **벡터 입력을 받지 못한다.** 여기 들어오는 것은 MuxF 가
     %  묶은 (FL, FR) 두 원소다. 그래서 같은 법칙을 State-Space 한 블록으로 적는다 —
-    %  5~8주차의 MotorLag 과 같은 꼴이다.
+    %  5~9주차의 MotorLag 과 같은 꼴이다.
     %
     %      xdot = -x/T_m + u/T_m ,  y = x      <=>   y/u = 1/(T_m s + 1)
     %

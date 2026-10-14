@@ -91,7 +91,7 @@ right_rear    (-2.374, -1.027, 0.318)   mount yaw -45 deg
 - **틸트 한계 ±45°는 URDF 가 아니라 제어기의 소프트웨어 제약**
   - `engine.xacro` 조인트 한계는 `lower="-pi" upper="pi"` (±180°) — 2026-09-03 upstream 확인
   - ±45° 는 `VRX_SHIFT_MINI_Full.m` 의 `alpha_max` 와 `rpi_otter` 안에 하드코딩됨
-- 8주차에 **본 과목 구성과 대조하는 비교 자료**로만 쓴다
+- 9주차에 **본 과목 구성과 대조하는 비교 자료**로만 쓴다
 - 그 밖: 3추진기 바우스러스터(`bow_wamv/`), 커스텀 2추진기(`my_wamv/`)
 
 ## 주요 토픽

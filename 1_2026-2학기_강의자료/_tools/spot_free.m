@@ -55,7 +55,7 @@ for i = 1:numel(L)
     for k = 1:size(q,1)-1
         if seg_hits(q(k,:), q(k+1,:), rect), return, end
         %  이미 있는 선이 **새 태그의 이름표** 위를 지나면 태그 이름을 읽을 수 없다
-        %  (2026-09-21 W06_0·W06_1 의 Fr_psi_b)
+        %  (2026-09-21 W07_0·W07_1 의 Fr_psi_b)
         if seg_hits(q(k,:), q(k+1,:), nb), return, end
     end
 end

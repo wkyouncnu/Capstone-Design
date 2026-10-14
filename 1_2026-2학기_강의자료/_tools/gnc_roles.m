@@ -9,8 +9,8 @@ function role = gnc_roles(mdl)
 %
 %   WHY ONE TABLE AND NOT ONE PER BUILDER
 %
-%   전에는 빌더마다 같은 루프를 들고 있었다. W05~W08 만 들고 있었고 W02·W03·
-%   W09·W04 은 빠져 있었다 — 2026-09-17 감사에서 48개 모델 전부가 걸렸다.
+%   전에는 빌더마다 같은 루프를 들고 있었다. W05~W09 만 들고 있었고 W02·W03·
+%   W10·W04 은 빠져 있었다 — 2026-09-17 감사에서 48개 모델 전부가 걸렸다.
 %   표가 하나면 새 모델을 만들 때 어디에 적어야 할지 헷갈릴 일이 없고,
 %   "3주차 Nav 는 무슨 색인가" 를 한 파일에서 답할 수 있다.
 %
@@ -22,7 +22,7 @@ function role = gnc_roles(mdl)
 
 [~, m] = fileparts(char(mdl));
 
-%  주차별로 공통인 사슬. 5~7주차가 같은 이름을 쓴다
+%  주차별로 공통인 사슬. 5~8주차가 같은 이름을 쓴다
 GNC = {'Guidance','guidance'; 'Mission','mission'; 'InnerLoop','control'; ...
        'Thrusters','thruster'; 'MotionModel','plant'; ...
        'CmdPublisher','ros'; 'PoseSubscriber','ros'; ...
@@ -54,13 +54,13 @@ case {'W03_0_offline','W03_4_teleop'}
     %   LOS 가 대신하게 될 그 자리다
     role = [GNC; {'TeleopPad','guidance'; 'OdomNav','ros'}];
 
-% ---- 9주차 · 토픽 조사 -------------------------------------------------
-case 'W09_0_offline'
+% ---- 10주차 · 토픽 조사 -------------------------------------------------
+case 'W10_0_offline'
     %   SensorModel 은 1단계 SensorSubscriber 자리를 대신한다 — 같은 연보라
     role = [GNC; {'Command','guidance'; 'SensorModel','ros'; 'RateMeter','ros'}];
-case 'W09_1_sensor_rates'
+case 'W10_1_sensor_rates'
     role = [GNC; {'SensorSubscriber','ros'; 'RateMeter','ros'}];
-case 'W09_2_qos_test'
+case 'W10_2_qos_test'
     role = [GNC; {'QosSubscribers','ros'; 'RxCount','ros'}];
 
 % ---- 4주차 · ROS2 연동과 첫 제어기 -------------------------------------
@@ -133,11 +133,11 @@ case {'SB12_reuse_done','SB12_reuse_todo'}
 case {'SB13_stateflow_done','SB13_stateflow_todo'}
     role = {'Mission','mission'; 'Dist','plant'};
 
-% ---- 5~8주차 · 유도·제어 사슬 ------------------------------------------
-case {'W05_0_offline','W05_1_vrx','W06_0_offline','W06_1_vrx', ...
-      'W07_0_offline','W07_1_vrx'}
+% ---- 5~9주차 · 유도·제어 사슬 ------------------------------------------
+case {'W05_0_offline','W05_1_vrx','W07_0_offline','W07_1_vrx', ...
+      'W08_0_offline','W08_1_vrx'}
     role = GNC;
-case {'W08_0_offline','W08_1_vrx'}
+case {'W09_0_offline','W09_1_vrx'}
     %   ZeroThr · ZeroEnv 는 VRX 모델에만 있다. Gazebo 가 힘을 만들므로 추력·외란을
     %   계산하지 않고 0 을 태그로 내보내, Logging 이 오프라인 모델과 **같은 신호**를
     %   받게 하는 자리다. 지령이 아니다 — 자리는 각각 추진기(4) · 환경(5) 단계다.

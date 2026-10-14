@@ -139,11 +139,11 @@ Your branch is up to date with 'origin/main'.
 > [!important] 받은 폴더에서 고친 것은 pull 앞뒤로 치워 두고 되돌린다
 > - 실습은 `*_setup.m` 을 **파일에서** 고치게 되어 있음 (5주차 1-7 — 명령 창에서 바꾼 값은 `setup` 이 다시 지움). 고쳐도 됨
 > - 다음 주에 받기 전에 `git stash` → `git pull` → `git stash pop` 세 줄이면 수정이 살아남음
-> - 모델(`.slx`)을 크게 고칠 때는 **다른 이름으로 저장** (예: `save_system('W07_0_offline','W07_my')`) — 새 파일은 pull 과 부딪히지 않음
-> - 팀 코드는 팀 저장소(10주차 D-1)에 둠. 강의자료 저장소와 섞지 않음
+> - 모델(`.slx`)을 크게 고칠 때는 **다른 이름으로 저장** (예: `save_system('W08_0_offline','W08_my')`) — 새 파일은 pull 과 부딪히지 않음
+> - 팀 코드는 팀 저장소(11주차 D-1)에 둠. 강의자료 저장소와 섞지 않음
 
 ## 연결
 
 - [[W02_ROS2_기초_노드와_토픽]] 2-7 — 처음 받는 곳
-- [[W10_VSCode와_Claude_에이전트_첫_제어노드]] — VS Code 의 WSL 창
+- [[W11_VSCode와_Claude_에이전트_첫_제어노드]] — VS Code 의 WSL 창
 - [[환경구축-실패가-가장-비싼-비용이다]]

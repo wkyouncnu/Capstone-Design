@@ -74,9 +74,9 @@ grep -c "찾을 표현" 10-주차별-강의자료/W*.md
 - **소수점까지 같아야 한다.** 다르면 배선 순서가 바뀐 것이다 → 포트 번호를 확인
 
 ```matlab
-before = sim('W06_0_offline');   % 구조 변경 전
+before = sim('W07_0_offline');   % 구조 변경 전
 % ... 재구조화 ...
-after  = sim('W06_0_offline');
+after  = sim('W07_0_offline');
 max(abs(squeeze(before.log_u.Data) - squeeze(after.log_u.Data)))   % 0 이어야 한다
 ```
 
@@ -94,7 +94,7 @@ max(abs(squeeze(before.log_u.Data) - squeeze(after.log_u.Data)))   % 0 이어야
 4. 진도 체크·과제·막혔을 때 표에 절 문자가 있으면 그것도
 
 ```bash
-grep -n "[A-K]절\|§[A-K]" 10-주차별-강의자료/W06_*.md
+grep -n "[A-K]절\|§[A-K]" 10-주차별-강의자료/W07_*.md
 ```
 
 ---

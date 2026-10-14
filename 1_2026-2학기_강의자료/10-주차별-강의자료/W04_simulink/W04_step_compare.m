@@ -145,7 +145,7 @@ fprintf('   그림 저장: img/W04_%d_offline_vs_vrx.png\n', stage);
 end
 
 function RTF = measureRTF(topic, secs)
-n  = ros2node('/w06_rtf_probe', str2double(getenv('ROS_DOMAIN_ID')));
+n  = ros2node('/w07_rtf_probe', str2double(getenv('ROS_DOMAIN_ID')));
 s  = ros2subscriber(n, topic, 'nav_msgs/Odometry');
 m0 = receive(s, 15);  w = tic;
 t0 = double(m0.header.stamp.sec) + double(m0.header.stamp.nanosec)*1e-9;
@@ -162,7 +162,7 @@ end
 
 function stopThrusters()
 % 추진기 플러그인은 마지막 값을 유지한다 — 끝나면 0 을 몇 번 보낸다
-n  = ros2node('/w06_stop', str2double(getenv('ROS_DOMAIN_ID')));
+n  = ros2node('/w07_stop', str2double(getenv('ROS_DOMAIN_ID')));
 pl = ros2publisher(n, '/wamv/thrusters/left/thrust',  'std_msgs/Float64');
 pr = ros2publisher(n, '/wamv/thrusters/right/thrust', 'std_msgs/Float64');
 msg = ros2message(pl);  msg.data = 0;

@@ -256,7 +256,7 @@ mss_style(m);                          % save_system 직전 한 번
 | `add_measurement.m` | measurement 단계를 통째로 생성 — 셀렉터 · 로깅 · 스코프 · 실시간 화면 | 지금은 `add_logging_box` + `add_animate_box` 를 모델마다 따로 부른다. §5 로깅 계약을 **한 함수가 강제**하게 됨 | 높음 |
 | `draw_ship.m` · `track_ships.m` · `ship_marks.m` | 궤적 위에 선체 실루엣 + 선수 방향선을 호길이 등간격으로 | 궤적선만으로는 크랩각이 안 보인다. 결과 그림 규칙이 요구하는 것 → `capstone-lecture-vault/references/figures-svg.md` | 높음 |
 | `ensure_base_vars.m` · `base_var.m` | setup 이 돌았는지 확인하고 기본 작업공간 변수를 안전하게 읽음 | `WNN_setup` 을 안 돌린 채 실행해 엉뚱한 값이 나오는 사고를 막음 | 높음 |
-| `crosstrack_err.m` · `wp_switch.m` · `path_plot.m` | 횡방향 오차 · 웨이포인트 전환 · 경로 그림 | 7\~10주차가 같은 식을 모델마다 다시 쓴다. 한 곳으로 모으면 문서의 정의와 어긋날 수 없음 | 높음 |
+| `crosstrack_err.m` · `wp_switch.m` · `path_plot.m` | 횡방향 오차 · 웨이포인트 전환 · 경로 그림 | 7\~11주차가 같은 식을 모델마다 다시 쓴다. 한 곳으로 모으면 문서의 정의와 어긋날 수 없음 | 높음 |
 | `run_sim.m` | 변수 하나만 바꿔 가며 반복 실행 | 조건을 바꿀 때 **모델이 실제로 읽는 변수**를 바꾸게 강제함 (`verify.md` §13) | 중간 |
 | `mlfcn_params.m` | MATLAB Function 의 상수를 입력 포트가 아니라 **Parameter** 로 | 상수 넷이 포트로 붙어 선이 넷 늘어나는 것을 막음 | 중간 |
 | `live_dash.m` · `live_track.m` | 한 창에 궤적 + 상태 여섯을 실시간으로 | `Animate` 가 궤적만 그린다. 속도·각속도가 안 보임 | 중간 |
