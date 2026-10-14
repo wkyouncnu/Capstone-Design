@@ -13,11 +13,12 @@ function [sumBlk, ssaBlk] = add_ssa(sys, sumName, ssaName, centre, gap)
 %
 %   무엇이 만들어지는가 / what gets built
 %
-%       psi_ref ---> (+)
-%                     |  ---> [ atan2(sin(u), cos(u)) ] ---> e
-%       psi ------->  (-)
+%       psi_ref --->(+)---> [ atan2(sin(u), cos(u)) ] ---> e
+%                    ^
+%                    | (-)
+%                  psi
 %
-%     합산점은 '+-' 이므로 지령이 **위**, 되먹임이 **아래**로 들어간다 (add_sum).
+%     합산점은 '|+-' 이므로 지령이 **왼쪽**, 되먹임이 **아래**로 들어간다 (add_sum).
 %     Fcn 은 들어온 각 하나를 (-pi, pi] 로 접는다. 그것이 ssa 의 전부다.
 %
 %   왜 MATLAB Function 이 아니라 Fcn 한 개인가 / why not a MATLAB Function

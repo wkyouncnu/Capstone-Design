@@ -1,5 +1,5 @@
-function s = add_cmd_publisher(m, pos, topics, ts)
-%ADD_CMD_PUBLISHER  추력 발행 배관을 한 상자에 넣는다. 입력은 FL, FR 두 개뿐.
+function s = add_cmd_publisher(m, pos, topics, ts, inp)
+%ADD_CMD_PUBLISHER  추력 발행 배관을 한 상자에 넣는다. 입력은 추진기 수만큼.
 %
 %   add_cmd_publisher(m, [x y], {'/wamv/thrusters/left/thrust', ...
 %                                '/wamv/thrusters/right/thrust'}, 'Ts_ctrl')
@@ -9,18 +9,23 @@ function s = add_cmd_publisher(m, pos, topics, ts)
 %     Bus Assignment  그 안의 data 필드를 채우고
 %     Publish         토픽으로 내보낸다
 %
-%   좌·우 두 벌이니 여섯 블록이다. 최상위에 늘어놓으면 신호 사슬이 여섯 칸 늘어나는데,
-%   늘어난 만큼 알려 주는 것은 없다 — "추력을 Gazebo 로 보낸다" 한 문장이 전부다.
+%   추진기 수만큼 벌이 생긴다 — 좌·우면 여섯 블록, 선수추진기까지면 아홉이다.
+%   최상위에 늘어놓으면 신호 사슬이 그만큼 늘어나는데, 늘어난 만큼 알려 주는 것은 없다 — "추력을 Gazebo 로 보낸다" 한 문장이 전부다.
 %   그래서 상자 하나로 묶는다.
 
 if nargin < 4 || isempty(ts), ts = '-1'; end
-side = {'L','R'};
-inp  = {'FL','FR'};
+%  입력 이름 — 기본은 5주차의 좌·우 둘이다. 6주차는 선수추진기까지 셋을 준다
+%  (add_cmd_publisher(m, pos, topics, ts, {'FL','FR','FB'})). 토픽 수와 같아야 한다
+if nargin < 5 || isempty(inp), inp = {'FL','FR'}; end
+nThr = numel(topics);
+assert(numel(inp) == nThr, 'add_cmd_publisher: 토픽 %d 개, 입력 이름 %d 개', nThr, numel(inp));
+%  블록 이름에 붙는 꼬리표 — FL -> L, FR -> R, FB -> B. 이름을 따로 짓지 않는다
+side = cellfun(@(nm) nm(2:end), inp, 'UniformOutput', false);
 
 s = add_subsys(m, 'CmdPublisher', [pos(1) pos(2) pos(1)+150 pos(2)+90], ...
-               {'FL','FR'}, {}, gnc_colour('ros'));
+               inp, {}, gnc_colour('ros'));
 
-for k = 1:2
+for k = 1:nThr
     y = 120 + (k-1)*180;
     t = side{k};
 
@@ -60,5 +65,5 @@ add_block('built-in/Note', [s '/note'], 'Position', [160 420], 'Text', sprintf([
     '  Bus Assignment  그 안의 data 필드를 채운다\n' ...
     '  Publish         토픽으로 내보낸다\n' ...
     '\n' ...
-    '좌 %s\n우 %s'], topics{1}, topics{2}));
+    '발행하는 토픽\n%s'], strjoin(topics, newline)));
 end

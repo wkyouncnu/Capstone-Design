@@ -103,7 +103,7 @@ g = add_subsys(m, 'Guidance', P.reference, {'x_n','y_n','psi'}, {'psi_ref','y_e'
 
 - 체인이 x ≈ 1600 안에서 끝나야 PNG 가 **2000 px** 안에 들어온다. 넘치면
   `export_diagram` 이 dpi 를 낮추는데, 낮출수록 글씨를 읽을 수 없다
-- `lay_chain` 으로 배치를 잡아 둔 모델에는 `tidy_model` 을 쓰지 않는다 → SKILL.md §4 `settle_links`
+- `lay_chain` 으로 배치를 잡아 둔 모델에는 `tidy_model` 을 쓰지 않는다 → `references/checks.md` 「포트를 하나 더 달았다면」
 
 ---
 

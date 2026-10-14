@@ -11,21 +11,31 @@ function blk = add_sum(sys, name, signs, centre)
 %     centre   원의 **중심** [x y]. 모서리가 아니다
 %              the centre of the circle, not a corner
 %
-%   포트가 어디에 붙는지 / where the ports end up
-%       '+-' 는 두 입력을 원의 **위와 아래** 가장자리에 붙인다 — 첫 입력(지령)이
-%       위, 둘째 입력(되먹임)이 아래다. 출력은 오른쪽이다. 2026-10-02 에 세
-%       모양의 포트 좌표를 직접 재어 확인했다 (20 x 20 원 기준).
+%   부호 목록은 언제나 막대로 시작한다 / the sign list always starts with a bar
 %
-%           '+-'   입력1 (위)      입력2 (아래)     출력 (오른쪽)
-%           '|+-'  입력1 (왼쪽)    입력2 (아래)     출력 (오른쪽)
-%           '++|'  입력1 (위)      입력2 (왼쪽)     출력 (오른쪽)
+%       교수 지시 2026-10-14 — "Simulink sum 블록은 항상 |+- 이런 부호 목록만
+%       사용." 그래서 이 함수는 막대가 없는 목록을 받아도 앞에 막대를 붙인다.
+%       '+-' 를 주어도 실제로는 '|+-' 가 들어간다.
 %
-%       **둘 다 왼쪽 가장자리에 붙이는 설정은 Simulink 에 없다.** 2026-10-02 에
-%       이 머리글이 그렇게 적혀 있었던 것은 잘못이다 (2026-10-14 바로잡음).
+%           '|+-'  입력1 (왼쪽)   입력2 (아래)   출력 (오른쪽)
+%           '|++'  입력1 (왼쪽)   입력2 (아래)   출력 (오른쪽)
 %
-%       With '+-' the two inputs attach to the top and the bottom edge, the
-%       reference above and the feedback below. No sign string puts both on
-%       the left edge; the bar is a spacer, and it moves one port, not two.
+%       막대는 포트가 아니라 **포트 자리 하나를 비우는 띄우개**다. 원의 위
+%       자리를 비우면 첫 입력이 왼쪽 가장자리에 남고 둘째 입력만 아래로
+%       내려간다. 그림에서는 이렇게 읽힌다.
+%
+%           지령 ------->(+)-----> 제어기 ...
+%                         ^
+%                         | (-)
+%                      되먹임
+%
+%       신호가 **왼쪽에서 들어와 오른쪽으로 나가는 한 줄**이 되고, 되먹임만
+%       아래에서 올라온다. 되먹임 제어 그림의 표준 모양이며, 지령선·출력선이
+%       모두 수평이라 블록을 포트 높이에 맞추어 놓으면 꺾임이 없는 직선이 된다.
+%
+%       2026-10-02 에는 막대 없는 '+-' (지령 위·되먹임 아래)를 골랐고 이 머리글도
+%       그렇게 적혀 있었다. 2026-10-14 지시로 바뀌었다 — 위에서 내려오는 지령선은
+%       신호 흐름을 끊고, 합산점마다 긴 세로줄이 생겨 선이 서로 겹치기 때문이다.
 %
 %   WHY THIS EXISTS
 %
@@ -40,29 +50,19 @@ function blk = add_sum(sys, name, signs, centre)
 %   eight Sum blocks are all IconShape 'round' at 20 x 20. This function keeps
 %   that shape and size.
 %
-%   왜 '|' 를 넣지 않는가 / why no bar in the sign string
-%
-%   막대는 포트가 아니라 **포트 자리 띄우개**다. '|+-' 로 적으면 첫 입력이 원의
-%   **왼쪽**에 남고 둘째 입력만 아래로 내려가, 지령과 되먹임이 서로 다른 쪽에서
-%   들어온다. 그냥 '+-' 로 적으면 둘이 **위와 아래로 마주 보고** 들어오고
-%   오차가 만들어지는 자리가 대칭으로 읽힌다.
-%
-%   2026-10-02 에 교수가 두 모양을 나란히 놓고 보고 **뒤쪽(막대 없는 것)**을
-%   골랐다. 오차가 만들어지는 자리는 도면에서 가장 먼저 찾는 곳이고, 지령과
-%   되먹임이 **마주 보고** 들어와야 "무엇에서 무엇을 빼는가" 가 한눈에 읽힌다.
-%
-%   The bar is a port-position spacer, not a port. With it the first input stays
-%   on the left edge while the second drops to the bottom, so the reference and
-%   the feedback arrive from two different sides. Without it the two face each
-%   other across the circle, top and bottom.
-%
 %   The centre is the argument rather than a corner because a summing junction
 %   is placed to line up with the signal it interrupts. Aligning centres keeps
 %   the wire straight; aligning corners does not.
+%
+%   옛 차수의 빌더 / older builders
+%       부호만 '+-' 로 적어 둔 빌더도 그대로 돈다 (막대는 여기서 붙는다). 다만
+%       포트가 위에서 왼쪽으로 옮겨 가므로, 그 차수를 **다시 빌드할 때** 합산점
+%       주변 블록 높이를 한 번 맞추어 주어야 check_lines 가 0 으로 남는다.
 
 if nargin < 4, error('add_sum:args', 'add_sum(sys, name, signs, centre)'); end
 
-signs = strrep(signs, '|', '');            % 막대는 받아도 버린다 (위 설명)
+signs = strrep(signs, '|', '');            % 들어온 막대는 떼고
+signs = ['|' signs];                       % 맨 앞에 하나만 다시 붙인다
 R     = 10;                                % half of the MSS 20 x 20
 
 blk = [sys '/' name];
