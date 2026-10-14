@@ -11,6 +11,7 @@ function n = finishStage(m, chain, boxes)
 
     load_system(m);
     straighten_chain(m, chain);   %  이웃 포트 높이를 맞춰 바로 잇는 선을 직선으로
+    flatten_lines(m);             %  높이가 같아졌는데 아직 돌아가는 선을 곧게 다시
     paint_roles(m);
     check_colour(m);
     mss_style(m);  save_system(m);  close_system(m, 0);
