@@ -38,13 +38,13 @@ function addThrusters(m, x, y)
     %  연속 Transfer Fcn 은 벡터 입력을 받지 않는다 (n 은 3원소다). A·B·C 가 대각
     %  이므로 세 추진기가 서로 섞이지 않는다 — 식은 5주차와 같고 축만 셋이다
     add_block('simulink/Continuous/State-Space', [ss '/MotorLag'], ...
-              'Position', [470 170 590 230]);
+              'Position', [470 180 590 240]);         % 가운데 210 = F2n 출력 높이
     set_param([ss '/MotorLag'], 'A','-eye(3)/tau_n', 'B','eye(3)/tau_n', ...
               'C','eye(3)', 'D','zeros(3)', 'X0','zeros(3,1)');
     add_line(ss, 'F2n/1', 'MotorLag/1');
 
     add_block('simulink/User-Defined Functions/MATLAB Function', [ss '/n2F'], ...
-              'Position', [660 150 810 300]);
+              'Position', [660 160 810 310]);         % 입력 1 이 210 에 오게 (= MotorLag)
     sl_fcn(ss, 'n2F', strjoin({
       'function [FL, FR, FB] = n2F(n, k)'
       '%#codegen'
@@ -55,7 +55,13 @@ function addThrusters(m, x, y)
       'FB = k * n(3) * abs(n(3));'
       }, newline));
     add_line(ss, 'MotorLag/1', 'n2F/1');
-    add_line(ss, 'Kp/1', 'n2F/2');
+
+    %  k_prop 을 쓰는 곳이 둘이라 상수 블록도 둘이다. 같은 작업공간 변수를
+    %  읽으므로 값은 늘 같다. 하나만 두고 선을 끌면 그 선이 F2n(x = 250~400)
+    %  을 가로지른다 — 2026-10-14 측정, check_lines 의 [블록관통] 1건.
+    %  상수는 복제해도 손해가 없는 블록이다. 선을 꺾는 것보다 낫다
+    sl_const(ss, 'Kp2', 'k_prop', 470, 245);          % 가운데 260 = n2F 입력 2
+    add_line(ss, 'Kp2/1', 'n2F/2');
 
     outs = {'FL','FR','FB'};
     for k = 1:3
@@ -63,9 +69,8 @@ function addThrusters(m, x, y)
         set_param([ss '/' outs{k}], 'Position', [880 p(2)-10 915 p(2)+10]);
         add_line(ss, sprintf('n2F/%d',k), [outs{k} '/1']);
     end
-    set_param([ss '/n'], 'Position', [880 350 915 370]);
+    set_param([ss '/n'], 'Position', [880 360 915 380]);
     add_line(ss, 'MotorLag/1', 'n/1', 'autorouting','on');
-    align_to(ss, 'Kp', 'Outport', port_xy(ss, 'n2F', 'Inport', 2));
 
     sl_note(ss, 'n_t', [ ...
         '추력 -> 회전수 -> 포화 -> 모터 1차 지연 -> 추력. 세 추진기가 같은 식을 쓴다' newline ...

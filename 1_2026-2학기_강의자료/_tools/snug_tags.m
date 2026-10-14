@@ -35,12 +35,14 @@ function n = snug_tags(sys, varargin)
 %   NAME/VALUE
 %     'Gap'   포트에서 태그까지의 가로 거리 [px]. 기본 30
 %     'Tries' 자리가 차 있을 때 더 밀어 볼 거리들 [px]. 기본 [0 40 90 150 220]
+%     'Passes' 다시 돌아 볼 횟수. 기본 5 (옮긴 것이 없으면 그 자리에서 그친다)
 %
 %   돌려주는 값은 자리를 옮긴 태그의 수다.
 
 p = inputParser;
-p.addParameter('Gap',   30);
-p.addParameter('Tries', [0 40 90 150 220]);
+p.addParameter('Gap',    30);
+p.addParameter('Tries',  [0 40 90 150 220]);
+p.addParameter('Passes', 5);
 p.parse(varargin{:});
 o = p.Results;
 n = 0;
@@ -54,14 +56,24 @@ kind = cell(numel(blks),1);
 for i = 1:numel(blks), kind{i} = get_param(blks{i}, 'BlockType'); end
 order = [find(strcmp(kind,'Goto'))' find(strcmp(kind,'From'))'];
 
-for i = order
-    blk = blks{i};
-    nm  = get_param(blk, 'Name');
-    if strcmp(kind{i}, 'Goto')
-        n = n + snug_goto(sys, blk, nm, o);
-    else
-        n = n + snug_from(sys, blk, nm, o);
+%  한 번만 돌면 태그가 서로의 자리를 막는다. 태그 다섯 개가 제 포트보다 한 칸
+%  위에 줄지어 서 있으면 첫째는 둘째가 앉은 자리를 노리고 둘째는 셋째의 자리를
+%  노린다 — 맨 아래 하나만 옮겨지고 나머지는 그대로 남는다 (2026-10-14
+%  W06_3_thrust 에서 Fr_v 가 OuterLoop 선의 통로에 남아 겹침·블록관통 3건).
+%  아래 것이 비켜 주면 위 것의 자리가 열리므로, 옮긴 것이 없을 때까지 다시 돈다
+for pass = 1:o.Passes
+    moved = 0;
+    for i = order
+        blk = blks{i};
+        nm  = get_param(blk, 'Name');
+        if strcmp(kind{i}, 'Goto')
+            moved = moved + snug_goto(sys, blk, nm, o);
+        else
+            moved = moved + snug_from(sys, blk, nm, o);
+        end
     end
+    n = n + moved;
+    if moved == 0, break, end
 end
 end
 
