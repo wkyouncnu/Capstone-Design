@@ -94,16 +94,25 @@ else
     plot([0 gy], [0 gx], 'k--', 'LineWidth',1.2); hold on;
     leg = {'계획 경로'};
 end
+%  그림의 크기는 **항적이 정한다**. 목표 선수각 막대와 선체 그림을 그 크기에
+%  맞춰 줄인다 — 고정 길이로 그리면 12 m 밖에 가지 않는 2단에서 배 한 척이
+%  화면을 덮어 항적이 보이지 않는다 (2026-10-15 지적)
+span = max([max(x_n)-min(x_n); max(y_n)-min(y_n); 2*Rs; hypot(gx-x_n(1), gy-y_n(1))]);
+Lpsi = max(2, 0.12*span);            % 목표 선수각 막대 길이 [m]
+
 plot(gy, gx, 'ks', 'MarkerFaceColor','w', 'MarkerSize',11, 'LineWidth',1.6);
-plot([gy gy+6*sin(gpsi)], [gx gx+6*cos(gpsi)], '-', 'Color',[0.75 0.10 0.10], ...
+plot([gy gy+Lpsi*sin(gpsi)], [gx gx+Lpsi*cos(gpsi)], '-', 'Color',[0.75 0.10 0.10], ...
      'LineWidth',1.8);
 plot(gy+Rs*cos(th), gx+Rs*sin(th), ':', 'Color',[0.6 0.6 0.6]);
 plot(y_n, x_n, 'b-', 'LineWidth',1.6);
 plot(y_n(1), x_n(1), 'go', 'MarkerFaceColor','g', 'MarkerSize',8);
 plot(y_n(end), x_n(end), 'ro', 'MarkerFaceColor','r', 'MarkerSize',8);
-%  마지막 자세를 선체 모양으로 한 번 더 그린다 — 선수각이 지켜졌는지가 보인다
-sc = 2;
-try, sc = evalin('base','boat_scale'); catch, end
+
+%  마지막 자세를 선체 모양으로 한 번 더 그린다 — 선수각이 지켜졌는지가 보인다.
+%  크기는 실척이 아니라 **그림 크기의 1/10** 이다. 실시간 그림(W06_animate)의
+%  boat_scale 과 따로 두는 까닭은 저 그림은 축이 고정이고 이 그림은 단계마다
+%  축이 달라지기 때문이다.
+sc = min(2, max(0.4, 0.10*span/4.9));
 L = 2.45*sc;  B = 1.03*sc;
 bx = L*[-1 -1 0.5 1 0.5];  by = B*[1 -1 -1 0 1];
 c = cos(psi(end));  s = sin(psi(end));
@@ -112,8 +121,10 @@ patch(y_n(end) + bx*s + by*c, x_n(end) + bx*c - by*s, [0.95 0.45 0.20], ...
 axis equal; grid on;
 xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
 title(sprintf('궤적   (마지막 오차 %.2f m, %.1f°)', S.e_final, S.epsi_final));
+
+%  범례는 축 **밖 아래**에 둔다. 'best' 는 항적 위에 얹히는 일이 잦다
 legend([leg {'목표 위치','목표 선수각','R_{stop}','항적','출발','도착'}], ...
-       'Location','best', 'FontSize',8);
+       'Location','southoutside', 'NumColumns',3, 'FontSize',7.5, 'Box','off');
 
 % ---- 2. 위치 오차 ----------------------------------------------------
 subplot(2,3,2);
@@ -131,6 +142,9 @@ plot(t, atan2(sin(pref),cos(pref))*180/pi, '--', 'LineWidth',1.4); hold on;
 plot(t, atan2(sin(psi), cos(psi))*180/pi, '-', 'LineWidth',1.2);
 plot(t, epsi, ':', 'Color',[0.2 0.6 0.2], 'LineWidth',1.2);
 grid on; xlabel('시간 [s]'); ylabel('각도 [deg]');
+%  선수각이 내내 0 인 단계(순수 횡이동)에서는 축이 10^-15 자리까지 늘어나
+%  제목 옆에 지수 표기가 붙는다. 최소 폭을 1 deg 로 두어 막는다
+yl = ylim;  if diff(yl) < 2, ylim(mean(yl) + [-1 1]); end
 legend({'\psi_{ref} 지령','\psi 선수각','오차'}, 'Location','best','FontSize',8);
 title(sprintf('선수각 추종   (마지막 10초 평균 |오차| %.2f°)', S.epsi_ss));
 
@@ -143,6 +157,8 @@ ylabel('속도 [m/s]');
 yyaxis right
 plot(t, r*180/pi, ':', 'LineWidth',1.2);
 ylabel('r [deg/s]');
+%  요 각속도도 마찬가지다 — 횡이동만 하는 단계에서는 r 이 0 이다
+if max(abs(r))*180/pi < 0.5, ylim([-0.5 0.5]); end
 grid on; xlabel('시간 [s]');
 legend({'u 서지','v 횡이동','r 요'}, 'Location','best','FontSize',8);
 title(sprintf('속도   (최대 |v| = %.3f m/s)', S.max_v));

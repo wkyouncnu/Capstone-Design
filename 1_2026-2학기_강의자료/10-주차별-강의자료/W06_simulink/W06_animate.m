@@ -41,7 +41,7 @@ function f = W06_animate(x_n, y_n, psi, psi_ref, x_ref, y_ref, u, v, r, ...
 persistent fig axXY axP axE axM ...
            hTrail hHull hHead hDot hInfo ...
            hPref hP hEN hEE hED hU hV hFL hFR hFB ...
-           trX trY tv Dp De Dm mode gx gy gpsi Rs tLast tPrev
+           trX trY tv Dp De Dm mode gx gy gpsi Rs tLast tPrev scFix
 
 %% ---- 인자 없이 부르면 창 핸들만 돌려준다 (캡처용) ----------------------
 if nargin == 0
@@ -108,7 +108,9 @@ if newRun
     %  목표 자세 — 네모로 위치를, 짧은 막대로 요구 선수각을 나타낸다
     plot(axXY, gy, gx, 's', 'MarkerEdgeColor',[0.75 0.10 0.10], ...
          'MarkerFaceColor','w', 'MarkerSize',13, 'LineWidth',1.8);
-    Lg = 6;
+    %  막대 길이는 장면 크기를 따라간다 — 6 m 로 못박으면 12 m 만 가는
+    %  2단에서 막대가 항적만큼 길어진다 (2026-10-15 지적)
+    Lg = max(3, 0.12*max([max(sceneX)-min(sceneX), max(sceneY)-min(sceneY), 20]));
     plot(axXY, [gy gy+Lg*sin(gpsi)], [gx gx+Lg*cos(gpsi)], '-', ...
          'Color',[0.75 0.10 0.10], 'LineWidth',1.8);
     text(axXY, gy+1.5, gx-3.0, '목표 자세', 'FontSize',11, 'Color',[0.75 0.10 0.10]);
@@ -126,6 +128,13 @@ if newRun
     mY = [min(sceneY) max(sceneY)];  mX = [min(sceneX) max(sceneX)];
     pad = 0.25*max([diff(mY) diff(mX) 20]);
     axis(axXY, [mY(1)-pad mY(2)+pad mX(1)-pad mX(2)+pad]);
+
+    %  선체를 몇 배로 그릴 것인가 — boat_scale 을 그대로 쓰되 **축 넓이의
+    %  1/6** 을 넘지 않게 눌러 둔다. 누르지 않으면 2단(12 m 횡이동)에서
+    %  전장 15 m 짜리 배가 화면을 덮어 항적이 보이지 않는다
+    sc0 = 3;
+    try, sc0 = evalin('base','boat_scale'); catch, end
+    scFix = min(sc0, max(0.6, 0.17*max(diff(mY), diff(mX)) / 4.9));
 
     %  상태 표시는 제목에 둔다. 그림 위에 얹으면 목표 표식을 가린다
     hInfo = title(axXY, '', 'FontSize',10, 'FontWeight','normal', 'Interpreter','tex');
@@ -210,9 +219,8 @@ if t - tLast < every, return; end
 tLast = t;
 
 %% ---- 왼쪽 : 항적 · 선체 ------------------------------------------------
-sc = 3;
-try, sc = evalin('base','boat_scale'); catch, end
-[hX, hY, hdx, hdy] = hull_ned(x_n, y_n, psi, sc);
+%  배율은 창을 만들 때 축 넓이에 맞춰 한 번 정해 둔 값이다 (scFix)
+[hX, hY, hdx, hdy] = hull_ned(x_n, y_n, psi, scFix);
 set(hTrail, 'XData', trY,  'YData', trX);
 set(hHull,  'XData', hY,   'YData', hX);
 set(hHead,  'XData', hdy,  'YData', hdx);

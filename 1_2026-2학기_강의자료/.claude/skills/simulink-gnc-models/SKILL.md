@@ -16,7 +16,8 @@ description: 선박·USV의 GNC(유도·항법·제어) Simulink 모델을 MATLA
 3. **검사 일곱 항목이 전부 0** 이어야 그 모델이 끝난 것이다 — `check_lines(m, true)`
 4. **합산점은 언제나 `'|+-'`** — 지령은 왼쪽, 되먹임은 아래 (교수 지시 2026-10-14)
 5. **예제는 사다리로 쌓는다** — 한 단계에 하나씩만 더하고, 단계마다 `.slx` 와
-   평평한 `.m` 을 한 짝으로 낸다 (교수 지시 2026-10-14)
+   그것을 **돌려 그림을 내는** 실행 `.m` 을 한 짝으로 낸다 (교수 지시 2026-10-15).
+   `.m` 은 물리를 다시 짜지 않는다 — 설정 → `sim` → 플롯 세 걸음뿐이다
 
 ## 어디를 읽는가
 
@@ -41,7 +42,9 @@ description: 선박·USV의 GNC(유도·항법·제어) Simulink 모델을 MATLA
    `check_colour` · `check_discrete` · `check_fill` 을 **전부 0** 으로 만든다
 4. **실행** — MATLAB MCP 로 실제로 돌려 수치를 얻는다. **잰 값만 문서에 싣는다**
 5. **그림** — `export_diagram` (Stateflow 는 `sfprint`)
-6. **짝 맞추기** — 같은 제어기를 평평한 `.m` 으로도 돌려 `max(abs(차))` 를 적는다
+6. **실행 파일** — 단계마다 `WXX_N_이름_run.m` 한 장. `setappdata` 로 단계를 정하고
+   `WXX_setup` → `sim(mdl)` → `WXX_plot` 을 부른 뒤 그 단계에서 **봐야 할 숫자**를
+   `fprintf` 로 찍는다. 모델만 Run 해도 같은 그림이 뜨게 둔다
 
 > [!caution] 자동 배치는 **단계 순서를 모른다**
 > `Simulink.BlockDiagram.arrangeSystem` 은 선 길이만 줄인다. 최상위를 `gnc_chain`
