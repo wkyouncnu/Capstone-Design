@@ -271,6 +271,8 @@ bash _tools/hook_stop.sh                             # PDF 동기화까지 함�
 
 - 세션이 끝날 때 **Stop 훅**이 `hook_stop.sh` 를 부른다 — MD→PDF 동기화 후 커밋·푸시
 - 훅이 돌았는지 확인 : `git rev-list --count origin/main..HEAD` 가 **0**
+- **고친 것은 빠짐없이 넣는다.** 끝났을 때 `git status` 가 깨끗해야 하고, 추적 밖(`??`)
+  파일을 남겨 두지 않는다. 자세한 것은 `capstone-git-sync` 2장
 
 > [!caution] 볼트 밖 폴더에서 세션을 열면 훅이 걸리지 않는다
 > Claude Code 는 **연 폴더의** `.claude/settings.json` 만 읽고 상위 폴더로 거슬러
