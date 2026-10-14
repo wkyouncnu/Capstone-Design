@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!-- photo_cam.sdf — 강의자료 그림을 찍기 위한 사진기 모델 (6주차 2-5)
+
+     Gazebo GUI 의 Screenshot 단추·서비스는 WSLg 에서 파일을 남기지 않음
+     (MinimalScene 의 카메라를 플러그인이 찾지 못함 — 실측으로 확인함).
+     그래서 그림은 GUI 가 아니라 **시뮬레이터 안의 사진기**로 찍음.
+     장면에 이 모델을 띄우면 `photo/image` 토픽으로 그림이 흘러나오고,
+     shoot_bow.sh 가 그것을 PNG 로 저장함. 화면이 없어도(headless) 됨.
+
+     사진기는 static 이라 물리에 끼어들지 않음. 다 찍은 뒤 지워도 되고 두어도 됨. -->
+
+<sdf version="1.6">
+  <model name="photo_cam">
+    <static>true</static>
+    <link name="link">
+      <sensor name="cam" type="camera">
+        <topic>photo/image</topic>
+        <always_on>1</always_on>
+        <update_rate>5</update_rate>
+        <camera>
+          <!-- 가로 시야각 60도. 선수추진기를 가까이 찍어도 왜곡이 심하지 않음 -->
+          <horizontal_fov>1.0472</horizontal_fov>
+          <image>
+            <width>1600</width>
+            <height>900</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>2000</far>
+          </clip>
+        </camera>
+      </sensor>
+    </link>
+  </model>
+</sdf>

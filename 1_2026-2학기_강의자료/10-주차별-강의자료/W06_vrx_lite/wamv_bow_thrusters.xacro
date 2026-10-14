@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!-- wamv_bow_thrusters.xacro — 선미 좌·우 + 선수(bow) 추진기 세 개 (6주차 2-2)
+     VRX 원본 wamv_t_thrusters.xacro 를 고치지 않고 이 파일을 새로 둔다.
+
+     좌표는 base_link 기준 ENU(x 앞 · y 좌현 · z 위) [m]
+       left   (-2.373776, +1.027135, 0.318237)   선미 좌현 — VRX 기본값과 같다
+       right  (-2.373776, -1.027135, 0.318237)   선미 우현 — VRX 기본값과 같다
+       bow    (+0.750000,  0.000000, 0.318237)   선수 중앙 — 이 주차에서 더한 것
+
+     orientation 의 세 번째 값은 요(yaw) 회전이다. 추력은 엔진 링크의 x 축으로 나간다
+     (engine.xacro 의 프로펠러 조인트 axis xyz="1 0 0").
+       0 0 ${pi/2}   → +지령이 좌현(ENU +y)  = NED -y   : VRX 기본 T 배치가 쓰는 값
+       0 0 ${-pi/2}  → +지령이 우현(ENU -y)  = NED +y   : 이 파일이 쓰는 값
+     NED 로 제어기를 짜므로 뒤쪽을 골라 지령 부호와 NED 부호를 같게 맞춘다.
+     부호는 믿지 않고 measure_bow.sh 로 실제 움직임을 재서 확인한다.
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:include filename="$(find wamv_description)/urdf/thrusters/engine.xacro" />
+  <xacro:engine prefix="left"  position="-2.373776  1.027135 0.318237" />
+  <xacro:engine prefix="right" position="-2.373776 -1.027135 0.318237" />
+  <xacro:engine prefix="bow"   position=" 0.750000  0.000000 0.318237"
+                               orientation="0 0 ${-pi/2}" />
+
+  <xacro:include filename="$(find wamv_gazebo)/urdf/thruster_layouts/wamv_gazebo_thruster_config.xacro" />
+  <xacro:wamv_gazebo_thruster_config name="left" />
+  <xacro:wamv_gazebo_thruster_config name="right" />
+  <xacro:wamv_gazebo_thruster_config name="bow" />
+</robot>

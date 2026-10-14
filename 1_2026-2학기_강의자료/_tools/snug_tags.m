@@ -85,11 +85,18 @@ if abs(mid(r) - a(2)) < 0.5 && r(1) > a(1) && ...
 
 seg = lanes(sys, nm);
 
-%  1) 같은 높이 — 선은 수평 직선, 꺾임 0 회
-for g = o.Gap + o.Tries
-    x = round(a(1) + g);  y = round(a(2));
-    if try_put(sys, blk, nm, [x, y-h/2, x+w, y+h/2], [a; x y], ...
-               {src_name(sp)}, seg, sp, 'Inport'), moved = 1; return, end
+%  같은 포트에서 **더 오른쪽으로** 가는 다른 선이 있으면 그 높이는 그 선의
+%  통로다. 태그를 거기 앉히면 선이 태그를 돌아 세 번 꺾인다
+%  (2026-10-14 W06_1_point — Go_x_ref 가 Guidance/1 -> OuterLoop/1 통로에 앉아
+%   직선이던 선이 215 -> 195 -> 345 -> 70 으로 돌아갔다).
+%  그때는 1) 을 건너뛰고 포트 가까이에서 위아래로 비킨다
+if ~right_run(sp, a)
+    %  1) 같은 높이 — 선은 수평 직선, 꺾임 0 회
+    for g = o.Gap + o.Tries
+        x = round(a(1) + g);  y = round(a(2));
+        if try_put(sys, blk, nm, [x, y-h/2, x+w, y+h/2], [a; x y], ...
+                   {src_name(sp)}, seg, sp, 'Inport'), moved = 1; return, end
+    end
 end
 
 %  2) 옆이 전부 차 있으면 **포트 가까이에서** 위아래로 비킨다 (꺾임 1회).
@@ -173,6 +180,26 @@ draw_line(sys, sp, dp, pts);
 end
 
 function y = mid(r), y = (r(2)+r(4))/2; end
+
+function tf = right_run(sp, a)
+%RIGHT_RUN  이 출발 포트에서 오른쪽으로 더 가는 다른 도착지가 있는가.
+%   있으면 출발 포트 높이는 그 선이 쓸 통로이므로 태그가 비켜 주어야 한다.
+%
+%   가지 친 선은 뿌리의 DstPortHandle 이 -1 이라 선으로는 세기 어렵다. 그래서
+%   출발 블록의 PortConnectivity 로 이 포트의 도착 블록들을 바로 읽는다.
+tf = false;
+sb = get_param(sp, 'Parent');
+k  = get_param(sp, 'PortNumber');
+pc = get_param(sb, 'PortConnectivity');
+for i = 1:numel(pc)
+    if isempty(pc(i).DstBlock), continue, end             % 출력 포트만 DstBlock 을 갖는다
+    if ~strcmp(pc(i).Type, num2str(k)), continue, end
+    for j = 1:numel(pc(i).DstBlock)
+        q = get_param(pc(i).DstBlock(j), 'Position');
+        if q(1) > a(1) + 80, tf = true; return, end        % 태그가 들어설 자리보다 멀다
+    end
+end
+end
 
 function sp = src_of(sys, dp)
 %  이 도착 포트로 들어오는 선의 출발 포트
