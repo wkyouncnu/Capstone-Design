@@ -56,7 +56,10 @@ function build_w06_models(stages)
     %    속이 아예 다르므로 섞지 않고 OuterLoopNED · InnerLoopNED 로 따로 뽑는다
     %    (8단의 유도부·추진기·운동모델은 5단과 같은 그림이다)
     shots = cell(0,3);
-    body  = stages(stages <= 7);
+    %    6단은 빼 둔다 — 그 단계의 플랜트가 Gazebo 라 MotionModel 이 없고, 사슬
+    %    끝이 CmdPublisher · PoseSubscriber 다. 서브시스템 도면은 선체고정 사슬이
+    %    모두 들어 있는 7단에서 뽑는다 (6단의 유도부·고리·추진기는 5단과 같은 그림)
+    body  = stages(stages <= 7 & stages ~= 6);
     if ~isempty(body)
         shots = [shots; {name{max(body)}, '', ...
                  {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'}}];
