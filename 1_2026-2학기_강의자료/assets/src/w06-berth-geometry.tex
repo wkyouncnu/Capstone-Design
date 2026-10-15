@@ -1,0 +1,196 @@
+% assets/w06-berth-geometry.svg — 접안 기하: d_x, d_y, psi_t, s, L_app 가 각각 무엇인가
+%
+%   bash _tools/tikz2svg.sh assets/src/w06-berth-geometry.tex assets/w06-berth-geometry.svg
+%
+% 이 그림이 말하는 것 다섯
+%   1) 선석 (d_x, d_y) 는 배가 **마지막에 서 있을 자리**다 — 부두 벽에서 한 뼘 떨어진 점
+%   2) psi_t 는 **부두가 뻗은 방향** — 북에서 잰 각이다. 배의 선수각이 아니다
+%   3) s = +1 / -1 은 **배가 부두의 어느 쪽에서 접근하는가** — 좌현 접안이면 +1
+%   4) L_app 은 선석에서 부두 바깥으로 떨어진 거리. 그 자리가 접근점 (a_x, a_y) 다
+%   5) 접근점은 식을 외워서 나오는 것이 아니라, 선석에서 부두 바깥 방향으로
+%      L_app 만큼 간 자리다. 식은 그것을 숫자로 쓴 것뿐이다
+%
+% 그리는 법 — 선석을 패널 원점에 두고 (t, n) 좌표로 모든 것을 적는다
+%   t = 부두를 따라가는 방향 (선석 방위 psi_t)
+%   n = 부두 바깥 방향 (t 를 s 쪽으로 90도 돌린 것)
+%   \TN{a}{b} = 선석에서 t 로 a m, n 으로 b m 간 자리 (화면 좌표로 바뀐다)
+%   이렇게 적어 두면 psi_t 와 s 만 바꿔도 패널 전체가 따라 돈다
+%
+% 주의 — shift= 키는 \TN 같은 매크로 전체를 좌표로 받지 못한다. 숫자로 먼저 푼다
+%
+% 좌표 메모 (mm)
+%   1 m = 3.2 mm · 패널 원점(=선석)  (가) (0,0)   (나) (180,0)
+%   제목 y=78 · 변수표 y=-92
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\pgfmathsetmacro{\PS}{3.2}                       % 1 m = 3.2 mm
+
+% ===== 한 패널을 통째로 그린다 ==============================================
+%   #1 = psi_t [deg]   #2 = s (+1 / -1)
+\newcommand{\berthscene}[2]{%
+  % (t, n) 의 화면 성분 — 화면 x 는 동, 화면 y 는 북
+  \pgfmathsetmacro{\tx}{sin(#1)}             \pgfmathsetmacro{\ty}{cos(#1)}
+  \pgfmathsetmacro{\nx}{(#2)*cos(#1)}        \pgfmathsetmacro{\ny}{-(#2)*sin(#1)}
+
+  % --- 부두 ---
+  \fill[black!7]  \TN{9}{-1.5} -- \TN{-9}{-1.5} -- \TN{-9}{-10.5} -- \TN{9}{-10.5} -- cycle;
+  \draw[soft, line width=0.5pt]
+                  \TN{9}{-1.5} -- \TN{-9}{-1.5} -- \TN{-9}{-10.5} -- \TN{9}{-10.5} -- cycle;
+  \begin{scope}
+    \clip \TN{9}{-1.5} -- \TN{-9}{-1.5} -- \TN{-9}{-10.5} -- \TN{9}{-10.5} -- cycle;
+    \foreach \k in {-11,-9,...,9}{%
+        \draw[soft, line width=0.25pt] \TN{\k}{-1.5} -- \TN{\k+2.0}{-10.5};}
+  \end{scope}
+  \node[font=\scriptsize, soft] at \TN{0}{-6} {부두};
+
+  % --- 접근 단계 경로 (미션 구간에서 들어온다) ---
+  \draw[guid, line width=1.5pt, -{Stealth[length=5pt,width=4pt]}]
+        \TN{-23}{-7} .. controls \TN{-15}{1} and \TN{-7}{10} .. \TN{0}{14.2};
+  \draw[guid, line width=0.8pt] \TN{-22.2}{-8.6} -- \TN{-20.4}{-5.6};
+  \draw[guid, line width=0.8pt] \TN{-21.0}{-9.2} -- \TN{-19.2}{-6.2};
+
+  % --- 접안 단계 경로 ---
+  \draw[warn, line width=1.5pt, -{Stealth[length=5pt,width=4pt]}]
+        \TN{0}{13.2} -- \TN{0}{1.8};
+
+  % --- L_app 치수선 (부두를 따라 5 m 옆으로 밀어 그린다) ---
+  \draw[ctrl, line width=0.45pt, {Stealth[length=2.6pt]}-{Stealth[length=2.6pt]}]
+        \TN{5.5}{0} -- \TN{5.5}{15};
+  \draw[ctrl, line width=0.25pt, densely dotted] \TN{0}{0}  -- \TN{5.5}{0};
+  \draw[ctrl, line width=0.25pt, densely dotted] \TN{0}{15} -- \TN{5.5}{15};
+
+  % --- psi_t : 북(점선)에서 부두 방향(화살표)까지 ---
+  \draw[soft, line width=0.35pt, densely dotted] (0,0) -- (0,{12*\PS});
+  \node[font=\scriptsize, soft, anchor=south] at (0,{12*\PS+0.6}) {북};
+  \draw[nav, line width=0.9pt, -{Stealth[length=3.4pt,width=2.4pt]}]
+        \TN{0}{0} -- \TN{12}{0};
+
+  % --- 부두 바깥 방향 s (선석에서 떨어진 자리에서 보인다) ---
+  \draw[plant, line width=0.9pt, -{Stealth[length=3.4pt,width=2.4pt]}]
+        \TN{13}{-1.5} -- \TN{13}{6.5};
+
+  % --- 멈춤 반경 · 단계 전이 반경 ---
+  \draw[warn,  line width=0.45pt, densely dashed] \TN{0}{0}  circle ({1.5*\PS});
+  \draw[plant, line width=0.45pt, densely dashed] \TN{0}{15} circle ({3.0*\PS});
+
+  % --- 선석에 선 배 (옆걸음 접안이면 선수각 = psi_t) ---
+  \pgfmathsetmacro{\bSX}{0}  \pgfmathsetmacro{\bSY}{0}
+  \begin{scope}[shift={(\bSX,\bSY)}, rotate={90-(#1)}]
+    \draw[ink, line width=0.5pt, fill=white, fill opacity=0.9]
+         (-5.4,-3.4) -- (-5.4,3.4) -- (2.0,3.4) -- (6.6,0) -- (2.0,-3.4) -- cycle;
+  \end{scope}
+
+  % --- 점 마커 ---
+  \node[circle, fill=plant, inner sep=1.3pt] at \TN{0}{15} {};
+  \node[rectangle, draw=warn, fill=white, line width=0.7pt, inner sep=1.5pt] at \TN{0}{0} {};
+
+  % --- 반경 라벨로 가는 지시선 ---
+  \draw[warn,  line width=0.3pt, densely dotted] \TN{-2.4}{-0.6} -- \TN{-7.0}{2.6};
+  \draw[warn,  line width=0.3pt, densely dotted] \TN{-1.0}{1.3}  -- \TN{-3.2}{5.4};
+  \draw[plant, line width=0.3pt, densely dotted] \TN{2.1}{17.1}  -- \TN{4.8}{18.6};
+}
+
+% ===== NED 나침반 ===========================================================
+\newcommand{\nedcompass}{%
+  \draw[soft, line width=0.4pt, -{Stealth[length=3pt,width=2pt]}] (0,0) -- (0,13);
+  \draw[soft, line width=0.4pt, -{Stealth[length=3pt,width=2pt]}] (0,0) -- (13,0);
+  \node[font=\scriptsize, soft, anchor=south] at (0,13.6) {$x_n$, North};
+  \node[font=\scriptsize, soft, anchor=west]  at (13.6,0) {$y_n$, East};}
+
+% ===========================================================================
+% (가) 기호의 뜻 — 부두가 비스듬한 일반형
+% ===========================================================================
+\begin{scope}[shift={(0,0)}]
+  \node[font=\small\bfseries, anchor=north west] at (-62,68)
+       {(가) 기호가 각각 어디를 가리키는가 — 부두가 비스듬한 일반형};
+
+  % (t, n) -> 화면. psi_t = 30, s = +1
+  \pgfmathsetmacro{\tx}{sin(30)}   \pgfmathsetmacro{\ty}{cos(30)}
+  \pgfmathsetmacro{\nx}{cos(30)}   \pgfmathsetmacro{\ny}{-sin(30)}
+  \newcommand{\TN}[2]{({(#1*\tx + #2*\nx)*\PS},{(#1*\ty + #2*\ny)*\PS})}
+  \berthscene{30}{1}
+
+  % psi_t 호
+  \draw[nav, line width=0.45pt, -{Stealth[length=3pt,width=2pt]}] (0,26) arc (90:60:26mm);
+  \node[font=\scriptsize, nav] at (9,27) {$\psi_t$};
+
+  \node[font=\scriptsize, warn,  anchor=center] at \TN{-9}{3.2}  {선석 $(d_x,\, d_y)$};
+  \node[font=\scriptsize, plant, anchor=center] at \TN{-7.5}{18} {접근점 $(a_x,\, a_y)$};
+  \node[font=\scriptsize, ctrl,  anchor=center] at \TN{9.5}{7.5} {$L_{app}$};
+  \node[font=\scriptsize, nav,   anchor=center] at \TN{15}{-3.5} {부두 방향};
+  \node[font=\scriptsize, plant, anchor=center] at \TN{17.5}{6}  {바깥 방향 $s$};
+  \node[font=\scriptsize, warn,  anchor=center] at \TN{-4.5}{7}  {$R_{stop}$};
+  \node[font=\scriptsize, plant, anchor=center] at \TN{6.5}{19.5} {$R_{dock}$};
+  \node[font=\scriptsize, guid,  anchor=center] at \TN{-17}{6}   {접근 단계};
+  \node[font=\scriptsize, warn,  anchor=center] at \TN{3.2}{10}  {접안 단계};
+  \node[font=\scriptsize, guid,  anchor=center] at \TN{-25}{-11} {미션 구간에서};
+
+  \begin{scope}[shift={(-56,34)}] \nedcompass \end{scope}
+\end{scope}
+
+% ===========================================================================
+% (나) W06 의 실제 설정 — psi_t = 0
+% ===========================================================================
+\begin{scope}[shift={(186,0)}]
+  \node[font=\small\bfseries, anchor=north west] at (-62,68)
+       {(나) 6주차에 실제로 넣은 숫자 — 부두가 북쪽으로 뻗은 경우};
+
+  \pgfmathsetmacro{\tx}{0}   \pgfmathsetmacro{\ty}{1}
+  \pgfmathsetmacro{\nx}{1}   \pgfmathsetmacro{\ny}{0}
+  \newcommand{\TN}[2]{({(#1*\tx + #2*\nx)*\PS},{(#1*\ty + #2*\ny)*\PS})}
+  \berthscene{0}{1}
+
+  \node[font=\scriptsize, warn,  anchor=center] at \TN{-9}{3.6}  {선석 $(40,\, 45)$};
+  \node[font=\scriptsize, plant, anchor=center] at \TN{-7.5}{18} {접근점 $(40,\, 60)$};
+  \node[font=\scriptsize, ctrl,  anchor=center] at \TN{9.5}{7.5} {$L_{app} = 15$ m};
+  \node[font=\scriptsize, nav,   anchor=center] at \TN{15}{-4.5} {$\psi_t = 0^{\circ}$ — 부두 방향 = 북};
+  \node[font=\scriptsize, plant, anchor=center] at \TN{17.5}{6}  {$s = +1$ (좌현 접안)};
+  \node[font=\scriptsize, warn,  anchor=center] at \TN{-5.0}{7}  {$R_{stop} = 1.5$};
+  \node[font=\scriptsize, plant, anchor=center] at \TN{7.0}{19.5} {$R_{dock} = 3$};
+  \node[font=\scriptsize, guid,  anchor=center] at \TN{-17}{6}   {접근 단계};
+  \node[font=\scriptsize, warn,  anchor=center] at \TN{3.4}{10}  {접안 단계};
+  \node[font=\scriptsize, guid,  anchor=center] at \TN{-25}{-11} {출발점 $(0,\,0)$ 에서};
+
+  \begin{scope}[shift={(-56,34)}] \nedcompass \end{scope}
+\end{scope}
+
+% ===========================================================================
+% 변수표
+% ===========================================================================
+\draw[wire, soft] (-62,-88) -- (260,-88);
+
+\node[anchor=north west, font=\scriptsize, text width=150mm] at (-62,-93)
+     {\textbf{기호와 코드 이름} \\[3pt]
+      $(d_x,\,d_y)$ — \texttt{dock\_pos} — 선석. 배가 마지막에 서 있을 점.
+        부두 벽에서 한 뼘 떨어져 있다 \\
+      $\psi_t$ — \texttt{dock\_deg} — 부두가 뻗은 방향. 북에서 잰 각이다.
+        \textbf{배의 선수각이 아니다} \\
+      $s$ — \texttt{berth\_side} — $+1$ 이면 부두가 배의 \textbf{왼쪽}(좌현 접안),
+        $-1$ 이면 오른쪽 \\
+      $L_{app}$ — \texttt{L\_app} — 선석에서 부두 바깥으로 떨어진 거리 \\
+      $(a_x,\,a_y)$ — 접근점. 접근 단계가 끝나고 접안 단계가 시작되는 자리 \\
+      $R_{dock}$ — \texttt{R\_dock} — 접근점에 "닿았다"고 볼 반경 \\
+      $R_{stop}$ — \texttt{R\_stop} — 선석에 "닿았다"고 볼 반경};
+
+\node[anchor=north west, font=\scriptsize, text width=152mm] at (104,-93)
+     {\textbf{접근점은 어떻게 나오는가} \\[3pt]
+      선석에서 \textcolor{plant}{부두 바깥 방향}으로 $L_{app}$ 만큼 간 자리다.
+      부두 방향이 $\psi_t$ 이므로 그것을 $90^{\circ}$ 돌린 수직 방향은
+      $(-\sin\psi_t,\; \cos\psi_t)$ 이고, $s$ 가 그 중 어느 쪽인지를 정한다 \\[4pt]
+      $\begin{bmatrix} a_x \\ a_y \end{bmatrix}
+       = \begin{bmatrix} d_x \\ d_y \end{bmatrix}
+       + s\,L_{app}\begin{bmatrix} -\sin\psi_t \\ \phantom{-}\cos\psi_t \end{bmatrix}$ \\[4pt]
+      $\psi_t = 0$ 을 넣으면 $(-\sin 0,\; \cos 0) = (0,\; 1)$ — 정확히 \textbf{동쪽}이다.
+      그래서 \\[2pt]
+      $\begin{bmatrix} a_x \\ a_y \end{bmatrix}
+       = \begin{bmatrix} 40 \\ 45 \end{bmatrix} + 1 \cdot 15 \begin{bmatrix} 0 \\ 1 \end{bmatrix}
+       = \begin{bmatrix} 40 \\ 60 \end{bmatrix}$ \\[4pt]
+      접근점은 선석의 \textbf{동쪽 15 m}. 배는 거기서 서쪽으로 붙는다};
+
+\end{tikzpicture}
+\end{document}

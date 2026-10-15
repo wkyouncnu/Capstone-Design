@@ -1,0 +1,154 @@
+% assets/w06-cascade.svg — 바깥 고리는 위치제어, 안쪽 고리는 속도제어
+%
+%   bash _tools/tikz2svg.sh assets/src/w06-cascade.tex assets/w06-cascade.svg
+%
+% 이 그림이 말하는 것
+%   제어기가 하나가 아니라 **둘이 겹쳐 있다**. 바깥은 "어디로 갈까"를 정하고,
+%   안쪽은 "얼마나 세게 밀까"를 정한다. 바깥이 안쪽에게 **명령으로 주는 것은
+%   추력이 아니라 속도**다 — 이것이 캐스케이드(다단) 제어의 전부다.
+%
+%   바깥 고리  위치 오차 [m]   --(P 제어기)-->  속도 지령 [m/s]
+%   안쪽 고리  속도 오차 [m/s] --(PI 제어기)--> 추력 지령 [N]
+%
+% 왜 나누는가 세 가지
+%   1) 속도 상한을 **지령 단계에서** 자를 수 있다 — 배가 과속하지 않는다
+%   2) 안쪽이 바깥보다 빨라 외란·모델 오차를 먼저 지운다
+%   3) 단위가 달라 이득을 따로 맞출 수 있다 (바깥 1/s, 안쪽 N/(m/s))
+%
+% 좌표 메모 (mm)
+%   주 경로 y=0 · 안쪽 되먹임 y=-26 · 바깥 되먹임 y=-44
+%   합산점 x = 0 / 96 · 블록 x = 28 / 64 / 126 / 160 / 194
+%   블록 폭 18 (반 9) · 합산점 지름 4.6 (반 2.3) — 라벨은 그 사이에 놓는다
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===========================================================================
+% 주 경로
+% ===========================================================================
+\node[sum]  (s1)  at (0,0)   {};
+\node[font=\scriptsize] at (0,0) {$+$};
+\node[cblk] (kp)  at (28,0)  {위치 P 제어기};
+\node[cblk] (sat) at (64,0)  {속도 제한};
+\node[sum]  (s2)  at (96,0)  {};
+\node[font=\scriptsize] at (96,0) {$+$};
+\node[cblk] (pi)  at (126,0) {속도 PI 제어기};
+\node[tblk] (al)  at (160,0) {추력 배분};
+\node[pblk] (pl)  at (194,0) {배의 운동};
+
+% 합산점 부호 — 지령은 왼쪽(+), 되먹임은 아래(-)
+\node[font=\scriptsize, anchor=north east] at (-1.6,-1.8)  {$-$};
+\node[font=\scriptsize, anchor=north east] at (94.4,-1.8) {$-$};
+
+% --- 선과 신호 이름 ---------------------------------------------------------
+\draw[sig] (-28,0) -- (s1);
+\node[note, anchor=south] at (-15,1.4) {$p_d$ \ [m]};
+\node[font=\scriptsize, anchor=north] at (-15,-6.2) {목표 위치};
+
+\draw[sig] (s1) -- (kp);
+\node[note, anchor=south] at (10.6,1.4) {$e_p$ \ [m]};
+
+\draw[sig] (kp) -- (sat);
+\node[anote, anchor=south] at (46,1.4) {$u_d$ \ [m/s]};
+\node[font=\scriptsize, accent, anchor=north] at (46,-6.2) {가고 싶은 속도};
+
+\draw[sig] (sat) -- (s2);
+\node[anote, anchor=south] at (83.4,1.4) {$u_{d,\,sat}$};
+
+\draw[sig] (s2) -- (pi);
+\node[note, anchor=south] at (107.6,1.4) {$e_u$ \ [m/s]};
+
+\draw[sig] (pi) -- (al);
+\node[note, anchor=south] at (143,1.4) {$\boldsymbol\tau$};
+\node[font=\scriptsize, anchor=north] at (143,-6.2) {[N, N$\cdot$m]};
+
+\draw[sig] (al) -- (pl);
+\node[note, anchor=south] at (177,1.4) {$\mathbf{u}$};
+\node[font=\scriptsize, anchor=north] at (177,-6.2) {추진기 힘 [N]};
+
+\draw[wire] (pl) -- (232,0);
+\node[note, anchor=south] at (218,1.4) {$p,\ u$};
+
+% ===========================================================================
+% 되먹임 둘
+% ===========================================================================
+\node[dot] (d1) at (214,0) {};
+\node[dot] (d2) at (226,0) {};
+
+\draw[fb] (d1) |- (96,-26) -- (s2);
+\node[anote, anchor=south] at (160,-25) {$u$ \ [m/s] — \textbf{실제 속도}};
+
+\draw[fb] (d2) |- (0,-44) -- (s1);
+\node[note, anchor=south] at (160,-43) {$p$ \ [m] — \textbf{실제 위치}};
+
+% ===========================================================================
+% 두 고리를 영역으로 묶는다
+% ===========================================================================
+\draw[grp, draw=ctrl] (86,-32) rectangle (220,12);
+\node[font=\scriptsize\bfseries, ctrl, anchor=north west] at (87,-32.8)
+     {안쪽 고리 — 속도제어 (빠르다)};
+
+\draw[grp, draw=guid] (-34,-50) rectangle (234,20);
+\node[font=\scriptsize\bfseries, guid, anchor=north west] at (-33,-50.8)
+     {바깥 고리 — 위치제어 (느리다)};
+
+% ===========================================================================
+% 두 고리가 하는 일 — 한 줄씩
+% ===========================================================================
+\node[font=\scriptsize, guid, anchor=south west, text width=104mm] at (-34,24)
+     {\textbf{바깥 고리가 묻는 것} — \emph{"선석까지 12 m 남았다. 그러면 몇 m/s 로 갈까?"} \\
+      답은 남은 거리에 비례한다. 멀면 빠르게, 가까우면 느리게.
+      그래서 $u_d = K_p\,e_p$ — 나오는 것은 \textbf{속도}이지 힘이 아니다};
+
+\node[font=\scriptsize, ctrl, anchor=south west, text width=116mm] at (118,24)
+     {\textbf{안쪽 고리가 묻는 것} — \emph{"1.2 m/s 로 가라는데 지금 0.8 m/s 다. 얼마나 더 밀까?"} \\
+      답은 속도 오차에 비례하고, 남은 치우침은 적분이 지운다.
+      그래서 $X = K_P\,e_u + K_I\!\int\! e_u\,dt$ — 나오는 것이 \textbf{힘}이다};
+
+% ===========================================================================
+% 아래 띠 — 왜 하나로 하지 않고 둘로 나누는가
+% ===========================================================================
+\draw[wire, soft] (-34,-64) -- (234,-64);
+
+\node[anchor=north west, font=\scriptsize, text width=82mm] at (-34,-69)
+     {\textbf{하나로 하면 안 되는가} \\[3pt]
+      위치 오차에서 추력을 바로 뽑는 한 고리짜리도 만들 수는 있다. 다만 \\[2pt]
+      $\bullet$ 배가 \textbf{얼마나 빨리 가는지를 제어기가 모른다}.
+        12 m 남았을 때 추력을 세게 주면 배는 계속 빨라지기만 한다 \\[2pt]
+      $\bullet$ 속도를 막으려면 \textbf{추력}을 잘라야 하는데,
+        추력을 자르면 멈추는 능력까지 같이 잘린다 \\[2pt]
+      $\bullet$ 물 저항과 바람이 바뀌면 같은 추력에 다른 속도가 나온다.
+        고칠 자리가 없다};
+
+\node[anchor=north west, font=\scriptsize, text width=82mm] at (58,-69)
+     {\textbf{둘로 나누면 생기는 것} \\[3pt]
+      $\bullet$ \textcolor{accent}{속도 지령을 자르는 자리}가 생긴다.
+        그 값이 곧 \textbf{배가 낼 수 있는 최고 속도}다.
+        접안에서는 이것이 안전 장치 노릇을 한다 \\[2pt]
+      $\bullet$ 안쪽 고리가 \textbf{바깥보다 빠르게} 돌아, 저항이 바뀌어도
+        속도를 지령에 맞춰 놓는다. 바깥 고리는 그 사실을 몰라도 된다 \\[2pt]
+      $\bullet$ 이득을 따로 맞춘다. 바깥 $K_p$ 의 단위는 $1/\mathrm{s}$,
+        안쪽 $K_P$ 는 $\mathrm{N}/(\mathrm{m/s})$ — 서로 섞이지 않는다};
+
+\node[anchor=north west, font=\scriptsize, text width=82mm] at (150,-69)
+     {\textbf{빠르고 느리다는 말의 뜻} \\[3pt]
+      안쪽 고리는 \textbf{속도}를 다루고, 속도는 추력에 곧바로 반응한다.
+      바깥 고리는 \textbf{위치}를 다루고, 위치는 속도를 한 번 더 쌓아야 바뀐다 \\[2pt]
+      그래서 같은 배라도 안쪽이 먼저 자리를 잡고, 바깥은 그 결과를 보고 천천히 움직인다.
+      둘의 반응 속도가 비슷해지면 서로 간섭해 흔들린다 \\[2pt]
+      $\;\to\;$ 바깥 이득은 안쪽보다 \textbf{작게} 잡는다};
+
+% ===========================================================================
+% 6주차 모델에서 이 그림이 어디인가
+% ===========================================================================
+\node[anchor=north west, font=\scriptsize, text width=266mm] at (-34,-122)
+     {\textbf{6주차 모델에서는} — 이 한 쌍이 \textbf{세 벌} 돈다.
+      앞뒤 방향($x$)에 한 벌, 좌우 방향($y$)에 한 벌, 선수각($\psi$)에 한 벌이다.
+      선수각 고리만 적분 없이 비례-미분으로 둔다 — 각도 오차를 쌓으면 한 바퀴 돌아 버리기 때문이다.
+      세 고리가 낸 $X,\ Y,\ N$ 을 \textcolor{thr}{추력 배분}이 받아 추진기 셋의 힘 $F_L,\ F_R,\ F_B$ 로 나눈다};
+
+\end{tikzpicture}
+\end{document}

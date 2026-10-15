@@ -1,0 +1,179 @@
+% assets/w06-alloc-geometry.svg — 추진기 셋이 앉은 자리와 모멘트 팔
+%
+%   bash _tools/tikz2svg.sh assets/src/w06-alloc-geometry.tex assets/w06-alloc-geometry.svg
+%
+% 이 그림이 말하는 것
+%   배분행렬 T 의 숫자는 외우는 것이 아니라 **추진기가 어디 앉아 있는지를 적은 것**이다.
+%   한 추진기가 힘 F 를 내면 그 힘은
+%       앞뒤로 미는 몫 X,  옆으로 미는 몫 Y,  배를 돌리는 몫 N = (모멘트 팔) x F
+%   로 갈린다. 팔의 길이가 곧 행렬의 세 번째 줄이다.
+%
+%   좌우 추진기  팔 = b  (중심선에서 좌우로 떨어진 거리, half_beam = 1.027135 m)
+%   선수 추진기  팔 = l3 (중심에서 앞으로 떨어진 거리, l_bow = 0.75 m)
+%
+% 좌표 — 배를 위에서 본다. 선체 좌표계
+%   x_b = 선수 방향(그림 위), y_b = 우현 방향(그림 오른쪽)
+%   \BP{xb}{yb} 로 적는다. 1 m = 20 mm
+%   화면 x = y_b, 화면 y = x_b 이므로 매크로 안에서 인자 순서가 뒤집힌다
+%
+% 겹침을 피하려고 정한 것
+%   돌림(호)은 선체 밖 반지름 48 mm 에 그린다 — 선체 반폭이 20.5 mm 라 닿지 않는다
+%   양의 요 N 은 x_b 가 y_b 쪽으로 도는 것 = 화면에서 시계방향 = arc 각이 **줄어드는** 쪽
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\pgfmathsetmacro{\BS}{20}                        % 1 m = 20 mm
+\newcommand{\BP}[2]{({(#2)*\BS},{(#1)*\BS})}     % #1 = x_b (선수), #2 = y_b (우현)
+
+\pgfmathsetmacro{\bb}{1.027135}                  % half_beam [m]
+\pgfmathsetmacro{\lb}{0.75}                      % l_bow [m]
+
+% --- 선체 외곽선 + 추진기 자리 ---------------------------------------------
+\newcommand{\hullplan}{%
+  \draw[ink, line width=0.6pt, fill=white]
+       \BP{-2.0}{-\bb} -- \BP{1.3}{-\bb} -- \BP{2.2}{0} -- \BP{1.3}{\bb}
+       -- \BP{-2.0}{\bb} -- cycle;
+  \draw[soft, line width=0.3pt, densely dashed] \BP{-2.1}{0} -- \BP{2.3}{0};
+  % 선체 좌표축
+  \draw[nav, line width=0.6pt, -{Stealth[length=3.4pt,width=2.4pt]}]
+       \BP{0}{0} -- \BP{1.95}{0};
+  \node[font=\scriptsize, nav, anchor=south east] at \BP{1.98}{-0.1} {$x_b$ (선수)};
+  \draw[nav, line width=0.6pt, -{Stealth[length=3.4pt,width=2.4pt]}]
+       \BP{0}{0} -- \BP{0}{0.82};
+  \node[font=\scriptsize, nav, anchor=north east] at \BP{-0.06}{0.88} {$y_b$ (우현)};
+  \node[dot] at \BP{0}{0} {};
+  \node[font=\scriptsize, soft, anchor=north east] at \BP{-0.1}{-0.1} {무게중심};
+  % 추진기 자리
+  \node[circle, draw=thr, fill=white, line width=0.7pt, minimum size=3.4mm,
+        inner sep=0pt] at \BP{-1.8}{-\bb} {};
+  \node[circle, draw=thr, fill=white, line width=0.7pt, minimum size=3.4mm,
+        inner sep=0pt] at \BP{-1.8}{\bb} {};
+  \node[circle, draw=thr, fill=white, line width=0.7pt, minimum size=3.4mm,
+        inner sep=0pt] at \BP{\lb}{0} {};}
+
+% ===========================================================================
+% (가) 추진기가 앉은 자리와 팔
+% ===========================================================================
+\begin{scope}[shift={(0,0)}]
+  \node[font=\small\bfseries, anchor=north west] at (-50,66)
+       {(가) 세 추진기가 앉은 자리 — 배분행렬의 숫자는 여기서 나온다};
+
+  \hullplan
+
+  % 힘 화살표
+  \draw[thr, line width=1.2pt, -{Stealth[length=4pt,width=3pt]}]
+       \BP{-1.8}{-\bb} -- \BP{-0.6}{-\bb};
+  \node[font=\scriptsize, thr, anchor=north east] at \BP{-1.95}{-\bb+0.05} {$F_L$};
+  \draw[thr, line width=1.2pt, -{Stealth[length=4pt,width=3pt]}]
+       \BP{-1.8}{\bb} -- \BP{-0.6}{\bb};
+  \node[font=\scriptsize, thr, anchor=north west] at \BP{-1.95}{\bb-0.05} {$F_R$};
+  \draw[thr, line width=1.2pt, -{Stealth[length=4pt,width=3pt]}]
+       \BP{\lb}{0} -- \BP{\lb}{1.3};
+  \node[font=\scriptsize, thr, anchor=south] at \BP{\lb+0.1}{0.75} {$F_B$};
+
+  % 모멘트 팔 b — 선체 왼쪽 바깥
+  \draw[ctrl, line width=0.45pt, {Stealth[length=2.6pt]}-{Stealth[length=2.6pt]}]
+       \BP{-2.6}{0} -- \BP{-2.6}{\bb};
+  \node[font=\scriptsize, ctrl, anchor=north] at \BP{-2.72}{0.5} {$b$};
+  \draw[ctrl, line width=0.25pt, densely dotted] \BP{-2.7}{0}   -- \BP{-1.95}{0};
+  \draw[ctrl, line width=0.25pt, densely dotted] \BP{-2.7}{\bb} -- \BP{-1.95}{\bb};
+
+  % 모멘트 팔 l3 — 선체 아래 바깥
+  \draw[ctrl, line width=0.45pt, {Stealth[length=2.6pt]}-{Stealth[length=2.6pt]}]
+       \BP{0}{-1.75} -- \BP{\lb}{-1.75};
+  \node[font=\scriptsize, ctrl, anchor=east] at \BP{0.37}{-1.85} {$l_3$};
+  \draw[ctrl, line width=0.25pt, densely dotted] \BP{0}{-1.85}   -- \BP{0}{-1.12};
+  \draw[ctrl, line width=0.25pt, densely dotted] \BP{\lb}{-1.85} -- \BP{\lb}{-1.12};
+
+  % 양의 요 모멘트 — 선체 밖 오른쪽, 시계방향
+  \draw[errc, line width=0.6pt, -{Stealth[length=3.4pt,width=2.4pt]}]
+       (30.9,36.8) arc (50:-10:48mm);
+  \node[font=\scriptsize, errc, anchor=west] at (50,22) {$N$ — 양의 요 모멘트};
+  \node[font=\scriptsize, errc, anchor=west] at (50,16) {(선수가 우현으로)};
+
+  \node[anchor=north west, font=\scriptsize, text width=96mm] at (-50,-70)
+       {\textbf{한 추진기가 내는 세 몫} \\[3pt]
+        $F_L,\ F_R$ 은 \textbf{선체 앞뒤}로 민다. 그래서 $X$ 에 그대로 들어가고
+        $Y$ 에는 한 톨도 들어가지 않는다. 중심선에서 $b$ 만큼 떨어져 있으므로
+        돌림 $N$ 에는 $+b\,F_L$ 과 $-b\,F_R$ 로 들어간다 \\[3pt]
+        $F_B$ 는 \textbf{선체 좌우}로 민다. 그래서 $Y$ 에 그대로 들어가고 $X$ 에는 없다.
+        무게중심에서 앞으로 $l_3$ 만큼 나가 있으므로 $N$ 에는 $+l_3 F_B$ 로 들어간다 \\[3pt]
+        $\;\to\;$ 이 여섯 줄을 그대로 옮겨 적은 것이 배분행렬이다. 외울 것이 없다};
+\end{scope}
+
+% ===========================================================================
+% (나) 옆으로만 밀고 싶을 때
+% ===========================================================================
+\begin{scope}[shift={(152,0)}]
+  \node[font=\small\bfseries, anchor=north west] at (-50,66)
+       {(나) 옆으로만 밀려면 — 선수추진기 혼자서는 안 된다};
+
+  \hullplan
+
+  % 선수추진기 — 옆으로 미는 힘
+  \draw[thr, line width=1.6pt, -{Stealth[length=5pt,width=3.6pt]}]
+       \BP{\lb}{0} -- \BP{\lb}{1.55};
+  \node[font=\scriptsize, thr, anchor=south] at \BP{\lb+0.1}{0.9} {$F_B = +250$ N};
+
+  % 좌우 추진기 — 서로 반대로
+  \draw[thr, line width=1.2pt, -{Stealth[length=4pt,width=3pt]}]
+       \BP{-1.8}{-\bb} -- \BP{-2.5}{-\bb};
+  \node[font=\scriptsize, thr, anchor=north] at \BP{-2.6}{-\bb} {$F_L = -91.3$ N};
+  \draw[thr, line width=1.2pt, -{Stealth[length=4pt,width=3pt]}]
+       \BP{-1.8}{\bb} -- \BP{-1.1}{\bb};
+  \node[font=\scriptsize, thr, anchor=north] at \BP{-2.0}{\bb} {$F_R = +91.3$ N};
+
+  % 선수추진기가 내는 돌림 — 양(시계방향), 선체 밖 오른쪽
+  \draw[errc, line width=0.6pt, -{Stealth[length=3.4pt,width=2.4pt]}]
+       (30.9,36.8) arc (50:0:48mm);
+  \node[font=\scriptsize, errc, anchor=west] at (50,26) {$+\,l_3 F_B = +187.5$ N$\cdot$m};
+
+  % 좌우 추진기가 내는 돌림 — 음(반시계), 선체 밖 왼쪽
+  \draw[plant, line width=0.6pt, -{Stealth[length=3.4pt,width=2.4pt]}]
+       (-47.3,-8.3) arc (190:230:48mm);
+  \node[font=\scriptsize, plant, anchor=east] at (-50,-20)
+       {$b\,(F_L - F_R) = -187.5$ N$\cdot$m};
+
+  \node[anchor=north west, font=\scriptsize, text width=96mm] at (-50,-70)
+       {\textbf{왜 세 개가 모두 움직이는가} \\[3pt]
+        배를 옆으로만 밀고 싶다 — 즉 $X = 0$, $Y = 250$ N, $N = 0$ 이다 \\[3pt]
+        $Y$ 를 낼 수 있는 것은 선수추진기뿐이므로 $F_B = 250$ N 이 정해진다.
+        그런데 선수추진기는 \textbf{앞쪽에} 있어, 혼자 밀면 배가 제자리에서 돌아 버린다
+        ($+187.5$ N$\cdot$m) \\[3pt]
+        그 돌림을 지우려고 좌우 추진기가 \textbf{서로 반대로} 민다.
+        한쪽은 앞으로 $+91.3$ N, 다른 쪽은 뒤로 $-91.3$ N — 합이 $0$ 이라 $X$ 는 그대로 $0$ 이고,
+        돌림만 $-187.5$ N$\cdot$m 로 나와 정확히 상쇄된다 \\[3pt]
+        $\;\to\;$ 옆걸음 접안에서 \textbf{세 추진기가 모두 일한다}는 말은 이 뜻이다};
+\end{scope}
+
+% ===========================================================================
+% 아래 띠 — 배분행렬과 그 역
+% ===========================================================================
+\draw[wire, soft] (-50,-118) -- (248,-118);
+
+\node[anchor=north west, font=\scriptsize, text width=136mm] at (-50,-123)
+     {\textbf{위 그림을 그대로 옮긴 것이 배분행렬이다} \\[4pt]
+      $\boldsymbol\tau = T\,\mathbf{u}$, \qquad
+      $\begin{bmatrix} X \\ Y \\ N \end{bmatrix}
+       = \begin{bmatrix} 1 & 1 & 0 \\ 0 & 0 & 1 \\ b & -b & l_3 \end{bmatrix}
+         \begin{bmatrix} F_L \\ F_R \\ F_B \end{bmatrix}$ \\[4pt]
+      첫 줄 — 앞뒤로 미는 것은 좌우 추진기 둘뿐 \\[2pt]
+      둘째 줄 — 옆으로 미는 것은 선수추진기 하나뿐 \\[2pt]
+      셋째 줄 — 돌리는 몫은 각자의 \textbf{모멘트 팔}을 곱한 것};
+
+\node[anchor=north west, font=\scriptsize, text width=136mm] at (112,-123)
+     {\textbf{거꾸로 푸는 것이 추력 배분이다} \\[4pt]
+      제어기가 낸 $X,\ Y,\ N$ 을 추진기 셋의 힘으로 되돌린다 —
+      $\mathbf{u} = T^{-1}\boldsymbol\tau$. 손으로 풀면 세 줄이다 \\[4pt]
+      $F_B = Y$ \qquad (둘째 줄에서 바로 나온다) \\[2pt]
+      $M = N - l_3 F_B$ \qquad (선수추진기가 이미 쓴 돌림을 빼고 남은 몫) \\[2pt]
+      $F_L = \dfrac{X}{2} + \dfrac{M}{2b}$, \qquad
+      $F_R = \dfrac{X}{2} - \dfrac{M}{2b}$ \\[4pt]
+      앞으로 미는 몫은 둘이 나눠 지고, 돌리는 몫은 둘이 \textbf{반대로} 진다};
+
+\end{tikzpicture}
+\end{document}

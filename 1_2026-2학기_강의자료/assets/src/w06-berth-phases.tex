@@ -1,0 +1,175 @@
+% assets/w06-berth-phases.svg — 접안 전략 둘: 옆걸음 대 전진
+%
+%   bash _tools/tikz2svg.sh assets/src/w06-berth-phases.tex assets/w06-berth-phases.svg
+%
+% 이 그림이 말하는 것
+%   같은 선석, 같은 접근점인데 **마지막에 배가 어느 쪽을 보고 서 있느냐**만 다르다.
+%   그 하나가 바뀌면 어느 추진기가 일하는지가 통째로 바뀐다.
+%
+%   (가) 옆걸음 접안   psi_f = psi_t           부두와 나란히 서서 **옆으로** 붙는다
+%                                              → 선체 y 방향 운동, 선수추진기가 주력
+%   (나) 전진 접안     psi_f = psi_t - s*90도   부두를 보고 **앞으로** 붙는다
+%                                              → 선체 x 방향 운동, 좌우 추진기가 주력
+%
+% 단계 번호는 모델 안의 phase 신호와 같다
+%   0 접근 → 1 선수각 정렬 → 2 접안 → 3 정지
+%
+% 좌표 — w06-berth-geometry.tex 와 같은 체계를 쓴다
+%   선석이 패널 원점. \TN{a}{b} = 부두를 따라 a m, 부두 바깥으로 b m
+%   여기서는 6주차 실제 설정 psi_t = 0, s = +1 이므로 t = 북, n = 동이다
+%   화면 회전각 = 90 - psi  (북이 위, 동이 오른쪽)
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\pgfmathsetmacro{\PS}{3.4}                       % 1 m = 3.4 mm
+\newcommand{\TN}[2]{({(#2)*\PS},{(#1)*\PS})}     % #1 = 부두 방향 t, #2 = 부두 바깥 n
+
+% --- 배 한 척 --------------------------------------------------------------
+%   #1 = t [m]   #2 = n [m]   #3 = 선수각 psi [deg]   #4 = 외곽선 스타일
+\newcommand{\boat}[4]{%
+  \begin{scope}[shift={({(#2)*\PS},{(#1)*\PS})}, rotate={90-(#3)}]
+    \draw[#4] (-5.8,-3.6) -- (-5.8,3.6) -- (2.2,3.6) -- (7.0,0) -- (2.2,-3.6) -- cycle;
+    \draw[#4, line width=0.3pt] (-5.8,0) -- (7.0,0);
+  \end{scope}}
+
+% --- 배가 가는 방향 화살표 (선체 기준) --------------------------------------
+%   #1 = t   #2 = n   #3 = psi [deg]   #4 = 선체축 각 (0 = 선수, -90 = 우현)   #5 = 색
+\newcommand{\boatvec}[5]{%
+  \begin{scope}[shift={({(#2)*\PS},{(#1)*\PS})}, rotate={90-(#3)}]
+    \draw[#5, line width=1.1pt, -{Stealth[length=4pt,width=3pt]}]
+         (#4:10mm) -- (#4:22mm);
+  \end{scope}}
+
+% --- 부두 -------------------------------------------------------------------
+\newcommand{\quay}{%
+  \fill[black!7]  \TN{11}{-2.6} -- \TN{-11}{-2.6} -- \TN{-11}{-9} -- \TN{11}{-9} -- cycle;
+  \draw[soft, line width=0.5pt]
+                  \TN{11}{-2.6} -- \TN{-11}{-2.6} -- \TN{-11}{-9} -- \TN{11}{-9} -- cycle;
+  \begin{scope}
+    \clip \TN{11}{-2.6} -- \TN{-11}{-2.6} -- \TN{-11}{-9} -- \TN{11}{-9} -- cycle;
+    \foreach \k in {-13,-11,...,11}{%
+        \draw[soft, line width=0.25pt] \TN{\k}{-1.5} -- \TN{\k+1.7}{-9};}
+  \end{scope}
+  \node[font=\scriptsize, soft] at \TN{0}{-6.2} {부두};
+  % 선석 · 접근점 마커
+  \node[rectangle, draw=warn, fill=white, line width=0.7pt, inner sep=1.5pt] at \TN{0}{0} {};
+  \node[circle, fill=plant, inner sep=1.3pt] at \TN{0}{15} {};}
+
+% --- 반경 (배 위에 그려 가려지지 않게 한다) ---------------------------------
+\newcommand{\radii}{%
+  \draw[plant, line width=0.4pt, densely dashed] \TN{0}{15} circle ({3.0*\PS});
+  \draw[warn,  line width=0.4pt, densely dashed] \TN{0}{0}  circle ({1.5*\PS});}
+
+% --- 접근 경로 (단계 0) -----------------------------------------------------
+\newcommand{\approachpath}{%
+  \draw[guid, line width=1.5pt, -{Stealth[length=5pt,width=4pt]}]
+        \TN{-13}{1} .. controls \TN{-8.5}{5} and \TN{-4}{11} .. \TN{0}{12.6};}
+
+% ===========================================================================
+% (가) 옆걸음 접안 — psi_f = psi_t
+% ===========================================================================
+\begin{scope}[shift={(0,0)}]
+  \node[font=\small\bfseries, anchor=north west] at (-50,48)
+       {(가) 옆걸음 접안 — $\psi_f = \psi_t$ : 부두와 나란히 서서 옆으로 붙는다};
+
+  \quay
+  \approachpath
+
+  % 단계 0 — 경로를 따라온다. 선수각은 경로 방향
+  \boat{-9.2}{3.6}{56}{soft, line width=0.5pt, fill=white, fill opacity=0.88}
+  \node[font=\scriptsize, guid, anchor=center] at \TN{-11.8}{10.5}
+       {\textbf{0} 접근 — 접근점까지};
+
+  % 단계 1 — 접근점에서 선수각을 psi_t 로 돌린다
+  \boat{0}{15}{20}{soft, line width=0.4pt, densely dashed}      % 돌기 전
+  \boat{0}{15}{0}{ink, line width=0.6pt, fill=white}            % 돌고 난 뒤
+  \draw[errc, line width=0.5pt, -{Stealth[length=3pt,width=2pt]}]
+        ({15*\PS},{15}) arc (90:40:15mm);
+  \node[font=\scriptsize, errc, anchor=center] at \TN{4.6}{17.8} {$\psi \to \psi_t$};
+  \node[font=\scriptsize, ctrl, anchor=center] at \TN{-5.2}{19.6}
+       {\textbf{1} 선수각 정렬 — $|\psi - \psi_f| < 5^{\circ}$};
+
+  % 단계 2 — 옆걸음. 배는 북을 보고 서쪽으로 미끄러진다
+  \boat{0}{7.5}{0}{ink, line width=0.6pt, fill=white, fill opacity=0.88}
+  \boatvec{0}{7.5}{0}{90}{warn}
+  \node[font=\scriptsize, warn, anchor=center] at \TN{5.4}{8.0}
+       {\textbf{2} 접안 — 선체 $y$ 방향};
+
+  % 단계 3 — 선석에 선다
+  \boat{0}{0}{0}{ink, line width=0.7pt, fill=white, fill opacity=0.88}
+  \node[font=\scriptsize, warn, anchor=center] at \TN{-5.0}{4.0}
+       {\textbf{3} 정지 — $R_{stop}$ 안};
+  \radii
+
+  % 어느 추진기가 일하는가
+  \node[anchor=north west, font=\scriptsize, text width=62mm] at (-50,-52)
+       {\textbf{일하는 추진기} \\[2pt]
+        배가 북을 보고 서쪽으로 가므로 \textbf{옆으로 미는 힘} $Y$ 가 필요하다.
+        $Y$ 를 낼 수 있는 것은 \textcolor{thr}{선수추진기 $F_B$} 하나뿐이다 \\[2pt]
+        그런데 $F_B$ 는 뱃머리에 있어 혼자 밀면 배가 돌아간다.
+        그 돌림을 \textcolor{thr}{좌우 추진기 $F_L,\ F_R$} 이 반대로 밀어 지운다 \\[2pt]
+        $\;\to\;$ 세 추진기가 모두 일한다. 선수추진기가 없으면 이 전략은 쓸 수 없다};
+\end{scope}
+
+% ===========================================================================
+% (나) 전진 접안 — psi_f = psi_t - s*90도
+% ===========================================================================
+\begin{scope}[shift={(168,0)}]
+  \node[font=\small\bfseries, anchor=north west] at (-50,48)
+       {(나) 전진 접안 — $\psi_f = \psi_t - s\,90^{\circ}$ : 부두를 보고 앞으로 붙는다};
+
+  \quay
+  \approachpath
+
+  \boat{-9.2}{3.6}{56}{soft, line width=0.5pt, fill=white, fill opacity=0.88}
+  \node[font=\scriptsize, guid, anchor=center] at \TN{-11.8}{10.5}
+       {\textbf{0} 접근 — 접근점까지};
+
+  % 단계 1 — 접근점에서 부두 쪽으로 90도 돌린다
+  \boat{0}{15}{20}{soft, line width=0.4pt, densely dashed}
+  \boat{0}{15}{-90}{ink, line width=0.6pt, fill=white, fill opacity=0.88}
+  \draw[errc, line width=0.5pt, -{Stealth[length=3pt,width=2pt]}]
+        ({15*\PS},{15}) arc (90:180:15mm);
+  \node[font=\scriptsize, errc, anchor=center] at \TN{4.8}{18.2} {$\psi \to \psi_t - 90^{\circ}$};
+  \node[font=\scriptsize, ctrl, anchor=center] at \TN{-5.2}{19.6}
+       {\textbf{1} 선수각 정렬 — $|\psi - \psi_f| < 5^{\circ}$};
+
+  % 단계 2 — 전진
+  \boat{0}{7.5}{-90}{ink, line width=0.6pt, fill=white, fill opacity=0.88}
+  \boatvec{0}{7.5}{-90}{0}{warn}
+  \node[font=\scriptsize, warn, anchor=center] at \TN{5.4}{8.0}
+       {\textbf{2} 접안 — 선체 $x$ 방향};
+
+  \boat{0}{0}{-90}{ink, line width=0.7pt, fill=white, fill opacity=0.88}
+  \node[font=\scriptsize, warn, anchor=center] at \TN{-5.0}{4.0}
+       {\textbf{3} 정지 — $R_{stop}$ 안};
+  \radii
+
+  \node[anchor=north west, font=\scriptsize, text width=62mm] at (-50,-52)
+       {\textbf{일하는 추진기} \\[2pt]
+        배가 가려는 쪽이 곧 뱃머리 쪽이므로 \textbf{앞으로 미는 힘} $X$ 만 있으면 된다.
+        \textcolor{thr}{좌우 추진기 $F_L,\ F_R$} 이 함께 민다 \\[2pt]
+        선수추진기는 거의 쉰다. 대신 마지막에 멈추려면 두 추진기를
+        \textbf{뒤로} 돌려야 하고, 여기서 역 프로펠러 효율 문제가 나온다 \\[2pt]
+        $\;\to\;$ 선수추진기 없는 배도 접안할 수 있다. 대신 멈추기가 어렵다};
+\end{scope}
+
+% ===========================================================================
+% 아래 띠 — 두 전략이 갈리는 한 줄
+% ===========================================================================
+\draw[wire, soft] (-50,-98) -- (236,-98);
+
+\node[anchor=north west, font=\scriptsize, text width=300mm] at (-50,-103)
+     {\textbf{갈리는 곳은 딱 한 줄이다} — 최종 선수각 $\psi_f$ 를 무엇으로 두는가.
+      나머지(접근점, 단계 전이 조건, 제어기, 배분행렬)는 둘이 똑같다 \\[4pt]
+      $\psi_f = \psi_t$ (옆걸음) \qquad 또는 \qquad
+      $\psi_f = \psi_t - s\,\dfrac{\pi}{2}$ (전진) \\[4pt]
+      $\psi_t = 0,\ s = +1$ 을 넣으면 옆걸음은 $\psi_f = 0^{\circ}$ (북쪽을 봄),
+      전진은 $\psi_f = -90^{\circ}$ (서쪽 = 부두 쪽을 봄)};
+
+\end{tikzpicture}
+\end{document}
