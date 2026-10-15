@@ -1,0 +1,234 @@
+% assets/w06-ned-loop.svg — NED 좌표계 접안 제어기 (8단)
+%
+%   bash _tools/tikz2svg.sh assets/src/w06-ned-loop.tex assets/w06-ned-loop.svg
+%
+% 이 그림이 말하는 것
+%   8단이 쓰는 제어기를 블록 하나하나까지 펼친 것이다.
+%   w06-bodyfixed-loop.svg 와 **같은 자리에 같은 블록**을 두었다 —
+%   두 장을 나란히 놓으면 무엇이 더 붙고 무엇이 빠졌는지가 바로 보인다.
+%
+%   선체고정 전략과 갈리는 자리는 셋이다
+%     (1) 바깥 고리에 **psi 가 들어가지 않는다** — 오차를 돌리지 않고 북·동에서 쓴다
+%     (2) 속도 제한을 축마다가 아니라 **벡터 크기**로 건다
+%     (3) 회전행렬이 **둘**이다 — 되먹임 쪽 ToNED, 지령 쪽 ToBody
+%
+% 좌표 메모 (mm)
+%   병진 줄 y = 0 · 선수각 줄 y = -46
+%   되먹임 가로줄 y = -62 (ToNED 되돌림) / -86 (u,v) / -98 (r) / -110 (위치·psi)
+%   병진 블록 x = 0 / 32 / 70 / 104 / 140 / 172 / 210
+%   배분·추진기·운동모델 x = 258 / 294 / 330 · 되먹임 분기 x = 348 / 354 / 366
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\tikzset{
+  bx/.style = {cblk, align=center, font=\scriptsize, minimum width=22mm, minimum height=10mm},
+  gx/.style = {gblk, align=center, font=\scriptsize, minimum width=22mm, minimum height=10mm},
+  tx/.style = {tblk, align=center, font=\scriptsize, minimum width=22mm, minimum height=10mm},
+  px/.style = {pblk, align=center, font=\scriptsize, minimum width=22mm, minimum height=10mm},
+  io/.style = {font=\scriptsize, ink, inner sep=1.5pt},
+  un/.style = {font=\scriptsize, soft, inner sep=1.5pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===========================================================================
+% 유도 — 선체고정 전략과 **똑같은 블록**이다
+% ===========================================================================
+\node[gx, minimum height=26mm, minimum width=26mm] (gd) at (-42,-23)
+     {\textbf{유도}\\ TaskRef\\[2pt] 단계에 따라\\ 목표가 바뀐다};
+\node[un, anchor=south] at (-42,-8.2) {입력 $x_n,\ y_n,\ \psi$};
+
+% ===========================================================================
+% 병진 줄 — 위치 오차에서 선체 힘까지
+% ===========================================================================
+\node[sum] (s1)  at (0,0)   {};   \node[font=\scriptsize] at (0,0) {$+$};
+\node[font=\scriptsize, anchor=north east] at (-1.6,-1.8) {$-$};
+
+\node[bx] (kp)  at (32,0)  {위치 P\\ $K_{p,ned}$ \ 두 축 같은 값};
+\node[bx] (cap) at (70,0)  {속도 \textbf{크기} 제한\\ $|\mathbf{V}| \le V_{ned,max}$};
+\node[bx] (gt)  at (104,0) {$\times\,$gate};
+\node[sum] (s2) at (140,0) {};   \node[font=\scriptsize] at (140,0) {$+$};
+\node[font=\scriptsize, anchor=north east] at (138.4,-1.8) {$-$};
+\node[bx] (pi)  at (172,0) {속도 PI\\ \textbf{북·동 축에서}\\ $K_{P,vn}$ \ $K_{I,vn}$};
+\node[bx] (tob) at (210,0) {$R(\psi)^{\mathsf T}$ \ ToBody\\ 지령을 선체축으로};
+
+\draw[sig] (gd.east|-s1) -- (s1);
+\node[io, anchor=south] at (-21,1.4) {$x_{ref},\ y_{ref}$};
+\node[un, anchor=north] at (-21,-1.6) {[m]};
+
+\draw[sig] (s1) -- (kp);
+\node[io, anchor=south] at (10.5,1.4) {$e_N,\ e_E$};
+\node[un, anchor=north] at (10.5,-1.6) {[m] 북·동};
+
+\draw[sig] (kp) -- (cap);
+\node[io, anchor=south] at (51,1.4) {$\dot x_p,\ \dot y_p$};
+\node[un, anchor=north] at (51,-1.6) {[m/s]};
+
+\draw[sig] (cap) -- (gt);
+\draw[sig] (gt) -- (s2);
+\node[io, anchor=south] at (126,1.4) {$\dot x_{cmd},\ \dot y_{cmd}$};
+\node[un, anchor=north] at (126,-1.6) {[m/s] 북·동};
+
+\draw[sig] (s2) -- (pi);
+\node[io, anchor=south] at (156,1.4) {$e_{\dot x},\ e_{\dot y}$};
+
+\draw[sig] (pi) -- (tob);
+\node[io, anchor=south] at (192,1.4) {$X_N,\ Y_E$};
+\node[un, anchor=north] at (192,-1.6) {[N] 북·동};
+
+% gate 는 유도에서 내려온다
+\draw[sig] (gd.south) |- (104,-30) -- (gt.south);
+\node[un, anchor=west] at (-27,-28.6) {gate $\in \{0,\,1\}$ — 도착하면 0};
+
+% ===========================================================================
+% 선수각 줄 — 선체고정 전략과 **한 글자도 다르지 않다**
+% ===========================================================================
+\node[bx] (ssa) at (0,-46)  {ssa\\ $\psi_{ref}-\psi$};
+\node[bx] (kps) at (70,-46) {선수각 P\\ $K_{p\psi}$};
+\node[sum] (s3) at (104,-46) {};  \node[font=\scriptsize] at (104,-46) {$+$};
+\node[font=\scriptsize, anchor=north east] at (102.4,-47.8) {$-$};
+\node[bx] (stn) at (136,-46) {모멘트 제한};
+\node[bx] (kdr) at (104,-86) {$K_{d\psi}$};
+
+\draw[sig] (gd.east|-ssa) -- (ssa);
+\node[io, anchor=south] at (-21,-44.6) {$\psi_{ref}$};
+\node[un, anchor=north] at (-21,-47.6) {[rad]};
+
+\draw[sig] (ssa) -- (kps);
+\node[io, anchor=south] at (35,-44.6) {$e_\psi$};
+\node[un, anchor=north] at (35,-47.6) {[rad] — $\pm\pi$ 로 접음};
+
+\draw[sig] (kps) -- (s3);
+\draw[sig] (kdr) -- (s3);
+\draw[sig] (s3) -- (stn);
+\node[un, anchor=west] at (115,-86) {$r$ 로 만드는 제동};
+
+% ===========================================================================
+% 배분 · 추진기 · 운동모델
+% ===========================================================================
+\node[tx, minimum height=26mm] (al) at (258,-23) {추력 배분\\ $\mathbf{u}=T^{-1}\boldsymbol\tau$};
+\node[tx, minimum height=26mm] (ts) at (294,-23) {추진기 포화\\ $\pm500$ \ $\pm500$\\ $\pm250$ \ [N]};
+\node[px, minimum height=26mm] (pl) at (330,-23) {\textbf{배의 운동}\\ 3자유도\\ 선체 동역학};
+
+\draw[sig] (tob.east) -- (236,0) -- (236,-16) -- (247,-16);
+\node[io, anchor=south] at (230,1.4) {$X,\ Y$};
+\node[un, anchor=north] at (232,-1.6) {[N] 선체축};
+
+\draw[sig] (stn.east) -- (236,-46) -- (236,-30) -- (247,-30);
+\node[io, anchor=south] at (190,-44.6) {$N$};
+\node[un, anchor=north] at (190,-47.6) {[N$\cdot$m] — 요 모멘트};
+
+\draw[sig] (al) -- (ts);
+\node[io, anchor=south] at (276,-21.6) {$F_L,\ F_R,\ F_B$};
+
+\draw[sig] (ts) -- (pl);
+\draw[wire] (pl.east) -- (366,-23);
+
+% ===========================================================================
+% 되먹임 — 여기에 **두 번째 회전행렬**이 있다
+% ===========================================================================
+\node[dot] at (348,-23) {};
+\node[dot] at (354,-23) {};
+
+\node[bx, minimum width=46mm, minimum height=14mm] (tn) at (250,-62)
+     {$R(\psi)$ \ ToNED\\
+      $\dot x = u\cos\psi - v\sin\psi$\\
+      $\dot y = u\sin\psi + v\cos\psi$};
+
+\draw[fb] (348,-23) |- (273,-62);
+\node[io, anchor=south] at (312,-61) {$u,\ v$ \ [m/s]};
+
+\draw[fb] (227,-62) -- (140,-62) -- (140,-2.3);
+\node[io, anchor=south] at (183,-61) {$\dot x,\ \dot y$ \ [m/s] — \textbf{NED 속도}};
+
+\draw[fb] (354,-23) |- (104,-98) -- (104,-91);
+\node[io, anchor=south] at (280,-97) {$r$ \ [rad/s] — 선수각속도};
+
+\draw[fb] (366,-23) |- (-42,-110) -- (-42,-36);
+\node[io, anchor=south] at (280,-109) {$x_n,\ y_n,\ \psi$ — \textbf{NED 위치와 선수각}};
+
+%  psi 를 쓰는 곳이 셋이다 — ssa · ToBody · ToNED
+\node[dot] at (0,-110) {};
+\draw[fb] (0,-110) -- (0,-51);
+\node[un, anchor=east] at (-1.5,-104) {$\psi$};
+
+\node[dot] at (210,-110) {};
+\draw[fb] (210,-110) -- (210,-5);
+\node[un, anchor=west] at (211.5,-104) {$\psi$ — ToBody 가 쓴다};
+
+\node[dot] at (250,-110) {};
+\draw[fb] (250,-110) -- (250,-69);
+\node[un, anchor=west] at (251.5,-104) {$\psi$ — ToNED 가 쓴다};
+
+% ===========================================================================
+% 묶음
+% ===========================================================================
+\draw[grp, draw=guid] (-11,-10) rectangle (122,11);
+\node[font=\scriptsize\bfseries, guid, anchor=south west] at (-10.5,11.4)
+     {바깥 고리 — \textbf{위치제어} (북·동 축에서 돈다. $\psi$ 가 \textbf{들어가지 않는다})};
+
+\draw[grp, draw=ctrl] (130,-10) rectangle (224,11);
+\node[font=\scriptsize\bfseries, ctrl, anchor=south west] at (130.5,11.4)
+     {안쪽 고리 — \textbf{속도제어}};
+
+% ===========================================================================
+% 위 — 이 전략의 성격과 치르는 값
+% ===========================================================================
+\node[anchor=north west, font=\scriptsize, text width=128mm] at (-62,52)
+     {\textbf{NED 전략 — 바다 지도 위에서 생각한다} \ (8단) \\[3pt]
+      위치 오차를 \textbf{돌리지 않는다}. $e_N$ 은 북쪽으로 몇 m, $e_E$ 는 동쪽으로
+      몇 m 남았나다. 그래서 바깥 고리에 $\psi$ 가 \textbf{들어가지 않는다} —
+      \texttt{addOuterLoopNED.m} 의 입력 포트 목록을 보면 $\psi$ 가 없다 \\[3pt]
+      대신 회전행렬이 \textbf{둘}로 늘어난다. 되먹임 쪽 \textbf{ToNED} 가 선체 속도
+      $u, v$ 를 NED 속도 $\dot x, \dot y$ 로 바꾸어야 북·동 축에서 오차를 낼 수 있고,
+      지령 쪽 \textbf{ToBody} 가 북·동 힘 $X_N, Y_E$ 를 선체 힘 $X, Y$ 로 되돌려야
+      추진기에 나눠 줄 수 있다 \\[3pt]
+      궤적은 더 곧다. 목표를 향해 \textbf{곧장} 속도를 내므로 배가 도는 동안에도
+      가는 방향이 흔들리지 않는다 — 잰 간거리는 8단 85.93 m, 5단 87.85 m};
+
+\node[anchor=north west, font=\scriptsize, text width=128mm] at (80,52)
+     {\textbf{그 대신 치르는 값 둘} \\[3pt]
+      $\bullet$ \textbf{느려진다.} 북·동 축에는 "앞"도 "옆"도 없으므로 그 속도를 어느
+      추진기가 낼지 모른다. 그래서 \textbf{느린 축}인 횡 속도 한계
+      $0.6$ m/s 로 묶는다 — 축마다 자르면 비스듬한 방향에서
+      $0.6\sqrt{2} = 0.85$ m/s 가 되어 버리므로 \textbf{벡터 크기}로 묶는다.
+      잰 완료 시각은 8단 145.95 s, 5단 78.70 s 다 \\[3pt]
+      $\bullet$ \textbf{안티와인드업이 느슨해진다.} 두 PI 의 출력 한계를 둘 다
+      $2F_{max}$ 로 둘 수밖에 없다. 실제 한계는 뒤쪽 추력 배분에서 $F_B$ 가
+      $250$ N 으로 잘리며 비로소 드러나고, 잘린 만큼을 적분기는 \textbf{모른 채}
+      쌓는다 — 선체고정 전략은 횡 PI 의 한계가 처음부터 $F_{bow,max}$ 임을 알았다};
+
+% ===========================================================================
+% 아래 띠
+% ===========================================================================
+\draw[wire, soft] (-62,-122) -- (372,-122);
+
+\node[anchor=north west, font=\scriptsize, text width=132mm] at (-62,-127)
+     {\textbf{모델에서 이 블록들이 있는 자리} \\[3pt]
+      \begin{tabular}{@{}ll@{}}
+      유도 & \texttt{parts/addGuidance.m} — 5단과 \textbf{같은 파일} \\
+      바깥 고리 & \texttt{parts/addOuterLoopNED.m} — 회전행렬이 \textbf{없다} \\
+      안쪽 고리 & \texttt{parts/addInnerLoopNED.m} — 회전행렬이 \textbf{둘} \\
+      추력 배분 & \texttt{parts/allocFcn.m} — 셋 모두 같은 파일 \\
+      운동모델 & \texttt{parts/addMotionModel.m} — 셋 모두 같은 파일 \\
+      \end{tabular} \\[3pt]
+      선수추진기를 끄는 \texttt{bow} 게인은 \textbf{추력 배분 앞}에 둔다.
+      뒤에 두면 $N - l_3 F_B$ 보정이 내지도 않은 모멘트를 되받는다};
+
+\node[anchor=north west, font=\scriptsize, text width=132mm] at (86,-127)
+     {\textbf{두 그림을 겹쳐 보면} \ (w06-bodyfixed-loop 와 같은 자리에 그렸다) \\[3pt]
+      \begin{tabular}{@{}lll@{}}
+       & 선체고정 (5·7단) & NED (8단) \\[1pt]
+      회전행렬 & 한 개 — 바깥 고리 맨 앞 & \textbf{두 개} — ToNED · ToBody \\
+      바깥 고리에 $\psi$ & 들어간다 & \textbf{들어가지 않는다} \\
+      속도 한계 & 축마다 \ $1.5$ / $0.6$ & 벡터 크기 \ $0.6$ \\
+      속도 PI 가 도는 축 & 앞뒤 · 좌우 & 북 · 동 \\
+      적분기 한계 & 제 추진기 한계 & 둘 다 $2F_{max}$ \\
+      \end{tabular} \\[3pt]
+      선수각 줄(ssa $\to K_{p\psi} \to$ 모멘트 제한)과 추력 배분, 운동모델은
+      \textbf{두 전략이 똑같다}. 갈리는 것은 \textbf{병진 줄 하나뿐}이다};
+
+\end{tikzpicture}
+\end{document}

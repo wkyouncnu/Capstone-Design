@@ -1,0 +1,213 @@
+% assets/w06-bodyfixed-loop.svg — 선체고정 좌표계 접안 제어기 (5단·7단)
+%
+%   bash _tools/tikz2svg.sh assets/src/w06-bodyfixed-loop.tex assets/w06-bodyfixed-loop.svg
+%
+% 이 그림이 말하는 것
+%   5단(옆걸음)과 7단(전진)이 쓰는 제어기를 블록 하나하나까지 펼친 것이다.
+%   들어가는 신호와 나오는 신호에 **이름과 단위**를 모두 적었다 —
+%   모델의 포트 이름과 같은 글자를 쓴다 (W06_simulink/parts/*.m).
+%
+%   핵심은 회전행렬이 **한 번**, 그것도 **바깥 고리 안**에 있다는 것이다.
+%   위치 오차를 선체축으로 돌려 놓으면 그 뒤로는 전부 선체축에서 돈다 —
+%   전후 속도, 횡 속도, 전후 힘, 횡 힘 모두 배가 보는 방향 기준이다.
+%
+% 좌표 메모 (mm)
+%   병진 줄 y = 0 · 선수각 줄 y = -46 · 되먹임 y = -80 / -92 / -104
+%   병진 블록 x = 0 / 32 / 70 / 104 / 136 / 172 / 204
+%   배분·추진기·운동모델 x = 252 / 288 / 324 · 되먹임 분기 x = 336 / 342 / 348
+%
+% 겹침을 피하려고 둔 자리
+%   위 설명 글상자는 y = 52 에서 시작한다. 묶음 상자의 제목이 y = 11.4 에
+%   앉으므로 글상자가 그보다 위에서 끝나야 서로 먹지 않는다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\tikzset{
+  bx/.style = {cblk, align=center, font=\scriptsize, minimum width=22mm, minimum height=10mm},
+  gx/.style = {gblk, align=center, font=\scriptsize, minimum width=22mm, minimum height=10mm},
+  tx/.style = {tblk, align=center, font=\scriptsize, minimum width=22mm, minimum height=10mm},
+  px/.style = {pblk, align=center, font=\scriptsize, minimum width=22mm, minimum height=10mm},
+  io/.style = {font=\scriptsize, ink, inner sep=1.5pt},
+  un/.style = {font=\scriptsize, soft, inner sep=1.5pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===========================================================================
+% 유도 — 과업이 요구하는 목표 자세를 낸다
+% ===========================================================================
+\node[gx, minimum height=26mm, minimum width=26mm] (gd) at (-42,-23)
+     {\textbf{유도}\\ TaskRef\\[2pt] 단계에 따라\\ 목표가 바뀐다};
+\node[un, anchor=south] at (-42,-8.2) {입력 $x_n,\ y_n,\ \psi$};
+
+% ===========================================================================
+% 병진 줄 — 위치 오차에서 전후·횡 힘까지
+% ===========================================================================
+\node[sum] (s1)  at (0,0)   {};   \node[font=\scriptsize] at (0,0) {$+$};
+\node[font=\scriptsize, anchor=north east] at (-1.6,-1.8) {$-$};
+
+\node[bx] (rot) at (32,0)  {$R(\psi)^{\mathsf T}$\\ 오차를 선체축으로};
+\node[bx] (kp)  at (70,0)  {위치 P\\ $K_{p,x}$ \ $K_{p,y}$};
+\node[bx] (sat) at (104,0) {속도 제한\\ $u_{max}$ \ $v_{max}$};
+\node[bx] (gt)  at (136,0) {$\times\,$gate};
+\node[sum] (s2) at (172,0) {};   \node[font=\scriptsize] at (172,0) {$+$};
+\node[font=\scriptsize, anchor=north east] at (170.4,-1.8) {$-$};
+\node[bx] (pi)  at (204,0) {속도 PI\\ $K_P$ \ $K_I$};
+
+\draw[sig] (gd.east|-s1) -- (s1);
+\node[io, anchor=south] at (-21,1.4) {$x_{ref},\ y_{ref}$};
+\node[un, anchor=north] at (-21,-1.6) {[m]};
+
+\draw[sig] (s1) -- (rot);
+\node[io, anchor=south] at (10.5,1.4) {$e_N,\ e_E$};
+\node[un, anchor=north] at (10.5,-1.6) {[m] 북·동};
+
+\draw[sig] (rot) -- (kp);
+\node[io, anchor=south] at (51,1.4) {$e_x,\ e_y$};
+\node[un, anchor=north] at (51,-1.6) {[m] 선체축};
+
+\draw[sig] (kp) -- (sat);
+\node[io, anchor=south] at (87,1.4) {$u_p,\ v_p$};
+\node[un, anchor=north] at (87,-1.6) {[m/s]};
+
+\draw[sig] (sat) -- (gt);
+\draw[sig] (gt) -- (s2);
+\node[io, anchor=south] at (159,1.4) {$u_{cmd},\ v_{cmd}$};
+\node[un, anchor=north] at (159,-1.6) {[m/s]};
+
+\draw[sig] (s2) -- (pi);
+\node[io, anchor=south] at (188,1.4) {$e_u,\ e_v$};
+
+% gate 는 유도에서 내려온다
+\draw[sig] (gd.south) |- (136,-30) -- (gt.south);
+\node[un, anchor=west] at (-27,-28.6) {gate $\in \{0,\,1\}$ — 도착하면 0};
+
+% ===========================================================================
+% 선수각 줄 — 각도 오차에서 요 모멘트까지
+% ===========================================================================
+\node[bx] (ssa) at (0,-46)  {ssa\\ $\psi_{ref}-\psi$};
+\node[bx] (kps) at (70,-46) {선수각 P\\ $K_{p\psi}$};
+\node[sum] (s3) at (104,-46) {};  \node[font=\scriptsize] at (104,-46) {$+$};
+\node[font=\scriptsize, anchor=north east] at (102.4,-47.8) {$-$};
+\node[bx] (stn) at (136,-46) {모멘트 제한};
+\node[bx] (kdr) at (104,-66) {$K_{d\psi}$};
+
+\draw[sig] (gd.east|-ssa) -- (ssa);
+\node[io, anchor=south] at (-21,-44.6) {$\psi_{ref}$};
+\node[un, anchor=north] at (-21,-47.6) {[rad]};
+
+\draw[sig] (ssa) -- (kps);
+\node[io, anchor=south] at (35,-44.6) {$e_\psi$};
+\node[un, anchor=north] at (35,-47.6) {[rad] — $\pm\pi$ 로 접음};
+
+\draw[sig] (kps) -- (s3);
+\draw[sig] (kdr) -- (s3);
+\node[un, anchor=west] at (115,-66) {$r$ 로 만드는 제동 — 각속도가 클수록 덜 민다};
+\draw[sig] (s3) -- (stn);
+
+% ===========================================================================
+% 배분 · 추진기 · 운동모델
+% ===========================================================================
+\node[tx, minimum height=26mm] (al) at (252,-23) {추력 배분\\ $\mathbf{u}=T^{-1}\boldsymbol\tau$};
+\node[tx, minimum height=26mm] (ts) at (288,-23) {추진기 포화\\ $\pm500$ \ $\pm500$\\ $\pm250$ \ [N]};
+\node[px, minimum height=26mm] (pl) at (324,-23) {\textbf{배의 운동}\\ 3자유도\\ 선체 동역학};
+
+\draw[sig] (pi.east) -- (230,0) -- (230,-16) -- (241,-16);
+\node[io, anchor=south] at (224,1.4) {$X,\ Y$};
+\node[un, anchor=north] at (224,-1.6) {[N]};
+
+\draw[sig] (stn.east) -- (230,-46) -- (230,-30) -- (241,-30);
+\node[io, anchor=south] at (185,-44.6) {$N$};
+\node[un, anchor=north] at (185,-47.6) {[N$\cdot$m] — 요 모멘트};
+
+\draw[sig] (al) -- (ts);
+\node[io, anchor=south] at (270,-21.6) {$F_L,\ F_R,\ F_B$};
+
+\draw[sig] (ts) -- (pl);
+\draw[wire] (pl.east) -- (348,-23);
+
+% ===========================================================================
+% 되먹임 셋 — 무엇이 어디로 돌아가는가
+% ===========================================================================
+\node[dot] at (336,-23) {};
+\node[dot] at (342,-23) {};
+
+\draw[fb] (336,-23) |- (172,-80) -- (s2);
+\node[io, anchor=south] at (254,-79) {$u,\ v$ \ [m/s] — \textbf{선체고정 속도}};
+
+\draw[fb] (342,-23) |- (104,-92) -- (104,-71);
+\node[io, anchor=south] at (254,-91) {$r$ \ [rad/s] — 선수각속도};
+
+\draw[fb] (348,-23) |- (-42,-104) -- (-42,-36);
+\node[io, anchor=south] at (254,-103) {$x_n,\ y_n,\ \psi$ — \textbf{NED 위치와 선수각}};
+
+%  psi 는 회전행렬과 ssa 에도 들어간다 — 되먹임 줄에서 갈라 올린다
+\node[dot] at (32,-104) {};
+\draw[fb] (32,-104) -- (32,-5);
+\node[un, anchor=west] at (33.5,-98) {$\psi$ — 회전행렬이 쓴다};
+
+\node[dot] at (0,-104) {};
+\draw[fb] (0,-104) -- (0,-51);
+\node[un, anchor=east] at (-1.5,-98) {$\psi$};
+
+% ===========================================================================
+% 묶음 — 바깥 고리와 안쪽 고리
+% ===========================================================================
+\draw[grp, draw=guid] (-11,-10) rectangle (154,11);
+\node[font=\scriptsize\bfseries, guid, anchor=south west] at (-10.5,11.4)
+     {바깥 고리 — \textbf{위치제어} (선체축에서 돈다)};
+
+\draw[grp, draw=ctrl] (162,-74) rectangle (216,11);
+\node[font=\scriptsize\bfseries, ctrl, anchor=south west] at (162.5,11.4)
+     {안쪽 고리 — \textbf{속도제어}};
+
+% ===========================================================================
+% 위 — 이 전략의 성격
+% ===========================================================================
+\node[anchor=north west, font=\scriptsize, text width=124mm] at (-62,52)
+     {\textbf{선체고정 전략 — 배가 보는 방향으로 생각한다} \ (5단 옆걸음 · 7단 전진) \\[3pt]
+      회전행렬이 \textbf{한 번}, 그것도 \textbf{맨 앞}에 있다. 위치 오차를
+      선체축으로 돌려 놓으면 그 뒤로는 전부 배 기준이다 —
+      $e_x$ 는 "앞으로 몇 m 남았나", $e_y$ 는 "옆으로 몇 m 남았나"다 \\[3pt]
+      그래서 속도 한계를 \textbf{축마다 다르게} 걸 수 있다. 전후는 추진기 둘이
+      내므로 $u_{max} = 1.5$ m/s, 횡은 선수추진기 하나가 내므로
+      $v_{max} = 0.6$ m/s — 어느 추진기가 그 속도를 내는지 알기 때문이다};
+
+\node[anchor=north west, font=\scriptsize, text width=124mm] at (74,52)
+     {\textbf{안티와인드업도 제 한계로 묶을 수 있다} \\[3pt]
+      횡 속도 PI 의 출력은 선수추진기가 내는 힘이므로 한계가
+      $F_{bow,max} = 250$ N 임을 \textbf{미리 안다}. 그 값으로 적분기를 묶어 두면
+      실제로 낼 수 없는 힘을 적분기가 쌓지 않는다 \\[3pt]
+      전후 속도 PI 는 추진기 둘이 함께 내므로 $2F_{max} = 1000$ N 이 한계다.
+      \textbf{요 모멘트}는 좌우 추진기의 팔 $b$ 와 선수추진기의 팔 $l_3$ 를 더한
+      $2F_{max}b + F_{bow,max}\,l_3$ 로 묶는다};
+
+% ===========================================================================
+% 아래 띠 — 모델 어디를 보면 이 블록이 있는가
+% ===========================================================================
+\draw[wire, soft] (-62,-116) -- (352,-116);
+
+\node[anchor=north west, font=\scriptsize, text width=128mm] at (-62,-121)
+     {\textbf{모델에서 이 블록들이 있는 자리} \\[3pt]
+      \begin{tabular}{@{}ll@{}}
+      유도 & \texttt{parts/addGuidance.m} (5단) · \texttt{addGuidanceFront.m} (7단) \\
+      바깥 고리 & \texttt{parts/addOuterLoop.m} — 회전행렬이 여기 있다 \\
+      안쪽 고리 & \texttt{parts/addInnerLoop.m} \\
+      추력 배분 & \texttt{parts/allocFcn.m} \\
+      운동모델 & \texttt{parts/addMotionModel.m} \\
+      \end{tabular}};
+
+\node[anchor=north west, font=\scriptsize, text width=128mm] at (82,-121)
+     {\textbf{5단과 7단은 이 그림에서 무엇이 다른가} \\[3pt]
+      \textbf{블록은 하나도 다르지 않다.} 유도가 내놓는 접안 선수각 $\psi_f$ 하나만
+      바뀐다 \\[2pt]
+      옆걸음 $\psi_f = \psi_t$ \qquad 전진 $\psi_f = \psi_t - s\,\pi/2$ \\[3pt]
+      그 결과 3단계에서 남은 거리가 $e_y$(횡)로 남느냐 $e_x$(전후)로 남느냐가
+      갈린다. 옆걸음은 선수추진기가 밀고, 전진은 좌우 추진기가 민다 \\[2pt]
+      잰 값 — 최대 $|F_B|$ 는 옆걸음 189.6 N, 전진 154.6 N.
+      대신 전진은 좌우 추진기가 한계 500 N 에 닿았다};
+
+\end{tikzpicture}
+\end{document}

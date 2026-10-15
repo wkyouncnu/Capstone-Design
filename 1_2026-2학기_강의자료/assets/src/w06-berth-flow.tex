@@ -1,0 +1,167 @@
+% assets/w06-berth-flow.svg — 접안은 한 번에 붙이지 않는다. 단계가 셋이다
+%
+%   bash _tools/tikz2svg.sh assets/src/w06-berth-flow.tex assets/w06-berth-flow.svg
+%
+% 이 그림이 말하는 것
+%   접안 제어기는 "선석으로 가라" 한 줄이 아니다. 목표가 단계마다 **바뀐다**.
+%   무엇이 바뀌고, 무엇을 보고 다음 단계로 넘어가는지를 한 장에 적은 것이다.
+%
+%   단계는 한 번 올라가면 내려오지 않는다 (래치). 파도에 밀려 판정 거리를
+%   잠깐 넘어서도 앞 단계로 돌아가지 않는다 — 돌아가면 두 단계 사이를 오가며
+%   영원히 붙지 못한다.
+%
+% 판정값은 모델이 쓰는 값 그대로다
+%   R_dock = 4 m · 선수각 문턱 5 deg · R_stop = 1.5 m · L_app = 15 m
+%
+% 좌표 메모 (mm)
+%   가운데 줄 x = 0 · 되돌아가는 선 x = 56 · 왼쪽 설명 x = -118
+%   블록 y = -30 / -84 / -138 · 판정 y = -56 / -110 / -164 · 끝 y = -192
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+\usetikzlibrary{shapes.geometric}
+
+\tikzset{
+  %  판정 — 마름모. 글자가 두 줄이라 폭을 넉넉히 준다
+  dec/.style = {draw=ink, line width=0.55pt, fill=white, diamond, aspect=2.6,
+                inner sep=1pt, font=\scriptsize, align=center,
+                minimum width=50mm, minimum height=17mm},
+  %  단계 — 네모. 목표가 무엇으로 바뀌는지를 적는다
+  pbox/.style = {draw=guid, line width=0.6pt, fill=white, rounded corners=0.8mm,
+                 inner sep=3pt, font=\scriptsize, align=center,
+                 minimum width=62mm, minimum height=13mm},
+  %  시작과 끝 — 둥근 띠
+  capsule/.style = {draw=ink, line width=0.6pt, fill=white, rounded corners=3mm,
+                inner sep=3pt, font=\small, minimum width=40mm, minimum height=9mm},
+  ylab/.style = {font=\scriptsize, ink, inner sep=1.5pt},
+  nlab/.style  = {font=\scriptsize, warn, inner sep=1.5pt},
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===========================================================================
+% 가운데 줄 — 시작에서 끝까지
+% ===========================================================================
+\node[capsule]  (st) at (0,0) {접안 시작};
+
+\node[pbox] (p1) at (0,-30)
+     {\textbf{1단계 · 접근}\\
+      목표 위치 = \textbf{접근점} $(x_a,\,y_a)$\\
+      목표 선수각 = \textbf{가는 방향}};
+
+\node[dec]  (d1) at (0,-58)
+     {접근점까지 남은 거리가\\ $R_{dock} = 4$ m 보다 가까운가?};
+
+\node[pbox] (p2) at (0,-86)
+     {\textbf{2단계 · 선수각 정렬}\\
+      목표 위치 = 접근점 \textbf{그대로}\\
+      목표 선수각 = \textbf{접안 선수각} $\psi_f$};
+
+\node[dec]  (d2) at (0,-114)
+     {선수각 오차가\\ $5^\circ$ 보다 작은가?};
+
+\node[pbox] (p3) at (0,-142)
+     {\textbf{3단계 · 접안}\\
+      목표 위치 = \textbf{접안점} $(x_d,\,y_d)$\\
+      목표 선수각 = $\psi_f$ \textbf{유지}};
+
+\node[dec]  (d3) at (0,-170)
+     {접안점까지 남은 거리가\\ $R_{stop} = 1.5$ m 보다 가까운가?};
+
+\node[capsule]  (en) at (0,-196) {접안 끝 — \textbf{gate} $= 0$};
+
+% --- 아래로 흐르는 선 -------------------------------------------------------
+\draw[sig] (st) -- (p1);
+\draw[sig] (p1) -- (d1);
+\draw[sig] (d1) -- (p2);   \node[ylab, anchor=west] at (1.6,-72) {예};
+\draw[sig] (p2) -- (d2);
+\draw[sig] (d2) -- (p3);   \node[ylab, anchor=west] at (1.6,-128) {예};
+\draw[sig] (p3) -- (d3);
+\draw[sig] (d3) -- (en);   \node[ylab, anchor=west] at (1.6,-184) {예};
+
+% --- 아니오 — 같은 단계를 한 스텝 더 돈다 -----------------------------------
+%     되돌아가는 선은 오른쪽 한 줄(x = 56)에 모아 서로 겹치지 않게 한다
+\draw[wire, warn] (d1.east) -- (56,-58) -- (56,-30);
+\draw[sig,  warn] (56,-30) -- (p1.east);
+\node[nlab, anchor=south] at (56,-56.5) {아니오};
+
+\draw[wire, warn] (d2.east) -- (56,-114) -- (56,-86);
+\draw[sig,  warn] (56,-86) -- (p2.east);
+\node[nlab, anchor=south] at (56,-112.5) {아니오};
+
+\draw[wire, warn] (d3.east) -- (56,-170) -- (56,-142);
+\draw[sig,  warn] (56,-142) -- (p3.east);
+\node[nlab, anchor=south] at (56,-168.5) {아니오};
+
+\node[nlab, anchor=north west, text width=48mm] at (62,-26)
+     {\textbf{아니오}는 되돌아가는 것이 아니다.
+      \textbf{같은 단계를 한 스텝 더} 도는 것뿐이다 —
+      제어기는 매 스텝 이 그림을 처음부터 다시 읽는다};
+
+% ===========================================================================
+% 왼쪽 — 각 단계가 무엇을 하는지, 왜 그렇게 하는지
+% ===========================================================================
+\node[anchor=north east, font=\scriptsize, text width=74mm, align=left] at (-40,-22)
+     {\textbf{왜 선석으로 바로 가지 않는가} \\[2pt]
+      선석 앞은 좁다. 비스듬히 들어가면 뱃머리나 고물이 먼저 닿는다.
+      \textbf{접근점}은 선석에서 부두 반대쪽으로 $L_{app} = 15$ m 물러난 점이다.
+      여기까지는 자세를 따지지 않고 빨리 간다 —
+      가는 방향으로 선수를 두면 물 저항이 가장 작다};
+
+\node[anchor=north east, font=\scriptsize, text width=74mm, align=left] at (-40,-78)
+     {\textbf{왜 제자리에서 먼저 돌리는가} \\[2pt]
+      움직이면서 돌면 배가 호를 그리며 선석 쪽으로 쏠린다.
+      접근점에 \textbf{선 채로} 선수각만 맞춰 두면, 남은 일은 똑바로 미는 것
+      하나뿐이다. $5^\circ$ 는 이 모델이 쓰는 문턱이다 —
+      더 조이면 바람에 흔들려 영영 다음 단계로 못 넘어간다};
+
+\node[anchor=north east, font=\scriptsize, text width=74mm, align=left] at (-40,-134)
+     {\textbf{마지막은 선수각을 묶어 둔 채 민다} \\[2pt]
+      목표 선수각을 $\psi_f$ 로 \textbf{고정}한다. 위치가 바뀌어도 선수각
+      지령은 따라 움직이지 않는다 — 그래야 배가 선석과 나란한 자세를
+      유지한 채 붙는다. 이 구간의 횡방향 힘을 \textbf{선수추진기}가 낸다};
+
+\node[anchor=north east, font=\scriptsize, text width=74mm, align=left] at (-40,-190)
+     {\textbf{gate 가 내려가면 바깥 고리가 속도 지령을 0 으로 낸다} \\[2pt]
+      추력을 끊는 것이 아니라 \textbf{목표 속도를 0 으로} 주는 것이다.
+      그래서 남은 속도는 안쪽 속도 고리가 되돌려 세운다};
+
+% ===========================================================================
+% 단계 래치 — 이 그림에서 가장 자주 놓치는 것
+% ===========================================================================
+\draw[grp, draw=warn] (-40,-178) rectangle (52,-20);
+\node[font=\scriptsize\bfseries, warn, anchor=south west] at (-39.5,-19.4)
+     {단계는 한 번 올라가면 \textbf{내려오지 않는다} (래치)};
+
+% ===========================================================================
+% 아래 띠 — 세 전략이 이 흐름의 어디에서 갈리는가
+% ===========================================================================
+\draw[wire, soft] (-118,-212) -- (116,-212);
+
+\node[anchor=north west, font=\scriptsize, text width=112mm] at (-118,-217)
+     {\textbf{세 전략은 이 흐름을 그대로 쓴다 — 갈리는 자리는 둘뿐이다} \\[3pt]
+      $\bullet$ \textbf{접안 선수각 $\psi_f$} — 옆걸음은 $\psi_f = \psi_t$
+        (선석 방위와 같게), 전진은 $\psi_f = \psi_t - s\,\dfrac{\pi}{2}$
+        (선석 방위에 수직하게). 접근점은 \textbf{두 경우가 같은 점}이고,
+        거기서 선수각만 $90^\circ$ 틀면 옆걸음이 전진으로 바뀐다 \\[3pt]
+      $\bullet$ \textbf{위치 오차를 어느 축에서 재는가} — 선체고정 갈래는
+        오차를 선체 축(앞뒤·좌우)으로 돌려서 재고, NED 갈래는 북·동 축에서
+        그대로 재어 속도 지령을 \textbf{벡터로} 만든다. 단계 판정은 둘 다
+        똑같이 거리와 각도로 한다};
+
+\node[anchor=north west, font=\scriptsize, text width=112mm] at (4,-217)
+     {\textbf{단계가 실제로 언제 넘어갔는가} — 모델을 돌려 잰 값 \\[3pt]
+      \begin{tabular}{@{}lrrrr@{}}
+        & 1$\to$2 & 2$\to$3 & 완료 & 끝 오차 \\[1pt]
+        5단 옆걸음 & 48.70 s & 54.65 s & 78.70 s & 0.545 m \\
+        7단 전진   & 48.70 s & 57.70 s & 68.75 s & 1.713 m \\
+        8단 NED    & 115.45 s & 121.40 s & 145.95 s & 0.554 m \\
+      \end{tabular} \\[3pt]
+      1$\to$2 가 5단과 7단에서 같은 것은 \textbf{접근점이 같은 점}이기 때문이다.
+      갈리는 것은 그 다음부터다 \\[2pt]
+      7단의 끝 오차가 $R_{stop}$ 보다 큰 것은 gate 가 내려간 \emph{뒤에도}
+      남은 속도로 더 나아갔기 때문이다 — 판정은 68.75 s 에 이미 통과했다};
+
+\end{tikzpicture}
+\end{document}
