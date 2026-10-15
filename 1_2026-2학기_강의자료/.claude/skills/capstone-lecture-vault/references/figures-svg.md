@@ -198,6 +198,7 @@ bash .claude/skills/capstone-lecture-vault/scripts/vault_check.sh --fig
 | 9. 빌드 누락 | `.tex` 는 고쳤는데 `.svg` 를 다시 안 뽑은 경우 |
 | 10. 그림 안의 금지 표현 | **본문 검사로는 안 걸린다.** 실제로 5건이 숨어 있었다 |
 | 11. 수식 구분자 | `$$` 개수가 홀수 → 수식이 본문으로 샌다 |
+| 11. 행 구분자 | 행렬·`aligned` 의 행 구분자가 `\\` 가 아니라 `\` 하나 → **오류 없이 한 행으로 뭉개진다** (`pdf-and-math.md`) |
 
 ---
 
@@ -209,7 +210,7 @@ bash .claude/skills/capstone-lecture-vault/scripts/vault_check.sh --fig
 
 ### 수식 검증
 
-1. `$$` 개수가 짝수인가 (`--fig` 가 검사)
+1. `$$` 개수가 짝수인가, 행 구분자가 `\\` 인가 (`--fig` 가 검사)
 2. PDF 를 뽑아 **수식이 조판되었는지** 본다. `$...$` 가 글자 그대로 보이면 실패다
 3. 그림의 기호와 본문 표의 기호가 같은가 — 그림은 `\psi`, 본문은 `psi` 처럼 어긋나지 않게
 

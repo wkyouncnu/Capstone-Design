@@ -100,6 +100,30 @@ I_z\,\dot{r} &= N - (N_r + N_{rr}|r|)\,r
 $$
 ```
 
+> [!warning] 행 구분자는 `\\` 다 — 하나만 쓰면 오류 없이 **한 행으로 뭉개진다**
+> `\begin{bmatrix} X \ Y \ N \end{bmatrix}` 처럼 `\` 를 하나만 쓰면 MathJax 가
+> 오류를 내지 않고 $1\times1$ 행렬로 조판한다. $3\times3$ 배분행렬이 한 줄로
+> 보이는데 경고가 없으므로 **눈으로 PDF 를 봐야** 알아챈다.
+>
+> 2026-10-15 6주차에서 여섯 군데가 그렇게 되어 있었다 — 배분행렬 · 역배분 ·
+> 회전행렬 · 접근점 · 운동방정식. 학생이 "수식이 전혀 이해가 안 간다" 고 한
+> 까닭의 절반이 이것이었다.
+>
+> `vault_check.sh` 11번이 이제 잡는다 (`행 구분자가 \\ 가 아닌 수식`).
+> 환경(`bmatrix` `pmatrix` `vmatrix` `aligned` `cases`) **안쪽만** 보므로
+> `\end{bmatrix}^{\!\top}\ \text{N}` 같은 얇은 공백은 걸리지 않는다.
+
+- 행렬은 **한 줄에 몰아 쓰지 않는다**. 행마다 줄을 바꿔 적으면 `\\` 가 빠진 것이 눈에 보인다
+
+```markdown
+$$
+\begin{bmatrix} X \\ Y \\ N \end{bmatrix}
+=
+\begin{bmatrix} 1 & 1 & 0 \\ 0 & 0 & 1 \\ b & -b & l_3 \end{bmatrix}
+\begin{bmatrix} F_L \\ F_R \\ F_B \end{bmatrix}
+$$
+```
+
 ### 쓸 때의 판단
 
 | 상황 | 형식 |

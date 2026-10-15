@@ -192,6 +192,35 @@ check_fig() {
   done < <(mds)
   note "수식 구분자 불일치" "$m"
   FAIL=$((FAIL+m))
+
+  # 행렬·정렬 환경의 행 구분자가 \\ 가 아니라 \ 하나로 들어간 것.
+  # 그러면 3x3 행렬이 한 행으로 렌더되는데 오류는 나지 않아 눈으로는 못 잡는다.
+  # 2026-10-15 6주차에서 여섯 군데가 그렇게 되어 있었다.
+  local r=0
+  while IFS= read -r f; do
+    local hit
+    # \begin 과 \end 사이(환경 안)만 본다. 환경 밖의 \  는 얇은 공백이라 정상이다
+    hit=$(awk '
+      {
+        rest = $0
+        while (match(rest, /\\begin\{(bmatrix|pmatrix|vmatrix|aligned|cases)\}/)) {
+          rest = substr(rest, RSTART + RLENGTH)
+          if (!match(rest, /\\end\{(bmatrix|pmatrix|vmatrix|aligned|cases)\}/)) break
+          inner = substr(rest, 1, RSTART - 1)
+          rest  = substr(rest, RSTART + RLENGTH)
+          if (index(inner, "\\\\") == 0 && index(inner, "\\ ") > 0) {
+            printf "%d: %s\n", FNR, substr($0, 1, 86)
+            break
+          }
+        }
+      }' "$f")
+    if [ -n "$hit" ]; then
+      printf '     %s\n' "$f"; printf '%s\n' "$hit" | sed 's/^/        /'
+      r=$((r + $(printf '%s\n' "$hit" | grep -c .)))
+    fi
+  done < <(mds)
+  note "행 구분자가 \\\\ 가 아닌 수식" "$r"
+  FAIL=$((FAIL+r))
   return 0
 }
 
