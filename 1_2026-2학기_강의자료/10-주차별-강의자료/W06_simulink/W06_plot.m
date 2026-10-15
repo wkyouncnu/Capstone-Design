@@ -82,21 +82,34 @@ for i = 1:numel(lv)
     if ~isempty(j), S.t_phase(i) = t(j); end
 end
 
-S.fig = figure('Name',['W06  ' ttl], 'Position',[80 60 1200 780], 'Color','w');
+%  이름표(Tag)를 단 창을 찾아 **다시 쓴다**. 돌릴 때마다 새 창을 열면
+%  단을 몇 번만 바꿔 돌려도 바탕화면에 창이 열 장씩 쌓인다
+S.fig = W06_fig('W06_result', ['W06  ' ttl], [80 60 1200 780]);
 
 % ---- 1. 궤적 --------------------------------------------------------
-subplot(2,3,[1 4]);
+%  접안 단은 왼쪽 칸을 **둘로 쪼갠다**. 위 칸에 전체 항적, 아래 칸에 접안
+%  확대다. 한 칸에 몰면 — 세로로 긴 칸에 axis equal 을 걸면 세로 범위가
+%  데이터보다 세 배 넓어져 0~45 m 짜리 항적이 -50~100 m 축에 놓인다 —
+%  11 m 짜리 베이가 점만 해져 배가 베이에 들어갔는지를 볼 수 없다
+if mode == 3
+    subplot(2,3,1);
+else
+    subplot(2,3,[1 4]);
+end
 th = linspace(0, 2*pi, 72);
 if mode == 3
-    plot([0 apy dy], [0 apx dx], 'k--', 'LineWidth',1.2); hold on;
-    dq = 1.6;  Lq = 12;
-    qcx = dx + dq*sd*sin(dpsi);   qcy = dy - dq*sd*cos(dpsi);
-    plot(qcy + Lq*[-1 1]*sin(dpsi), qcx + Lq*[-1 1]*cos(dpsi), '-', ...
-         'Color',[0.45 0.33 0.20], 'LineWidth',7);
+    %  계획 경로는 **베이 입구 중심선을 지나** 선석으로 들어간다. 접근점에서
+    %  곧장 선석으로 선을 그으면 날개 벽을 비스듬히 가로질러 "벽을 뚫고
+    %  들어가는 계획" 처럼 보인다
+    [qX, qY, ~, ~, mX, mY] = W06_dock_patch(dx, dy, dpsi, sd);
+    plot([0 apy mY dy], [0 apx mX dx], 'k--', 'LineWidth',1.2); hold on;
+    %  ㄷ 자 도킹 스테이션 — 텀프로젝트 과제의 베이와 같은 모양이다.
+    %  세 면이 막혀 있어 궤적이 벽을 뚫는지가 그림에서 바로 보인다
+    patch(qY, qX, [0.82 0.76 0.66], 'EdgeColor',[0.45 0.33 0.20], 'LineWidth',1.1);
     plot(apy, apx, 'o', 'MarkerEdgeColor',[0 0.5 0], 'MarkerFaceColor','w', ...
          'MarkerSize',9, 'LineWidth',1.6);
     plot(apy+Rd*cos(th), apx+Rd*sin(th), ':', 'Color',[0.40 0.70 0.40]);
-    leg = {'계획 경로','부두','접근점','R_{dock}'};
+    leg = {'계획 경로','도킹 스테이션','접근점','R_{dock}'};
 else
     plot([0 gy], [0 gx], 'k--', 'LineWidth',1.2); hold on;
     leg = {'계획 경로'};
@@ -105,23 +118,43 @@ end
 %  맞춰 줄인다 — 고정 길이로 그리면 12 m 밖에 가지 않는 2단에서 배 한 척이
 %  화면을 덮어 항적이 보이지 않는다 (2026-10-15 지적)
 span = max([max(x_n)-min(x_n); max(y_n)-min(y_n); 2*Rs; hypot(gx-x_n(1), gy-y_n(1))]);
-Lpsi = max(2, 0.12*span);            % 목표 선수각 막대 길이 [m]
+%  목표 선수각 막대 길이 [m] — 접안 단만 **배 반길이**로 못박는다. 장면
+%  크기를 따라가면 7 m 를 넘어 깊이 5.5 m 짜리 베이의 안쪽 벽을 뚫고 나간다
+if mode == 3
+    Lpsi = 3.4;
+else
+    Lpsi = max(2, 0.12*span);
+end
+
+%  선체를 몇 배로 그릴 것인가
+%    접안(3단)은 ㄷ 자 베이와 **크기를 견주어야** 하므로 실척으로 그린다 —
+%    배가 베이에 들어가는 크기인지가 그림에서 바로 보여야 한다.
+%    나머지 단은 축 범위가 단마다 달라 실척으로 그리면 배가 화면을 덮는다
+if mode == 3
+    sc = 1;
+else
+    sc = min(2, max(0.4, 0.10*span/4.9));
+end
+L = 2.45*sc;  B = 1.03*sc;
+bx = L*[-1 -1 0.5 1 0.5];  by = B*[1 -1 -1 0 1];
 
 plot(gy, gx, 'ks', 'MarkerFaceColor','w', 'MarkerSize',11, 'LineWidth',1.6);
 plot([gy gy+Lpsi*sin(gpsi)], [gx gx+Lpsi*cos(gpsi)], '-', 'Color',[0.75 0.10 0.10], ...
      'LineWidth',1.8);
 plot(gy+Rs*cos(th), gx+Rs*sin(th), ':', 'Color',[0.6 0.6 0.6]);
+
+%  목표 자세의 배를 **처음부터** 빈 외곽선으로 그려 둔다. 도착한 배(아래의
+%  채운 외곽선)가 이 틀에 겹쳐야 접안에 성공한 것이다. 틀이 없으면 "오차
+%  0.5 m" 가 눈에 얼마만큼인지 읽히지 않는다
+cg = cos(gpsi);  sg = sin(gpsi);
+plot(gy + [bx bx(1)]*sg + [by by(1)]*cg, gx + [bx bx(1)]*cg - [by by(1)]*sg, ...
+     '--', 'Color',[0.75 0.10 0.10], 'LineWidth',1.3);
+
 plot(y_n, x_n, 'b-', 'LineWidth',1.6);
 plot(y_n(1), x_n(1), 'go', 'MarkerFaceColor','g', 'MarkerSize',8);
 plot(y_n(end), x_n(end), 'ro', 'MarkerFaceColor','r', 'MarkerSize',8);
 
-%  마지막 자세를 선체 모양으로 한 번 더 그린다 — 선수각이 지켜졌는지가 보인다.
-%  크기는 실척이 아니라 **그림 크기의 1/10** 이다. 실시간 그림(W06_animate)의
-%  boat_scale 과 따로 두는 까닭은 저 그림은 축이 고정이고 이 그림은 단계마다
-%  축이 달라지기 때문이다.
-sc = min(2, max(0.4, 0.10*span/4.9));
-L = 2.45*sc;  B = 1.03*sc;
-bx = L*[-1 -1 0.5 1 0.5];  by = B*[1 -1 -1 0 1];
+%  마지막 자세를 선체 모양으로 한 번 더 그린다 — 선수각이 지켜졌는지가 보인다
 c = cos(psi(end));  s = sin(psi(end));
 patch(y_n(end) + bx*s + by*c, x_n(end) + bx*c - by*s, [0.95 0.45 0.20], ...
       'FaceAlpha',0.5, 'EdgeColor',[0.4 0.15 0.05]);
@@ -129,9 +162,55 @@ axis equal; grid on;
 xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
 title(sprintf('궤적   (마지막 오차 %.2f m, %.1f°)', S.e_final, S.epsi_final));
 
-%  범례는 축 **밖 아래**에 둔다. 'best' 는 항적 위에 얹히는 일이 잦다
-legend([leg {'목표 위치','목표 선수각','R_{stop}','항적','출발','도착'}], ...
-       'Location','southoutside', 'NumColumns',3, 'FontSize',7.5, 'Box','off');
+%  범례는 축 **밖 아래**에 둔다. 'best' 는 항적 위에 얹히는 일이 잦다.
+%  접안 단은 아래 칸(확대 그림)에 범례를 모아 붙인다 — 위 칸에 붙이면
+%  아래 칸을 덮는다
+legList = [leg {'목표 위치','목표 선수각','R_{stop}','목표 자세(배)','항적','출발','도착'}];
+if mode == 3
+    pad = 2.0;
+    zx = [min([qX gx x_n(end)])-pad, max([qX gx x_n(end)])+pad];   % 북 범위
+    zy = [min([qY gy y_n(end)])-pad, max([qY gy y_n(end)])+pad];   % 동 범위
+
+    %  위 칸에 아래 칸이 어디를 잘라 왔는지 네모로 표시한다
+    plot(zy([1 2 2 1 1]), zx([1 1 2 2 1]), '-', 'Color',[0.45 0.45 0.45], ...
+         'LineWidth',0.8, 'HandleVisibility','off');
+    title(sprintf('궤적 전체   (마지막 오차 %.2f m, %.1f°)', S.e_final, S.epsi_final));
+
+    %  위 칸에는 범례를 **붙이지 않는다**. 열한 줄짜리 범례는 어디에 두어도
+    %  — 왼쪽 위에 두면 베이를, 오른쪽 아래에 두면 항적을 — 가린다.
+    %  범례는 아래 확대 칸에 한 벌만 두고, 위 칸은 지나가는 자리 셋에
+    %  글자를 직접 찍는다. 자리는 선석 기준 (a, b) 로 잡아 선석 방위
+    %  psi_t 와 접안 방향 s 가 바뀌어도 따라 돌게 한다
+    ab2x = @(aa,bb) dx + aa*cos(dpsi) - bb*sd*sin(dpsi);
+    ab2y = @(aa,bb) dy + aa*sin(dpsi) + bb*sd*cos(dpsi);
+    text(ab2y(9.0,-3.4), ab2x(9.0,-3.4), '도킹 스테이션', 'FontSize',8, ...
+         'Color',[0.35 0.25 0.15], 'HorizontalAlignment','center');
+    text(apy+2.0, apx+2.5, '접근점', 'FontSize',8, 'Color',[0 0.45 0]);
+    text(y_n(1)+2.0, x_n(1)-2.0, '출발', 'FontSize',8, 'Color',[0 0.45 0]);
+
+    % ---- 아래 칸 : 접안 확대 ----
+    subplot(2,3,4);
+    patch(qY, qX, [0.82 0.76 0.66], 'EdgeColor',[0.45 0.33 0.20], 'LineWidth',1.1);
+    hold on;
+    plot([mY dy], [mX dx], 'k--', 'LineWidth',1.1);
+    plot(gy+Rs*cos(th), gx+Rs*sin(th), ':', 'Color',[0.6 0.6 0.6]);
+    plot(gy + [bx bx(1)]*sg + [by by(1)]*cg, gx + [bx bx(1)]*cg - [by by(1)]*sg, ...
+         '--', 'Color',[0.75 0.10 0.10], 'LineWidth',1.3);
+    plot(y_n, x_n, 'b-', 'LineWidth',1.6);
+    patch(y_n(end) + bx*s + by*c, x_n(end) + bx*c - by*s, [0.95 0.45 0.20], ...
+          'FaceAlpha',0.5, 'EdgeColor',[0.4 0.15 0.05]);
+    plot(gy, gx, 'ks', 'MarkerFaceColor','w', 'MarkerSize',9, 'LineWidth',1.4);
+    plot(y_n(end), x_n(end), 'ro', 'MarkerFaceColor','r', 'MarkerSize',7);
+    axis equal;  xlim(zy);  ylim(zx);  grid on;
+    xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
+    title('접안 확대 — 배와 베이가 실척');
+    legend({'도킹 스테이션','계획 경로','R_{stop}','목표 자세(배)','항적', ...
+            '도착 자세','목표 위치','도착'}, ...
+           'Location','southoutside', 'NumColumns',3, 'FontSize',7.5, 'Box','off');
+else
+    legend(legList, 'Location','southoutside', 'NumColumns',3, ...
+           'FontSize',7.5, 'Box','off');
+end
 
 % ---- 2. 위치 오차 ----------------------------------------------------
 subplot(2,3,2);
@@ -184,7 +263,7 @@ legend({'F_L','F_R','F_B','\pmF_{max}','','\pmF_{bow,max}'}, ...
 title(sprintf('추력   (최대 |F_B| = %.1f N)', S.max_FB));
 
 % ---- 6. 회전수와 단계 ------------------------------------------------
-figure('Name',['W06 추진기와 단계  ' ttl], 'Position',[140 120 950 380], 'Color','w');
+W06_fig('W06_thruster', ['W06 추진기와 단계  ' ttl], [140 120 950 380]);
 subplot(1,2,1);
 plot(t, n(:,1), 'LineWidth',1.2); hold on;
 plot(t, n(:,2), 'LineWidth',1.2);

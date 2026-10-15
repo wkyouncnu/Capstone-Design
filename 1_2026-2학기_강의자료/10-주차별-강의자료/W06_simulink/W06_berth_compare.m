@@ -57,9 +57,18 @@ end
 dock_north = evalin('base', 'dock_north');   dock_east = evalin('base', 'dock_east');
 app_north  = evalin('base', 'app_north');    app_east  = evalin('base', 'app_east');
 R_stop     = evalin('base', 'R_stop');
+dock_deg   = evalin('base', 'dock_deg');     berth_side = evalin('base', 'berth_side');
 
-fig = figure('Name', 'W06  접안 세 가지', 'Color', 'w', 'Position', [60 80 1340 430]);
+%  ㄷ 자 도킹 스테이션 — 결과 그림·애니메이션과 **같은 도형**을 쓴다.
+%  세 궤적이 같은 베이로 들어가는 그림이라야 "붙이는 방법이 갈린다" 가 읽힌다
+[qX, qY] = W06_dock_patch(dock_north, dock_east, deg2rad(dock_deg), berth_side);
+
+fig = W06_fig('W06_compare', 'W06  접안 세 가지', [60 80 1340 430]);
 subplot(1,3,1); hold on; grid on; axis equal;
+%  베이를 **먼저** 깔아 궤적이 그 위에 올라오게 한다. 범례는 궤적 셋과
+%  점 넷만 세므로 벽은 범례에서 빼 둔다
+patch(qY, qX, [0.82 0.76 0.66], 'EdgeColor',[0.45 0.33 0.20], ...
+      'LineWidth',1.0, 'HandleVisibility','off');
 for k = 1:numel(ST)
     if isempty(R{k}), continue; end
     plot(R{k}.y, R{k}.x, '-', 'Color', col(k,:), 'LineWidth', 1.6);
@@ -75,6 +84,8 @@ title('접안 궤적 — 선석도 접근점도 같다');
 
 %  차이는 마지막 L_app 구간에만 있다 — 그 자리를 따로 크게 본다
 subplot(1,3,2); hold on; grid on; axis equal;
+patch(qY, qX, [0.82 0.76 0.66], 'EdgeColor',[0.45 0.33 0.20], ...
+      'LineWidth',1.0, 'HandleVisibility','off');
 for k = 1:numel(ST)
     if isempty(R{k}), continue; end
     plot(R{k}.y, R{k}.x, '-', 'Color', col(k,:), 'LineWidth', 1.6);
@@ -83,7 +94,8 @@ plot(dock_east + R_stop*cos(th), dock_north + R_stop*sin(th), 'k:');
 plot(dock_east, dock_north, 'ks', 'MarkerFaceColor', 'w', 'MarkerSize', 9);
 plot(app_east,  app_north,  'ko', 'MarkerFaceColor', 'w', 'MarkerSize', 8);
 L_app = evalin('base', 'L_app');
-xlim(dock_east  + [-0.35 1.25]*L_app);
+%  왼쪽을 -0.35 로 잘라 두면 베이 안쪽 벽이 화면 밖으로 나간다 — 벽까지 보인다
+xlim(dock_east  + [-0.70 1.25]*L_app);
 ylim(dock_north + [-0.8  0.8 ]*L_app);
 xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
 title('선석 부근 — 붙이는 방법이 갈린다');

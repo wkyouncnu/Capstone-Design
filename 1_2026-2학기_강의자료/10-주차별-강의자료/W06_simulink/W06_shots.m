@@ -57,9 +57,14 @@ if isempty(C{5}) || isempty(C{8}), return; end
 A = C{5};  B = C{8};
 q = evalin('base','task_q');
 
-fig = figure('Name','W06  선체고정 대 NED', 'Position',[80 60 1250 460], 'Color','w');
+fig = W06_fig('W06_shots', 'W06  선체고정 대 NED', [80 60 1250 460]);
 
 subplot(1,3,1);
+%  ㄷ 자 도킹 스테이션을 **먼저** 깐다 — 두 궤적이 같은 베이로 들어간다는
+%  것이 보여야 "제어 좌표계만 다르다" 는 말이 읽힌다. q 는 task_q 그대로다
+[qX, qY] = W06_dock_patch(q(7), q(8), q(9), q(12));
+patch(qY, qX, [0.82 0.76 0.66], 'EdgeColor',[0.45 0.33 0.20], ...
+      'LineWidth',1.0, 'HandleVisibility','off'); hold on;
 plot(A.y, A.x, 'b-', 'LineWidth',1.6); hold on;
 plot(B.y, B.x, 'r-', 'LineWidth',1.6);
 plot(q(8), q(7), 'ks', 'MarkerFaceColor','w', 'MarkerSize',11, 'LineWidth',1.6);
