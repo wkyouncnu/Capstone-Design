@@ -23,7 +23,7 @@ S   = W06_plot(out, sprintf('%d단 — %s', stage, stage_name{stage}));
 t     = out.log_x_n.Time;
 x_n   = out.log_x_n.Data;   y_n = out.log_y_n.Data;
 gate  = out.log_gate.Data;
-k     = find(gate < 0.5, 1);
+k     = find(gate <= 0, 1);
 
 fprintf('\n[4단 점검] 목표  (%7.3f, %7.3f) m / %6.2f deg,  R_stop = %g m\n', ...
         x_d, y_d, rad2deg(psi_d), R_stop);

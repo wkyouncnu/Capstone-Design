@@ -64,7 +64,10 @@ if mode == 3, gpsi = pref(end); end
 dg    = hypot(gx - x_n, gy - y_n);
 epsig = atan2(sin(gpsi - psi), cos(gpsi - psi)) * 180/pi;
 
-k = find(gate < 0.5, 1);             % gate 가 0 으로 떨어진 첫 순간이 완료 시각
+%  gate 가 **정확히** 0 이 된 첫 순간이 완료 시각이다. 7단의 gate 는 0/1 이
+%  아니라 감속 계수라 접안 전부터 1 보다 작아진다 — 문턱을 0.5 로 두면 아직
+%  달리는 중을 완료로 읽는다 (addGuidanceFront 머리글)
+k = find(gate <= 0, 1);
 if isempty(k), S.t_done = NaN; else, S.t_done = t(k); end
 ss = find(t >= t(end) - 10, 1);      % 마지막 10 초
 

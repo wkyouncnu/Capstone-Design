@@ -63,7 +63,9 @@ for k = 1:numel(stages)
     epsi = atan2(sin(gpsi - psi), cos(gpsi - psi)) * 180/pi;
     ss   = find(t >= t(end) - 10, 1);
 
-    j = find(gate < 0.5, 1);
+    %  gate 가 **정확히** 0 이 된 순간이 완료 시각이다. 7단의 gate 는 0/1 이
+    %  아니라 감속 계수라 접안 전부터 1 보다 작아진다 (addGuidanceFront 머리글)
+    j = find(gate <= 0, 1);
     T(k).stage = s;
     T(k).mdl   = mdl;
     T(k).ok    = true;

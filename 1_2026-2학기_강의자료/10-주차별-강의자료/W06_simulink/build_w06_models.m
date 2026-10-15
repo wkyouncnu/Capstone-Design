@@ -69,8 +69,13 @@ function build_w06_models(stages)
     %    설명하는 그림이므로 그것을 쓴다. 5단이 빠진 호출에서는 있는 단계로 뽑는다
     if any(stages == 5)
         shots = [shots; {'W06_5_dock', '', {'Guidance'}}];
-    elseif ~isempty(body)
+    elseif ~isempty(body) && ~any(stages == 7)
         shots = [shots; {name{max(body)}, '', {'Guidance'}}];
+    end
+    %    7단의 유도부는 GuidanceFront.png 로 따로 뽑는다 — 입력에 속도 u·v 가
+    %    더 있고, gate 가 0/1 이 아니라 감속 계수다. 강의노트 E-1 이 쓰는 그림이다
+    if any(stages == 7)
+        shots = [shots; {'W06_7_front', 'Front', {'Guidance'}}];
     end
     if any(stages == 8)
         shots = [shots; {'W06_8_ned', 'NED', {'OuterLoop','InnerLoop'}}];

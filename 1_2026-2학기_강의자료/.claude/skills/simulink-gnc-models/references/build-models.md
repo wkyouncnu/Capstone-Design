@@ -103,6 +103,32 @@ d = Stateflow.Data(ch);  d.Name = 'mode';  d.Scope = 'Output';
 > 것이므로 그림만 다른 블록이었다. `shots` 를 쪼개 Guidance 만 5단에서 뽑게 고쳤다.
 > 판별법 하나 — **단계를 더할 때 `addXxx` 함수 이름이 바뀌었으면 그림도 갈라진 것이다.**
 
+> [!caution] **단계 하나만** 다시 빌드할 때 공용 도면이 덮어써진다
+> `shots` 표는 보통 "5단이 호출에 들어 있으면 5단에서, 아니면 있는 것 중 최고
+> 단계에서" 처럼 짜인다. 그래서 `build_w06_models(7)` 처럼 **한 단계만** 다시
+> 부르면 되돌림(fallback) 가지를 타고 7단 그림이 `img/Guidance.png` 를 덮는다.
+> 모델을 고친 것은 7단뿐인데 강의노트의 5단 그림이 바뀐다.
+> 되돌림 가지에 **갈라진 단계를 빼는 조건**을 적고, 갈라진 쪽은 꼬리를 붙여
+> 따로 뽑는다 (2026-10-15, `GuidanceFront.png`).
+>
+> ```matlab
+> if any(stages == 5)
+>     shots = [shots; {'W06_5_dock', '', {'Guidance'}}];
+> elseif ~isempty(body) && ~any(stages == 7)      % 7단은 되돌림에서 뺀다
+>     shots = [shots; {name{max(body)}, '', {'Guidance'}}];
+> end
+> if any(stages == 7)
+>     shots = [shots; {'W06_7_front', 'Front', {'Guidance'}}];
+> end
+> ```
+>
+> 단계 하나를 다시 빌드한 뒤에는 `git status` 로 **건드릴 생각이 없던 PNG** 가
+> 바뀌지 않았는지 본다. 바뀌었으면 그 그림은 제 단계에서 다시 뽑는다.
+
+> [!note] Simulink 주석에 마크다운을 쓰지 않는다
+> `sl_note` 가 받는 글은 그대로 그려진다. `**이고**` 라고 쓰면 별표가 글자로
+> 찍힌다. 강조가 필요하면 말로 쓴다 (`이고 또한`). 2026-10-15 7단 주석에서 밟았다.
+
 ## 파일을 쓰는 방법 — 긴 한글 `.m` 은 히어독으로 쓰지 않는다
 
 - Bash 히어독으로 긴 한국어 MATLAB 본문을 쓰면 `unexpected EOF while looking for
