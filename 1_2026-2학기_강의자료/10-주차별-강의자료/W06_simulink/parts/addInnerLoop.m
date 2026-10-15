@@ -40,9 +40,11 @@ function addInnerLoop(m, x, y, bow)
     add_line(ss, 'u_cmd/1','SumU/1');  add_line(ss, 'u/1','SumU/2');
     add_line(ss, 'v_cmd/1','SumV/1');  add_line(ss, 'v/1','SumV/2');
 
-    %  속도 PI — 적분기 wind-up 은 clamping 으로 막는다 (출력이 포화면 적분 정지)
-    sl_pi(ss, 'PI_u', 'Kp_u', 'Ki_u', '2*F_max',   350,  60);
-    sl_pi(ss, 'PI_v', 'Kp_v', 'Ki_v', 'F_bow_max', 350, 180);
+    %  속도 PI — 적분기 wind-up 은 **역계산**(back-calculation)으로 막는다.
+    %  잘려 나간 만큼 (sat - raw) 을 Kb 배 해서 적분기 입력에 되돌린다.
+    %  고정(clamping)은 적분을 멈추기만 하므로 쌓인 양이 그대로 남는다.
+    sl_pi(ss, 'PI_u', 'Kp_u', 'Ki_u', '2*F_max',   350,  60, 'Kb');
+    sl_pi(ss, 'PI_v', 'Kp_v', 'Ki_v', 'F_bow_max', 350, 180, 'Kb');
     add_line(ss, 'SumU/1','PI_u/1');
     add_line(ss, 'SumV/1','PI_v/1');
 
@@ -84,7 +86,7 @@ function addInnerLoop(m, x, y, bow)
 
     txt = ['속도 PI 둘(전후·횡) + 선수각 P-D 하나 -> 추력 배분' newline ...
            '선수추진기가 횡력을 내면 요 모멘트가 딸려 오므로 좌·우 추진기가 그만큼 되받음' newline ...
-           'PI 는 clamping — 출력이 포화면 적분을 멈춤 (wind-up 방지)'];
+           'PI 는 역계산(back-calculation) — 잘려 나간 만큼을 Kb 배 해서 적분기로 되감음'];
     if bow
         txt = [txt newline 'BowOn 게인 — bow_on = 0 이면 횡력 지령이 끊김 (선수추진기 없는 배)'];
     end

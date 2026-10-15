@@ -40,6 +40,7 @@ description: 선박·USV의 GNC(유도·항법·제어) Simulink 모델을 MATLA
 | 제어기·유도법칙을 쓴다 | `references/gnc-conventions.md` · `references/authoring.md` |
 | 사람이 조작하는 모델을 만든다 | `references/interactive-models.md` |
 | 다 만들고 검사한다 | `references/checks.md` → `references/verify.md` |
+| **VRX 로 돌려 결과 그림을 남긴다 · 애니메이션을 찍는다** | `references/verify.md` §8.1 · §8.2 |
 | 규칙이 왜 이런지 궁금하다 | `references/decisions.md` |
 
 ## 작업 순서
@@ -81,3 +82,7 @@ description: 선박·USV의 GNC(유도·항법·제어) Simulink 모델을 MATLA
   단계**에서 뽑기 (`build-models.md`) · 윗단에도 앞 단계의 스위치를 남기기
   (`decisions.md` §4-3) · 좁은 상자 안에서 통과선에 가지를 치지 않기
   (`line-routing.md` §5.1) — 5·6주차 도면 점검에서 (2026-10-15)
+- VRX 결과 그림 **두 장을 이름 규칙으로** 남기기 · 대조 칸은 그 주차의 질문 순서로 ·
+  `WXX_anim_capture.m` 으로 실시간 화면을 조건과 함께 찍기 · `gcf` 대신 그리는 함수가
+  준 핸들 · 범례가 정착선을 덮지 않게 (`verify.md` §8.1·§8.2·§16·§17) —
+  교수 지시 2026-10-15 *"실제 VRX 결과에 대한 그래프도 자세히, 다른 주차에 맞게."*

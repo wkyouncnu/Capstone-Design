@@ -190,7 +190,7 @@ if newRun
     ylabel(axP,'\psi [deg]');
     title(axP, '선수각 — 지령 대비 응답 (ssa 로 접은 값)', 'FontWeight','normal');
     legend(axP, [hPref hP], {'\psi_{ref} (과업 지령)','\psi (응답)'}, ...
-           'Location','southeast', 'Orientation','horizontal', 'AutoUpdate','off');
+           'Location','southwest', 'Orientation','horizontal', 'AutoUpdate','off');
 
     % ---- 오른쪽 (2) : 위치 오차 ----
     %   6주차의 핵심 지표다. 성분과 거리를 함께 그려야 어느 쪽으로 남았는지 읽힌다

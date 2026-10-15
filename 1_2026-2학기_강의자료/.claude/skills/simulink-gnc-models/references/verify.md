@@ -86,6 +86,62 @@ RTF = (double(m1.header.stamp.sec) + double(m1.header.stamp.nanosec)*1e-9 - t0) 
 
 - **VRX 모델에도 `Animate` 블록을 넣는다** — 주행 중 항적이 보인다. Gazebo 화면 없이도 확인 가능
 
+### 8.1 결과 그림은 **두 장**을 같은 이름으로 남긴다 (교수 지시 2026-10-15)
+
+VRX 연동 단이 있는 주차는 실행 파일이 그림을 **띄우기만 하면 안 된다.** Gazebo 가
+떠 있는 자리에서만 얻는 그림이므로, 그 자리에서 파일로 남겨야 다음 사람이 본다.
+주차마다 이름이 달라지면 강의자료에서 찾지 못하므로 **이름을 규칙으로 고정한다.**
+
+| 파일 | 무엇 | 내는 곳 |
+|---|---|---|
+| `img/WXX_N_vrx_result.png` | 연동 단(N단) 자체의 성능 그림 — `WXX_plot` 이 낸 그 창 | `WXX_vrx_run` 끝 |
+| `img/WXX_vrx_vs_offline.png` | 같은 조건으로 돌린 **오프라인 ↔ VRX 대조** | 같은 곳, `do_compare` |
+
+```matlab
+IMG = fullfile(fileparts(mfilename('fullpath')), 'img');
+if ~isfolder(IMG), mkdir(IMG); end
+S = WXX_plot(out, ttl);
+exportgraphics(S.fig, fullfile(IMG,'WXX_N_vrx_result.png'), 'Resolution', 130);
+```
+
+- **대조 그림의 칸은 그 주차가 답해야 하는 질문 순서로 둔다.** 칸 수를 늘리는 것이
+  목적이 아니다. 5주차는 궤적과 이격 두 칸으로 족하지만, 접안(6주차)은
+  *제자리에 섰는가 · 자세가 맞는가 · 힘을 얼마나 썼는가* 를 따로 물으므로
+  여섯 칸이다 — 궤적+선석 · 목표까지 거리(+$R_{dock}$·$R_{stop}$) · 이격 ·
+  $\psi$ 와 $\psi_t$ · $u$·$v$ · $F_L$·$F_R$·$F_B$
+- 색은 **VRX 주황 `[0.85 0.33 0.10]` · 오프라인 파랑 `[0 0.45 0.74]`** 로 주차마다 같게
+- 끝에 두 열 표(완료·끝오차·자세오차·최대 속도·최대 추력·주행거리)를 `fprintf` 로 찍는다
+- **VRX 로그를 `setappdata` 로 남긴다** — Gazebo 를 한 번 돌리기 어려우므로, 그림을
+  다시 그리려고 다시 돌리는 일을 막는다 (`setappdata(0,'WXX_vrx_log', V)`)
+
+> [!caution] 찍지 못한 그림을 강의자료에 `![…]` 로 링크하지 않는다
+> `vault_check.sh` 가 **없는 그림을 잡아낸다.** VRX 가 떠야 생기는 PNG 는 실제로
+> 찍은 뒤에 링크한다. 그 전에는 "어느 파일로 남는지 · 각 칸을 어떻게 읽는지" 만 적는다
+
+### 8.2 실시간 화면은 `WXX_anim_capture.m` 로 찍는다
+
+애니메이션 그림도 **재현되어야 한다.** 손으로 창을 잡아 찍으면 다음 사람이 같은
+그림을 얻지 못하고 조건(게인·시간·RTF)도 남지 않는다. 주차마다 한 장 둔다.
+
+```matlab
+function info = WXX_anim_capture(which, varargin)   % 'Pacing' · 'Stop'
+setappdata(0,'WXX_stage', stage);  setappdata(0,'WXX_skip_run', true);
+evalin('base','WXX_setup');  assignin('base','animate',1);
+in = Simulink.SimulationInput(evalin('base','mdl'));   % 모델 파일은 건드리지 않는다
+if ~isempty(tStop), in = in.setModelParameter('StopTime', num2str(tStop)); end
+sim(in);
+f = WXX_animate();                                     % 그리는 함수가 준 핸들
+exportgraphics(f, fullfile(img,['WXX_anim_' which '.png']), 'Resolution', 150);
+```
+
+- **StopTime·페이싱은 `Simulink.SimulationInput` 으로만 준다.** `set_param` 으로
+  모델에 쓰면 `.slx` 가 바뀌어 다음 빌드와 어긋난다
+- `info` 로 조건을 함께 돌려준다 — 과업·게인·추진기 한계·벽시계. 강의자료에 그림을
+  실을 때 그 숫자를 캡션에 적는다
+- VRX 로 찍을 때는 끝에 **추진기마다 0 N 을 보낸다.** 플러그인은 마지막 값을
+  유지하므로, 보내지 않으면 다음 실험이 달리는 배 위에서 시작한다. 선수추진기가
+  있는 주차는 좌·우·**선수** 셋 전부다
+
 ## 9. VRX 연동에서 반드시 밟는 지뢰 세 개
 
 | 증상 | 원인 | 조치 |
@@ -232,6 +288,12 @@ end
 exportgraphics(findobj(0,'Type','figure','Tag','W06_anim'), path, 'Resolution',130);
 ```
 
+**`gcf` 는 더 나쁘다.** 한 세션에 성능 그림 · 추진기 그림 · 실시간 화면이 함께 열려
+있으므로 `gcf` 는 **마지막으로 만진 창**이다. 그리는 함수가 인자 없이 불렀을 때
+자기 창 핸들을 돌려주게 만들고(`f = W06_animate();`), **그 핸들로** 저장한다.
+저장 전에 `isvalid(f)` 로 창이 정말 열렸는지 보고, 안 열렸으면 `animate = 1` 이
+아니라는 뜻이므로 오류를 낸다 — 빈 그림이 조용히 저장되는 것보다 낫다.
+
 ## 17. 그림 칸을 짤 때 — 두 번 실패한 길
 
 - **세로로 긴 칸 + `axis equal` 은 쓰지 않는다.** `subplot(2,3,[1 4])` 에 `axis equal`
@@ -243,3 +305,8 @@ exportgraphics(findobj(0,'Type','figure','Tag','W06_anim'), path, 'Resolution',1
   지나가는 자리 두셋에 `text` 로 글자를 직접 찍는다
 - 글자 자리는 **그림의 기준 좌표**로 잡는다. 접안 그림은 선석 기준 $(a, b)$ 로 두어
   선석 방위와 접안 방향이 바뀌어도 이름표가 따라 돌게 했다
+- **범례가 정착 구간을 덮지 않게 둔다.** 오차 칸은 끝에서 0 선에 붙으므로 `southeast`
+  에 둔 범례가 바로 그 구간을 가린다. 제어 결과 그림에서 읽어야 하는 것이 그
+  "끝에서 0 에 붙었는가" 이므로, 오차·각도 칸의 범례는 `southwest` 또는 `north`
+  쪽으로 비켜 둔다. **찍은 그림을 눈으로 열어 확인한다** — 코드만 보고는 못 찾는다
+  (2026-10-15 에 `W06_anim_dock.png` 에서 $\psi = 0$ 정착선이 가려져 있었다)

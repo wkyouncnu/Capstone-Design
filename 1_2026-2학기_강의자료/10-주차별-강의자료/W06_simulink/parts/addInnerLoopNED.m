@@ -28,12 +28,13 @@
 %     것과 나가는 것을 모두 그 좌표계로 맞춰야 하기 때문이다.
 %
 %   anti-windup 이 느슨해진다
-%     선체고정 전략에서는 횡 속도 PI 의 clamping 한계를 F_bow_max 로 둘 수
+%     선체고정 전략에서는 횡 속도 PI 의 출력 한계를 F_bow_max 로 둘 수
 %     있었다 — 그 힘을 선수추진기가 낸다는 것을 알기 때문이다. NED 축에서는
 %     북쪽 힘을 어느 추진기가 낼지 선수각에 따라 달라지므로 그렇게 묶을 수
 %     없다. 두 축 모두 2*F_max 로 두고, 실제 한계는 배분(Alloc)에서 FB 가
-%     F_bow_max 로 잘리며 드러난다. 잘린 만큼은 적분기가 모르므로 쌓인다 —
-%     NED 전략이 치르는 둘째 값이다.
+%     F_bow_max 로 잘리며 드러난다. PI 가 보는 포화는 **제 출력 한계**뿐이고
+%     Alloc 에서 잘린 몫은 보지 못하므로, 역계산(Kb)을 켜 두어도 그 몫까지
+%     되감기지는 않는다 — NED 전략이 치르는 둘째 값이다.
 %
 %   도면을 어떻게 앉혔는가 (배선 검사를 0 으로 두려면 이 순서가 필요하다)
 %     (1) ToNED 를 도면 **아래**에 둔다. 되먹임은 합산점의 2 번(아래) 포트로
@@ -69,10 +70,12 @@ function addInnerLoopNED(m, x, y, bow)
       }, newline));
 
     %  (2) NED 속도 오차 -> PI — 논문 식 15
+    %      안티와인드업은 선체고정 전략과 같은 역계산(Kb)을 쓴다. 두 전략의
+    %      차이가 좌표계에서만 오게 하려는 것이다
     add_sum(ss, 'ErrXd', '+-', [520  90]);
     add_sum(ss, 'ErrYd', '+-', [520 210]);
-    sl_pi(ss, 'PI_xd', 'Kp_vn', 'Ki_vn', '2*F_max', 620,  60);
-    sl_pi(ss, 'PI_yd', 'Kp_vn', 'Ki_vn', '2*F_max', 620, 180);
+    sl_pi(ss, 'PI_xd', 'Kp_vn', 'Ki_vn', '2*F_max', 620,  60, 'Kb');
+    sl_pi(ss, 'PI_yd', 'Kp_vn', 'Ki_vn', '2*F_max', 620, 180, 'Kb');
 
     %  (3) 힘 지령을 선체좌표로 — 논문 식 16
     add_block('simulink/User-Defined Functions/MATLAB Function', [ss '/ToBody'], ...
@@ -164,7 +167,8 @@ function addInnerLoopNED(m, x, y, bow)
         'NED 전략 — 속도 PI 가 북·동 축에서 돔 (선체 전후·횡이 아님)' newline ...
         '회전행렬이 둘 : 되먹임을 들일 때(ToNED) 와 힘을 낼 때(ToBody)' newline ...
         '선수각 P-D 와 추력 배분은 선체고정 전략과 같음' newline ...
-        'PI clamping 을 2*F_max 로 느슨하게 둠 — 실제 한계는 Alloc 에서 드러남'];
+        'PI 출력 한계를 2*F_max 로 느슨하게 둠 — 실제 한계는 Alloc 에서 드러남' newline ...
+        '안티와인드업은 역계산(Kb) — 다만 Alloc 에서 잘린 몫은 PI 가 보지 못함'];
     if bow
         txt = [txt newline ...
             'BowOn 게인 — bow_on = 0 이면 횡력 지령이 끊김 (선수추진기 없는 배)'];

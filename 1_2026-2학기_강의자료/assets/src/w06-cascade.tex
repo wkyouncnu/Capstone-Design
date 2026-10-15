@@ -4,151 +4,199 @@
 %
 % 이 그림이 말하는 것
 %   제어기가 하나가 아니라 **둘이 겹쳐 있다**. 바깥은 "어디로 갈까"를 정하고,
-%   안쪽은 "얼마나 세게 밀까"를 정한다. 바깥이 안쪽에게 **명령으로 주는 것은
-%   추력이 아니라 속도**다 — 이것이 캐스케이드(다단) 제어의 전부다.
+%   안쪽은 "얼마나 세게 밀까"를 정한다. 바깥이 안쪽에게 주는 것은 추력이
+%   아니라 **속도 지령**이다 — 이것이 캐스케이드(다단) 제어의 전부다.
 %
-%   바깥 고리  위치 오차 [m]   --(P 제어기)-->  속도 지령 [m/s]
-%   안쪽 고리  속도 오차 [m/s] --(PI 제어기)--> 추력 지령 [N]
+% 2026-10-15 다시 그림 — 앞 판은 한 축짜리 일반형이라 6주차 모델과 달랐다.
+%   실제 모델(parts/addOuterLoop.m + parts/addInnerLoop.m)과 블록을 맞춘다.
 %
-% 왜 나누는가 세 가지
-%   1) 속도 상한을 **지령 단계에서** 자를 수 있다 — 배가 과속하지 않는다
-%   2) 안쪽이 바깥보다 빨라 외란·모델 오차를 먼저 지운다
-%   3) 단위가 달라 이득을 따로 맞출 수 있다 (바깥 1/s, 안쪽 N/(m/s))
+%     바깥 고리  (x_ref, y_ref) - (x_n, y_n) = (e_N, e_E)  [m]    <- NED 축
+%                --(회전 R(psi)^T)-->  (e_x, e_y)          [m]    <- 선체 축
+%                --(P: Kp_x, Kp_y)-->  (u_d, v_d)          [m/s]
+%                --(포화 u_max, v_max)--> --(x gate)--> (u_cmd, v_cmd)
+%     안쪽 고리  (u_cmd, v_cmd) - (u, v)                   [m/s]
+%                --(PI: Kp_u Ki_u / Kp_v Ki_v)--> (X, Y)   [N]
+%                --(추력 배분)--> (F_L, F_R, F_B)          [N]
+%
+%   앞 판에 없어서 틀렸던 것 셋
+%     (1) 위치 목표가 한 개(p_d)로 그려져 있었다. 실제로는 북·동 두 개다
+%     (2) **회전행렬이 빠져 있었다.** 바깥 고리의 오차는 북·동으로 몇 m 이고
+%         안쪽 고리가 쥐는 것은 앞·옆으로 몇 m/s 다. 두 자가 psi 만큼 돌아가
+%         있으므로 사이에 R(psi)^T 가 반드시 한 번 들어간다
+%     (3) 안쪽 고리가 제어하는 것이 u 하나로 그려져 있었다. u 와 v 둘이다
 %
 % 좌표 메모 (mm)
-%   주 경로 y=0 · 안쪽 되먹임 y=-26 · 바깥 되먹임 y=-44
-%   합산점 x = 0 / 96 · 블록 x = 28 / 64 / 126 / 160 / 194
-%   블록 폭 18 (반 9) · 합산점 지름 4.6 (반 2.3) — 라벨은 그 사이에 놓는다
+%   주 경로 y=0 · 안쪽 되먹임 y=-30 · 바깥 되먹임 y=-48 · psi 줄 y=-64
+%   합산점 x = 0 / 206 · 블록 x = 38 / 86 / 136 / 174 / 246 / 292 / 340
+%   블록 폭 26 (반 13) 이므로 사이 틈이 최소 21 mm — 두 줄짜리 신호 이름이 들어간다
+%   글자는 \footnotesize — 앞 판은 \scriptsize 라 확대해도 읽기 힘들었다
 
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
+
+\tikzset{
+  bx/.style = {cblk, align=center, font=\footnotesize,
+               minimum width=26mm, minimum height=13mm},
+  tx/.style = {tblk, align=center, font=\footnotesize,
+               minimum width=24mm, minimum height=13mm},
+  px/.style = {pblk, align=center, font=\footnotesize,
+               minimum width=24mm, minimum height=13mm},
+  io/.style = {font=\footnotesize, ink, inner sep=1.6pt},
+  un/.style = {font=\scriptsize, soft, inner sep=1.4pt},
+}
 
 \begin{document}
 \begin{tikzpicture}[x=1mm, y=1mm]
 
 % ===========================================================================
-% 주 경로
+% 주 경로 — 목표 위치에서 추진기 힘까지
 % ===========================================================================
-\node[sum]  (s1)  at (0,0)   {};
+\node[sum]  (s1) at (0,0)   {};
 \node[font=\scriptsize] at (0,0) {$+$};
-\node[cblk] (kp)  at (28,0)  {위치 P 제어기};
-\node[cblk] (sat) at (64,0)  {속도 제한};
-\node[sum]  (s2)  at (96,0)  {};
-\node[font=\scriptsize] at (96,0) {$+$};
-\node[cblk] (pi)  at (126,0) {속도 PI 제어기};
-\node[tblk] (al)  at (160,0) {추력 배분};
-\node[pblk] (pl)  at (194,0) {배의 운동};
+\node[font=\scriptsize, anchor=north east] at (-1.8,-2.0) {$-$};
 
-% 합산점 부호 — 지령은 왼쪽(+), 되먹임은 아래(-)
-\node[font=\scriptsize, anchor=north east] at (-1.6,-1.8)  {$-$};
-\node[font=\scriptsize, anchor=north east] at (94.4,-1.8) {$-$};
+\node[bx, draw=nav] (rot) at (38,0) {회전 \ $R(\psi)^{\mathsf T}$\\[1pt] NED 축 $\to$ 선체 축};
+\node[bx] (kp)  at (86,0)  {위치 P\\[1pt] $K_{p,x}$ \ $K_{p,y}$};
+\node[bx] (sat) at (136,0) {속도 제한\\[1pt] $u_{max}\,1.5$ \ $v_{max}\,0.6$};
+\node[bx, minimum width=16mm] (gt) at (170,0) {$\times\,$gate};
+\node[sum] (s2) at (206,0)  {};
+\node[font=\scriptsize] at (206,0) {$+$};
+\node[font=\scriptsize, anchor=north east] at (204.2,-2.0) {$-$};
+\node[bx] (pi)  at (246,0) {속도 PI\\[1pt] $K_{p,u}\ K_{i,u}$ \ $K_{p,v}\ K_{i,v}$};
+\node[tx] (al)  at (292,0) {추력 배분\\[1pt] $\mathbf u = T^{-1}\boldsymbol\tau$};
+\node[px] (sh)  at (340,0) {배의 운동\\[1pt] 3자유도};
 
 % --- 선과 신호 이름 ---------------------------------------------------------
-\draw[sig] (-28,0) -- (s1);
-\node[note, anchor=south] at (-15,1.4) {$p_d$ \ [m]};
-\node[font=\scriptsize, anchor=north] at (-15,-6.2) {목표 위치};
+\draw[sig] (-34,0) -- (s1);
+\node[io, anchor=south] at (-18,1.8) {$x_{ref},\ y_{ref}$};
+\node[un, anchor=north] at (-18,-1.8) {[m] 목표 위치};
 
-\draw[sig] (s1) -- (kp);
-\node[note, anchor=south] at (10.6,1.4) {$e_p$ \ [m]};
+\draw[sig] (s1) -- (rot);
+\node[io, anchor=south] at (13.6,1.8) {$e_N,\ e_E$};
+\node[un, anchor=north] at (13.6,-1.8) {[m] 북 $\cdot$ 동};
+
+\draw[sig] (rot) -- (kp);
+\node[io, anchor=south] at (62,1.8) {$e_x,\ e_y$};
+\node[un, anchor=north] at (62,-1.8) {[m] 앞 $\cdot$ 옆};
 
 \draw[sig] (kp) -- (sat);
-\node[anote, anchor=south] at (46,1.4) {$u_d$ \ [m/s]};
-\node[font=\scriptsize, accent, anchor=north] at (46,-6.2) {가고 싶은 속도};
+\node[anote, font=\footnotesize, anchor=south] at (111,1.8) {$u_d,\ v_d$};
+\node[un, anchor=north] at (111,-1.8) {[m/s]};
+\node[font=\scriptsize, accent, anchor=north] at (111,-6.2) {가고 싶은 속도};
 
-\draw[sig] (sat) -- (s2);
-\node[anote, anchor=south] at (83.4,1.4) {$u_{d,\,sat}$};
+\draw[sig] (sat) -- (gt);
+\draw[sig] (gt) -- (s2);
+\node[anote, font=\footnotesize, anchor=south] at (191,1.8) {$u_{cmd},\ v_{cmd}$};
 
 \draw[sig] (s2) -- (pi);
-\node[note, anchor=south] at (107.6,1.4) {$e_u$ \ [m/s]};
+\node[io, anchor=south] at (220.6,1.8) {$e_u,\ e_v$};
+\node[un, anchor=north] at (220.6,-1.8) {[m/s]};
 
 \draw[sig] (pi) -- (al);
-\node[note, anchor=south] at (143,1.4) {$\boldsymbol\tau$};
-\node[font=\scriptsize, anchor=north] at (143,-6.2) {[N, N$\cdot$m]};
+\node[io, anchor=south] at (269.5,1.8) {$X,\ Y$};
+\node[un, anchor=north] at (269.5,-1.8) {[N] 선체축};
 
-\draw[sig] (al) -- (pl);
-\node[note, anchor=south] at (177,1.4) {$\mathbf{u}$};
-\node[font=\scriptsize, anchor=north] at (177,-6.2) {추진기 힘 [N]};
+\draw[sig] (al) -- (sh);
+\node[io, anchor=south] at (316,1.8) {$F_L,\ F_R,\ F_B$};
+\node[un, anchor=north] at (316,-1.8) {[N]};
 
-\draw[wire] (pl) -- (232,0);
-\node[note, anchor=south] at (218,1.4) {$p,\ u$};
+\draw[wire] (sh) -- (392,0);
 
 % ===========================================================================
-% 되먹임 둘
+% 되먹임 셋 — 선체 속도 · NED 위치 · 선수각
 % ===========================================================================
-\node[dot] (d1) at (214,0) {};
-\node[dot] (d2) at (226,0) {};
+\node[dot] (d1) at (370,0) {};
+\node[dot] (d2) at (380,0) {};
+\node[dot] (d3) at (388,0) {};
 
-\draw[fb] (d1) |- (96,-26) -- (s2);
-\node[anote, anchor=south] at (160,-25) {$u$ \ [m/s] — \textbf{실제 속도}};
+\draw[fb] (d1) |- (206,-30) -- (s2);
+\node[anote, font=\footnotesize, anchor=south] at (288,-29)
+     {$u,\ v$ \ [m/s] — \textbf{선체 속도} (앞 $\cdot$ 옆)};
 
-\draw[fb] (d2) |- (0,-44) -- (s1);
-\node[note, anchor=south] at (160,-43) {$p$ \ [m] — \textbf{실제 위치}};
+\draw[fb] (d2) |- (0,-48) -- (s1);
+\node[io, anchor=south] at (288,-47)
+     {$x_n,\ y_n$ \ [m] — \textbf{NED 위치} (북 $\cdot$ 동)};
+
+\draw[fb] (d3) |- (38,-64) -- (rot);
+\node[font=\footnotesize, nav, anchor=south] at (288,-63)
+     {$\psi$ \ [rad] — \textbf{선수각}. 회전행렬이 이것을 쓴다};
 
 % ===========================================================================
 % 두 고리를 영역으로 묶는다
 % ===========================================================================
-\draw[grp, draw=ctrl] (86,-32) rectangle (220,12);
-\node[font=\scriptsize\bfseries, ctrl, anchor=north west] at (87,-32.8)
+\draw[grp, draw=ctrl] (194,-36) rectangle (358,14);
+\node[font=\footnotesize\bfseries, ctrl, anchor=north west] at (195,-36.8)
      {안쪽 고리 — 속도제어 (빠르다)};
 
-\draw[grp, draw=guid] (-34,-50) rectangle (234,20);
-\node[font=\scriptsize\bfseries, guid, anchor=north west] at (-33,-50.8)
+\draw[grp, draw=guid] (-42,-54) rectangle (372,22);
+\node[font=\footnotesize\bfseries, guid, anchor=north west] at (-41,-54.8)
      {바깥 고리 — 위치제어 (느리다)};
 
 % ===========================================================================
-% 두 고리가 하는 일 — 한 줄씩
+% 두 고리가 하는 일 — 한 칸씩
 % ===========================================================================
-\node[font=\scriptsize, guid, anchor=south west, text width=104mm] at (-34,24)
-     {\textbf{바깥 고리가 묻는 것} — \emph{"선석까지 12 m 남았다. 그러면 몇 m/s 로 갈까?"} \\
-      답은 남은 거리에 비례한다. 멀면 빠르게, 가까우면 느리게.
-      그래서 $u_d = K_p\,e_p$ — 나오는 것은 \textbf{속도}이지 힘이 아니다};
+\node[font=\footnotesize, guid, anchor=south west, text width=118mm] at (-42,26)
+     {\textbf{바깥 고리가 묻는 것} — \emph{"선석까지 북으로 12 m, 동으로 3 m
+      남았다. 그러면 앞뒤로 · 옆으로 몇 m/s 로 갈까?"} \\
+      남은 거리에 비례해 \textbf{속도}를 정한다. 나오는 것은 힘이 아니다};
 
-\node[font=\scriptsize, ctrl, anchor=south west, text width=116mm] at (118,24)
-     {\textbf{안쪽 고리가 묻는 것} — \emph{"1.2 m/s 로 가라는데 지금 0.8 m/s 다. 얼마나 더 밀까?"} \\
-      답은 속도 오차에 비례하고, 남은 치우침은 적분이 지운다.
-      그래서 $X = K_P\,e_u + K_I\!\int\! e_u\,dt$ — 나오는 것이 \textbf{힘}이다};
+\node[font=\footnotesize, nav, anchor=south west, text width=94mm] at (86,26)
+     {\textbf{사이에 회전이 있는 까닭} — 바깥이 센 것은 \textbf{북 $\cdot$ 동으로
+      몇 m}, 안쪽이 쥐는 것은 \textbf{앞 $\cdot$ 옆으로 몇 m/s} 다.
+      두 자가 $\psi$ 만큼 돌아가 있어 한 번 돌려야 말이 통한다};
 
-% ===========================================================================
-% 아래 띠 — 왜 하나로 하지 않고 둘로 나누는가
-% ===========================================================================
-\draw[wire, soft] (-34,-64) -- (234,-64);
-
-\node[anchor=north west, font=\scriptsize, text width=82mm] at (-34,-69)
-     {\textbf{하나로 하면 안 되는가} \\[3pt]
-      위치 오차에서 추력을 바로 뽑는 한 고리짜리도 만들 수는 있다. 다만 \\[2pt]
-      $\bullet$ 배가 \textbf{얼마나 빨리 가는지를 제어기가 모른다}.
-        12 m 남았을 때 추력을 세게 주면 배는 계속 빨라지기만 한다 \\[2pt]
-      $\bullet$ 속도를 막으려면 \textbf{추력}을 잘라야 하는데,
-        추력을 자르면 멈추는 능력까지 같이 잘린다 \\[2pt]
-      $\bullet$ 물 저항과 바람이 바뀌면 같은 추력에 다른 속도가 나온다.
-        고칠 자리가 없다};
-
-\node[anchor=north west, font=\scriptsize, text width=82mm] at (58,-69)
-     {\textbf{둘로 나누면 생기는 것} \\[3pt]
-      $\bullet$ \textcolor{accent}{속도 지령을 자르는 자리}가 생긴다.
-        그 값이 곧 \textbf{배가 낼 수 있는 최고 속도}다.
-        접안에서는 이것이 안전 장치 노릇을 한다 \\[2pt]
-      $\bullet$ 안쪽 고리가 \textbf{바깥보다 빠르게} 돌아, 저항이 바뀌어도
-        속도를 지령에 맞춰 놓는다. 바깥 고리는 그 사실을 몰라도 된다 \\[2pt]
-      $\bullet$ 이득을 따로 맞춘다. 바깥 $K_p$ 의 단위는 $1/\mathrm{s}$,
-        안쪽 $K_P$ 는 $\mathrm{N}/(\mathrm{m/s})$ — 서로 섞이지 않는다};
-
-\node[anchor=north west, font=\scriptsize, text width=82mm] at (150,-69)
-     {\textbf{빠르고 느리다는 말의 뜻} \\[3pt]
-      안쪽 고리는 \textbf{속도}를 다루고, 속도는 추력에 곧바로 반응한다.
-      바깥 고리는 \textbf{위치}를 다루고, 위치는 속도를 한 번 더 쌓아야 바뀐다 \\[2pt]
-      그래서 같은 배라도 안쪽이 먼저 자리를 잡고, 바깥은 그 결과를 보고 천천히 움직인다.
-      둘의 반응 속도가 비슷해지면 서로 간섭해 흔들린다 \\[2pt]
-      $\;\to\;$ 바깥 이득은 안쪽보다 \textbf{작게} 잡는다};
+\node[font=\footnotesize, ctrl, anchor=south west, text width=176mm] at (190,26)
+     {\textbf{안쪽 고리가 묻는 것} — \emph{"앞으로 1.2 m/s 로 가라는데 지금
+      0.8 m/s 다. 얼마나 더 밀까?"} \ 속도 오차에 비례하고 남은 치우침은
+      적분이 지운다. 나오는 것이 \textbf{힘}이다};
 
 % ===========================================================================
-% 6주차 모델에서 이 그림이 어디인가
+% 아래 띠 — 회전행렬 · 왜 둘로 나누는가 · 모델의 어디인가
 % ===========================================================================
-\node[anchor=north west, font=\scriptsize, text width=266mm] at (-34,-122)
-     {\textbf{6주차 모델에서는} — 이 한 쌍이 \textbf{세 벌} 돈다.
-      앞뒤 방향($x$)에 한 벌, 좌우 방향($y$)에 한 벌, 선수각($\psi$)에 한 벌이다.
-      선수각 고리만 적분 없이 비례-미분으로 둔다 — 각도 오차를 쌓으면 한 바퀴 돌아 버리기 때문이다.
-      세 고리가 낸 $X,\ Y,\ N$ 을 \textcolor{thr}{추력 배분}이 받아 추진기 셋의 힘 $F_L,\ F_R,\ F_B$ 로 나눈다};
+\draw[wire, soft] (-42,-78) -- (392,-78);
+
+\node[anchor=north west, font=\footnotesize, text width=130mm] at (-42,-84)
+     {\textbf{회전행렬을 빼면 무슨 일이 생기는가} — 숫자로 \\[3pt]
+      배가 \textbf{동쪽}을 보고 있다 ($\psi = 90^\circ$). 목표는
+      \textbf{북쪽으로 10 m} 이고 동쪽 오차는 0 이다 \\[3pt]
+      \hspace{3mm} $e_x = \ \ \cos\psi\;e_N + \sin\psi\;e_E
+        = 0\cdot 10 + 1\cdot 0 = 0$ \ m \\[2pt]
+      \hspace{3mm} $e_y = -\sin\psi\;e_N + \cos\psi\;e_E
+        = -1\cdot 10 + 0 = -10$ \ m \\[3pt]
+      앞으로는 \textbf{0 m}, 좌현쪽으로 \textbf{10 m} 다. 가야 할 길은 전진이
+      아니라 \textbf{옆걸음}이고 그 힘은 선수추진기가 낸다 \\[3pt]
+      돌리지 않고 $e_N$ 을 전후 PI 에 바로 주면 배는 \textbf{동쪽으로} 10 m
+      를 달린다 — 목표와 $90^\circ$ 어긋난 방향이다};
+
+\node[anchor=north west, font=\footnotesize, text width=130mm] at (96,-84)
+     {\textbf{왜 하나로 하지 않고 둘로 나누는가} \\[3pt]
+      $\bullet$ \textcolor{accent}{속도 지령을 자르는 자리}가 생긴다. 그 값이
+        곧 배가 낼 수 있는 최고 속도이고, 접안에서 안전 장치 노릇을 한다
+        ($u_{max}$ 1.5 m/s, $v_{max}$ 0.6 m/s) \\[2pt]
+      $\bullet$ 안쪽이 \textbf{바깥보다 빠르게} 돌아 저항과 바람이 바뀌어도
+        속도를 지령에 맞춰 놓는다. 바깥은 그 사실을 몰라도 된다 \\[2pt]
+      $\bullet$ 이득의 단위가 갈린다. 바깥 $K_{p,x}$ 는 $1/\mathrm{s}$,
+        안쪽 $K_{p,u}$ 는 $\mathrm{N}/(\mathrm{m/s})$ — 서로 섞이지 않는다 \\[2pt]
+      $\bullet$ 위치 오차에서 추력을 바로 뽑으면 \textbf{배가 얼마나 빨리
+        가는지를 제어기가 모른다}. 멀리서 세게 밀면 계속 빨라지기만 한다};
+
+\node[anchor=north west, font=\footnotesize, text width=155mm] at (234,-84)
+     {\textbf{6주차 모델에서 이 그림이 어디인가} \\[3pt]
+      \begin{tabular}{@{}ll@{}}
+        바깥 고리 & \texttt{parts/addOuterLoop.m} \\
+        \ \ 그 안의 회전 & \texttt{Rotate} MATLAB Function \\
+        안쪽 고리 & \texttt{parts/addInnerLoop.m} \\
+        추력 배분 & \texttt{parts/allocFcn.m} \\
+        운동모델 & \texttt{parts/addMotionModel.m} \\
+      \end{tabular} \\[4pt]
+      \textbf{선수각은 고리 하나가 더 있다} — 위 그림에 그리지 않은 셋째
+      고리다. $\psi_{ref} - \psi$ 를 $\pm\pi$ 로 접어 $K_{p,\psi}$ 를 곱하고
+      요각속도 $r$ 로 제동한다 (P-D). 적분을 두지 않는 까닭은 각도 오차를
+      쌓으면 한 바퀴 돌아 버리기 때문이다 \\[3pt]
+      세 고리가 낸 $X,\ Y,\ N$ 을 \textcolor{thr}{추력 배분}이 받아
+      $F_L,\ F_R,\ F_B$ 로 나눈다 \\[3pt]
+      \textbf{8단(NED 전략)은 이 회전을 옮긴다} — 바깥 고리에서 빼고 안쪽
+      고리의 양 끝에 둔다. \texttt{w06-ned-loop} 와 견주어 볼 것};
 
 \end{tikzpicture}
 \end{document}
