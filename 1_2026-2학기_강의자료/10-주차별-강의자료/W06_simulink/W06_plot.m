@@ -14,6 +14,7 @@ function S = W06_plot(out, ttl)
 %     S.epsi_ss      마지막 10 초 평균 |선수각 오차| [deg]
 %     S.max_v        최대 |v| [m/s]          <- 선수추진기가 만든 횡이동 속도
 %     S.max_FB       최대 |F_B| [N]
+%     S.max_Ferr     프로펠러 법칙 왕복 검산 max|F_err| [N]  <- 0 이어야 한다
 %     S.t_phase      단계가 올라간 시각 [s]  (접안은 3개, 그 밖은 1개)
 
 if nargin < 2, ttl = ''; end
@@ -45,6 +46,11 @@ FB    = out.log_FB.Data;
 n = squeeze(out.log_n.Data);
 if size(n,1) ~= numel(t), n = n.'; end
 
+%  프로펠러 법칙 왕복 검산 — Thrusters 가 추력을 회전수로 바꾸고 다시 추력으로
+%  되돌린 차이다. 두 식이 서로의 역함수이므로 0 이 나와야 한다 (1·2단은 0 받침)
+Ferr = squeeze(out.log_F_err.Data);
+if size(Ferr,1) ~= numel(t), Ferr = Ferr.'; end
+
 eN = xref - x_n;  eE = yref - y_n;
 d  = hypot(eN, eE);
 epsi = atan2(sin(pref - psi), cos(pref - psi)) * 180/pi;
@@ -68,6 +74,7 @@ S.e_ss       = mean(dg(ss:end));
 S.epsi_ss    = mean(abs(epsig(ss:end)));
 S.max_v      = max(abs(v));
 S.max_FB     = max(abs(FB));
+S.max_Ferr   = max(abs(Ferr(:)));
 if mode == 3, lv = [1 2 3]; else, lv = 1; end
 S.t_phase = nan(size(lv));
 for i = 1:numel(lv)
@@ -185,7 +192,7 @@ plot(t, n(:,3), 'LineWidth',1.6, 'Color',[0.93 0.69 0.13]);
 nm = evalin('base','n_max');
 yline( nm,'r:');  yline(-nm,'r:');
 grid on; xlabel('시간 [s]'); ylabel('회전수 [rad/s]');
-legend({'n_L','n_R','n_B','\pmn_{max}'}, 'Location','best','FontSize',8);
+legend({'n_L','n_R','n_B','\pmn_{max} 참고선'}, 'Location','best','FontSize',8);
 title('프로펠러 회전수');
 
 subplot(1,2,2);
@@ -215,5 +222,6 @@ fprintf('  마지막 선수각 오차   %8.2f deg\n', S.epsi_final);
 fprintf('  마지막 10초 평균 오차%8.3f m  / %6.2f deg\n', S.e_ss, S.epsi_ss);
 fprintf('  최대 |v| (횡이동)    %8.3f m/s\n', S.max_v);
 fprintf('  최대 |F_B| (선수추진기)%6.1f N   (한계 %.0f N)\n', S.max_FB, Fbm);
+fprintf('  왕복 검산 max|F_err| %8.2e N    (F -> n -> F, 0 이어야 한다)\n', S.max_Ferr);
 
 end

@@ -95,6 +95,14 @@ d = Stateflow.Data(ch);  d.Name = 'mode';  d.Scope = 'Output';
   폭이 틀리면 그림이 멈춘다 — 폭도 계약이다
 - 공용 도면을 어디서 뽑는지는 `build_wXX_models.m` 끝의 `shots` 표 한 곳에 모아 둔다
 
+> [!caution] 서브시스템 도면은 "가장 높은 단계" 가 아니라 **그 그림을 설명하는 단계**에서 뽑는다
+> 윗단의 서브시스템이 아랫단의 것보다 **더 큰** 경우에만 최고 단계가 답이다. 블록이
+> 아예 **다른** 경우에는 최고 단계가 강의노트와 어긋난다.
+> 2026-10-15 에 `img/Guidance.png` 가 7단(`addGuidanceFront`, 전진 접안)에서 뽑히고
+> 있었다. 강의노트의 캡션과 `dock_on` 설명은 5단(`addGuidance`, 세 단계 접안)의
+> 것이므로 그림만 다른 블록이었다. `shots` 를 쪼개 Guidance 만 5단에서 뽑게 고쳤다.
+> 판별법 하나 — **단계를 더할 때 `addXxx` 함수 이름이 바뀌었으면 그림도 갈라진 것이다.**
+
 ## 파일을 쓰는 방법 — 긴 한글 `.m` 은 히어독으로 쓰지 않는다
 
 - Bash 히어독으로 긴 한국어 MATLAB 본문을 쓰면 `unexpected EOF while looking for

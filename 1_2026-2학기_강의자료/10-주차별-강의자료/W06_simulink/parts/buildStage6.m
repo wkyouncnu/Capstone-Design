@@ -57,7 +57,7 @@ function [chain, boxes] = buildStage6(m)
 
     addGuidance  (m,  250,  60);
     addOuterLoop (m,  700,  60);
-    addInnerLoop (m, 1150, 280);
+    addInnerLoop (m, 1150, 280, true);      % true = BowOn 스위치 (2단에서 생긴 뒤 계속 붙어 있다)
     addThrusters (m, 1600, 280);
 
     %  운동모델이 있던 자리 — 추력을 토픽으로 보내고, 자세를 토픽으로 받는다

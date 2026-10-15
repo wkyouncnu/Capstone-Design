@@ -76,3 +76,8 @@ description: 선박·USV의 GNC(유도·항법·제어) Simulink 모델을 MATLA
 - 선은 가능하면 직선 (`check_straight`) · 합산점 전수 검사 (`check_sums`) ·
   태그 **열 정렬** · 스킬 규칙 자동 적용 — 교수 지시 (2026-10-15).
   교수가 손수 정렬한 W06_1_point 도면에서 기준을 읽었다 (`line-routing.md` §3.4)
+- 역 프로펠러 법칙이 **플러그인 안**에 있는 자리 (`gnc-conventions.md` §7.1) ·
+  긴 벡터 Constant 를 이름으로 묶기 (`authoring.md`) · 공용 도면은 **그 그림을 설명하는
+  단계**에서 뽑기 (`build-models.md`) · 윗단에도 앞 단계의 스위치를 남기기
+  (`decisions.md` §4-3) · 좁은 상자 안에서 통과선에 가지를 치지 않기
+  (`line-routing.md` §5.1) — 5·6주차 도면 점검에서 (2026-10-15)

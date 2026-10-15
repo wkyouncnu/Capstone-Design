@@ -3,7 +3,8 @@
 % =====================================================================
 %   로깅 상자·그림 상자·스코프는 여덟 단계가 **똑같은 것 하나**를 쓴다. 그래야
 %   단계를 올려도 그래프 모양이 그대로여서 무엇이 달라졌는지 비교가 된다.
-%   그런데 1단에는 추진기 회전수(nprop)가 없고 3단까지는 단계(phase)가 없다.
+%   그런데 1·2단에는 추진기 칸이 없어 회전수(nprop)와 왕복 검산값(Ferr)이 없고,
+%   3단까지는 단계(phase)가 없다.
 %   없는 태그를 From 이 받으면 모델이 깨지므로 여기서 0 을 흘려 둔다.
 %
 %   다음 단계에서 그 신호가 진짜로 생기면 이 상자에서 이름을 빼면 된다.
@@ -11,9 +12,9 @@ function addStubs(m, tags, x, y)
     if isempty(tags), return; end
     s = add_subsys(m, 'NotYet', [x y x+150 y+60], {}, {}, gnc_colour('logging'));
     for k = 1:numel(tags)
-        %  nprop 은 추진기가 셋이라 3x1 이다. 0 을 흘릴 때도 **모양까지**
+        %  nprop·Ferr 는 추진기가 셋이라 3x1 이다. 0 을 흘릴 때도 **모양까지**
         %  맞춰야 로깅·그림 상자가 단계를 가리지 않고 그대로 돌아간다
-        if strcmp(tags{k}, 'nprop'), z = '[0; 0; 0]'; else, z = '0'; end
+        if any(strcmp(tags{k}, {'nprop','Ferr'})), z = '[0; 0; 0]'; else, z = '0'; end
         sl_const(s, ['Zero_' tags{k}], z, 60, 70+70*(k-1));
         sl_goto (s, tags{k}, 230, 72+70*(k-1));
         add_line(s, ['Zero_' tags{k} '/1'], ['Go_' tags{k} '/1'], 'autorouting','on');

@@ -72,7 +72,7 @@ function addInnerLoop(m, x, y, bow)
         add_line(ss, 'PI_v/1','Alloc/2');
     end
     add_line(ss, 'SatN/1','Alloc/3');
-    sl_const(ss, 'PRM', '[half_beam; l_bow; F_max; F_bow_max]', 640, 425);
+    sl_const(ss, 'PRM', 'alloc_prm', 640, 425);
     add_line(ss, 'PRM/1','Alloc/4');
 
     outs = {'FL','FR','FB'};

@@ -44,8 +44,8 @@ function addGuidanceStop(m, x, y)
       'gate  = double(ph < 1);'
       }, newline));
 
-    sl_const(ss, 'q',  '[x_d; y_d; psi_d]', 170, 250);
-    sl_const(ss, 'Rs', 'R_stop',            170, 300);
+    sl_const(ss, 'q',  'stop_q',  170, 250);
+    sl_const(ss, 'Rs', 'R_stop',  170, 300);
     row_feed(ss, 'TaskHold', {'x_n','y_n','psi','q','Rs',''});
 
     %  단계 래치 — 한 스텝 전 값을 되먹여 대수 루프를 끊는다

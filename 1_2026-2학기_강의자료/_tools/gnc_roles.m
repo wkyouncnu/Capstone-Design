@@ -134,6 +134,12 @@ case {'SB12_reuse_done','SB12_reuse_todo'}
 case {'SB13_stateflow_done','SB13_stateflow_todo'}
     role = {'Mission','mission'; 'Dist','plant'};
 
+% ---- 5주차 실습 F · 웨이포인트 번호를 어디에 기억할 것인가 --------------
+case 'W05_2_idx_memory'
+    %   둘 다 번호를 세는 자리다 — 유도(파랑)다. 다른 것은 상태를 코드 안에
+    %   두는가(persistent) 도면에 두는가(Unit Delay) 뿐이다 (2026-10-15)
+    role = [GNC; {'IdxPersistent','guidance'; 'IdxStep','guidance'}];
+
 % ---- 5~9주차 · 유도·제어 사슬 ------------------------------------------
 case {'W05_0_offline','W05_1_vrx','W07_0_offline','W07_1_vrx', ...
       'W08_0_offline','W08_1_vrx'}

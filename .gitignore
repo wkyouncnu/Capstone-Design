@@ -38,6 +38,7 @@ slprj/
 *.asv
 *.autosave
 *.original
+*.slx.bak
 *.r2022a
 *.r2023b
 *.slx.r*

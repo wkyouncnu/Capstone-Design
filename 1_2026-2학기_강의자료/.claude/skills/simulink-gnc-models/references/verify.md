@@ -161,3 +161,28 @@ o = evalc('W06_setup');
 - 빌더(`parts/*.m`)를 고친 뒤에는 `bdclose('all'); clear functions` 를 먼저 부른다.
   안 부르면 옛 함수가 그대로 돈다
 - **함수·리터럴 결과를 바로 색인할 수 없다** — `{'a','b'}{k}` 는 오류다. 변수에 받아 쓴다
+- `evaluate_matlab_code` 안에서는 **함수를 정의할 수 없다.** MCP 도구의 `description`
+  인자도 쓰지 않는다
+
+### 15.1 조건을 바꿔 가며 여러 번 돌릴 때는 **스크래치패드 함수 파일**로
+
+`WXX_setup` 이 base 를 비우므로 루프 변수와 모아 둔 결과가 두 번째 바퀴에서 사라진다.
+한 줄짜리 MCP 호출로는 풀리지 않는다 — 스크래치패드에 `.m` **함수 파일**을 쓰고
+`addpath` 한 뒤 그 함수만 부른다. 함수 작업공간은 setup 이 비우지 못한다.
+
+```matlab
+function w06_sw(stages, bows, docks)        % 스크래치패드 파일
+for i = 1:numel(stages)
+    setappdata(0, 'W06_stage', stages(i));  setappdata(0, 'W06_skip_run', true);
+    evalin('base', 'W06_setup');
+    evalin('base', sprintf('bow_on = %d;', bows(i)));   % 설정을 덮어쓴다
+    o = sim(evalin('base', 'mdl'));
+    fprintf('...', ...);                     % 바퀴마다 한 줄씩 찍는다
+end
+end
+```
+
+- 모델이 읽는 값은 **base 에서** 덮어쓴다 (`evalin('base', ...)`). 함수 안에서 만든
+  변수는 모델이 보지 못한다
+- 설정 묶음(`task_q` 같은 벡터)을 덮어쓸 때는 **묶음 전체를 다시 조립**한다.
+  낱개만 바꾸면 모델은 옛 묶음을 읽는다

@@ -379,15 +379,25 @@ function addInnerLoop(m, x, y)
 end
 
 % =====================================================================
-% 3단 · THRUSTERS — 프로펠러 + 모터 모델
-%   VRX 의 추진기 플러그인은 뉴턴을 받아 추력을 즉시 낸다.
-%   실제 모터는 회전수 한계도 있고 응답 지연도 있다.
-%   MSS otter.m 과 같은 프로펠러 법칙을 여기에 붙인다.
+% 3단 · THRUSTERS — Gazebo 추진기 플러그인을 그 순서대로 옮겨 적은 칸
 %
-%     F_cmd -> n_cmd = sign(F)*sqrt(|F|/k) -> 포화 -> 1차 지연 -> n
-%           -> F = k*n*|n|
+%   VRX 의 추진기 토픽 /wamv/thrusters/*/thrust 가 받는 것은 **뉴턴**이다.
+%   역 프로펠러 법칙은 제어기가 아니라 그 플러그인 **안**에 있다 —
+%   gz::sim::systems::Thruster, 소스는 gz-sim7 src/systems/thruster/Thruster.cc.
+%   이 칸은 그 세 토막을 소스와 같은 순서로 다시 적는다 (2026-10-15 소스 확인).
 %
-%   같은 단을 두 모델에 똑같이 넣으므로 오프라인과 VRX 가 계속 일치한다.
+%     1) 포화를 **추력에** 건다          OnCmdThrust        Thruster.cc:520-521
+%          thrust = clamp(cmd, cmdMin, cmdMax),  cmdMax = max_thrust_cmd
+%     2) 추력 -> 회전수                  ThrustToAngularVec Thruster.cc:562-584
+%          omega = sign(F*Ct) * sqrt(|F| / (rho*Ct*D^4))
+%        이 회전수가 조인트 속도 지령이 된다 (velocity_control, :740-756)
+%     3) 회전수 -> 추력                  AngularVelToThrust Thruster.cc:593-599
+%          F = rho*Ct*D^4 * |omega| * omega
+%
+%   링크에 실제로 가는 힘은 되돌린 값이 아니라 **포화만 거친 지령**이다
+%   (PreUpdate 의 AddWorldWrench, Thruster.cc:770-773 이 desiredThrust 를 쓴다).
+%   3) 은 플러그인에서 회전수 지령 모드에만 쓰이므로, 이 칸에서는 2) 를 되돌려
+%   맞는지 보는 **검산**으로 둔다. 그 차이를 F_err 로 내보내 수치로 확인한다.
 % =====================================================================
 function addThrusters(m, x, y)
     ss = [m '/Thrusters'];
@@ -395,78 +405,70 @@ function addThrusters(m, x, y)
 
     add_block('simulink/Sources/In1', [ss '/FL_cmd'], 'Position',[40 60 75 90],  'Port','1');
     add_block('simulink/Sources/In1', [ss '/FR_cmd'], 'Position',[40 140 75 170],'Port','2');
-
-    add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [ss '/F2n'], 'Position', [170 70 320 266]);   % 포트 4개 — 52 px 간격 (52*3+40)
-    setFcn(ss, 'F2n', [ ...
-'function n_cmd = F2n(FL, FR, k, n_max)'                              newline ...
-'%#codegen'                                                           newline ...
-'% Inverse propeller law: turn a demanded thrust into a shaft speed.' newline ...
-'%   F = k*n*|n|   ->   n = sign(F)*sqrt(|F|/k)'                      newline ...
-'% Saturation happens on SPEED, not on force. That is what a real'    newline ...
-'% motor limits.'                                                     newline ...
-'F = [FL; FR];'                                                       newline ...
-'n_cmd = zeros(2,1);'                                                 newline ...
-'for i = 1:2'                                                         newline ...
-'    ni = sign(F(i)) * sqrt(abs(F(i))/k);'                            newline ...
-'    if ni >  n_max, ni =  n_max; end'                                newline ...
-'    if ni < -n_max, ni = -n_max; end'                                newline ...
-'    n_cmd(i) = ni;'                                                  newline ...
-'end']);
-
     add_block('simulink/Sources/Constant', [ss '/Kp'], ...
-              'Position',[40 250 130 280], 'Value','k_prop');
-    add_block('simulink/Sources/Constant', [ss '/Nm'], ...
-              'Position',[40 300 130 330], 'Value','n_max');
+              'Position',[40 220 130 250], 'Value','k_prop');
+    add_block('simulink/Sources/Constant', [ss '/Flim'], ...
+              'Position',[40 300 130 330], 'Value','F_plugin_max');
 
-    %  모터 1차 지연 — **연속 시간**이다 (교수 지시 2026-10-01).
-    %
-    %      dn/dt = (n_cmd - n) / tau_n        <=>   n/n_cmd = 1/(tau_n*s + 1)
-    %
-    %  전에는 num(z)/den(z) 꼴의 Discrete Transfer Fcn 이었다. 연속 Transfer Fcn
-    %  으로 바꾸려 했으나 **그 블록은 벡터 입력을 받지 않는다** — n 은 좌·우 두
-    %  축의 2원소 신호다. 그래서 같은 1차 지연을 상태공간 한 블록으로 적는다.
-    %  A = -I/tau_n, B = I/tau_n, C = I, D = 0 이 곧 위의 식이다 (대각이므로
-    %  좌·우가 서로 섞이지 않는다). 시상수 tau_n 은 그대로고 구현만 바뀌었다.
-    add_block('simulink/Continuous/State-Space', [ss '/MotorLag'], ...
-              'Position',[380 85 500 145]);
-    set_param([ss '/MotorLag'], 'A','-eye(2)/tau_n', 'B','eye(2)/tau_n', ...
-              'C','eye(2)', 'D','zeros(2)', 'X0','zeros(2,1)');
-
+    %  블록 하나에 세 토막을 다 적는다. 갈래선을 두지 않는 이유 — 통과선에서
+    %  가지를 치면 입력 포트 하나에 선이 둘 달린다. square_lines 는 Inport 를
+    %  **잎 블록**으로 보아 한쪽 포트 높이에 맞춰 끌어가므로 다른 한쪽이 꺾이고
+    %  세로 토막이 겹친다 (2026-10-15 측정: 겹침 75 px). 포트를 늘려 한 블록으로
+    %  받으면 여덟 선이 모두 직선이다
     add_block('simulink/User-Defined Functions/MATLAB Function', ...
-              [ss '/n2F'], 'Position', [560 70 700 160]);
-    setFcn(ss, 'n2F', [ ...
-'function [FL, FR] = n2F(n, k)'                                  newline ...
-'%#codegen'                                                      newline ...
-'% Forward propeller law. Note the |n| : thrust is quadratic in' newline ...
-'% shaft speed, so a rate limit on n is NOT a rate limit on F.'  newline ...
-'FL = k * n(1) * abs(n(1));'                                     newline ...
-'FR = k * n(2) * abs(n(2));']);
+              [ss '/Plugin'], 'Position', [250 60 440 260]);
+    setFcn(ss, 'Plugin', [ ...
+'function [FL, FR, n, F_err] = Plugin(FL_cmd, FR_cmd, k, F_lim)'   newline ...
+'%#codegen'                                                        newline ...
+'% Gazebo 추진기 플러그인이 하는 일을 소스와 같은 순서로 적는다.'   newline ...
+'%   gz-sim7  src/systems/thruster/Thruster.cc'                    newline ...
+''                                                                 newline ...
+'% 1) 포화 — 플러그인은 **추력에** 건다 (OnCmdThrust, :520-521)'    newline ...
+'%      thrust = clamp(cmd, cmdMin, cmdMax),  cmdMax = max_thrust_cmd' newline ...
+'F = [FL_cmd; FR_cmd];'                                            newline ...
+'F = max(-F_lim, min(F_lim, F));'                                  newline ...
+''                                                                 newline ...
+'% 2) 추력 -> 회전수 (ThrustToAngularVec, :562-584). 이 값이 조인트'  newline ...
+'%    속도 지령이 된다 — velocity_control = true (:740-756)'        newline ...
+'%      omega = sign(F*Ct)*sqrt(|F|/(rho*Ct*D^4)),  k = rho*Ct*D^4' newline ...
+'%    Ct > 0 이므로 sign(F*Ct) = sign(F) 다'                        newline ...
+'n = sign(F) .* sqrt(abs(F)/k);'                                   newline ...
+''                                                                 newline ...
+'% 3) 회전수 -> 추력 (AngularVelToThrust, :593-599). 플러그인에서는'  newline ...
+'%    회전수 지령 모드에만 쓰인다. 여기서는 2) 를 되돌려 맞는지 보는'  newline ...
+'%    **검산**이다 — 두 식이 서로의 역함수이므로 0 이 나와야 한다'    newline ...
+'%      F = rho*Ct*D^4 * |omega| * omega'                          newline ...
+'F_chk = k * abs(n) .* n;'                                         newline ...
+'F_err = F_chk - F;'                                               newline ...
+''                                                                 newline ...
+'% 4) 링크에 가는 힘은 되돌린 값이 아니라 포화만 거친 지령이다'      newline ...
+'%    (AddWorldWrench 가 desiredThrust 를 그대로 쓴다, :770-773)'   newline ...
+'FL = F(1);'                                                       newline ...
+'FR = F(2);']);
 
-    add_block('simulink/Sinks/Out1', [ss '/FL'], 'Position',[780 70 815 100], 'Port','1');
-    add_block('simulink/Sinks/Out1', [ss '/FR'], 'Position',[780 130 815 160],'Port','2');
-    add_block('simulink/Sinks/Out1', [ss '/n'],  'Position',[780 190 815 220],'Port','3');
+    add_block('simulink/Sinks/Out1', [ss '/FL'],    'Position',[570 60 605 90],  'Port','1');
+    add_block('simulink/Sinks/Out1', [ss '/FR'],    'Position',[570 140 605 170],'Port','2');
+    add_block('simulink/Sinks/Out1', [ss '/n'],     'Position',[570 220 605 250],'Port','3');
+    add_block('simulink/Sinks/Out1', [ss '/F_err'], 'Position',[570 300 605 330],'Port','4');
 
-    add_line(ss,'FL_cmd/1','F2n/1','autorouting','on');
-    add_line(ss,'FR_cmd/1','F2n/2','autorouting','on');
-    add_line(ss,'Kp/1','F2n/3','autorouting','on');
-    add_line(ss,'Nm/1','F2n/4','autorouting','on');
-    add_line(ss,'F2n/1','MotorLag/1','autorouting','on');
-    add_line(ss,'MotorLag/1','n2F/1','autorouting','on');
-    add_line(ss,'Kp/1','n2F/2','autorouting','on');
-    add_line(ss,'n2F/1','FL/1','autorouting','on');
-    add_line(ss,'n2F/2','FR/1','autorouting','on');
-    add_line(ss,'MotorLag/1','n/1','autorouting','on');
+    in  = {'FL_cmd','FR_cmd','Kp','Flim'};
+    out = {'FL','FR','n','F_err'};
+    for k = 1:4
+        add_line(ss, [in{k} '/1'], sprintf('Plugin/%d',k));
+        add_line(ss, sprintf('Plugin/%d',k), [out{k} '/1']);
+    end
 
-    Simulink.BlockDiagram.arrangeSystem(ss);
+    %  여덟 잎 블록을 각자의 포트 높이에 맞춘다 — 여덟 선이 모두 직선이 된다
+    for k = 1:4
+        align_to(ss, in{k},  'Outport', port_xy(ss, 'Plugin', 'Inport',  k));
+        align_to(ss, out{k}, 'Inport',  port_xy(ss, 'Plugin', 'Outport', k));
+    end
 
-    %  설정 상수를 받는 포트 높이에 맞춘다 — 그러면 잇는 선이 직선 한 토막이다.
-    %  arrangeSystem 은 선 길이만 보지 높이를 맞춰 주지는 않는다 (꺾임 2회가 남는다)
-    align_to(ss, 'Kp', 'Outport', port_xy(ss, 'F2n', 'Inport', 3));
-    align_to(ss, 'FL_cmd', 'Outport', port_xy(ss, 'F2n', 'Inport', 1));
-    align_to(ss, 'FR_cmd', 'Outport', port_xy(ss, 'F2n', 'Inport', 2));
-    align_to(ss, 'Nm', 'Outport', port_xy(ss, 'F2n', 'Inport', 4));
-
+    sl_note(ss, 'n_t', [ ...
+        'Gazebo 추진기 플러그인(gz::sim::systems::Thruster)을 그 순서대로 적은 칸' newline ...
+        '1) 포화를 추력에 건다  2) 추력 -> 회전수  3) 되돌려 검산  4) 힘은 1) 의 값' newline ...
+        '회전수는 조인트 속도 지령이 되는 값이다 — velocity_control = true' newline ...
+        'F_err = 되돌린 추력 - 포화한 추력. 두 식이 서로의 역함수이므로 0 이어야 한다'], 250, 390);
 end
 
 % =====================================================================
@@ -488,7 +490,7 @@ function addMotionModel(m, x, y)
     % 조류와 선체 계수는 신호가 아니라 설정이다. 상자 안에 둔다.
     % 최상위에 두면 상수 세 개와 선 세 개가 운동모델 앞을 가린다.
     cfg = {'V_c','current_speed'; 'beta_c','beta_c'; ...
-           'p','[m_usv; Izz; Xu; Xuu; Yv; Yvv; Nr; Nrr; half_beam]'};
+           'p','usv_p'};
     for k = 1:3
         add_block('simulink/Sources/Constant', [ss '/' cfg{k,1}], ...
                   'Position', [40 220+(k-1)*70 130 220+(k-1)*70+30], 'Value', cfg{k,2});
@@ -679,8 +681,8 @@ function G(m, tag, x, y)
 end
 
 function wireThrusterGotos(m, x, y)
-    t = {'FL','FR','nprop'};
-    for k = 1:3
+    t = {'FL','FR','nprop','Ferr'};
+    for k = 1:4
         G(m, t{k}, x, y+(k-1)*40);
         add_line(m, sprintf('Thrusters/%d',k), ['Go_' t{k} '/1'], 'autorouting','on');
     end
@@ -866,8 +868,8 @@ function addLogging(m, x, y)
 %   신호 이름 = Goto 태그 이름 (n 만 nprop 태그를 쓴다)
     %  wp_idx 도 기록한다 — 그래프에서 구간이 바뀐 자리를 숫자로 확인하려면
     %  필요하다 (2026-10-02 에 Guidance 의 다섯째 출력으로 밖에 냈다)
-    sig = {'x_n','y_n','psi','psi_ref','y_e','x_e','beta','chi','u','r','U','gate','FL','FR','n','wp_idx'};
-    tag = {'x_n','y_n','psi','psi_ref','y_e','x_e','beta','chi','u','r','U','gate','FL','FR','nprop','wp_idx'};
+    sig = {'x_n','y_n','psi','psi_ref','y_e','x_e','beta','chi','u','r','U','gate','FL','FR','n','F_err','wp_idx'};
+    tag = {'x_n','y_n','psi','psi_ref','y_e','x_e','beta','chi','u','r','U','gate','FL','FR','nprop','Ferr','wp_idx'};
     add_logging_box(m, sig, tag, [x y], 'Ts_ctrl');
 end
 

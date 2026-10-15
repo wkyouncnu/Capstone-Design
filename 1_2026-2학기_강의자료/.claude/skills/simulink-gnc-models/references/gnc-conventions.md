@@ -98,3 +98,26 @@ N = (FL − FR) · b        % b = half beam
 - Gazebo 추진기 플러그인은 **뉴턴을 직접** 받는다 (PWM 아님)
 - 그래도 모델에 넣는 이유는 **응답 지연**을 재현하기 위함
   - `k = ρ·Ct·D⁴`, `F = k·n·|n|`, 1차 지연 `τ_motor`
+
+### 7.1 역 프로펠러 법칙은 WAM-V 에 **있다** — 플러그인 **안**에 있다
+
+"토픽이 뉴턴을 받으니 WAM-V 에는 프로펠러 법칙이 없다" 고 쓰면 틀린다.
+법칙은 제어기 쪽이 아니라 플러그인 쪽에 있을 뿐이다 (2026-10-15 소스 확인).
+
+| 어디 | 무엇 |
+|---|---|
+| `wamv_gazebo/urdf/thruster_layouts/wamv_gazebo_thruster_config.xacro:10-24` | 계수 선언 — `thrust_coefficient 0.004422`, `fluid_density 1000`, `propeller_diameter 0.2`, `velocity_control true` |
+| 펼친 URDF `bow_wamv_target.urdf:462-473` (left) · `:484-495` (right) · `:506-517` (middle = 선수추진기) | 세 추진기가 **같은 계수**를 쓴다. `max_thrust_cmd` = 2353.53383667818 N |
+| `gz-sim7  src/systems/thruster/Thruster.cc:520-521` | `OnCmdThrust` — 포화는 **추력에** 걸린다 (`clamp(cmd, cmdMin, cmdMax)`) |
+| 같은 파일 `:562-584` | `ThrustToAngularVec` — `ω = sign(F·Ct)·sqrt(|F|/(ρ·Ct·D⁴))`, **역 프로펠러 법칙 본체** |
+| 같은 파일 `:593-599` | `AngularVelToThrust` — `F = ρ·Ct·D⁴·|ω|·ω`. **회전수 지령 모드에서만** 쓰인다 |
+| 같은 파일 `:740-756` | `velocity_control` 이면 구한 `ω` 를 `JointVelocityCmd` 로 바로 준다 |
+| 같은 파일 `:770-773` | `AddWorldWrench` — 링크에 실제로 주는 힘은 **포화만 거친 지령**(`desiredThrust`)이다 |
+
+- 그래서 시뮬링크 쪽 `Thrusters` 서브시스템은 **플러그인을 베낀 것**이지 지어낸 것이
+  아니다. `F → n` 은 `:562-584` 와 같은 식이고, `n → F` 는 `:593-599` 와 같은 식이다
+- 가르칠 값어치가 여기 있다 — **control allocation** (`τ → F_i`) 과 **프로펠러 법칙**
+  (`F_i ↔ n_i`) 은 서로 다른 두 변환이다. 한 단계에 하나씩 보인다
+- 출처 식: Fossen, *Handbook of Marine Craft Hydrodynamics and Motion Control*, p. 246
+- **오프라인 모델에서 지우지 않는다.** 플러그인에 있는 것을 오프라인에서 빼면 두
+  모델이 다른 물리를 돌게 된다 (교수 지시 2026-10-15)

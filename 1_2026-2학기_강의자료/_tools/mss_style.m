@@ -43,6 +43,11 @@ function n = mss_style(mdl, verbose)
 %   숫자 게인(`2` · `0.5`)은 식이 짧아 50 px 에서 멈추므로 달라지지 않는다.
 %   중심은 그대로 두므로 배선이 틀어지지 않는다.
 %
+%   상수도 같다. Constant 는 값이 블록보다 넓으면 `-C-` 를 그린다 — `-K-` 와
+%   똑같이 **어느 값인지 알 수 없는** 상태다. 상수 값은 모두 작업공간 변수
+%   이름이므로(sl_const 규칙) 이름이 길수록 가려진다. 2026-10-15 에 W05·W06 의
+%   `F_plugin_max` 가 그렇게 가려졌다. 같은 자로 Constant 도 넓힌다.
+%
 %   WHAT IS LEFT ALONE
 %
 %   SubSystem blocks. Those are the six stages of the signal chain and their
@@ -95,10 +100,12 @@ for i = 1:numel(blocks)
 
     wh = want(t);
 
-    %  Gain 은 식이 보여야 한다. MSS 폭 50 px 를 **최소값**으로 두고 식 길이에
-    %  맞춰 늘린다. 안 그러면 Simulink 가 식을 숨기고 `-K-` 를 그린다.
+    %  Gain 은 식이, Constant 는 값이 보여야 한다. MSS 폭을 **최소값**으로 두고
+    %  글자 길이에 맞춰 늘린다. 안 그러면 Simulink 가 `-K-` · `-C-` 를 그린다.
     if strcmp(t, 'Gain')
-        wh(1) = max(wh(1), gain_width(b));
+        wh(1) = max(wh(1), text_width(b, 'Gain'));
+    elseif strcmp(t, 'Constant')
+        wh(1) = max(wh(1), text_width(b, 'Value'));
     end
 
     p  = get_param(b, 'Position');
@@ -149,11 +156,12 @@ if verbose, fprintf('    %d blocks restyled in %s\n', n, mdl); end
 end
 
 % -------------------------------------------------------------------------
-function w = gain_width(b)
-%GAIN_WIDTH  Gain 의 식이 글자 그대로 보이는 데 필요한 폭 [px].
+function w = text_width(b, prm)
+%TEXT_WIDTH  블록의 글자(Gain 의 식, Constant 의 값)가 그대로 보이는 폭 [px].
 %
-%   Simulink 는 식이 블록보다 넓으면 `-K-` 를 그린다. 블록을 글자가 들어갈
-%   만큼 키우면 변수 이름이 그대로 보인다. 폭만 늘리고 높이는 그대로 둔다.
+%   Simulink 는 글자가 블록보다 넓으면 `-K-`(Gain) · `-C-`(Constant) 를
+%   그린다. 블록을 글자가 들어갈 만큼 키우면 변수 이름이 그대로 보인다.
+%   폭만 늘리고 높이는 그대로 둔다.
 %
 %   7 px/글자는 Simulink 의 기본 도면 글꼴(Helvetica 10 pt)을 도면에서 재
 %   얻은 값이다. 여백 16 px 는 좌우 8 px 씩이다.
@@ -162,14 +170,14 @@ GAIN_PAD         = 16;
 GAIN_MAX         = 200;     % 이보다 길면 식이 아니라 수식이다. 거기서 멈춘다
 
 try
-    ex = get_param(b, 'Gain');
+    ex = get_param(b, prm);
 catch
     w = 0; return
 end
 if ~ischar(ex) && ~isstring(ex), w = 0; return; end
 ex = char(ex);
 
-%  행렬 게인은 여러 줄로 그려진다 — 가장 긴 줄로 잰다
+%  행렬 게인·행렬 상수는 여러 줄로 그려진다 — 가장 긴 줄로 잰다
 lines = strsplit(ex, {char(10), char(13), ';'});
 len   = max(cellfun(@(s) numel(strtrim(s)), lines));
 

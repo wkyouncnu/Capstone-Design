@@ -62,7 +62,15 @@ function build_w06_models(stages)
     body  = stages(stages <= 7 & stages ~= 6);
     if ~isempty(body)
         shots = [shots; {name{max(body)}, '', ...
-                 {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'}}];
+                 {'OuterLoop','InnerLoop','Thrusters','MotionModel'}}];
+    end
+    %    Guidance 만 5단에서 뽑는다 — 7단의 유도부는 더 큰 것이 아니라 **다른**
+    %    것이다 (addGuidanceFront). 5·8단이 쓰는 세 단계 접안 유도부가 강의노트가
+    %    설명하는 그림이므로 그것을 쓴다. 5단이 빠진 호출에서는 있는 단계로 뽑는다
+    if any(stages == 5)
+        shots = [shots; {'W06_5_dock', '', {'Guidance'}}];
+    elseif ~isempty(body)
+        shots = [shots; {name{max(body)}, '', {'Guidance'}}];
     end
     if any(stages == 8)
         shots = [shots; {'W06_8_ned', 'NED', {'OuterLoop','InnerLoop'}}];

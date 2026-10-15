@@ -80,23 +80,37 @@ Nr = 800;  Nrr = 800;    % yaw   항력
 % 부가질량은 VRX 설정에서 xDotU = yDotV = nDotR = 0 이다
 
 %% ====================================================================
-%  6. 추진기(프로펠러 + 모터) 모델
-%     VRX 는 추력을 뉴턴으로 받아 즉시 낸다. 실제 모터는 그렇지 않다.
-%     그래서 MSS otter.m 과 같은 프로펠러 법칙을 제어기 쪽에 붙인다.
+%  6. 추진기 — 프로펠러 법칙이 어디 있는가
+%     VRX 추진기 토픽 /wamv/thrusters/*/thrust (std_msgs/Float64) 가 받는 것은
+%     **뉴턴**이다. 역 프로펠러 법칙은 제어기가 아니라 플러그인 **안**에 있다.
 %
-%       F_cmd  ->  n_cmd = sign(F)*sqrt(|F|/k)   (역 프로펠러 법칙)
-%              ->  회전수 포화  |n| <= n_max
-%              ->  1차 지연 (모터 응답)  tau_n
-%              ->  F = k * n * |n|              (정 프로펠러 법칙)
+%     플러그인 선언  — 아래 두 자리에 계수가 적혀 있다
+%       vrx/vrx_urdf/wamv_gazebo/urdf/thruster_layouts/
+%                                      wamv_gazebo_thruster_config.xacro:10-24
+%       펼친 결과   bow_wamv/bow_wamv_target.urdf:462-473 (left) · :484-495
+%                   (right) · :506-517 (middle = 선수추진기)
+%     플러그인 소스 — gz-sim7  src/systems/thruster/Thruster.cc
+%       :520-521  OnCmdThrust         clamp(cmd, cmdMin, cmdMax)   <- 포화는 추력에
+%       :562-584  ThrustToAngularVec  omega = sign(F*Ct)*sqrt(|F|/(rho*Ct*D^4))
+%       :593-599  AngularVelToThrust  F = rho*Ct*D^4*|omega|*omega
+%       :740-756  velocity_control    구한 omega 를 JointVelocityCmd 로 바로 쓴다
+%       :770-773  AddWorldWrench      링크에 주는 힘은 **포화만 거친 지령**이다
 %
-%     k 는 VRX 플러그인이 내부에서 쓰는 값과 같다.
-%       k = rho * Ct * D^4 = 1000 * 0.004422 * 0.2^4
+%     Thrusters 서브시스템은 이 네 토막을 그 순서대로 다시 적는다. 세 번째 식은
+%     플러그인에서 회전수 지령 모드에만 쓰이므로 되돌려 맞는지 보는 **검산**으로
+%     두고, 그 차이를 F_err 로 로깅한다 (0 이 나와야 한다).
+%       k = rho * Ct * D^4 = 1000 * 0.004422 * 0.2^4   (URDF 값 그대로)
 % =====================================================================
 k_prop = 1000 * 0.004422 * 0.2^4;   % 0.0070752 [N/(rad/s)^2]
-n_max  = sqrt(F_max / k_prop);      % 266 rad/s (약 2540 rpm), F_max=500 기준
-tau_n  = 0.30;                      % 모터 시상수 [s]
-                                    % tau_n >= Ts_ctrl 이어야 안정하다
-                                    % tau_n = Ts_ctrl 로 두면 지연이 거의 없다
+n_max  = sqrt(F_max / k_prop);      % 265.8 rad/s (약 2538 rpm) — F_max 를 회전수로
+                                    % 읽은 눈금이다. 포화 블록이 아니라 참고선이다
+
+%   플러그인이 추력에 거는 한계 — URDF 의 max_thrust_cmd 를 그대로 옮긴다.
+%   그 값의 유래도 URDF 에 식으로 적혀 있다 (thruster_config.xacro:6-8, 20)
+%     (x_u + x_uu * v_max) * v_max / 2,   x_u = 51.3, x_uu = 72.4, v_max = 7.71667
+%   즉 **최대 속도에서의 항력을 추진기 둘이 나눠 낸 몫**이다.
+F_plugin_max = 2353.53383667818;    % [N] 추진기 하나당 (URDF 값 그대로)
+%   본 과목의 F_max = 500 N 은 그 21 % 이므로 Gazebo 가 먼저 자르는 일은 없다.
 
 %% ====================================================================
 %  7. 실시간 그림 (W05_0_offline 전용)
@@ -130,6 +144,12 @@ x0 = [0.1; 0; 0; 0; 0; psi_init];
 
 Ts_ctrl = 0.05;                          % 제어 주기 [s]
 beta_c  = deg2rad(current_direction);    % 조류 방향 [rad]
+
+% 오프라인 운동모델이 받는 계수 묶음 — 순서가 곧 p(1..9)
+usv_p = [m_usv; Izz; Xu; Xuu; Yv; Yvv; Nr; Nrr; half_beam];
+%   벡터를 블록 안에 적지 않고 **이름**으로 두는 까닭
+%     Constant 블록은 적힌 글이 블록보다 길면 Simulink 가 값을 감추고 '-C-' 만
+%     그린다. 강의노트에 그 그림이 그대로 실리므로 어느 값인지 알 수 없게 된다.
 
 if guidance_mode == 1
     mode_name = 'atan2';

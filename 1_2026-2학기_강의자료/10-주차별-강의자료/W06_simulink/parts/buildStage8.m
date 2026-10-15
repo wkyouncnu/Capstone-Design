@@ -37,7 +37,7 @@ function [chain, boxes] = buildStage8(m)
 
     addGuidance     (m,  250,  60);
     addOuterLoopNED (m,  700,  60);
-    addInnerLoopNED (m, 1150, 280);
+    addInnerLoopNED (m, 1150, 280, true);   % true = BowOn 스위치 (2단에서 생긴 뒤 계속 붙어 있다)
     addThrusters    (m, 1600, 280);
     addMotionModel  (m, 2050, 280);
 

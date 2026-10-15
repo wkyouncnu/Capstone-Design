@@ -42,7 +42,14 @@
 %         합산점 아래 같은 세로 통로를 함께 쓰거나 ToNED 를 가로질러 지나간다.
 %     (3) 입력 포트의 높이를 **받는 포트 높이에 맞춘다**. 그러면 선이 수평
 %         직선 한 토막이고, 한 열에 쌓여도 세로 통로를 겹치지 않는다.
-function addInnerLoopNED(m, x, y)
+%
+%   bow 인자 — addInnerLoop 과 같은 자리, 같은 뜻이다
+%     true 면 횡력 지령에 bow_on 게인이 하나 붙는다. 선체고정 전략은 그 자리가
+%     PI_v 뒤였고, NED 전략은 ToBody 뒤다 — 횡력이 그제서야 생기기 때문이다.
+%     여기서도 Alloc **앞에서** 끊는다. 뒤에서 끊으면 N - l_bow*FB 보정이 내지도
+%     않은 모멘트를 되받아 선수각까지 틀어진다.
+function addInnerLoopNED(m, x, y, bow)
+    if nargin < 4, bow = false; end
     ss = add_subsys(m, 'InnerLoop', [x y x+190 y+190], ...
                     {'xdot_cmd','ydot_cmd','u','v','psi_ref','psi','r'}, ...
                     {'FL','FR','FB'}, gnc_colour('control'));
@@ -92,7 +99,7 @@ function addInnerLoopNED(m, x, y)
     add_block('simulink/User-Defined Functions/MATLAB Function', [ss '/Alloc'], ...
               'Position', [1100 60 1280 460]);
     sl_fcn(ss, 'Alloc', allocFcn());
-    sl_const(ss, 'PRM', '[half_beam; l_bow; F_max; F_bow_max]', 910, 425);
+    sl_const(ss, 'PRM', 'alloc_prm', 910, 425);
 
     %  ---- 입력 포트를 받는 포트 높이에 맞춘다 ---------------------------
     pin = {'xdot_cmd','ErrXd',1; 'ydot_cmd','ErrYd',1; ...
@@ -134,7 +141,15 @@ function addInnerLoopNED(m, x, y)
     add_line(ss, 'SumN/1','SatN/1');
 
     add_line(ss, 'ToBody/1','Alloc/1');
-    add_line(ss, 'ToBody/2','Alloc/2');
+    if bow
+        %  Alloc 의 2 번 포트 높이에 맞춰 게인을 세운다 — 선이 수평 한 토막이다
+        pa = port_xy(ss, 'Alloc', 'Inport', 2);
+        sl_gain(ss, 'BowOn', 'bow_on', 1000, pa(2)-20);
+        add_line(ss, 'ToBody/2','BowOn/1');
+        add_line(ss, 'BowOn/1', 'Alloc/2');
+    else
+        add_line(ss, 'ToBody/2','Alloc/2');
+    end
     add_line(ss, 'SatN/1',  'Alloc/3');
     add_line(ss, 'PRM/1',   'Alloc/4');
 
@@ -145,9 +160,14 @@ function addInnerLoopNED(m, x, y)
         add_line(ss, sprintf('Alloc/%d',k), [outs{k} '/1']);
     end
 
-    sl_note(ss, 'n_i', [ ...
+    txt = [ ...
         'NED 전략 — 속도 PI 가 북·동 축에서 돔 (선체 전후·횡이 아님)' newline ...
         '회전행렬이 둘 : 되먹임을 들일 때(ToNED) 와 힘을 낼 때(ToBody)' newline ...
         '선수각 P-D 와 추력 배분은 선체고정 전략과 같음' newline ...
-        'PI clamping 을 2*F_max 로 느슨하게 둠 — 실제 한계는 Alloc 에서 드러남'], 520, 760);
+        'PI clamping 을 2*F_max 로 느슨하게 둠 — 실제 한계는 Alloc 에서 드러남'];
+    if bow
+        txt = [txt newline ...
+            'BowOn 게인 — bow_on = 0 이면 횡력 지령이 끊김 (선수추진기 없는 배)'];
+    end
+    sl_note(ss, 'n_i', txt, 520, 760);
 end

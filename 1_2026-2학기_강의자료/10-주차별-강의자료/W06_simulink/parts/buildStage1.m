@@ -23,7 +23,7 @@ function [chain, boxes] = buildStage1(m)
     feedForces(m, 'MotionModel', 1530, 300);
     wireNavGotos(m, 'MotionModel', 1960, 280);
 
-    addStubs(m, {'nprop','phase'}, 1600, 760);
+    addStubs(m, {'nprop','Ferr','phase'}, 1600, 760);
     boxes = addBoxes(m, {'psi_ref','psi'; 'x_ref','x_n'; 'y_ref','y_n'; ...
                          '','u'; '','v'}, 2060, 60, false);
 

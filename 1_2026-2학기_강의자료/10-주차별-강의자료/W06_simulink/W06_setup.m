@@ -76,7 +76,7 @@ R_dock     =   4;    % 접근점에 이만큼 들어오면 다음 단계로 넘�
 R_stop = 1.5;        % 목표점에서 이만큼 안으로 들어오면 도착으로 본다 [m]
 
 %% ====================================================================
-%  3. 선수추진기 스위치 (2단에서 생긴다)
+%  3. 실습 스위치 둘 — 선수추진기(2단에서 생김)와 단계 전이(5단에서 생김)
 %
 %     bow_on = 1  선수추진기를 쓴다
 %     bow_on = 0  횡력 지령을 끊는다 — 추진기 둘뿐인 5주차의 배가 된다
@@ -84,8 +84,19 @@ R_stop = 1.5;        % 목표점에서 이만큼 안으로 들어오면 도착�
 %     2단 실습은 같은 목표를 두 값으로 각각 돌려 그림을 겹쳐 보는 것이다.
 %     0 으로 두면 동쪽으로 12 m 가 끝까지 줄지 않는다. 옆으로 밀 힘이 없기
 %     때문이다 (선수각은 그대로 잡힌다 — 요 모멘트는 좌·우 추진기로 낸다).
+%
+%     게인은 2단 이상의 모든 모델 안쪽 고리에 들어 있다 (8단은 ToBody 뒤).
+%     즉 접안 단계에서도 끄고 켜 볼 수 있다.
 % =====================================================================
 bow_on = 1;
+
+%     dock_on = 1  접근점 -> 선수각 정렬 -> 옆걸음, 세 단계를 밟는다
+%     dock_on = 0  선석으로 바로 간다 — 목표가 처음부터 선석이고 선수각은
+%                  가는 방향으로 둔다. 즉 어느 현을 댈지 고르지 않는다
+%
+%     5·6·8단의 유도부(addGuidance)가 q(14) 로 읽는다. 7단 전진 접안은 유도부가
+%     다르므로(addGuidanceFront) 이 스위치를 보지 않는다.
+dock_on = 1;
 
 %% ====================================================================
 %  4. 제어 게인 — 바깥(위치)·안(속도)·선수각 세 고리
@@ -178,20 +189,40 @@ Nr = 800;  Nrr = 800;    % yaw   항력  -(Nr + Nrr|r|)r
 % 부가질량은 VRX 설정에서 xDotU = yDotV = nDotR = 0 이다
 
 %% ====================================================================
-%  7. 추진기(프로펠러 + 모터) 모델 — 3단에서 모델에 들어간다
+%  7. 추진기 — 프로펠러 법칙이 어디 있는가. 3단에서 그 칸이 생긴다
 %
-%       F_cmd  ->  n_cmd = sign(F)*sqrt(|F|/k)   (역 프로펠러 법칙)
-%              ->  회전수 포화  |n| <= n_max
-%              ->  1차 지연 (모터 응답)  tau_n
-%              ->  F = k * n * |n|              (정 프로펠러 법칙)
+%     VRX 추진기 토픽 /wamv/thrusters/*/thrust (std_msgs/Float64) 가 받는 것은
+%     **뉴턴**이다. 역 프로펠러 법칙은 제어기가 아니라 플러그인 **안**에 있다.
 %
-%     VRX 의 추력 토픽은 **뉴턴**을 받는다. 위 변환은 Gazebo 가 요구하는 것이
-%     아니라 모터가 즉시 힘을 내지 못하는 사실을 제어기 쪽에서 모사하는 것이다.
-%       k = rho * Ct * D^4 = 1000 * 0.004422 * 0.2^4
+%     플러그인 선언  — 아래 두 자리에 계수가 적혀 있다
+%       vrx/vrx_urdf/wamv_gazebo/urdf/thruster_layouts/
+%                                      wamv_gazebo_thruster_config.xacro:10-24
+%       펼친 결과   bow_wamv/bow_wamv_target.urdf:462-473 (left) · :484-495
+%                   (right) · :506-517 (middle = 선수추진기). 세 추진기가 같은
+%                   계수를 쓴다 — Ct = 0.004422, rho = 1000, D = 0.2
+%     플러그인 소스 — gz-sim7  src/systems/thruster/Thruster.cc
+%       :520-521  OnCmdThrust         clamp(cmd, cmdMin, cmdMax)   <- 포화는 추력에
+%       :562-584  ThrustToAngularVec  omega = sign(F*Ct)*sqrt(|F|/(rho*Ct*D^4))
+%       :593-599  AngularVelToThrust  F = rho*Ct*D^4*|omega|*omega
+%       :740-756  velocity_control    구한 omega 를 JointVelocityCmd 로 바로 쓴다
+%       :770-773  AddWorldWrench      링크에 주는 힘은 **포화만 거친 지령**이다
+%
+%     Thrusters 서브시스템은 이 네 토막을 그 순서대로 다시 적는다. 세 번째 식은
+%     플러그인에서 회전수 지령 모드에만 쓰이므로 되돌려 맞는지 보는 **검산**으로
+%     두고, 그 차이를 F_err 로 로깅한다 (0 이 나와야 한다).
+%       k = rho * Ct * D^4 = 1000 * 0.004422 * 0.2^4   (URDF 값 그대로)
 % =====================================================================
 k_prop = 1000 * 0.004422 * 0.2^4;   % 0.0070752 [N/(rad/s)^2]
-n_max  = sqrt(F_max / k_prop);      % 266 rad/s (약 2540 rpm), F_max=500 기준
-tau_n  = 0.30;                      % 모터 시상수 [s] (tau_n >= Ts_ctrl)
+n_max  = sqrt(F_max / k_prop);      % 265.8 rad/s (약 2538 rpm) — F_max 를 회전수로
+                                    % 읽은 눈금이다. 포화 블록이 아니라 참고선이다
+
+%   플러그인이 추력에 거는 한계 — URDF 의 max_thrust_cmd 를 그대로 옮긴다.
+%   그 값의 유래도 URDF 에 식으로 적혀 있다 (thruster_config.xacro:6-8, 20)
+%     (x_u + x_uu * v_max) * v_max / 2,   x_u = 51.3, x_uu = 72.4, v_max = 7.71667
+%   즉 **최대 속도에서의 항력을 추진기 둘이 나눠 낸 몫**이다. 선수추진기도 같은
+%   값을 쓴다 — 그 축에 추진기가 하나뿐이라는 것은 URDF 가 아니라 배치의 문제다.
+F_plugin_max = 2353.53383667818;    % [N] 추진기 하나당 (URDF 값 그대로)
+%   본 과목의 F_max = 500 N 은 그 21 % 이므로 Gazebo 가 먼저 자르는 일은 없다.
 
 %% ====================================================================
 %  8. 조류 — 오프라인 모델에서만 동작한다
@@ -262,11 +293,25 @@ else
     task_mode = 3;
 end
 
-% 접안 단계의 유도부가 한 줄로 받는 설정 묶음 — 순서가 곧 q(1..13)
+% 접안 단계의 유도부가 한 줄로 받는 설정 묶음 — 순서가 곧 q(1..14)
 task_q = [ hold_north;  hold_east;  deg2rad(hold_deg);
            sway_north;  sway_east;  deg2rad(sway_deg);
            dock_north;  dock_east;  deg2rad(dock_deg);
-           R_dock;      L_app;      berth_side;      R_stop ];
+           R_dock;      L_app;      berth_side;      R_stop;
+           dock_on ];
+
+% 4단 이하의 유도부가 받는 목표 자세 묶음 — 순서가 곧 q(1..3)
+stop_q = [x_d; y_d; psi_d];
+
+% 추력배분이 받는 기하·포화 묶음 — 순서가 곧 PRM(1..4)
+alloc_prm = [half_beam; l_bow; F_max; F_bow_max];
+
+% 오프라인 운동모델이 받는 계수 묶음 — 순서가 곧 p(1..10)
+usv_p = [m_usv; Izz; Xu; Xuu; Yv; Yvv; Nr; Nrr; half_beam; l_bow];
+%   세 묶음을 블록 안에 벡터로 적지 않고 **이름**으로 두는 까닭
+%     Constant 블록은 적힌 글이 블록보다 길면 Simulink 가 값을 감추고 '-C-' 만
+%     그린다. 강의노트에 그 그림이 그대로 실리므로 어느 값인지 알 수 없게 된다.
+%     이름 하나로 묶어 두면 블록에 이름이 보이고, 값은 이 파일 한 자리에서 읽는다.
 
 % 접근점 — 그림과 초기 선수각 계산에 쓴다 (유도부 안의 식과 같다)
 app_north = dock_north - berth_side * L_app * sin(deg2rad(dock_deg));
@@ -300,6 +345,10 @@ else
 end
 if stage >= 2
     fprintf('  선수추진기 : bow_on = %d\n', bow_on);
+end
+if stage >= 5 && stage ~= 7
+    dock_txt = {'(선석으로 바로 — 댈 현을 못 고름)', '(접근점 -> 선수각 정렬 -> 옆걸음)'};
+    fprintf('  단계 전이  : dock_on = %d  %s\n', dock_on, dock_txt{dock_on + 1});
 end
 fprintf('  속도 한계  : u_max = %g m/s,  v_max = %g m/s\n', u_max, v_max);
 fprintf('  추력 한계  : 선미 %g N,  선수 %g N\n', F_max, F_bow_max);

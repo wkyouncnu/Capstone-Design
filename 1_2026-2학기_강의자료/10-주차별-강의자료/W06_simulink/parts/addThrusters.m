@@ -1,79 +1,87 @@
 % =====================================================================
-% 사슬 4 · 3단에서 생김  Thrusters — 요구 추력을 실제 추진기가 낼 수 있는 추력으로
+% 사슬 4 · 3단에서 생김  Thrusters — Gazebo 추진기 플러그인을 옮겨 적은 칸
 % =====================================================================
-%   5주차와 똑같은 세 토막인데 축이 둘에서 셋으로 늘었을 뿐이다.
+%   5주차와 같은 자리이고 축만 둘에서 셋으로 늘었다.
 %
-%     요구 추력 -> (역 프로펠러 법칙) 회전수 -> (포화) -> (모터 1차 지연)
-%               -> (프로펠러 법칙) 실제 추력
+%   VRX 추진기 토픽 /wamv/thrusters/*/thrust (std_msgs/Float64) 가 받는 것은
+%   **뉴턴**이다. 역 프로펠러 법칙은 제어기가 아니라 플러그인 **안**에 있다.
+%   이 칸은 그 플러그인이 하는 일을 소스와 같은 순서로 다시 적는다
+%   (2026-10-15 에 소스를 직접 열어 확인했다).
 %
-%   VRX 의 추진기 토픽은 뉴턴을 받는다. 그래서 이 블록의 출력을 그대로 보낸다.
-%   회전수 n 은 그림으로만 쓴다 — 포화가 어디서 걸렸는지 눈으로 보려는 것이다.
+%   계수가 적힌 자리
+%     vrx/vrx_urdf/wamv_gazebo/urdf/thruster_layouts/
+%                                    wamv_gazebo_thruster_config.xacro:10-24
+%     펼친 결과  bow_wamv/bow_wamv_target.urdf:462-473 (left) · :484-495
+%                (right) · :506-517 (middle = 선수추진기). 세 추진기가 같은
+%                계수를 쓴다 — Ct = 0.004422, rho = 1000, D = 0.2
+%   플러그인 소스  gz-sim7  src/systems/thruster/Thruster.cc
+%     :520-521  OnCmdThrust         clamp(cmd, cmdMin, cmdMax)  <- 포화는 추력에
+%     :562-584  ThrustToAngularVec  omega = sign(F*Ct)*sqrt(|F|/(rho*Ct*D^4))
+%     :593-599  AngularVelToThrust  F = rho*Ct*D^4*|omega|*omega
+%     :740-756  velocity_control    구한 omega 를 JointVelocityCmd 로 바로 쓴다
+%     :770-773  AddWorldWrench      링크에 주는 힘은 **포화만 거친 지령**이다
+%
+%   세 번째 식은 플러그인에서 회전수 지령 모드에만 쓰인다. 여기서는 두 번째를
+%   되돌려 맞는지 보는 **검산**으로 두고, 그 차이를 F_err 로 내보내 로깅한다.
+%   두 식이 서로의 역함수이므로 0 이 나와야 한다.
 function addThrusters(m, x, y)
-    ss = add_subsys(m, 'Thrusters', [x y x+190 y+150], ...
-                    {'FL_cmd','FR_cmd','FB_cmd'}, {'FL','FR','FB','n'}, ...
+    ss = add_subsys(m, 'Thrusters', [x y x+190 y+190], ...
+                    {'FL_cmd','FR_cmd','FB_cmd'}, {'FL','FR','FB','n','F_err'}, ...
                     gnc_colour('thruster'));
 
-    add_block('simulink/User-Defined Functions/MATLAB Function', [ss '/F2n'], ...
-              'Position', [250 60 400 360]);          % 포트 5개 — 52*4+40 = 248 이상
-    sl_fcn(ss, 'F2n', strjoin({
-      'function n_cmd = F2n(FL, FR, FB, k, n_max)'
+    %  블록 하나에 네 토막을 다 적는다. 통과선에서 가지를 치지 않는 이유 —
+    %  가지를 치면 Inport 하나에 선이 둘 달리고, square_lines 는 Inport 를
+    %  **잎 블록**으로 보아 한쪽 포트 높이로 끌어간다. 그러면 다른 한쪽이 꺾이고
+    %  세로 토막이 겹친다 (2026-10-15 5주차에서 측정, 겹침 75 px). 포트를 늘려
+    %  한 블록으로 받으면 선이 모두 직선이다
+    add_block('simulink/User-Defined Functions/MATLAB Function', [ss '/Plugin'], ...
+              'Position', [250 60 450 320]);          % 포트 5개 — 52*4+40 = 248 이상
+    sl_fcn(ss, 'Plugin', strjoin({
+      'function [FL, FR, FB, n, F_err] = Plugin(FL_cmd, FR_cmd, FB_cmd, k, F_lim)'
       '%#codegen'
-      '%  역 프로펠러 법칙 — 내고 싶은 추력을 회전수로 되돌린다.'
-      '%     F = k*n*|n|   ->   n = sign(F)*sqrt(|F|/k)'
-      '%  포화는 회전수에 걸린다. 모터가 묶는 것은 힘이 아니라 회전수다.'
-      'F = [FL; FR; FB];'
-      'n_cmd = zeros(3,1);'
-      'for i = 1:3'
-      '    ni = sign(F(i)) * sqrt(abs(F(i))/k);'
-      '    if ni >  n_max, ni =  n_max; end'
-      '    if ni < -n_max, ni = -n_max; end'
-      '    n_cmd(i) = ni;'
-      'end'
+      '%  Gazebo 추진기 플러그인이 하는 일을 소스와 같은 순서로 적는다.'
+      '%    gz-sim7  src/systems/thruster/Thruster.cc'
+      ''
+      '%  1) 포화 — 플러그인은 **추력에** 건다 (OnCmdThrust, :520-521)'
+      '%       thrust = clamp(cmd, cmdMin, cmdMax),  cmdMax = max_thrust_cmd'
+      'F = [FL_cmd; FR_cmd; FB_cmd];'
+      'F = max(-F_lim, min(F_lim, F));'
+      ''
+      '%  2) 추력 -> 회전수 (ThrustToAngularVec, :562-584). 이 값이 조인트'
+      '%     속도 지령이 된다 — velocity_control = true (:740-756)'
+      '%       omega = sign(F*Ct)*sqrt(|F|/(rho*Ct*D^4)),  k = rho*Ct*D^4'
+      '%     Ct > 0 이므로 sign(F*Ct) = sign(F) 다'
+      'n = sign(F) .* sqrt(abs(F)/k);'
+      ''
+      '%  3) 회전수 -> 추력 (AngularVelToThrust, :593-599). 플러그인에서는'
+      '%     회전수 지령 모드에만 쓰인다. 여기서는 2) 를 되돌려 맞는지 보는'
+      '%     **검산**이다 — 두 식이 서로의 역함수이므로 0 이 나와야 한다'
+      '%       F = rho*Ct*D^4 * |omega| * omega'
+      'F_chk = k * abs(n) .* n;'
+      'F_err = F_chk - F;'
+      ''
+      '%  4) 링크에 가는 힘은 되돌린 값이 아니라 포화만 거친 지령이다'
+      '%     (AddWorldWrench 가 desiredThrust 를 그대로 쓴다, :770-773)'
+      'FL = F(1);'
+      'FR = F(2);'
+      'FB = F(3);'
       }, newline));
-    sl_const(ss, 'Kp', 'k_prop', 60, 420);
-    sl_const(ss, 'Nm', 'n_max',  60, 470);
-    row_feed(ss, 'F2n', {'FL_cmd','FR_cmd','FB_cmd','Kp','Nm'});
+    sl_const(ss, 'Kp',   'k_prop',       60, 340);
+    sl_const(ss, 'Flim', 'F_plugin_max', 60, 400);
+    row_feed(ss, 'Plugin', {'FL_cmd','FR_cmd','FB_cmd','Kp','Flim'});
 
-    %  모터 1차 지연 — 연속 시간. dn/dt = (n_cmd - n)/tau_n 을 상태공간으로 적는다.
-    %  연속 Transfer Fcn 은 벡터 입력을 받지 않는다 (n 은 3원소다). A·B·C 가 대각
-    %  이므로 세 추진기가 서로 섞이지 않는다 — 식은 5주차와 같고 축만 셋이다
-    add_block('simulink/Continuous/State-Space', [ss '/MotorLag'], ...
-              'Position', [470 180 590 240]);         % 가운데 210 = F2n 출력 높이
-    set_param([ss '/MotorLag'], 'A','-eye(3)/tau_n', 'B','eye(3)/tau_n', ...
-              'C','eye(3)', 'D','zeros(3)', 'X0','zeros(3,1)');
-    add_line(ss, 'F2n/1', 'MotorLag/1');
-
-    add_block('simulink/User-Defined Functions/MATLAB Function', [ss '/n2F'], ...
-              'Position', [660 160 810 310]);         % 입력 1 이 210 에 오게 (= MotorLag)
-    sl_fcn(ss, 'n2F', strjoin({
-      'function [FL, FR, FB] = n2F(n, k)'
-      '%#codegen'
-      '%  프로펠러 법칙. |n| 이 붙어 있다 — 추력은 회전수의 제곱이므로'
-      '%  회전수에 건 제한이 추력에 그대로 비례해 걸리지 않는다.'
-      'FL = k * n(1) * abs(n(1));'
-      'FR = k * n(2) * abs(n(2));'
-      'FB = k * n(3) * abs(n(3));'
-      }, newline));
-    add_line(ss, 'MotorLag/1', 'n2F/1');
-
-    %  k_prop 을 쓰는 곳이 둘이라 상수 블록도 둘이다. 같은 작업공간 변수를
-    %  읽으므로 값은 늘 같다. 하나만 두고 선을 끌면 그 선이 F2n(x = 250~400)
-    %  을 가로지른다 — 2026-10-14 측정, check_lines 의 [블록관통] 1건.
-    %  상수는 복제해도 손해가 없는 블록이다. 선을 꺾는 것보다 낫다
-    sl_const(ss, 'Kp2', 'k_prop', 470, 245);          % 가운데 260 = n2F 입력 2
-    add_line(ss, 'Kp2/1', 'n2F/2');
-
-    outs = {'FL','FR','FB'};
-    for k = 1:3
-        p = port_xy(ss, 'n2F', 'Outport', k);
-        set_param([ss '/' outs{k}], 'Position', [880 p(2)-10 915 p(2)+10]);
-        add_line(ss, sprintf('n2F/%d',k), [outs{k} '/1']);
+    %  다섯 잎 블록을 각자의 포트 높이에 맞춘다 — 다섯 선이 모두 직선이 된다
+    outs = {'FL','FR','FB','n','F_err'};
+    for k = 1:numel(outs)
+        p = port_xy(ss, 'Plugin', 'Outport', k);
+        set_param([ss '/' outs{k}], 'Position', [580 p(2)-10 615 p(2)+10]);
+        add_line(ss, sprintf('Plugin/%d',k), [outs{k} '/1']);
     end
-    set_param([ss '/n'], 'Position', [880 360 915 380]);
-    add_line(ss, 'MotorLag/1', 'n/1', 'autorouting','on');
 
     sl_note(ss, 'n_t', [ ...
-        '추력 -> 회전수 -> 포화 -> 모터 1차 지연 -> 추력. 세 추진기가 같은 식을 쓴다' newline ...
-        '포화가 회전수에 걸리므로 지령이 커도 추력이 n_max 에서 멈춘다' newline ...
-        'VRX 추진기 토픽은 뉴턴을 받으므로 이 출력을 그대로 보낸다'], 250, 430);
+        'Gazebo 추진기 플러그인(gz::sim::systems::Thruster)을 그 순서대로 적은 칸' newline ...
+        '1) 포화를 추력에 건다  2) 추력 -> 회전수  3) 되돌려 검산  4) 힘은 1) 의 값' newline ...
+        '회전수는 조인트 속도 지령이 되는 값이다 — velocity_control = true' newline ...
+        '세 추진기가 같은 계수를 쓴다. 플러그인 한계는 편당 2353.5 N (URDF)' newline ...
+        'F_err = 되돌린 추력 - 포화한 추력. 두 식이 서로의 역함수이므로 0 이어야 한다'], 250, 460);
 end

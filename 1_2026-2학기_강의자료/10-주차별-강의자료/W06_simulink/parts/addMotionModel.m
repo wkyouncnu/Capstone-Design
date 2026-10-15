@@ -61,7 +61,7 @@ function addMotionModel(m, x, y)
 
     sl_const(ss, 'V_c',    'current_speed', 110, 600);
     sl_const(ss, 'beta_c', 'beta_c',        110, 650);
-    sl_const(ss, 'p', '[m_usv; Izz; Xu; Xuu; Yv; Yvv; Nr; Nrr; half_beam; l_bow]', 60, 700);
+    sl_const(ss, 'p', 'usv_p', 60, 700);
 
     add_block('simulink/Continuous/Integrator', [ss '/Integ'], ...
               'Position', [560 290 590 320], 'InitialCondition','x0');

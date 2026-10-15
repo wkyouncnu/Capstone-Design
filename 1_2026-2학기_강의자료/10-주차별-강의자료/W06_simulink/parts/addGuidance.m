@@ -12,6 +12,13 @@
 %     접안은 "지금 어느 단계인가"에 따라 목표가 달라진다. 단계가 올라간 뒤에는
 %     내려오지 않아야 한다(래치). 그런데 단계는 자기 자신의 입력이 되므로 그대로
 %     되먹이면 대수 루프가 된다. Unit Delay 를 한 칸 끼워 한 스텝 전 값을 쓴다.
+%
+%   dock_on 스위치 — 단계를 나누는 값어치를 재는 자리다
+%     dock_on = 1  접근점 -> 선수각 정렬 -> 옆걸음, 세 단계를 밟는다
+%     dock_on = 0  선석으로 바로 간다. 목표는 처음부터 선석이고 선수각은 가는
+%                  방향으로 둔다 — 즉 **어느 현을 댈지 고르지 않는다**
+%     거리로는 두 벌이 거의 같게 닿는다. 다른 것은 닿을 때의 선수각이다.
+%     계류줄·방충재·승하선 위치가 현에 따라 정해져 있으므로 그것이 성패를 가른다.
 function addGuidance(m, x, y)
     ss = add_subsys(m, 'Guidance', [x y x+190 y+150], ...
                     {'x_n','y_n','psi'}, ...
@@ -32,12 +39,13 @@ function addGuidance(m, x, y)
       '%    q(11)    L_app       접안점에서 접근점까지의 거리 [m]'
       '%    q(12)    berth_side  +1 이면 부두가 좌현쪽 — 접근점이 우현쪽에 생긴다'
       '%    q(13)    R_stop      목표에 닿았다고 보는 반지름 [m]'
+      '%    q(14)    dock_on     1 이면 세 단계를 밟고, 0 이면 선석으로 바로 간다'
       '%'
       '%  gate = 1 이면 바깥 고리가 속도 지령을 낸다. 0 이면 멈춘다.'
       'hx = q(1);  hy = q(2);  hpsi = q(3);'
       'sx = q(4);  sy = q(5);  spsi = q(6);'
       'dx = q(7);  dy = q(8);  dpsi = q(9);'
-      'Rd = q(10); La = q(11); sd = q(12); Rs = q(13);'
+      'Rd = q(10); La = q(11); sd = q(12); Rs = q(13);  don = q(14);'
       'ph = phase_prev;'
       ''
       'if mode == 1 || mode == 2'
@@ -59,7 +67,15 @@ function addGuidance(m, x, y)
       '    %  선수각 dpsi 로 들어가려면 접근점이 그 뒤쪽에 있어야 한다'
       '    ax = dx - sd*La*sin(dpsi);'
       '    ay = dy + sd*La*cos(dpsi);'
-      '    if ph < 1'
+      '    if don < 0.5'
+      '        %  단계를 나누지 않는 경우 — 목표가 처음부터 선석이다. 선수각은'
+      '        %  가는 방향으로 두므로 어느 현을 댈지 고르지 못한다'
+      '        x_ref = dx;  y_ref = dy;'
+      '        psi_ref = atan2(dy - y_n, dx - x_n);'
+      '        if sqrt((dx - x_n)^2 + (dy - y_n)^2) < Rs'
+      '            ph = 3;'
+      '        end'
+      '    elseif ph < 1'
       '        %  1단계 — 접근점으로 간다. 선수각은 가는 방향으로 둔다 (저항이 작다)'
       '        x_ref = ax;  y_ref = ay;'
       '        psi_ref = atan2(ay - y_n, ax - x_n);'
@@ -115,5 +131,6 @@ function addGuidance(m, x, y)
     sl_note(ss, 'n_g', [ ...
         'task_mode 로 과업을 고름 — 1 위치·선수각 유지 / 2 순수 횡이동 / 3 접안' newline ...
         'phase 는 한 번 올라가면 내려오지 않음 (래치). Unit Delay 가 대수 루프를 끊음' newline ...
-        'gate = 0 이 되면 바깥 고리가 속도 지령을 0 으로 내려 배가 섬'], 330, 700);
+        'gate = 0 이 되면 바깥 고리가 속도 지령을 0 으로 내려 배가 섬' newline ...
+        'dock_on = 0 (q(14)) 이면 단계를 밟지 않고 선석으로 바로 감 — 댈 현을 못 고름'], 330, 700);
 end

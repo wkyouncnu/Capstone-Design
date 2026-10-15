@@ -13,6 +13,7 @@ function S = W05_plot(out, ttl)
 %     S.t_finish     완주 시각 [s]  (미완주면 NaN)
 %     S.mean_beta    평균 |크랩각| [deg]
 %     S.mean_u       정상상태 속도 [m/s]
+%     S.max_Ferr     프로펠러 법칙 왕복 검산 max|F_err| [N]  <- 0 이어야 한다
 
 if nargin < 2, ttl = ''; end
 
@@ -47,6 +48,12 @@ S.mean_ye_ss = mean(abs(ye(s:k)));
 S.max_ye     = max(abs(ye(1:k)));
 S.mean_beta  = mean(abs(beta(s:k))) * 180/pi;
 S.mean_u     = mean(u(s:k));
+
+%  프로펠러 법칙 왕복 검산 — Thrusters 가 추력을 회전수로 바꾸고 다시 추력으로
+%  되돌린 차이다. 두 식이 서로의 역함수이므로 0 이 나와야 한다
+Ferr = squeeze(out.log_F_err.Data);
+if size(Ferr,1) ~= numel(t), Ferr = Ferr.'; end
+S.max_Ferr = max(abs(Ferr(:)));
 
 S.fig = figure('Name',['W05  ' ttl], 'Position', [80 60 1200 780], 'Color','w');
 
@@ -99,9 +106,12 @@ grid on; xlabel('시간 [s]'); ylabel('u [m/s]');
 legend({'u 실제','u_{ref} 지령'}, 'Location','best','FontSize',8);
 title(sprintf('속도 제어   (정상상태 %.3f m/s)', S.mean_u));
 
-% ---- 6. 추력과 회전수 --------------------------------------------------
-figure('Name', ['W05 추진기  ' ttl], 'Position',[140 120 900 380], 'Color','w');
-subplot(1,2,1);
+% ---- 6. 추력 · 회전수 · 왕복 검산 --------------------------------------
+%  세 번째 칸이 검산이다. 추진기 칸은 Gazebo 플러그인의 두 식을 그대로 옮겨
+%  적은 것이고, 그 둘이 서로의 역함수인지는 F -> n -> F 를 돌려 봐야 안다.
+%  맞다면 이 칸은 바닥에 붙어 있다 (배정밀도 반올림 수준).
+figure('Name', ['W05 추진기  ' ttl], 'Position',[140 120 1200 380], 'Color','w');
+subplot(1,3,1);
 plot(t(1:k), FL(1:k), 'LineWidth',1.2); hold on;
 plot(t(1:k), FR(1:k), 'LineWidth',1.2);
 yline( evalin('base','F_max'), 'r:'); yline(-evalin('base','F_max'), 'r:');
@@ -109,13 +119,20 @@ grid on; xlabel('시간 [s]'); ylabel('추력 [N]');
 legend({'F_L','F_R','포화한계'}, 'Location','best','FontSize',8);
 title('추력');
 
-subplot(1,2,2);
+subplot(1,3,2);
 plot(t(1:k), n(1:k,1), 'LineWidth',1.2); hold on;
 plot(t(1:k), n(1:k,2), 'LineWidth',1.2);
 yline( evalin('base','n_max'), 'r:'); yline(-evalin('base','n_max'), 'r:');
 grid on; xlabel('시간 [s]'); ylabel('회전수 [rad/s]');
-legend({'n_L','n_R','n_{max}'}, 'Location','best','FontSize',8);
+legend({'n_L','n_R','n_{max} 참고선'}, 'Location','best','FontSize',8);
 title('프로펠러 회전수');
+
+subplot(1,3,3);
+plot(t(1:k), abs(Ferr(1:k,1)), 'LineWidth',1.2); hold on;
+plot(t(1:k), abs(Ferr(1:k,2)), 'LineWidth',1.2);
+grid on; xlabel('시간 [s]'); ylabel('|F_{err}| [N]');
+legend({'좌현','우현'}, 'Location','best','FontSize',8);
+title(sprintf('왕복 검산  max %.2e N', S.max_Ferr));
 
 % ---- 성능 지표 --------------------------------------------------------
 fprintf('\n===== %s =====\n', ttl);
@@ -129,5 +146,6 @@ else
 end
 fprintf('  평균 |크랩각|        %8.2f deg\n', S.mean_beta);
 fprintf('  정상상태 속도        %8.3f m/s  (목표 %.2f)\n', S.mean_u, ur);
+fprintf('  왕복 검산 max|F_err| %8.2e N    (F -> n -> F, 0 이어야 한다)\n', S.max_Ferr);
 
 end

@@ -254,6 +254,25 @@ check_fill(모델, true)       % 블록 넓이 / 경계상자 넓이. 층마다 
 - 최상위 기준으로 0.20 이상이면 좋고, 0.10 미만이면 빈칸이 90 % 다
 - 도면이 커지면 PDF 에서 글씨가 작아진다. 같은 내용이면 **작은 도면이 낫다**
 
+### 값이 가려진 Constant — `-C-` 를 전수로 센다
+
+Simulink 는 적힌 글이 블록보다 길면 값을 감추고 `-C-` 만 그린다. 도면이 강의노트에
+그대로 실리므로 **어느 값인지 알 수 없는 블록**은 남길 수 없다 (`authoring.md`).
+
+```matlab
+b = find_system(모델, 'LookUnderMasks','all', 'BlockType','Constant');
+for j = 1:numel(b)
+    v = get_param(b{j}, 'Value');   p = get_param(b{j}, 'Position');
+    if numel(v)*7 + 16 > p(3)-p(1)              % 글자가 블록보다 길다
+        fprintf('%s | %s | 글자 %d자 | 폭 %d px\n', 모델, b{j}, numel(v), p(3)-p(1));
+    end
+end
+```
+
+- 7 px/자 는 **넉넉히 잡은 어림**이다. 걸린 것을 다 고칠 필요는 없고, **글자 수가
+  폭보다 훨씬 긴 것**(벡터 리터럴)을 골라 `WXX_setup` 의 이름 하나로 묶는다
+- 고친 뒤에는 도면을 **눈으로** 본다. 이 검사는 자리를 좁혀 줄 뿐 판정하지 못한다
+
 ### 도면만 보지 말고 컴파일까지 볼 것
 
 ```matlab
