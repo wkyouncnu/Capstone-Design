@@ -328,15 +328,21 @@ function addInnerLoop(m, x, y)
     add_block('simulink/Continuous/PID Controller', [ss '/PI_u'], ...
               'Position', [400 370 490 430]);
     %  **연속 시간 PI** 다 (교수 지시 2026-10-01 — 제어기는 연속으로 적는다).
-    %  적분기는 1/s 이고 안티와인드업은 clamping 이다. 전에는 같은 블록을
-    %  Discrete-time 으로 두었는데, 그 근거로 적혀 있던 "VRX 라서 이산" 은
-    %  이유가 아니었다 — 솔버를 ode4 로 바꾸면 같은 스텝으로 돈다 (4주차에서 확인).
+    %  적분기는 1/s 다. 전에는 같은 블록을 Discrete-time 으로 두었는데, 그 근거로
+    %  적혀 있던 "VRX 라서 이산" 은 이유가 아니었다 — 솔버를 ode4 로 바꾸면 같은
+    %  스텝으로 돈다 (4주차에서 확인).
+    %
+    %  안티와인드업은 **역계산**(back-calculation)이다 (교수 지시 2026-10-15 —
+    %  "고정이 아니라 역계산으로"). 고정(clamping)은 적분을 멈추기만 해서 이미
+    %  쌓인 양이 남는다. 역계산은 잘려 나간 몫을 Kb 배 해서 되감는다.
+    %      v = Kp*e + Ki*I,   dI/dt = e + Kb*( sat(v) - v )
+    %  Kb 는 숫자로 박지 않고 base 의 변수 이름으로 넣는다 (W05_setup 의 Kb).
     set_param([ss '/PI_u'], 'Controller','PI', ...
         'TimeDomain','Continuous-time', ...
         'P','Kp_u', 'I','Ki_u', ...
         'LimitOutput','on', ...
         'UpperSaturationLimit','2*F_max', 'LowerSaturationLimit','-2*F_max', ...
-        'AntiWindupMode','clamping');
+        'AntiWindupMode','back-calculation', 'Kb','Kb');
 
     add_line(ss,'u_ref/1','Gate/1','autorouting','on');
     add_line(ss,'gate/1', 'Gate/2','autorouting','on');

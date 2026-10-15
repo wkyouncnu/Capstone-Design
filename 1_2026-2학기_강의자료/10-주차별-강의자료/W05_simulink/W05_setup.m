@@ -56,6 +56,11 @@ Kp_psi = 400;   Kd_psi = 200;
 %   U = sqrt(u^2+v^2) 가 아니다. MSS 의 surge velocity control 과 같다
 Kp_u = 300;     Ki_u = 100;
 
+% 적분기 anti-windup — 역계산(back-calculation) 되감기 이득 [1/s]
+%   dI/dt = e + Kb*( sat(v) - v ).  1/Kb 가 되감기는 시간상수다.
+%   Kb = Ki/Kp 로 두는 것이 Astrom 의 권고다 (적분시간 Ti = Kp/Ki = 3 s 와 같게).
+Kb = Ki_u / Kp_u;
+
 half_beam = 1.027135;   % 후방 2추진기 좌우 반폭 [m] (wamv_aft_thrusters.xacro)
 F_max     = 500;        % 추력 포화 [N]
 % 왜 500 인가
