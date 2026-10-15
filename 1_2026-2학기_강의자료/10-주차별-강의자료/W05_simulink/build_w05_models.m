@@ -308,8 +308,7 @@ function addInnerLoop(m, x, y)
     add_block('simulink/Math Operations/Gain', [ss '/Kd_rate'], ...
               'Position', [410 300 460 340], 'Gain','Kd_psi');
 
-    add_block('simulink/Math Operations/Sum', [ss '/SumN'], ...
-              'Position', [640 110 670 150], 'Inputs','+-');
+    add_sum(ss, 'SumN', '+-', [655 130]);
     add_block('simulink/Discontinuities/Saturation', [ss '/SatN'], ...
               'Position', [720 110 760 150], ...
               'UpperLimit','2*F_max*half_beam', 'LowerLimit','-2*F_max*half_beam');
@@ -325,8 +324,7 @@ function addInnerLoop(m, x, y)
     % ---------- 속도 제어 : u 되먹임 PI ----------
     add_block('simulink/Math Operations/Product', [ss '/Gate'], ...
               'Position', [200 380 235 420]);
-    add_block('simulink/Math Operations/Sum', [ss '/SurgeErr'], ...
-              'Position', [300 385 330 415], 'Inputs','+-');
+    add_sum(ss, 'SurgeErr', '+-', [315 400]);
     add_block('simulink/Continuous/PID Controller', [ss '/PI_u'], ...
               'Position', [400 370 490 430]);
     %  **연속 시간 PI** 다 (교수 지시 2026-10-01 — 제어기는 연속으로 적는다).
@@ -1072,6 +1070,35 @@ function build_idx_memory()
     save_system(m); close_system(m);
     tidy_model(m);            % 되먹임 고리가 있어 손으로 놓으면 세 번 꺾인다
     load_system(m); paint_roles(m); check_colour(m);
+    %  Scope 로 가는 두 선만 세로 통로를 손으로 정한다.
+    %
+    %  자동 배선이 IdxStep 쪽 통로를 **출발 포트보다 왼쪽**(x = 340 < 345)에 잡아
+    %  선이 5 px 되돌아갔다가 내려갔다 — 신호가 역주행하는 모양이다. 2026-10-15
+    %  에 W05·W06 열한 모델의 선을 전수로 재 보니 역주행은 이 한 건이었다.
+    %
+    %  꺾임 2회는 여기서 하한이다. Scope 의 입력 두 개는 50 px 떨어져 있고 두
+    %  출처(IdxPersistent · IdxStep)는 115 px 떨어져 있어 **둘을 동시에 수평으로
+    %  맞출 수 없다.** 포트 높이가 다른 두 포트를 잇는 정상 모양은 "수평 → 세로
+    %  통로 → 수평" 이고, 통로를 출발·도착 포트의 x 로 당기면 1 회로 줄지만 선이
+    %  포트에서 세로로 떠나거나 세로로 닿는다. 그래서 고칠 것은 통로의 x 뿐이다.
+    %  두 통로를 20 px 띄워 서로 겹치지 않게 한다 (check_overlaps 와 짝이다)
+    relane(m, 'Scope', 1, 355);        % IdxPersistent -> Scope/1
+    relane(m, 'Scope', 2, 375);        % IdxStep       -> Scope/2
     save_system(m); close_system(m, 0);
     fprintf('  W05_2_idx_memory  생성\n');
+end
+
+% -------------------------------------------------------------------------
+function relane(m, dst, k, xl)
+%RELANE  도착 포트로 들어오는 선의 **세로 통로 x** 만 다시 정한다.
+%   선을 끊고 다시 잇지 않는다 — 다시 이으면 신호 이름이 날아가고 Scope 범례가
+%   "Signal 1" 로 나온다. 가지선도 점의 첫째가 갈라지는 자리이므로 그대로 쓴다.
+    lh = get_param([m '/' dst], 'LineHandles');
+    if k > numel(lh.Inport) || lh.Inport(k) <= 0, return, end
+    h = lh.Inport(k);
+    p = get_param(h, 'Points');
+    a = p(1,:);  b = p(end,:);
+    q = [a; xl a(2); xl b(2); b];
+    keep = [true; any(abs(diff(q,1,1)) > 0.5, 2)];
+    set_param(h, 'Points', q(keep,:));
 end

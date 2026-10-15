@@ -275,8 +275,7 @@ function addCalcSubsystem(m, x, y)
     add_block('built-in/Subsystem', s, 'Position',[x y x+120 y+80]);
     add_block('built-in/Inport',  [s '/a'],   'Position',[40  50  70  70]);
     add_block('built-in/Inport',  [s '/b'],   'Position',[40 130  70 150]);
-    add_block('simulink/Math Operations/Sum', [s '/Sum'], ...
-              'Inputs','+-', 'Position',[150 80 180 120]);
+    add_sum(s, 'Sum', '+-', [165 100]);
     add_block('simulink/Math Operations/Gain', [s '/K'], ...
               'Gain','2', 'Position',[240 85 280 115]);
     add_block('built-in/Outport', [s '/y'],   'Position',[350 90 380 110]);
@@ -322,8 +321,7 @@ function build_SB3_todo()
     % 평평한 모델 — 서브시스템 없이 모든 블록이 최상위에 놓여 있다
     add_block('simulink/Sources/Constant', [m '/a'], 'Value','10', 'Position',[40 60 90 90]);
     add_block('simulink/Sources/Constant', [m '/b'], 'Value','4',  'Position',[40 130 90 160]);
-    add_block('simulink/Math Operations/Sum', [m '/Sum'], ...
-              'Inputs','+-', 'Position',[180 80 210 120]);
+    add_sum(m, 'Sum', '+-', [195 100]);
     add_block('simulink/Math Operations/Gain', [m '/K'], ...
               'Gain','2', 'Position',[270 85 310 115]);
     add_block('simulink/Sinks/Display', [m '/Display'], 'Position',[400 85 470 115]);
@@ -461,8 +459,7 @@ function addReference(m)
     add_block('simulink/Sources/Step', [m '/Ref_dn'], ...
               'Time','10', 'Before','0', 'After','-1.5', 'SampleTime','0.05', ...
               'Position',[40 130 90 170]);
-    add_block('simulink/Math Operations/Sum', [m '/Ref'], ...
-              'Inputs','++', 'Position',[140 100 170 130]);
+    add_sum(m, 'Ref', '++', [155 115]);
     add_line(m,'Ref_up/1','Ref/1','autorouting','on');
     add_line(m,'Ref_dn/1','Ref/2','autorouting','on');
 end
@@ -471,8 +468,7 @@ function build_SB5_done()
     m = 'SB5_pid_done'; fresh(m);
 
     addReference(m);
-    add_block('simulink/Math Operations/Sum', [m '/Err'], ...
-              'Inputs','+-', 'Position',[230 100 260 130]);
+    add_sum(m, 'Err', '+-', [245 115]);
     add_block('simulink/Discrete/Discrete PID Controller', [m '/PID'], ...
               'Position',[310 90 390 140]);
     set_param([m '/PID'], 'Controller','PI', 'P','1', 'I','2', ...
@@ -520,8 +516,7 @@ function build_SB5_todo()
     m = 'SB5_pid_todo'; fresh(m);
 
     addReference(m);
-    add_block('simulink/Math Operations/Sum', [m '/Err'], ...
-              'Inputs','+-', 'Position',[230 100 260 130]);
+    add_sum(m, 'Err', '+-', [245 115]);
     add_block('simulink/Discrete/Discrete PID Controller', [m '/PID'], ...
               'Position',[310 90 390 140]);
     set_param([m '/PID'], 'Controller','P', 'P','1', 'SampleTime','0.05');

@@ -187,7 +187,7 @@ function build_SB8_done()
 
     % (1) Unit Delay 로 손수 만든 누적기:  y[k] = y[k-1] + Ts*u[k]
     B(m,'simulink/Math Operations/Gain','GTs',[160 100 200 130],'Gain','0.05');
-    B(m,'simulink/Math Operations/Sum','SumA',[260 95 290 135],'Inputs','++');
+    add_sum(m, 'SumA', '++', [275 115]);
     B(m,'simulink/Discrete/Unit Delay','UD',[260 200 300 240],'SampleTime','0.05');
 
     % (2) 같은 일을 하는 기성 블록
@@ -263,7 +263,7 @@ function build_SB9_done()
       'Numerator','[1]','Denominator','[0.3 1]');
 
     % (2) 같은 것을 Integrator 로 직접
-    B(m,'simulink/Math Operations/Sum','SumB',[200 150 230 190],'Inputs','+-');
+    add_sum(m, 'SumB', '+-', [215 170]);
     B(m,'simulink/Math Operations/Gain','Ginv',[280 155 320 185],'Gain','1/0.3');
     B(m,'simulink/Continuous/Integrator','Int',[370 150 410 190]);
 
@@ -556,8 +556,7 @@ function makeLagSubsystem(m, name, tauVal, pos)
     add_block('built-in/Subsystem', p, 'Position', pos);
 
     add_block('simulink/Ports & Subsystems/In1',  [p '/u'],  'Position',[40 90 70 120]);
-    add_block('simulink/Math Operations/Sum',     [p '/Sm'], 'Inputs','+-', ...
-              'Position',[140 85 170 125]);
+    add_sum(p, 'Sm', '+-', [155 105]);
     add_block('simulink/Math Operations/Gain',    [p '/Gi'], 'Gain','1/tau', ...
               'Position',[230 90 270 120]);
     add_block('simulink/Continuous/Integrator',   [p '/It'], 'Position',[330 85 370 125]);

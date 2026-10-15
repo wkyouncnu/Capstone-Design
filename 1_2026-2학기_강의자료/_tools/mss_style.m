@@ -118,9 +118,12 @@ end
 %  rectangle is one a builder created without add_sum; fix it here rather than
 %  leaving one slab in an otherwise consistent diagram.
 %
-%  부호 문자열의 막대('|')는 **빼 둔다.** 막대가 있으면 둘째 입력이 원의 아래쪽
-%  가장자리로 내려가 되먹임선이 밑에서 올라온다. 빼면 두 입력이 왼쪽 가장자리에
-%  위아래로 붙어 지령과 되먹임이 같은 쪽에서 들어온다 — 교수 결정 2026-10-02.
+%  부호 문자열은 **막대('|') 하나로 시작한다** — 교수 지시 2026-10-14.
+%  막대는 포트가 아니라 원의 위 자리를 비우는 띄우개다. 비워 두면 첫 입력이
+%  왼쪽 가장자리에 남고 둘째 입력만 아래로 내려가, 지령은 왼쪽에서 들어오고
+%  되먹임만 밑에서 올라온다. 지령선과 출력선이 한 줄로 수평이 되어 꺾임이 없다.
+%  2026-10-02 에는 거꾸로 **떼어 내고** 있었다. 그래서 `add_sum` 이 붙인 막대가
+%  빌더 끝에서 다시 지워져 모델 71 개가 전부 막대 없이 저장되어 있었다 (2026-10-15).
 %  자세한 이유는 add_sum 의 머리글에 적어 두었다. 둥근 Sum 은 전부 여기를 지난다.
 sums = find_system(mdl, 'LookUnderMasks','all', 'BlockType','Sum');
 for i = 1:numel(sums)
@@ -129,9 +132,10 @@ for i = 1:numel(sums)
         set_param(sums{i}, 'IconShape', 'round');
         changed = true;
     end
-    sg = get_param(sums{i}, 'Inputs');
-    if any(sg == '|')
-        set_param(sums{i}, 'Inputs', strrep(sg, '|', ''));
+    sg   = get_param(sums{i}, 'Inputs');
+    want = ['|' strrep(sg, '|', '')];
+    if ~strcmp(sg, want)
+        set_param(sums{i}, 'Inputs', want);
         changed = true;
     end
     if changed, n = n + 1; end
