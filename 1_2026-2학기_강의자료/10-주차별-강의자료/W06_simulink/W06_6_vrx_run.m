@@ -109,6 +109,7 @@ S_off = W06_plot(out_off, '5단 오프라인 대조');
 
 V = getappdata(0, 'W06_vrx_log');   S = getappdata(0, 'W06_vrx_S');
 G = getappdata(0, 'W06_vrx_org');   origin_north = G(1);   origin_east = G(2);
+IMG = fullfile(fileparts(mfilename('fullpath')), 'img');   % W06_setup 이 base 를 비우므로 다시 잡는다
 
 O = struct('t',   out_off.log_x_n.Time, ...
            'x',   out_off.log_x_n.Data, 'y', out_off.log_y_n.Data, ...
