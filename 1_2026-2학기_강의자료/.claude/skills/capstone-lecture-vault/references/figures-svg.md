@@ -45,6 +45,20 @@ bash _tools/tikz2svg.sh assets/src/w06-control-loop.tex assets/w06-control-loop.
 > 필요한 TeX 패키지 — `kotex-utf` · `cjk-ko` · `nanumtype1` · **`kotex-plain`**.
 > 마지막 하나가 없으면 `I can't find file kotexutf-core` 로 실패한다.
 > TinyTeX 은 `%APPDATA%\TinyTeX` 에 있고 PATH 에 없으므로 스크립트가 직접 붙인다.
+>
+> **새 PC 에 까는 법** (2026-10-16 노트북, 약 3 분) — PowerShell
+> ```powershell
+> Invoke-WebRequest https://tinytex.yihui.org/install-bin-windows.ps1 -OutFile tt.ps1 -UseBasicParsing
+> powershell -ExecutionPolicy Bypass -File tt.ps1
+> ```
+> 그다음 Git Bash 에서 그림에 필요한 패키지
+> ```bash
+> export PATH="$APPDATA/TinyTeX/bin/windows:$PATH"
+> tlmgr.bat install dvisvgm pgf standalone xcolor kotex-utf kotex-utils kotex-plain cjk-ko nanumtype1 unfonts-core unfonts-extra
+> ```
+> - `kotex-plain` 이 빠지면 ``I can't find file `kotexutf-core'`` 로 멈춘다 — `kotex-utf` 만으로는 모자람
+> - PDF 만들기(`pdf_sync.sh`)에는 LaTeX 이 **필요 없다** (Chrome + 로컬 MathJax). TinyTeX 은 TikZ 그림 빌드용
+> - `vault_check` 9 번 "소스가 더 최신" 이 떠도 내용이 바뀐 것은 아닐 수 있다 — Dropbox·`git checkout` 이 파일 시각만 바꾼다. 다시 빌드해서 `git status` 에 SVG 가 안 잡히면 시각만 어긋났던 것임 (2026-10-16 14건 모두 그랬음)
 
 ---
 
