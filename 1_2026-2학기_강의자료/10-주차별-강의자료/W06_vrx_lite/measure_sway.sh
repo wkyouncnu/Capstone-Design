@@ -22,6 +22,10 @@ SECS="${2:-10}"
 source /opt/ros/humble/setup.bash
 source ~/vrx_ws/install/setup.bash
 
+# 시작 자리를 넓은 물로 옮긴다 — 스폰은 남쪽 해안에 붙어 있어 우현으로 밀면 얹힌다
+# (to_open_water.sh 머리말, 2026-10-16). 스폰 자리 그대로 재려면 STAY=1 bash measure_sway.sh
+[ -n "$STAY" ] || bash "$(dirname "${BASH_SOURCE[0]}")/to_open_water.sh" || exit 1
+
 python3 - "$Y" "$SECS" <<'PY'
 import math, sys, time
 import rclpy

@@ -30,12 +30,32 @@
 %     (5) u · v      바깥 고리가 낸 속도 지령을 따라갔는가
 %     (6) 추력       선미 합 F_L+F_R 과 선수추진기 F_B 가 한계에 닿았는가
 %
-%   실행 전에 WSL 에서 VRX 가 떠 있어야 한다.
-%     ros2 launch vrx_gz competition.launch.py world:=sydney_regatta \
-%          urdf:=$HOME/capstone_ws/wamv/w7_wamv.urdf.xacro
+%   실행 전에 WSL 에서 **선수추진기를 단** VRX 가 떠 있어야 한다 (G-3, 실험마다 새로).
+%   5주차의 w7_wamv / wamv_lite 로 띄우면 bow 토픽이 없어 선수추진기가 헛돈다.
+%     cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W06_vrx_lite
+%     bash ../W03_vrx_lite/stop_vrx.sh && bash run_vrx_bow.sh
 setappdata(0, 'W06_stage', 6);
 setappdata(0, 'W06_skip_run', true);
 W06_setup
+
+%  실시간 화면은 끈다 (2026-10-16 노트북 실측). 화면을 그리는 동안 Simulink 가
+%  VRX 를 못 따라가 완료 시각이 44.8 s 로 짧아지고 오프라인과 16.6 m 벌어졌다
+%  (동기 점검 k = 1.25). 끄면 77.55 s · 이격 0.79 m. 빠른 PC 에서 보려면 1 로.
+animate = 0;
+
+%  Simulink 블록은 ROS 네트워크 프로필의 Domain ID 를, ros2* 함수는 환경변수를
+%  쓴다. 둘이 다르면 Simulink 만 아무것도 못 받고 오류 없이 배가 서 있다.
+try
+    prof = getpref('ROS_Toolbox', 'ROS_NetworkAddress_Profiles');
+    dom_prof = double(prof{1}.DomainID);
+catch
+    dom_prof = 0;      % 프로필을 한 번도 저장하지 않았으면 기본값 0
+end
+if dom_prof ~= str2double(ros_domain_id)
+    error(['Simulink ROS 프로필의 Domain ID 는 %d, W06_setup 의 ros_domain_id 는 %s 이다.\n' ...
+           '  Simulink 툴스트립 시뮬레이션 -> ROS 네트워크 에서 Domain ID 를 %s 로 바꾸고 다시 실행'], ...
+          dom_prof, ros_domain_id, ros_domain_id);
+end
 
 TOPIC = '/wamv/sensors/position/ground_truth_odometry';
 IMG   = fullfile(fileparts(mfilename('fullpath')), 'img');
@@ -85,6 +105,19 @@ S     = W06_plot(out, sprintf('%d단 — %s (RTF %.2f)', stage, stage_name{stage
 S.RTF = RTF;
 exportgraphics(S.fig, fullfile(IMG, 'W06_6_vrx_result.png'), 'Resolution', 130);
 fprintf('4) 결과 그림 저장: img/W06_6_vrx_result.png\n');
+
+%  동기 점검 — Simulink 가 VRX 를 따라갔는가 (5주차 W05_vrx_run 과 같은 식)
+%  VRX 의 u, v 는 "시뮬레이터 1 초에 몇 m" 다. 제때 돌았으면 모델 시각으로 적분한
+%  거리와 실제로 지나간 거리가 같다 (k = 1). 늦어지면 k > 1.
+s_path = sum(hypot(diff(out.log_x_n.Data), diff(out.log_y_n.Data)));
+s_int  = trapz(out.log_x_n.Time, hypot(out.log_u.Data, out.log_v.Data));
+S.k_sync = s_path / max(s_int, eps);
+fprintf('   동기 점검 k = 지나간 거리 %.1f m / 속도 적분 %.1f m = %.3f', s_path, s_int, S.k_sync);
+if S.k_sync > 1.08
+    fprintf('  <- Simulink 가 VRX 를 못 따라갔다. 이 결과는 쓰지 말 것 — VRX 를 다시 띄워 재실행\n');
+else
+    fprintf('  (1.08 이하 — 동기 정상)\n');
+end
 
 %  W06_setup 이 base 를 비우므로 VRX 로그를 appdata 로 옮겨 둔다.
 %  여섯 칸에 쓸 신호를 한 묶음으로 나른다
@@ -204,4 +237,5 @@ fprintf('  %-22s %12.1f %12.1f\n', 'max|F_B| [N]',         S_off.max_FB,     S.m
 fprintf('  %-22s %12.1f %12.1f\n', '주행거리 [m]', ...
         sum(hypot(diff(O.x), diff(O.y))), sum(hypot(diff(V.x), diff(V.y))));
 fprintf('  궤적 평균 이격 %.2f m,  최대 %.2f m\n', mean(sep), max(sep));
-fprintf('  이격이 크면 먼저 볼 것 — 스폰 원점, 추력 토픽 부호, RTF\n');
+fprintf('  동기 점검 k = %.3f  (1.08 을 넘으면 Simulink 가 늦은 것 — 결과를 쓰지 말 것)\n', S.k_sync);
+fprintf('  이격이 크면 먼저 볼 것 — 동기 k, 스폰 원점, 추력 토픽 부호, RTF\n');

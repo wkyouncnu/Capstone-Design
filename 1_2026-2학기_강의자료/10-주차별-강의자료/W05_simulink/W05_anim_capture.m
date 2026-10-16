@@ -66,13 +66,12 @@ if vrx
                '  - ROS_DOMAIN_ID 가 양쪽 같은가 (전 주차 7)'], TOP);
     end
 
-    %  스폰 위치를 직접 읽어 원점으로 쓴다. launch.py 의 스폰 좌표가 설치마다
-    %  다르다 (같은 2.4.0-2 인데 ENU y 가 162 인 컴퓨터와 200 인 컴퓨터가 있다,
-    %  2026-09-18 · 스킬 규칙 15). 고정값을 쓰면 그 차이만큼 경로가 통째로 밀려
-    %  안전 수역을 벗어난다. W05_vrx_run 이 하는 일과 같다.
+    %  경로 원점은 월드에 고정한다 (W05_setup 의 path_north0 · path_east0).
+    %  스폰은 설치마다 다르고 (ENU y 162 / 200), 스폰을 원점으로 삼으면 162
+    %  설치에서 경로가 38 m 남쪽으로 밀려 해안에 얹힌다 (2026-10-16). W05_vrx_run 과 같다.
     [rtf, x0_n, y0_n] = measure_spawn(TOP, 20);
-    assignin('base','origin_north', x0_n);
-    assignin('base','origin_east',  y0_n);
+    assignin('base','origin_north', evalin('base','path_north0'));
+    assignin('base','origin_east',  evalin('base','path_east0'));
     fprintf('  스폰 (x, y) = (%.1f, %.1f) m · RTF %.3f\n', x0_n, y0_n, rtf);
     if isempty(pacing), pacing = rtf; end
 

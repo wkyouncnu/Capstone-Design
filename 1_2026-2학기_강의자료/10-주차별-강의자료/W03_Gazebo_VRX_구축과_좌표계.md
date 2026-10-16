@@ -43,7 +43,7 @@ summary: Gazebo Garden과 VRX 설치, 선박 6자유도, ENU와 NED 변환, 쿼�
 >
 > | 언제 | 명령 (VS Code 의 WSL 창 터미널) | 하는 일 |
 > |---|---|---|
-> | 처음 한 번 | `cd ~ && git clone https://github.com/wkyouncnu/Capstone-Design.git` | 강의자료 전체를 받음 (약 400 MB) |
+> | 처음 한 번 | `cd ~ && git clone https://github.com/wkyouncnu/Capstone-Design.git` | 강의자료 전체를 받음 (약 770 MB · 2026-10-16 실측 1분 40초) |
 > | 처음 한 번 | `mkdir -p ~/capstone_ws/src && cd ~/capstone_ws/src && git clone https://github.com/wkyouncnu/usv_basics.git` | 예제 패키지를 받음. 이어서 `cd ~/capstone_ws && colcon build --symlink-install` |
 > | 매주 수업 전 | `cd ~/Capstone-Design && git pull` · `cd ~/capstone_ws/src/usv_basics && git pull` | **바뀐 파일만** 받음. 다시 clone 하지 않음 |
 > | 무엇이 바뀌었는지 | `git log --oneline -10` · `git show --stat HEAD` | 교수가 갱신한 내역을 확인 |
@@ -1250,6 +1250,7 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | `run_vrx.sh` | 모드를 골라 VRX 를 띄움. 실행하는 `ros2 launch` 명령을 먼저 화면에 찍음 | 방법 A · B |
 | `make_wamv_lite.sh` | 켤 센서를 골라 URDF 를 직접 만듦 | 방법 B |
 | `measure_vrx.sh` | 떠 있는 VRX 의 **평균 RTF** 와 **화면 fps** 를 잼 | 진단 · 확인 |
+| `stop_vrx.sh` | 떠 있는 VRX·Gazebo·브리지를 **모두 끔**. 남은 고아 서버까지 강제로 정리 (2026-10-16 추가) | 실험마다 띄우기 전 |
 
 1. 저장소를 최신으로 받음 (처음이면 문서 첫머리의 "강의자료 저장소" 표대로 `git clone` 부터)
 
@@ -1263,7 +1264,7 @@ cd ~/Capstone-Design && git pull
 cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite
 ```
 
-3. 파일이 네 개 보이는지 확인
+3. 파일이 다섯 개 보이는지 확인
 
 ```bash
 ls
@@ -1272,7 +1273,7 @@ ls
 - 정상 출력
 
 ```
-make_wamv_lite.sh  measure_vrx.sh  run_vrx.sh  wamv_lite.urdf
+make_wamv_lite.sh  measure_vrx.sh  run_vrx.sh  stop_vrx.sh  wamv_lite.urdf
 ```
 
 > [!tip] 한글 폴더 이름은 치지 않는다
@@ -2775,6 +2776,7 @@ cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash measure_vrx.sh 20
 | `run_vrx.sh` | `lite` · `mine` · `full` · `original` 모드로 VRX 를 띄움. 실행 명령을 먼저 화면에 찍음 |
 | `make_wamv_lite.sh` | 켤 센서를 골라 `~/capstone_ws/wamv/wamv_lite.urdf` 를 만듦 (`camera` · `lidar`) |
 | `measure_vrx.sh` | 평균 RTF · 구간별 흔들림 · 화면 fps 를 재고 판정함 |
+| `stop_vrx.sh` | 떠 있는 VRX 를 끄고 0 개가 됐는지 확인함 (`check` 를 붙이면 끄지 않고 보여 주기만) |
 
 ### 공식 문서
 

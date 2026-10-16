@@ -1,24 +1,32 @@
-function S = W05_vrx_run(T_end, do_compare)
+function S = W05_vrx_run(T_end, do_compare, show)
 % W05_VRX_RUN  VRX(Gazebo) 와 연동해 W05_1_vrx 를 돌리고 결과를 그린다.
 %
 %   >> W05_setup
-%   >> W05_vrx_run              % 230초 주행(임무 약 207 s 완주) + 오프라인 대조
-%   >> W05_vrx_run(150)         % 150초 — 완주 전에 끊긴다
-%   >> W05_vrx_run(230, false)  % 대조 없이 VRX 만
+%   >> W05_vrx_run                 % 270초 주행(임무 완주) + 오프라인 대조
+%   >> W05_vrx_run(150)            % 150초 — 완주 전에 끊긴다
+%   >> W05_vrx_run(270, false)     % 대조 없이 VRX 만
+%   >> W05_vrx_run(270, true, 1)   % 실시간 화면을 켜고 (빠른 PC 에서만)
 %
 %   이 스크립트가 대신 해 주는 것
 %     1. VRX 토픽이 보이는지 확인          (안 보이면 여기서 멈춘다)
 %     2. RTF 를 20초 동안 실제로 측정       (손으로 재지 않아도 된다)
-%     3. 페이싱 비율을 RTF 에 맞춰 실행     (도는 동안 실시간 그림이 뜬다)
-%     4. 끝나면 오프라인과 같은 형식의 결과 그림
-%     5. 같은 초기 선수각으로 오프라인을 돌려 두 궤적을 겹쳐 그림
+%     3. 페이싱 비율을 RTF 에 맞춰 실행     (실시간 화면은 기본으로 끈다)
+%     4. 끝나면 오프라인과 같은 형식의 결과 그림 + 동기 점검 k
+%     5. 같은 출발점·초기 선수각으로 오프라인을 돌려 두 궤적을 겹쳐 그림
 %
-%   실행 전에 VRX 가 떠 있어야 한다.
-%     ros2 launch vrx_gz competition.launch.py world:=sydney_regatta \
-%          urdf:=$HOME/capstone_ws/wamv/w7_wamv.urdf.xacro
+%   실시간 화면을 기본으로 끄는 까닭 (2026-10-16 노트북 실측)
+%     화면을 그리는 동안 Simulink 가 VRX 를 못 따라가 같은 모델 1 초에 배가
+%     1.7 배 더 갔다 (동기 점검 k = 1.69, 메시지 손실 경고 155 건). 끄면 k = 1.00.
+%     도는 모습은 오프라인 모델(W05_setup)의 실시간 화면으로 본다.
+%
+%   실행 전에 WSL 에서 VRX 가 떠 있어야 한다 (3주차 경량 모델, 실험마다 새로).
+%     cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite
+%     bash stop_vrx.sh && bash run_vrx.sh
 
-if nargin < 1 || isempty(T_end),     T_end = 230;   end
+if nargin < 1 || isempty(T_end),     T_end = 270;   end
 if nargin < 2 || isempty(do_compare), do_compare = true; end
+if nargin < 3 || isempty(show),       show = 0;      end
+assignin('base', 'animate', show);
 
 m   = 'W05_1_vrx';
 TOP = '/wamv/sensors/position/ground_truth_odometry';
@@ -52,12 +60,20 @@ fprintf('   OK — 토픽 %d개\n', numel(tl));
 %% 2. RTF 측정 --------------------------------------------------------
 fprintf('2) RTF 측정 (20초)\n');
 [RTF, x0_n, y0_n] = measureRTF(TOP, 20);
-% 스폰 위치를 직접 읽어 원점으로 쓴다. launch.py 의 스폰 좌표가 설치마다 다르다
-% (같은 2.4.0-2 인데 한 컴퓨터는 ENU y = 162, 다른 컴퓨터는 200 — 2026-09-18).
-% 고정값을 쓰면 그 차이만큼 경로가 통째로 밀려 안전 수역을 벗어난다.
-assignin('base', 'origin_north', x0_n);
-assignin('base', 'origin_east',  y0_n);
-fprintf('   스폰 위치 (x, y) = (%.1f, %.1f) m — 이 점을 원점으로 쓴다\n', x0_n, y0_n);
+% 스폰 위치는 설치마다 다르다 (VRX 원본 ENU y = 162, 기준 데스크톱 200).
+% 스폰을 경로 원점으로 삼으면 162 설치에서 경로가 38 m 남쪽으로 밀려 4번
+% 웨이포인트 부근 해안에 얹힌다 (2026-10-16 노트북 실측). 그래서 경로 원점은
+% 월드에 고정하고 (W05_setup 의 path_north0 · path_east0), 배는 스폰에서 출발한다.
+pn0 = evalin('base', 'path_north0');   pe0 = evalin('base', 'path_east0');
+assignin('base', 'origin_north', pn0);
+assignin('base', 'origin_east',  pe0);
+start_n = x0_n - pn0;   start_e = y0_n - pe0;        % 경로 좌표로 본 출발점
+fprintf('   스폰 위치 (x, y) = (%.1f, %.1f) m\n', x0_n, y0_n);
+fprintf('   경로 원점 (x, y) = (%.1f, %.1f) m — 배는 경로 좌표 (%.1f, %.1f) 에서 출발\n', ...
+        pn0, pe0, start_n, start_e);
+if hypot(start_n, start_e) > 1
+    fprintf('   (스폰이 경로 원점과 다른 설치임. 오프라인 대조도 같은 출발점에서 돌린다)\n');
+end
 fprintf('   RTF = %.3f  ->  페이싱 비율을 이 값으로 둔다\n', RTF);
 
 %% 3. 실행 ------------------------------------------------------------
@@ -72,6 +88,7 @@ fprintf('4) 결과 그림\n');
 S     = W05_plot(out, sprintf('VRX / %s 유도', modeName()));
 S.RTF = RTF;
 saveFig(S.fig, 'W05_1_vrx_result.png');    % gcf 는 추진기 창이다 — 궤적 창을 저장한다
+S.k_sync = syncCheck(out);
 
 %% 5. 오프라인과 대조 --------------------------------------------------
 if ~do_compare, return; end
@@ -85,7 +102,9 @@ if isempty(k0), k0 = 1; end
 psi0 = out.log_psi.Data(k0);
 fprintf('   VRX 초기 선수각 %.2f deg\n', rad2deg(psi0));
 
-x0old = evalin('base','x0');   x0 = x0old;   x0(6) = psi0;   assignin('base','x0', x0);
+x0old = evalin('base','x0');   x0 = x0old;   x0(6) = psi0;
+x0(4) = start_n;   x0(5) = start_e;                  % VRX 와 같은 출발점
+assignin('base','x0', x0);
 animOld = evalin('base','animate');   assignin('base','animate', 0);
 load_system('W05_0_offline');
 o2 = sim('W05_0_offline', 'StopTime', num2str(T_end));   % 모델에 저장된 정지 시간은 건드리지 않는다
@@ -117,6 +136,25 @@ fprintf('  궤적 평균 이격 %6.2f m,  최대 %6.2f m\n', S.sep_mean, S.sep_m
 end
 
 % =====================================================================
+function k = syncCheck(out)
+% Simulink 가 VRX 를 따라갔는가 — 로그만으로 판정한다 (2026-10-16 노트북 실측)
+%   VRX 가 준 속도 u 는 "시뮬레이터 1 초에 몇 m" 다. Simulink 가 제때 돌았다면
+%   모델 시각으로 적분한 거리와 실제로 지나간 거리가 같다 (k = 1).
+%   Simulink 가 그림 그리기 등으로 늦어지면 같은 모델 1 초 동안 배가 더 가므로
+%   k > 1 이 된다. 같은 노트북에서 animate = 1 일 때 k = 1.25, 0 일 때 1.00 이었다.
+t = out.log_x_n.Time;
+s_path = sum(hypot(diff(out.log_x_n.Data), diff(out.log_y_n.Data)));
+s_int  = trapz(t, abs(out.log_u.Data));
+k = s_path / max(s_int, eps);
+fprintf('   동기 점검 k = 지나간 거리 %.1f m / 속도 적분 %.1f m = %.3f', s_path, s_int, k);
+if k > 1.08
+    fprintf('  <- Simulink 가 VRX 를 못 따라갔다\n');
+    fprintf('      이 결과는 쓰지 말 것. W05_setup 에서 animate = 0 으로 두고 VRX 를 다시 띄워 재실행\n');
+else
+    fprintf('  (1.08 이하 — 동기 정상)\n');
+end
+end
+
 function [RTF, x0_n, y0_n] = measureRTF(topic, sec)
 n = ros2node(sprintf('/rtf_probe_%d', randi(9999)));
 c = onCleanup(@() clear('n'));

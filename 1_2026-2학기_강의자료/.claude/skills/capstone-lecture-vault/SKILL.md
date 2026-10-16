@@ -1,6 +1,6 @@
 ---
 name: capstone-lecture-vault
-description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만들고 고치고 검증하는 전 과정. 사용자가 "주차 자료 만들어줘", "강의자료 고쳐줘", "MD 수정", "PDF 다시 뽑아줘", "수식 넣어줘", "LaTeX", "그림 그려줘", "SVG", "문체 고쳐줘", "개조식", "지식카드", "README 갱신", "강의계획서", "과제 만들어줘", "VRX 로 확인해줘", "실측", "오프라인이랑 VRX 대조", "볼트 점검" 을 언급하거나, 10-주차별-강의자료·20-지식·80-과제·00-운영 폴더의 문서를 건드릴 때 반드시 사용하라. Simulink 모델 자체를 만들거나 배치를 정리할 때는 simulink-gnc-models 스킬을 함께 쓴다.
+description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만들고 고치고 검증하는 전 과정. 사용자가 "주차 자료 만들어줘", "강의자료 고쳐줘", "MD 수정", "PDF 다시 뽑아줘", "수식 넣어줘", "LaTeX", "그림 그려줘", "SVG", "문체 고쳐줘", "개조식", "지식카드", "README 갱신", "강의계획서", "과제 만들어줘", "VRX 로 확인해줘", "실측", "오프라인이랑 VRX 대조", "볼트 점검", "이 컴퓨터에서 돌아가는지", "git clone 해서 확인", "처음부터 다 돌려 봐", "실행 화면 캡처" 를 언급하거나, 10-주차별-강의자료·20-지식·80-과제·00-운영 폴더의 문서를 건드릴 때 반드시 사용하라. Simulink 모델 자체를 만들거나 배치를 정리할 때는 simulink-gnc-models 스킬을 함께 쓴다.
 ---
 
 # 캡스톤디자인 볼트 — 일하는 방식
@@ -47,6 +47,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | "자료대로 되는지 확인해줘" · 자료를 고친 **직후** | `_tools/verify_wNN.sh` 를 돌린다. **FAIL 0 이 합격선** | `references/doc-verification.md` |
 | "모델 만들어줘 / 선 정리해줘" | `build_wXX_models.m` 작성 → `tidy_model` + `paint_roles` + `export_model_pngs` | 스킬 `simulink-gnc-models` |
 | "색이 없는데" · 도면이 흑백 | `check_colour(모델)` → 0 이 합격선. 표는 `_tools/gnc_roles.m` | 스킬 `simulink-gnc-models` |
+| **"이 컴퓨터에서 처음부터 돌아가는지" · "GitHub 에서 받아서 되는지" · "N주차 VRX 까지 다 돌려 봐"** | 옛 clone 을 옮기고 **새로 `git clone`** → 학생 경로(UNC)로 오프라인 → VRX | **`references/fresh-clone-check.md`** |
 | "VRX 로 돌려서 확인해줘" | WSL 배포판 `Ubuntu-22.04` 확인부터 | `references/vrx-runbook.md` |
 | "오프라인이랑 대조해줘" | 겹치는 시간 구간만. 이격은 **위상 오차인 경우가 많다** | `references/vrx-runbook.md` |
 | "주차를 옮기자 / 순서 바꾸자" | 파급 범위를 먼저 나열한다 (문서 4곳 이상) | `references/vault-upkeep.md` |
@@ -185,6 +186,14 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
        (묶는 순서는 빌더와 그리는 함수 **양쪽 주석에 같은 표**로 적는다 — 순서가 곧 인자 계약이다)
     ④ 남는 태그의 이름은 **신호 이름 그대로** — `psi`, `r`, `u`, `FL`, `FR`, `N`, `psi_ref`
     선으로 되돌렸을 때 화면을 가로지르거나 3회 꺾이면 그 신호는 태그로 남긴다 (배선 검사가 우선).
+30. **"돌아간다" 는 GitHub 새 clone 에서 학생 경로로 돌려 본 뒤에만 말한다** (교수 지시 2026-10-16).
+    Dropbox 볼트·데스크톱에서 도는 것은 증거가 아니다. VRX 원본의 스폰(ENU y 162)이 데스크톱(200)과 달라
+    5주차 경로가 학생 노트북에서만 해안에 얹혔고, 실시간 화면 부하로 Simulink 가 VRX 를 못 따라간 결과가
+    "VRX 가 7.6 s 빠르다" 로 문서에 실려 있었다. 절차와 찾은 것 넷은 `references/fresh-clone-check.md`.
+    - VRX 수치에는 **스폰 좌표 · RTF · 동기 점검 $k$** 를 함께 적는다. $k > 1.08$ 인 실행은 쓰지 않는다
+    - 새로 설치해야 하는 것이 생기면 **반드시 그 주차 자료에** 설치 명령과 정상 출력을 둔다. 스크립트 파일이 늘면 폴더 계층도·배포 파일 표·`ls` 정상 출력을 함께 고친다
+    - VRX 를 띄우기 전에는 `W03_vrx_lite/stop_vrx.sh` — 고아 `gz sim server` 는 TERM 을 무시한다
+
 ---
 
 ## 2. 작업 루프
@@ -218,6 +227,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | `references/screenshots.md` | **도구 화면을 캡처할 때.** 캡처 스크립트와 이미 밟은 지뢰 |
 | `references/doc-verification.md` | **문서대로 되는지 기계로 확인할 때.** 검사식 작성법과 함정 |
 | `references/vrx-runbook.md` | VRX 를 띄우고 수치를 뽑을 때 |
+| **`references/fresh-clone-check.md`** | **GitHub 새 clone 으로 주차를 처음부터 검증할 때.** 순서 · 볼트→clone 복사 · 2026-10-16 에 찾은 것 · 실행 화면 캡처 |
 | `references/vault-upkeep.md` | 문서를 추가·이동·개편할 때, 지식카드를 만들 때 |
 | **`references/vault-wide-update.md`** | **한 주차에서 고친 것을 전 주차에 퍼뜨릴 때. 절 번호 밀기, 구조 변경 후 수치 대조** |
 

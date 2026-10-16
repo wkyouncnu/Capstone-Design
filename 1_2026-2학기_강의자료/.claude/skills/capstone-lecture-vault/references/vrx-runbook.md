@@ -14,7 +14,7 @@
 | 버전 | VRX `humble` 브랜치 `2.4.0-2-gdc30ed8d` (2026-09-15 재설치 실측) |
 | 스택 | ROS 2 Humble + Gazebo Garden 7.9.0 |
 | **도메인** | `~/.bashrc` 의 `ROS_DOMAIN_ID=8`. **Simulink 프로필과 같아야 한다** (§1.1) |
-| 스폰 위치 | **설치마다 다르다.** 데스크톱 ENU `(-532, 200)`, 9-15 노트북 `(-532, 162)` — 둘 다 2.4.0-2. `vrx_run` 이 ground truth 첫 샘플로 잰다 (§4) |
+| 스폰 위치 | **설치마다 다르다.** 데스크톱 ENU `(-532, 200)`, 노트북 `(-532, 162)` = **VRX 원본 `competition.launch.py:46` 그대로** (학생 설치는 전부 162). 162 자리는 서쪽·남쪽 해안 바로 옆 (§4) |
 
 ```bash
 wsl -d Ubuntu-22.04 bash -lc 'source /opt/ros/humble/setup.bash && source ~/vrx_ws/install/setup.bash && ros2 topic list'
@@ -152,6 +152,10 @@ t = double(m.header.stamp.sec) + double(m.header.stamp.nanosec)*1e-9;
 | 부호가 반대 | ENU ↔ NED. 특히 `thrusters/*/pos` 는 **ENU 관절각** | 변환 지점에 `assert` 를 박는다 |
 | 같은 설정의 계단응답 오버슈트가 실행마다 3 · 54 · 347 % | 첫 메시지 전 0 버스(선수각 90°) + Simulink 가 시작 직후 수 초 멈춘 동안 Gazebo 가 첫 추력을 계속 줌 (2026-09-25 노트북) | 4주차 `Quat2Yaw` 의 `ok` → `GateL/R` 로 첫 메시지 **뒤 1 초**까지 추력 0, 적분기 입력도 `GateE` 로 0. 지표는 추력이 처음 나간 시각부터 |
 | VRX 곡선이 오프라인보다 두 배 빨리 오름 (궤적은 비슷) | 실시간 화면(`animate = 1`)을 그리느라 Simulink 가 초반에 VRX 를 못 따라감. RTF 는 정상(0.97)이라 안 보임 | 측정 스크립트는 VRX 구간을 `SimulationInput.setVariable('animate',0)` 으로. 화면 켬 3.5 % · 3.5 s → 끔 2.9 % · 6.2 s |
+| **5주차 VRX 가 4번 웨이포인트 부근 해안에 얹힘** (속도 0, 크랩각 67°) | VRX 원본 스폰 ENU y = **162**. 스폰을 경로 원점으로 삼으면 경로가 38 m 남쪽으로 밀림 (2026-10-16 노트북) | `W05_setup` 의 `path_north0 = 200` · `path_east0 = -532` 로 경로를 월드에 고정, 배는 스폰에서 출발. 7\~9주차도 같은 문제를 먼저 의심 |
+| **VRX 완주가 오프라인보다 수십 초 짧은데 궤적은 겹침** | 실시간 화면 부하로 Simulink 가 늦음 — 노트북에서 화면 켬 44.8 s · 끔 79.55 s (오프라인 78.7) | VRX 실행은 `animate = 0`. 판정은 **동기 점검 $k$** = 지나간 거리 ÷ 속도의 모델 시각 적분, 1.08 초과면 버림 |
+| 열린 고리 측정(`measure_sway`)이 한쪽 방향만 요가 크게 돎 | 스폰이 해안 옆 — 우현으로 밀면 해안에 닿음 | `W06_vrx_lite/to_open_water.sh` 로 `set_pose` 해 넓은 물에서 잼 |
+| 배가 두 척 · 토픽 값이 튐 · `pkill` 뒤에도 `gz sim server` 가 남음 | 고아 서버가 **SIGTERM 을 무시** (2026-10-16 실측) | `W03_vrx_lite/stop_vrx.sh` — TERM 3 초 뒤 KILL, 0 개 확인 |
 | `*_step_compare` 가 VRX 를 떠 있는데도 오프라인만 돔 | `WXX_setup` 이 환경변수를 `7` 로 박고, PC 의 WSL·프로필은 `8` | 측정 스크립트 첫머리에서 프로필 값으로 `setenv` (`W04_vrx_record` 와 같은 블록). 이 노트북은 2026-09-25 현재 WSL·프로필 모두 8 |
 
 > [!caution] 부호는 주석으로 막지 말고 `assert` 로 막는다
@@ -192,6 +196,8 @@ t = double(m.header.stamp.sec) + double(m.header.stamp.nanosec)*1e-9;
 ---
 
 ## 6. 정리 — 매번 한다
+
+학생에게는 `bash W03_vrx_lite/stop_vrx.sh` 하나로 가르친다 (TERM → 3 초 → KILL → 0 개 확인, `check` 는 보기만). 아래는 스크립트가 하는 일이다.
 
 ```bash
 wsl -d Ubuntu-22.04 bash -lc 'pkill -f "[v]rx_gz|[v]rx_ros|[r]os_gz_bridge|[g]z sim|[r]uby|[p]arameter_bridge"'

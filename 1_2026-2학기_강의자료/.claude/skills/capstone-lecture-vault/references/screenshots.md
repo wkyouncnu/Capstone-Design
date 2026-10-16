@@ -28,6 +28,8 @@
 | Windows 앱 (VS Code, 탐색기) | `_tools/winshot.ps1` | 창을 앞으로 끌어와 DWM 경계로 자름 |
 | **WSLg 창** (rqt, RViz2, Gazebo) | `_tools/xshot.sh` · `_tools/xclick.sh` | **X 서버에서 직접** 뜬다 |
 | 웹 페이지 | 헤드리스 Chrome | 로그인·쿠키 배너가 없다 |
+| **사용자가 PC 를 쓰는 중** · `FOREGROUND MISMATCH` | `_tools/wincap.ps1` (PrintWindow) | 창을 앞으로 가져오지 않고 그 창만 찍음. 입력은 못 보냄 (2026-10-16) |
+| 터미널 실행 장면 | Windows Terminal + 데모 스크립트 | `fresh-clone-check.md` 5장 |
 
 ### Windows 앱
 
