@@ -1,0 +1,179 @@
+% assets/w05-rotation.svg — 두 오차의 sin·cos 은 회전행렬 하나다
+%
+%   bash _tools/tikz2svg.sh assets/src/w05-rotation.tex assets/w05-rotation.svg
+%
+% 요점: 같은 화살표를 북·동 축으로 읽으면 (x-x_k, y-y_k), 경로 축으로 읽으면
+%       (x_e, y_e) 다. 둘을 잇는 것이 회전행렬의 전치다. 그리고 t, n 의 꼴은
+%       외우는 것이 아니라 방위각의 정의에서 바로 나온다.
+%
+% 좌표는 계산한 값이다. 화면 규약: TikZ x = 동, TikZ y = 북.
+%   pi_p = 50 deg
+%     t = (북 cos50, 동 sin50) = (0.642788, 0.766044)   -> TikZ (0.766044, 0.642788)
+%     n = (북 -sin50, 동 cos50) = (-0.766044, 0.642788) -> TikZ (0.642788, -0.766044)
+%   고른 값: x_e = 42, y_e = 16 (mm)
+%     x - x_k = 42 cos50 - 16 sin50 = 26.997 - 12.257 = 14.740   (북)
+%     y - y_k = 42 sin50 + 16 cos50 = 32.174 + 10.285 = 42.459   (동)
+%     확인: 42.459^2 + 14.740^2 = 2020.0 = 42^2 + 16^2            (길이 보존)
+%
+%   패널 1 원점 (6,16)   -> 배 (48.46, 30.74)
+%   패널 2 원점 (84,24)  -> 배 (126.46, 38.74)
+%     t 의 발 = 원점 + 42 t = (116.17, 51.00)   수직성 내적 0.001
+%     n 의 발 = 원점 + 16 n = ( 94.29, 11.74)   수직성 내적 0.000
+%   패널 3 원점 (18,-48), 단위길이 26 mm
+%     t 끝 = (37.92, -31.29),  n 끝 = (34.71, -67.92)
+%
+% 새로 만든 그림 (2026-10-17). w05-track-error 는 두 오차가 "무엇인지"를 보여 주고,
+% 이 그림은 식의 sin·cos 이 "어디서 왔는지"를 보여 준다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% =========================================================================
+% 패널 1 — 북·동 축으로 읽기
+% =========================================================================
+\node[font=\small, anchor=west] at (2,66) {① 북 · 동 축으로 읽으면};
+
+\coordinate (o1) at (6,16);
+\coordinate (s1) at (48.46,30.74);
+
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (o1) -- (6,54);
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (o1) -- (62,16);
+\node[font=\scriptsize, anchor=south] at (6,54.6) {$x$ (북)};
+\node[font=\scriptsize, anchor=west]  at (62.6,16) {$y$ (동)};
+
+\draw[soft, densely dotted, line width=0.5pt] (s1) -- (48.46,16);
+\draw[soft, densely dotted, line width=0.5pt] (s1) -- (6,30.74);
+\draw[soft, line width=0.4pt] (46.06,16) -- (46.06,18.4) -- (48.46,18.4);
+\draw[soft, line width=0.4pt] (6,28.34) -- (8.4,28.34) -- (8.4,30.74);
+\node[font=\scriptsize, soft, anchor=north] at (27,14.6) {$y - y_k$};
+\node[font=\scriptsize, soft, anchor=east]  at (4.6,23.4) {$x - x_k$};
+
+\draw[sig, line width=0.8pt] (o1) -- (s1);
+\node[font=\scriptsize, anchor=south] at (26.1,26.0) {$\boldsymbol{p} - \boldsymbol{p}_k$};
+
+\fill[pathc] (o1) circle (1.1);
+\node[font=\scriptsize, pathc, anchor=north east] at (4.8,14.8) {$\boldsymbol{p}_k$};
+\begin{scope}[shift={(48.46,30.74)}, rotate=-20]
+  \fill[ink] (-1.6,-2.3) -- (-1.6,1.3) -- (0,3.2) -- (1.6,1.3) -- (1.6,-2.3) -- cycle;
+\end{scope}
+\node[font=\scriptsize, anchor=west] at (50.2,30.4) {$\boldsymbol{p}$};
+
+\node[note, anchor=west, text width=58mm] at (2,2)
+     {축이 북과 동이므로 성분은 좌표를 빼면 바로 나온다. 경로가 어디로 가는지는 들어 있지 않다};
+
+% =========================================================================
+% 패널 2 — 경로 축으로 읽기
+% =========================================================================
+\node[font=\small, anchor=west] at (80,66) {② 경로 축으로 읽으면 — 같은 화살표};
+
+\coordinate (o2)  at (84,24);
+\coordinate (s2)  at (126.46,38.74);
+\coordinate (ftt) at (116.17,51.00);
+\coordinate (ftn) at (94.29,11.74);
+
+% 경로 (t 축) 와 그 오른쪽 (n 축)
+\draw[pathc, line width=0.7pt, -{Stealth[length=4pt,width=3pt]}] (o2) -- (126.90,60.00);
+\draw[pathc, line width=0.7pt, -{Stealth[length=4pt,width=3pt]}] (o2) -- (96.86,8.68);
+\node[font=\scriptsize, pathc, anchor=south east] at (126.6,60.4) {$\hat{t}$ (경로 방향)};
+\node[font=\scriptsize, pathc, anchor=north west] at (97.4,8.3)   {$\hat{n}$ (우현)};
+
+% 북 기준선과 경로 방위각
+\draw[axis, densely dashed] (o2) -- (84,48);
+\draw[axis] (o2) ++(0,14) arc (90:40:14);
+\node[note] at (91.2,39.6) {$\pi_p$};
+
+% 성분 — 수선을 내려서 읽는다
+\draw[soft, densely dotted, line width=0.5pt] (s2) -- (ftt);
+\draw[soft, densely dotted, line width=0.5pt] (s2) -- (ftn);
+\draw[soft, line width=0.4pt] (114.33,49.46) -- (115.87,47.62) -- (117.71,49.16);
+\draw[soft, line width=0.4pt] (92.75,13.58) -- (94.59,15.12) -- (96.13,13.28);
+
+\draw[errc, line width=1.1pt] (o2) -- (ftt);
+\draw[errc, line width=1.1pt] (o2) -- (ftn);
+\fill[errc] (ftt) circle (0.9);
+\fill[errc] (ftn) circle (0.9);
+\node[font=\scriptsize, errc, anchor=south east] at (98.6,39.2) {$x_e$};
+\node[font=\scriptsize, errc, anchor=east]       at (87.4,15.4) {$y_e$};
+
+\draw[sig, line width=0.8pt] (o2) -- (s2);
+\node[font=\scriptsize, anchor=south] at (104.1,34.0) {$\boldsymbol{p} - \boldsymbol{p}_k$};
+
+\fill[pathc] (o2) circle (1.1);
+\node[font=\scriptsize, pathc, anchor=north east] at (82.8,22.8) {$\boldsymbol{p}_k$};
+\begin{scope}[shift={(126.46,38.74)}, rotate=-20]
+  \fill[ink] (-1.6,-2.3) -- (-1.6,1.3) -- (0,3.2) -- (1.6,1.3) -- (1.6,-2.3) -- cycle;
+\end{scope}
+\node[font=\scriptsize, anchor=west] at (128.2,38.4) {$\boldsymbol{p}$};
+
+\node[note, anchor=west, text width=58mm] at (80,0)
+     {축을 $\pi_p$ 만큼 돌려 놓았을 뿐 화살표는 그대로다 —
+      길이도 $\sqrt{x_e^2 + y_e^2}$ 로 변하지 않는다};
+
+% =========================================================================
+% 패널 3 — 단위벡터가 왜 그 꼴인가
+% =========================================================================
+\node[font=\small, anchor=west] at (2,-12) {③ $\hat{t}$ 와 $\hat{n}$ 이 왜 그 꼴인가};
+
+\coordinate (o3) at (18,-48);
+
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (o3) -- (18,-17);
+\draw[axis, -{Stealth[length=4pt,width=3pt]}] (o3) -- (58,-48);
+\node[font=\scriptsize, anchor=south west] at (18.6,-17.4) {$x$ (북)};
+\node[font=\scriptsize, anchor=west]       at (58.6,-48)   {$y$ (동)};
+
+% 길이 1 을 나타내는 호
+\draw[soft, densely dotted, line width=0.4pt] (18,-22) arc (90:-50:26);
+\node[note, soft, anchor=west] at (46.19,-37.74) {길이 $1$};
+
+% t 와 그 두 성분
+\draw[pathc, line width=1.0pt, -{Stealth[length=5pt,width=4pt]}] (o3) -- (37.92,-31.29);
+\node[font=\scriptsize, pathc, anchor=south west] at (37.2,-30.6) {$\hat{t}$};
+\draw[pathc, densely dotted, line width=0.5pt] (37.92,-31.29) -- (18,-31.29);
+\draw[pathc, densely dotted, line width=0.5pt] (37.92,-31.29) -- (37.92,-48);
+\node[font=\scriptsize, pathc, anchor=east]  at (17.4,-33.6) {$\cos\pi_p$};
+\node[font=\scriptsize, pathc, anchor=north] at (37.92,-49.2) {$\sin\pi_p$};
+
+% n 과 그 두 성분
+\draw[errc, line width=1.0pt, -{Stealth[length=5pt,width=4pt]}] (o3) -- (34.71,-67.92);
+\node[font=\scriptsize, errc, anchor=north west] at (34.0,-67.6) {$\hat{n}$};
+\draw[errc, densely dotted, line width=0.5pt] (34.71,-67.92) -- (18,-67.92);
+\draw[errc, densely dotted, line width=0.5pt] (34.71,-67.92) -- (34.71,-48);
+\node[font=\scriptsize, errc, anchor=east]  at (17.4,-67.92) {$-\sin\pi_p$};
+\node[font=\scriptsize, errc, anchor=south] at (27,-46.6)    {$\cos\pi_p$};
+
+% 북에서 잰 경로 방위각
+\draw[axis] (o3) ++(0,10) arc (90:40:10);
+\node[note] at (22.6,-40.6) {$\pi_p$};
+
+% =========================================================================
+% 오른쪽 아래 — 식
+% =========================================================================
+\node[font=\small, anchor=west] at (68,-13) {성분을 읽는 일 = 회전행렬 곱하기};
+
+\node[note, anchor=west, text width=66mm] at (68,-20)
+     {$\hat{t}$ 는 방위각이 $\pi_p$ 인 단위벡터 — 북 성분 $\cos\pi_p$, 동 성분 $\sin\pi_p$};
+\node[note, anchor=west, text width=66mm] at (68,-29)
+     {$\hat{n}$ 은 $\hat{t}$ 를 시계방향으로 $90^\circ$ 돌린 것, 곧 방위각 $\pi_p + 90^\circ$ 인 단위벡터 —
+      $\cos(\pi_p{+}90^\circ) = -\sin\pi_p$, $\sin(\pi_p{+}90^\circ) = \cos\pi_p$};
+\node[note, anchor=west, text width=66mm] at (68,-40)
+     {둘은 길이 1 이고 서로 수직이므로, 성분은 내적 하나로 나온다};
+
+\node[font=\scriptsize, anchor=west] at (68,-48)
+     {$x_e = \hat{t}^{\top}(\boldsymbol{p}-\boldsymbol{p}_k)$, \quad
+      $y_e = \hat{n}^{\top}(\boldsymbol{p}-\boldsymbol{p}_k)$};
+
+\node[font=\scriptsize, anchor=west] at (68,-59)
+     {$\begin{bmatrix} x_e \\[1pt] y_e \end{bmatrix}
+       = \begin{bmatrix} \cos\pi_p & \sin\pi_p \\[1pt] -\sin\pi_p & \cos\pi_p \end{bmatrix}
+         \begin{bmatrix} x - x_k \\[1pt] y - y_k \end{bmatrix}
+       = \boldsymbol{R}(\pi_p)^{\top}\left(\boldsymbol{p}-\boldsymbol{p}_k\right)$};
+
+\node[note, anchor=west, text width=66mm] at (68,-70)
+     {$\boldsymbol{R}(\pi_p)$ 는 경로 축의 값을 북 · 동으로 되돌리는 행렬이다.
+      반대 방향이므로 전치가 붙는다 — 회전행렬은 $\boldsymbol{R}^{-1} = \boldsymbol{R}^{\top}$ 이라 전치만으로 역이 된다};
+
+\end{tikzpicture}
+\end{document}

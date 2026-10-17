@@ -1,17 +1,37 @@
-% assets/w05-course-crab.svg — 선수각 · 침로각 · 크랩각
+% assets/w05-course-crab.svg — 해류 삼각형: 선수각 · 침로각 · 크랩각 · 횡류각
 %
 %   bash _tools/tikz2svg.sh assets/src/w05-course-crab.tex assets/w05-course-crab.svg
 %
-% 요점: 조류가 있으면 뱃머리가 향한 방향과 배가 실제로 가는 방향이 어긋난다.
+% 요점: 대지속도는 대수속도와 조류의 벡터 합이다. 그 합이 뱃머리에서 틀어진 각이
+%       크랩각이고, 그래서 선수각만 제어하면 배가 경로에서 옆으로 밀린다.
 %
-% 좌표는 계산한 값이다 (TikZ 각은 동쪽에서 반시계, 방위각은 북에서 시계).
-%   psi 선  (24,38) : TikZ 57.72 deg -> 방위 32.28 deg
-%   chi 선  (40,30) : TikZ 36.87 deg -> 방위 53.13 deg
-%   beta = chi - psi = 20.85 deg
-%   세 호 모두 북 기준선 또는 psi 선에서 시작한다. 동쪽에서 재지 않는다.
+% 좌표는 계산한 값이다. 화면 규약: TikZ x = 동, TikZ y = 북.
+% 방위각은 북에서 시계방향, TikZ 각 = 90 - 방위각.
 %
-% 고친 것 (2026-09-18). 이전 그림은 chi 호와 beta 호가 모두 동쪽에서
-% chi 선까지(36.9 deg)를 재고 있었다. beta 는 psi 와 chi 사이(20.9 deg)다.
+%   psi = 35 deg (선수각),  u_r = 2.0, v_r = 0.35 m/s (대수),  U_c = 0.7 m/s, beta_c = 110 deg
+%   조류 방위는 beta_c 로 적는다. 모델(build_w05_models 의 EOM)이 읽는 변수 이름이 beta_c 다.
+%   Fossen 원문은 같은 것을 gamma_c 로 적지만, 이 볼트는 코드 이름을 따른다.
+%     U_r      = sqrt(2.0^2 + 0.35^2) = 2.0304 m/s
+%     beta_r   = atan2(0.35, 2.0)     = 9.926 deg      -> chi_r = 44.926 deg
+%     U_r(NED) = (1.43733 북, 1.43394 동)
+%     U_c(NED) = (-0.23941 북, 0.65778 동)
+%     U (NED)  = ( 1.19792 북, 2.09172 동)  -> U = 2.4105 m/s, chi = 60.195 deg
+%     beta     = chi - psi = 25.195 deg,  u = U cos beta = 2.1812, v = U sin beta = 1.0261
+%     확인: atan2(v, u) = 25.195 deg = beta
+%
+%   그림 축척 S = 22 mm per (m/s)  ->  U_r 44.67 mm, U_c 15.40 mm, U 53.03 mm
+%     U_r 끝 = (31.54, 31.63),  U 끝 = (46.02, 26.36)
+%
+%   아래 작은 그림 축척 S2 = 10 mm per (m/s), 원점 (12,-40)
+%     U 끝 = (32.92, -28.02),  u 의 발 = (24.51, -22.13)   (수직성 내적 0 확인)
+%
+% 호의 반지름 — 북에서 재는 것은 안쪽(11/16/21), 뱃머리에서 재는 것은 바깥(28/34).
+% 그래야 두 무리가 섞이지 않는다.
+%
+% 고친 것 (2026-10-17). 이전 그림은 psi, chi, beta 셋만 있었고 조류가 점선 화살표로
+% 곁들여져 있을 뿐이어서, 크랩각이 "어디서 생기는가" 가 그림에 없었다.
+% 대수속도 · 조류 · 대지속도의 벡터 삼각형을 그려 넣었다.
+% 2026-09-18 에 고친 것(호를 동이 아니라 북에서 재기)은 그대로 지켰다.
 
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
@@ -19,49 +39,128 @@
 \begin{document}
 \begin{tikzpicture}[x=1mm, y=1mm]
 
-\coordinate (o) at (0,0);
+\coordinate (o)    at (0,0);
+\coordinate (urt)  at (31.54,31.63);     % 대수속도 U_r 의 끝
+\coordinate (ut)   at (46.02,26.36);     % 대지속도 U 의 끝
 
-% ---- 북 기준선 -------------------------------------------------------------
-\draw[axis, densely dashed, -{Stealth[length=4pt,width=3pt]}] (o) -- (0,46);
-\node[font=\small, anchor=south] at (0,47) {$x$ (북)};
+% ---- 북 · 동 축 ------------------------------------------------------------
+\draw[axis, densely dashed, -{Stealth[length=4pt,width=3pt]}] (o) -- (0,52);
+\node[font=\small, anchor=south] at (0,53) {$x$ (북)};
 \draw[axis, -{Stealth[length=4pt,width=3pt]}] (o) -- (50,0);
 \node[font=\small, anchor=west] at (51,0) {$y$ (동)};
 
-% ---- 선수각 psi — 북에서 뱃머리까지 ---------------------------------------
-\draw[sig, line width=0.8pt] (o) -- (24,38);
-\node[font=\small, anchor=south east] at (24,38.5) {뱃머리};
-\draw[axis] (o) ++(0,13) arc (90:57.72:13);
-\node[note] at (4.3,15.8) {$\psi$};
+% ---- 선체 축 ---------------------------------------------------------------
+\draw[axis, densely dashed, -{Stealth[length=4pt,width=3pt]}] (o) -- (21.80,31.13);
+\node[font=\small, anchor=south east] at (21.5,32.0) {뱃머리 $x_b$};
+\draw[axis, densely dashed, -{Stealth[length=4pt,width=3pt]}] (o) -- (7.37,-5.16);
+\node[font=\small, anchor=north west] at (7.9,-5.6) {$y_b$};
 
-% ---- 침로각 chi — 북에서 실제 진행 방향까지 -------------------------------
-\draw[sig, flow, line width=0.8pt] (o) -- (40,30);
-\node[font=\small, flow, anchor=west] at (40.5,30) {진행 방향};
-\draw[flow] (o) ++(0,21) arc (90:36.87:21);
-\node[note, flow] at (11.2,23.6) {$\chi$};
+% ---- 속도 삼각형 -----------------------------------------------------------
+% 대수속도 — 물에 대한 속도
+\draw[pathc, line width=1.0pt, -{Stealth[length=5pt,width=4pt]}] (o) -- (urt);
+\node[font=\small, pathc, anchor=south east] at (30.6,32.9) {$\boldsymbol{U}_r$};
 
-% ---- 크랩각 beta — 뱃머리와 진행 방향 사이 --------------------------------
-\draw[errc, line width=0.8pt] (16.02,25.36) arc (57.72:36.87:30);
-\node[note, errc] at (25.2,27.1) {$\beta$};
+% 조류 — 대수속도의 끝에 이어 붙인다
+\draw[thr, line width=1.0pt, -{Stealth[length=5pt,width=4pt]}] (urt) -- (ut);
+\node[font=\small, thr, anchor=south west] at (40.4,31.0) {$\boldsymbol{U}_c$};
 
-% ---- 조류 — 배를 우현 쪽으로 민다 -----------------------------------------
-\draw[sig, flow, densely dashed] (28,8)  -- ++(14,-5);
-\draw[sig, flow, densely dashed] (28,14) -- ++(14,-5);
-\node[note, flow, anchor=west] at (43,5) {조류};
+% 대지속도 — 둘의 합
+\draw[flow, line width=1.0pt, -{Stealth[length=5pt,width=4pt]}] (o) -- (ut);
+\node[font=\small, flow, anchor=west] at (47.2,24.6) {$\boldsymbol{U}$};
 
-% ---- 읽는 법 ---------------------------------------------------------------
-\node[note, anchor=west] at (66,44) {$\psi$ = 선수각 — 뱃머리가 향한 방향};
-\node[note, flow, anchor=west] at (66,39) {$\chi$ = 침로각 — 배가 실제로 가는 방향};
-\node[note, errc, anchor=west] at (66,34) {$\beta$ = 크랩각 — 둘의 차이};
-\node[note, anchor=west] at (66,28) {$\psi$·$\chi$ 는 \textbf{북}에서, $\beta$ 는 \textbf{뱃머리}에서};
-\node[note, anchor=west] at (66,23.5) {모두 시계방향으로 잰다};
+% ---- 조류 방위 beta_c — 대수속도 끝에서 북으로부터 잰다 ---------------------
+\draw[axis, densely dashed, line width=0.4pt] (urt) -- ++(0,9);
+\draw[thr, line width=0.4pt] ($(urt)+(0,6)$) arc (90:-20:6);
+\node[note, thr] at (38.0,38.4) {$\beta_c$};
 
-% ---- 식 --------------------------------------------------------------------
-\node[font=\small, anchor=west] at (0,-12) {$\chi = \psi + \beta$};
-\node[font=\small, anchor=west] at (26,-12) {$\beta = \operatorname{atan2}(v,\ u)$};
-\node[note, anchor=west] at (72,-12) {$u,\ v$ = 선체 축으로 잰 전후 · 좌우 대지속도};
-\node[wnote, anchor=west, text width=118mm] at (0,-22)
+% ---- 북에서 재는 세 각 -----------------------------------------------------
+\draw[axis]  (o) ++(0,11) arc (90:55:11);
+\node[note]  at (4.3,13.3) {$\psi$};
+\draw[pathc] (o) ++(0,16) arc (90:45.074:16);
+\node[note, pathc] at (7.6,17.9) {$\chi_r$};
+\draw[flow]  (o) ++(0,21) arc (90:29.805:21);
+\node[note, flow] at (11.5,21.6) {$\chi$};
+
+% ---- 뱃머리에서 재는 두 각 -------------------------------------------------
+\draw[accent] (o) ++(16.060,22.936) arc (55:45.074:28);
+\node[note, accent] at (19.9,23.7) {$\beta_r$};
+\draw[errc]   (o) ++(19.502,27.851) arc (55:29.805:34);
+\node[note, errc] at (29.9,25.1) {$\beta$};
+
+% ---- 배 -------------------------------------------------------------------
+\begin{scope}[rotate=-35]
+  \fill[ink] (-1.9,-2.7) -- (-1.9,1.6) -- (0,3.8) -- (1.9,1.6) -- (1.9,-2.7) -- cycle;
+\end{scope}
+
+% =========================================================================
+% 오른쪽 — 읽는 법과 식
+% =========================================================================
+\node[font=\small, anchor=west] at (68,52) {해류 삼각형};
+
+\node[note, anchor=west]         at (68,45.5) {$\psi$ \ 선수각 — 뱃머리가 향한 방향};
+\node[note, flow, anchor=west]   at (68,40.3) {$\chi$ \ 침로각 — 배가 \textbf{땅에 대해} 가는 방향};
+\node[note, pathc, anchor=west]  at (68,35.1) {$\chi_r$ \ 대수 침로각 — 배가 \textbf{물에 대해} 가는 방향};
+\node[note, errc, anchor=west]   at (68,29.9) {$\beta$ \ 크랩각 — 뱃머리와 진행 방향의 차이};
+\node[note, accent, anchor=west] at (68,24.7) {$\beta_r$ \ 횡류각 — 뱃머리와 물살 방향의 차이};
+\node[note, thr, anchor=west]    at (68,19.5) {$\beta_c$ \ 조류가 흘러가는 방위 — 북에서 잰다};
+
+\draw[soft, line width=0.3pt] (68,15.6) -- (130,15.6);
+
+\node[font=\scriptsize, anchor=west] at (68,11.0)
+     {$\boldsymbol{U} = \boldsymbol{U}_r + \boldsymbol{U}_c$ \quad 대지속도 = 대수속도 $+$ 조류};
+\node[font=\scriptsize, anchor=west] at (68,5.0)
+     {$U = \sqrt{u^2+v^2}$, \quad $U_r = \sqrt{u_r^2+v_r^2}$, \quad $U_c = \sqrt{u_c^2+v_c^2}$};
+\node[font=\scriptsize, anchor=west] at (68,-1.0)
+     {$\chi = \psi + \beta$, \quad $\beta = \operatorname{atan2}(v,\ u)$};
+\node[font=\scriptsize, anchor=west] at (68,-7.0)
+     {$\chi_r = \psi + \beta_r$, \quad $\beta_r = \arcsin\!\left(v_r/U_r\right)$};
+
+\draw[soft, line width=0.3pt] (68,-11.5) -- (130,-11.5);
+
+\node[note, anchor=west, text width=62mm] at (68,-17.5)
+     {무엇이 무엇을 재는가 — GNSS 는 $\chi$ 와 $U$, 컴퍼스는 $\psi$, ADCP 는 조류를 잰다.
+      $\beta$ 는 재는 것이 아니라 $\chi - \psi$ 로 얻는다};
+\node[wnote, anchor=west, text width=62mm] at (68,-28.5)
+     {조류가 없으면 $\boldsymbol{U} = \boldsymbol{U}_r$ 이고 $\beta = \beta_r$ 이 된다.
+      이 그림의 두 각이 갈라지는 원인은 조류 하나다};
+\node[wnote, anchor=west, text width=62mm] at (68,-39.5)
      {선수각 $\psi$ 만 제어하면 배는 경로에서 옆으로 밀린 채 나아간다.
       조류에서 경로 이탈이 남는 이유다};
+
+% =========================================================================
+% 아래 — 선체 축으로 본 같은 속도 (u, v 가 어디서 나오는가)
+% =========================================================================
+\node[font=\small, anchor=west] at (0,-14) {선체 축으로 본 대지속도 — $u$ 와 $v$};
+
+\coordinate (p)  at (12,-40);
+\coordinate (pu) at (24.51,-22.13);      % u 의 발
+\coordinate (pt) at (32.92,-28.02);      % U 의 끝
+
+\draw[axis, densely dashed, -{Stealth[length=4pt,width=3pt]}] (p) -- (25.19,-21.16);
+\node[font=\scriptsize, anchor=south] at (25.19,-20.6) {$x_b$};
+\draw[axis, densely dashed, -{Stealth[length=4pt,width=3pt]}] (p) -- (25.11,-49.18);
+\node[font=\scriptsize, anchor=north west] at (25.5,-49.4) {$y_b$};
+
+\draw[soft, densely dotted, line width=0.5pt] (p) -- (pu);
+\draw[soft, densely dotted, line width=0.5pt] (pu) -- (pt);
+\draw[flow, line width=1.0pt, -{Stealth[length=5pt,width=4pt]}] (p) -- (pt);
+
+% 직각 표시 — u 의 발에서 x_b 방향과 y_b 방향으로 2.4mm 씩
+\draw[soft, line width=0.4pt]
+     ($(pu)+(1.38,1.97)$) -- ($(pu)+(1.38,1.97)+(1.97,-1.38)$) -- ($(pu)+(1.97,-1.38)$);
+
+\node[note, soft] at (15.8,-29.35) {$u$};
+\node[note, soft] at (30.4,-22.6)  {$v$};
+\node[font=\scriptsize, flow, anchor=west] at (33.6,-28.6) {$\boldsymbol{U}$};
+\draw[errc] (p) ++(8.030,11.468) arc (55:29.805:14);
+\node[note, errc] at (24.63,-28.62) {$\beta$};
+
+\begin{scope}[shift={(12,-40)}, rotate=-35]
+  \fill[ink] (-1.6,-2.3) -- (-1.6,1.3) -- (0,3.2) -- (1.6,1.3) -- (1.6,-2.3) -- cycle;
+\end{scope}
+
+\node[note, anchor=west, text width=26mm] at (39,-31)
+     {$u$ 전후, $v$ 좌우. 둘 다 \textbf{대지} 기준. 물에 대한 $u_r$, $v_r$ 도 같은 축으로 잰다};
 
 \end{tikzpicture}
 \end{document}

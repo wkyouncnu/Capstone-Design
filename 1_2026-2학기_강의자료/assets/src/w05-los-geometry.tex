@@ -3,6 +3,7 @@
 %   bash _tools/tikz2svg.sh assets/src/w05-los-geometry.tex assets/w05-los-geometry.svg
 %
 % 요점: 배는 "가장 가까운 점"이 아니라 그보다 Delta 앞의 조준점을 겨냥한다.
+%       그리고 그 지령이 어떤 값에서 어떤 순서로 나오는지가 그림 안에 있어야 한다.
 % 화면 규약: x(북) 위, y(동) 오른쪽.
 %
 % 좌표는 손으로 찍지 않는다. pi_p = 50 deg, x_e = 45, y_e = 18, Delta = 30 (mm)
@@ -21,6 +22,10 @@
 %   2) pi_p 를 북이 아니라 동에서 재고 있었다
 %   3) x_e(경로 방향 오차)가 아예 없었다 — 전환 판정이 쓰는 값이다
 % 수락반경은 이 그림에서 뺐다. 전환 판정은 w05-switching.svg 가 맡는다.
+%
+% 고친 것 (2026-10-17). 기하는 맞았지만 "무엇이 주어지고 무엇을 구하는가" 가
+% 그림에 없었다. 아는 값에 표를 붙이고, 계산 순서 세 줄과 이 그림의 수치를
+% 오른쪽에 적었다. 좌표와 각은 그대로다.
 
 \documentclass[border=6pt]{standalone}
 \input{capstone-style}
@@ -45,9 +50,9 @@
 \draw[pathc, line width=0.8pt] (wk) -- (wk1);
 \fill[pathc] (wk)  circle (1.1);
 \fill[pathc] (wk1) circle (1.1);
-\node[note, pathc, below right=0.3mm and 0mm of wk]  {웨이포인트 $k$};
-\node[note, pathc, above left=0.3mm and 0mm of wk1] {$k+1$};
-\node[note, pathc, rotate=40] at (78.4,70.6) {계획 경로};
+\node[note, pathc, below right=0.3mm and 0mm of wk]  {웨이포인트 $k$ — $\boldsymbol{p}_k$};
+\node[note, pathc, above left=0.3mm and 0mm of wk1] {$k+1$ — $\boldsymbol{p}_{k+1}$};
+\node[note, pathc, rotate=40] at (75.0,70.4) {계획 경로};
 
 % ---- 경로 방위각 pi_p — 북에서 잰다 ----------------------------------------
 \draw[axis, densely dashed] (wk) -- ++(0,26);
@@ -80,7 +85,7 @@
 
 % ---- 시선 (line of sight) --------------------------------------------------
 \draw[sig, accent, line width=0.7pt] (sh) -- (ap);
-\node[note, accent, rotate=71] at (61.8,52) {시선};
+\node[note, accent, rotate=71] at (70.8,43.5) {시선};
 
 % 보정각 arctan(y_e/Delta) — 조준점에서 경로와 시선 사이
 \draw[axis] (ap) ++(-8.43,-7.07) arc (220:251:11);
@@ -95,7 +100,46 @@
 \begin{scope}[shift={(60.04,29.14)}, rotate=-19.04]
   \fill[ink] (-1.7,-2.4) -- (-1.7,1.4) -- (0,3.4) -- (1.7,1.4) -- (1.7,-2.4) -- cycle;
 \end{scope}
-\node[note, below=2.6mm of sh] {배};
+\node[note, below=2.6mm of sh] {배 — $\boldsymbol{p} = (x,\ y)$};
+
+% =========================================================================
+% 오른쪽 — 무엇이 주어지고 무엇을 구하는가
+% =========================================================================
+\node[font=\small, anchor=west] at (96,76) {주어진 것};
+
+\node[note, anchor=west, text width=76mm] at (96,70.5)
+     {$\boldsymbol{p}_k = [x_k,\ y_k]^{\top}$, \ \ $\boldsymbol{p}_{k+1} = [x_{k+1},\ y_{k+1}]^{\top}$
+      \ — 미션 파일에 적힌 웨이포인트};
+\node[note, anchor=west, text width=76mm] at (96,63.5)
+     {$\boldsymbol{p} = [x,\ y]^{\top}$ \ — 배의 현재 위치. 항법이 매 걸음 준다};
+\node[note, anchor=west, text width=76mm] at (96,57.5)
+     {$\Delta$ \ — lookahead distance. 설계자가 고르는 값 (1-7절)};
+
+\draw[soft, line width=0.3pt] (96,53) -- (176,53);
+
+\node[font=\small, anchor=west] at (96,48.5) {매 걸음 이 순서로 계산한다};
+
+\node[font=\scriptsize, anchor=west] at (96,42.5)
+     {① \ $\pi_p = \operatorname{atan2}\!\left(y_{k+1}-y_k,\ x_{k+1}-x_k\right)$};
+\node[note, anchor=west] at (101,38.0) {구간이 바뀔 때만 다시 계산};
+
+\node[font=\scriptsize, anchor=west] at (96,32.5)
+     {② \ $y_e = -\left(x-x_k\right)\sin\pi_p + \left(y-y_k\right)\cos\pi_p$};
+\node[note, anchor=west] at (101,28.0) {1-5절의 회전 한 번};
+
+\node[font=\scriptsize, accent, anchor=west] at (96,22.5)
+     {③ \ $\psi_{\mathrm{ref}} = \pi_p - \arctan\!\left(y_e/\Delta\right)$};
+\node[anote, anchor=west] at (101,18.0) {구하려는 값 — 헤딩 제어기로 보낸다};
+
+\draw[soft, line width=0.3pt] (96,13.5) -- (176,13.5);
+
+\node[note, anchor=west] at (96,9.0)
+     {이 그림의 값 — $\pi_p = 50^\circ$, \ $y_e = 6$ m, \ $\Delta = 10$ m};
+\node[font=\scriptsize, anchor=west] at (96,3.5)
+     {$\arctan(6/10) = 30.96^\circ \ \Rightarrow \ \psi_{\mathrm{ref}} = 50^\circ - 30.96^\circ = 19.04^\circ$};
+\node[note, pathc, anchor=west, text width=76mm] at (96,-3.5)
+     {배가 경로의 오른쪽에 있으므로 지령이 $\pi_p$ 보다 왼쪽으로 나온다.
+      $y_e \to 0$ 이면 $\psi_{\mathrm{ref}} \to \pi_p$ — 보정이 저절로 사라진다};
 
 \end{tikzpicture}
 \end{document}
