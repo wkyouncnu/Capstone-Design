@@ -156,6 +156,10 @@ check_fig() {
   for t in assets/src/*.tex; do
     [ -f "$t" ] || continue
     case "$(basename "$t")" in capstone-style.tex) continue ;; esac
+    #  \documentclass 가 없는 것은 그림이 아니라 **조각**이다 — 좌표만 담은
+    #  *-geo.tex 처럼 다른 그림이 \input 으로 끌어다 쓴다. 혼자서는 빌드되지
+    #  않으므로 SVG 를 찾으면 안 된다 (2026-10-20, w05-los-standard-geo.tex)
+    grep -q '\\documentclass' "$t" || continue
     b="assets/$(basename "${t%.tex}").svg"
     if [ ! -f "$b" ]; then
       echo "     [SVG 없음] $t"; n=$((n+1))

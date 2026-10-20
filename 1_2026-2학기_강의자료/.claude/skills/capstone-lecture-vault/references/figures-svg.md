@@ -60,6 +60,28 @@ bash _tools/tikz2svg.sh assets/src/w06-control-loop.tex assets/w06-control-loop.
 > - PDF 만들기(`pdf_sync.sh`)에는 LaTeX 이 **필요 없다** (Chrome + 로컬 MathJax). TinyTeX 은 TikZ 그림 빌드용
 > - `vault_check` 9 번 "소스가 더 최신" 이 떠도 내용이 바뀐 것은 아닐 수 있다 — Dropbox·`git checkout` 이 파일 시각만 바꾼다. 다시 빌드해서 `git status` 에 SVG 가 안 잡히면 시각만 어긋났던 것임 (2026-10-16 14건 모두 그랬음)
 
+### 조각 파일 — 혼자서 빌드되지 않는 `.tex`
+
+좌표만 담아 다른 그림이 `\input` 으로 끌어다 쓰는 파일(`*-geo.tex`)은 **조각**이다.
+`\documentclass` 가 없으므로 `tikz2svg.sh` 로 돌리지 않고, 짝이 되는 SVG 도 없다.
+`vault_check` 9 번은 `\documentclass` 가 없는 `.tex` 를 건너뛴다 (2026-10-20 `w05-los-standard-geo.tex`).
+
+### 대학원 과목 그림을 캡스톤으로 들일 때
+
+같은 내용을 다룬 그림이 대학원 과목 "센서신호처리 및 융합" 볼트에 이미 있으면
+다시 그리지 않고 옮긴다. 옮기는 규칙 —
+
+| 손대는 것 | 손대지 않는 것 |
+|---|---|
+| 머리말의 경로·빌드 명령 | 좌표·선·호·축척 (`\Val*`·`\Scr*` 매크로 값) |
+| `\input{gnc-style}` → `\input{capstone-style}` | 그림의 배치와 비율 |
+| 영어 글자 → 한글 (개조식) | 수치 — 본문 검산이 그대로 맞아야 한다 |
+| 상호참조 절 번호를 캡스톤 번호로 | |
+
+- 캡스톤 스타일에 없는 색(`alng`·`knownc`)은 그림 파일에서 `\definecolor` 로 정한다
+- **기존 그림을 덮어쓰지 않는다.** 본문 수치가 그 그림에 묶여 있다 — 새 이름으로 더한다
+  (2026-10-20 `w05-los-geometry.svg` 는 $y_e=6$·$\Delta=10$ 으로 남기고 `w05-los-standard.svg` 를 더했다)
+
 ---
 
 ## 3. 기하 그림은 좌표를 손으로 찍지 않는다
