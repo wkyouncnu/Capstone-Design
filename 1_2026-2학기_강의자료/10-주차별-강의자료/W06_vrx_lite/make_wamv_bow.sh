@@ -46,4 +46,12 @@ grep -q OdometryPublisher "$OUT" && echo '  plugin OdometryPublisher (참값 오
 echo "추진기 토픽 :"
 grep -o '<topic>thrusters/[^<]*</topic>' "$OUT" | sed 's|.*<topic>|  /wamv/|; s|</topic>||'
 echo "추진기 조인트 위치 :"
-grep -A3 'chassis_engine_joint' "$OUT" | grep -o 'xyz="[^"]*" rpy="[^"]*"' | sed 's/^/  /'
+#  xacro 가 뱉는 URDF 는 속성을 알파벳 순(rpy 먼저, xyz 나중)으로 적는다 —
+#  'xyz=.. rpy=..' 순서로 찾으면 한 줄도 안 걸려 이 자리가 빈칸이 된다. 조인트 이름과 함께 찍는다.
+awk '
+  /joint name=".*chassis_engine_joint"/ { match($0, /name="[^"]*"/); n = substr($0, RSTART+6, RLENGTH-7) }
+  /<origin/ && n != "" {
+    match($0, /xyz="[^"]*"/); x = substr($0, RSTART+5, RLENGTH-6)
+    match($0, /rpy="[^"]*"/); r = substr($0, RSTART+5, RLENGTH-6)
+    printf("  %-32s xyz=[%s]  rpy=[%s]\n", n, x, r); n = ""
+  }' "$OUT"

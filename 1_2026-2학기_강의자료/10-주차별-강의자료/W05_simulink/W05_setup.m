@@ -7,7 +7,10 @@
 %   >> open_system('W05_0_offline')      % 실습 A — 조류 실험
 %   >> open_system('W05_1_vrx')          % 실습 B — Gazebo 연동
 
-clear; clc;
+clear;
+%  다른 스크립트·함수가 불러서 돌 때는 (W05_skip_run = true) 화면을 지우지 않는다 —
+%  지우면 그 쪽이 이미 찍어 둔 측정표가 함께 사라진다
+if ~isequal(getappdata(0, 'W05_skip_run'), true), clc; end
 
 %% ====================================================================
 %  1. 웨이포인트 — 출발점 기준 상대좌표 [m], NED

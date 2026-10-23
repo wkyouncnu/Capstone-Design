@@ -150,8 +150,12 @@ fprintf('   동기 점검 k = 지나간 거리 %.1f m / 속도 적분 %.1f m = %
 if k > 1.08
     fprintf('  <- Simulink 가 VRX 를 못 따라갔다\n');
     fprintf('      이 결과는 쓰지 말 것. W05_setup 에서 animate = 0 으로 두고 VRX 를 다시 띄워 재실행\n');
+elseif k < 0.9
+    %  명령은 나가는데 배가 그만큼 가지 않음 = Gazebo 가 멈춰 있었던 것 (ros2 데몬 손상)
+    fprintf('  <- 명령만큼 배가 가지 않았다 (Gazebo 가 멈춤)\n');
+    fprintf('      이 결과는 쓰지 말 것. WSL 에서 ros2 daemon stop && ros2 daemon start 뒤 VRX 를 다시 띄워 재실행\n');
 else
-    fprintf('  (1.08 이하 — 동기 정상)\n');
+    fprintf('  (0.9 ~ 1.08 — 동기 정상)\n');
 end
 end
 

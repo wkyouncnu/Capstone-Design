@@ -53,13 +53,16 @@ dom = B('ros_domain_id');
 
 %  Simulink 블록은 ROS 네트워크 프로필의 Domain ID 를, ros2* 함수는 환경변수를
 %  쓴다. 둘이 다르면 Simulink 만 아무것도 못 받고 오류 없이 배가 서 있다
+%  프로필을 한 번도 만든 적이 없으면 Simulink 도 환경변수를 따른다 — 그대로 둔다
 try
     prof = getpref('ROS_Toolbox', 'ROS_NetworkAddress_Profiles');
     dom_prof = double(prof{1}.DomainID);
 catch
-    dom_prof = 0;
+    dom_prof = [];                          % 프로필 없음 (새로 설치한 MATLAB 의 기본 상태)
 end
-if dom_prof ~= str2double(dom)
+if isempty(dom_prof)
+    setenv('ROS_DOMAIN_ID', dom);
+elseif dom_prof ~= str2double(dom)
     error(['Simulink ROS 프로필의 Domain ID 는 %d, W06_setup 의 ros_domain_id 는 %s 이다.\n' ...
            '  Simulink 툴스트립 시뮬레이션 -> ROS 네트워크 에서 Domain ID 를 %s 로 바꾸고 다시 실행'], ...
           dom_prof, dom, dom);
@@ -120,8 +123,13 @@ S.k_sync = sum(dd(mv)) / max(sum(U(mv) .* dt(mv)), eps);
 fprintf('   동기 점검 k = %.3f', S.k_sync);
 if S.k_sync > 1.08
     fprintf('  <- Simulink 가 VRX 를 못 따라갔다. 이 결과는 쓰지 말 것 — VRX 를 다시 띄워 재실행\n');
+elseif S.k_sync < 0.9
+    %  명령은 나가는데 배가 그만큼 가지 않음 = Gazebo 가 멈춰 있었던 것.
+    %  ros2 데몬이 깨지면 이 꼴이 되고, 걸림 검사는 (힘은 나가므로) 통과해 버린다
+    fprintf(['  <- 명령만큼 배가 가지 않았다 (Gazebo 가 멈춤). 이 결과는 쓰지 말 것\n' ...
+             '      WSL 에서  ros2 daemon stop && ros2 daemon start  뒤 VRX 를 다시 띄워 재실행\n']);
 else
-    fprintf('  (1.08 이하 — 동기 정상)\n');
+    fprintf('  (0.9 ~ 1.08 — 동기 정상)\n');
 end
 
 %  걸림 검사 — 추진기가 힘을 내는데 배가 5 초 넘게 서 있으면 무언가에 닿은 것

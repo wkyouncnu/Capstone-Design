@@ -92,6 +92,10 @@ cd "$D" && git -c core.quotepath=off status --porcelain | sed 's/^...//' | while
 | (2026-10-23) `run_vrx.sh` 뒤 로그는 나오는데 **Gazebo 창이 안 뜸** | WSLg 창 표시기(msrdc)가 재시작 반복 — 노트북을 이틀 켜 둔 뒤 | `W03_vrx_lite/check_gui.sh` + 두 실행 스크립트가 먼저 검사, 해결은 `wsl --shutdown`. 5주차 E-1 경고 상자 |
 | (2026-10-23) 6주차 1·2·3·4·7·8단에 VRX 판이 없음 — 규칙 20 위반 | 쌍둥이를 5단↔6단 하나만 만들어 둠 | `parts/plant.m` 로 단마다 `_vrx.slx`, `W06_vrx_run(k)` 로 일곱 쌍 모두 Gazebo 검증 (걸림 0.6 s 이하, 물체까지 6.9 m 이상) |
 | (환경) Simulink 만 아무것도 못 받음 | 노트북 WSL·프로필 도메인 8, 자료 표준 7 | 노트북을 7 로. `W06_6_vrx_run` 이 프로필 불일치에서 멈추게 함 |
+| (2026-10-23) 추력은 꾸준히 나가는데 배가 **2.2 m** 만 가고 **두 검사를 다 통과** ($k$ = 0.014, 걸림 0.2 s) | ROS 2 데몬이 깨져 `rclpy.ok()` 가 거짓 — 명령이 Gazebo 까지 안 감. $k$ 는 상한만 보고 있었고, 추력은 나가므로 걸림 검사도 조용함 | `W05_vrx_run`·`W06_vrx_run` 에 **$k$ 하한 0.9**. 해결은 `ros2 daemon stop && ros2 daemon start` 뒤 VRX 새로 |
+| (2026-10-23) `W06_bow_demo`·`W06_psi_sweep` 가 **측정표를 찍지 않음** — 오류도 없고 `res` 도 안 남음 | 두 스크립트가 끝에서 설정을 되돌리려고 `W06_setup` 을 **다시 부름**. 스크립트끼리는 워크스페이스를 공유하므로 setup 의 `clear` 가 `res` 를, `clc` 가 이미 찍은 표를 지움 | `W0x_setup.m` 의 `clc` 를 `if ~isequal(getappdata(0,'W0x_skip_run'),true), clc; end` 로 감쌈 |
+| (2026-10-23) `make_wamv_bow.sh` 의 "추진기 조인트 위치 :" 아래가 **빈칸** — 오류 없이 조용함 | `xacro` 가 뱉는 URDF 는 속성을 알파벳 순(`rpy` 먼저, `xyz` 나중)으로 적는데 `grep -o 'xyz=.. rpy=..'` 로 찾고 있었음 | `awk` 로 조인트 이름 + `xyz` + `rpy` 를 따로 뽑아 찍음. **출력이 빈칸인 자리는 지적 수에 안 잡히므로 눈으로 확인함** |
+| (2026-10-23) VRX 쪽 `W06_vrx_run` 이 ROS 네트워크 프로필이 없는 PC 에서 멈춤 | 프로필을 조회해 `setenv` 하는 줄이 빈 결과를 못 견딤 — 프로필을 한 번도 만들지 않은 PC 가 기본 상태 | `dom_prof = []` 로 두고 `isempty` 면 통과. 이 수정이 없으면 **학생 전원이 6주차 VRX 에서 막힘** |
 
 - 판정 문장: **같은 컴퓨터라도 스폰·속도·CPU 가 데스크톱과 다르면 같은 스크립트가 다른 실험이 된다.**
   자료의 VRX 수치에는 반드시 스폰 좌표 · RTF · $k$ 를 함께 적는다
@@ -115,3 +119,4 @@ cd "$D" && git -c core.quotepath=off status --porcelain | sed 's/^...//' | while
 - 글꼴은 크기·글꼴을 먼저 맞춘 뒤 명령이 돌게 한다 — 스크립트 첫 줄 `sleep 7` 동안 `winshot -Do "key:ctrl+minus"` ×3. 나중에 바꾸면 줄이 다시 흘러 앞부분이 사라진다
 - `ros2 launch` 로그는 1 초 만에 화면을 넘긴다 → "명령 확인" 화면은 `stop_vrx.sh check` + `DRY=1 bash run_vrx_bow.sh` 로 따로 찍는다
 - MATLAB 창에는 사용자의 다른 파일 탭이 보인다 → 주소창(UNC 경로) + 명령 창만 잘라 붙인다
+- (2026-10-23) 새 clone 의 WSL 에서는 `_tools/xshot.sh` 가 **안 돈다** — `xdotool` 이 없는 기본 상태임. `sudo apt-get install -y xdotool` 로 깔거나, 깔지 않을 때는 Windows 전체 화면 캡처(`CopyFromScreen`)로 대신함
