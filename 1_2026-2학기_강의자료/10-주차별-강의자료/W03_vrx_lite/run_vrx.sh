@@ -35,6 +35,12 @@ case "$MODE" in
   *) echo "모드: lite · mine · full · original"; exit 1 ;;
 esac
 
+# 화면(WSLg)이 Windows 로 창을 내보낼 수 있는지 먼저 본다 (2026-10-23 — 창 표시기 msrdc 가
+# 재시작을 반복하면 로그만 쏟아지고 Gazebo 창이 안 뜬다). 무시하고 띄우려면 IGNORE_GUI=1
+if [ -z "$DRY" ] && [ -z "$IGNORE_GUI" ]; then
+  bash "$HERE/check_gui.sh" || exit 1
+fi
+
 # MATLAB · Simulink 와 같은 도메인이어야 토픽이 보인다 (2주차 2-5)
 if [ -z "$ROS_DOMAIN_ID" ]; then
   echo "경고: ROS_DOMAIN_ID 가 비어 있음 → 0 으로 뜸. ~/.bashrc 의 export ROS_DOMAIN_ID=... 를 확인"

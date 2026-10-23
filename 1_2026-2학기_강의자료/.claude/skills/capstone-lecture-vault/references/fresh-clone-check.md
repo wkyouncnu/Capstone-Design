@@ -89,6 +89,7 @@ cd "$D" && git -c core.quotepath=off status --porcelain | sed 's/^...//' | while
 | VRX 완주 시각이 오프라인보다 수십 초 짧음, 궤적은 겹침 | 실시간 화면(`animate`)을 그리느라 Simulink 가 VRX 를 못 따라감. RTF 는 정상이라 안 보임 | VRX 실행은 `animate = 0`, 끝에 **동기 점검 $k$** = 지나간 거리 ÷ $\int\lvert u\rvert dt$ |
 | `measure_sway.sh` 가 한쪽만 `요 유지 틀림` (+33° / −4.9°) | 스폰이 해안 옆이라 우현으로 밀면 해안에 닿음 | `to_open_water.sh` (`set_pose`) 를 먼저 부름 |
 | 배가 두 척 · 토픽이 튐 | 고아 `gz sim server` 가 **SIGTERM 을 무시** | `W03_vrx_lite/stop_vrx.sh` — TERM 3 초 뒤 KILL |
+| (2026-10-23) `run_vrx.sh` 뒤 로그는 나오는데 **Gazebo 창이 안 뜸** | WSLg 창 표시기(msrdc)가 재시작 반복 — 노트북을 이틀 켜 둔 뒤 | `W03_vrx_lite/check_gui.sh` + 두 실행 스크립트가 먼저 검사, 해결은 `wsl --shutdown`. 5주차 E-1 경고 상자 |
 | (환경) Simulink 만 아무것도 못 받음 | 노트북 WSL·프로필 도메인 8, 자료 표준 7 | 노트북을 7 로. `W06_6_vrx_run` 이 프로필 불일치에서 멈추게 함 |
 
 - 판정 문장: **같은 컴퓨터라도 스폰·속도·CPU 가 데스크톱과 다르면 같은 스크립트가 다른 실험이 된다.**
@@ -105,7 +106,7 @@ cd "$D" && git -c core.quotepath=off status --porcelain | sed 's/^...//' | while
 |---|---|
 | 터미널 (학생이 치는 명령 + 출력) | Windows Terminal 에 데모 스크립트를 띄움 — `wt.exe -w new --title T1 --suppressApplicationTitle wsl.exe -d Ubuntu-22.04 bash -i ~/demo.sh`. 스크립트는 프롬프트 모양 + 명령을 찍고 `eval` 로 그대로 실행 |
 | 앞으로 못 가져올 때 | `_tools/wincap.ps1` (PrintWindow) — 사용자가 다른 창을 쓰는 중에도 찍힘 |
-| Gazebo | `_tools/xshot.sh "Gazebo Sim"` (WSL 안) |
+| Gazebo | `_tools/xshot.sh "Gazebo Sim"` (WSL 안). **사용자에게 "화면이 뜬다" 를 보일 때는 Windows 전체 화면 캡처**(`CopyFromScreen`) — WSLg 가 고장 나도 X 안에서는 찍힌다 |
 | MATLAB 명령 창 | `winshot.ps1 -Do "click:..|type:W06_6_vrx_run|key:enter"` 로 **직접 입력**해서 돌림 — MCP 실행은 명령 창에 안 보인다 |
 
 - `wt.exe` 는 인자의 `;` 를 **새 탭 구분자**로 읽는다 → 명령은 스크립트 파일로 넘긴다. `--size` 는 이 PC 의 WT 판에 없다

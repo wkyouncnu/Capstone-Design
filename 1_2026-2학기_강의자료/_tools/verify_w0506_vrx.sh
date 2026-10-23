@@ -49,6 +49,7 @@ expect "강의자료 clone"          "Capstone-Design"  bash -c "cd ~/Capstone-D
 expect "git pull"                "up to date\|Updating\|Fast-forward" bash -c "cd ~/Capstone-Design && git pull"
 expect "ROS_DOMAIN_ID = 7"       "^7$"              bash -c "echo $ROS_DOMAIN_ID"
 expect "W03 stop_vrx.sh 있음"    "stop_vrx.sh"      ls "$L3"
+expect "WSLg 화면 정상"          "화면 정상"        bash "$L3/check_gui.sh"
 expect "W06 폴더 열한 개"        "^11$"             bash -c "ls $L6 | wc -l"
 expect "VRX 스폰 (원본 162/200)" "Model('wamv'"     grep -n "Model('wamv'" ~/vrx_ws/src/vrx/vrx_gz/launch/competition.launch.py
 

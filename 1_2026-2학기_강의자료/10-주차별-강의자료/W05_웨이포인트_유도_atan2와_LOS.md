@@ -62,6 +62,37 @@ summary: 배를 경로 위로 올려놓는 법 — 두 유도법칙을 오프라
 > - MATLAB **R2024b + Simulink + ROS Toolbox**
 > - 배포 폴더 `W05_simulink/` 와 `W05_matlab/`
 
+> [!important] 이번 주차 실행 요약 — Gazebo(VRX) ↔ Simulink 는 이 세 덩어리만 치면 됨
+> 자세한 설명은 2부 E 절. 아래는 2026-10-23 기준 노트북에서 그대로 쳐서 확인한 순서임 (완주 232.2 s · 동기 점검 $k$ = 1.005)
+>
+> **① 터미널 1 — Gazebo 띄우기** (창이 뜨면 이 터미널은 닫지 않고 둠)
+>
+> ```bash
+> cd ~/Capstone-Design && git pull
+> cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite
+> bash stop_vrx.sh
+> bash run_vrx.sh
+> ```
+>
+> **② 터미널 2 — 토픽 확인** (`ground_truth_odometry` 가 보이면 됨)
+>
+> ```bash
+> ros2 topic list | grep -E "thrusters|ground_truth"
+> ```
+>
+> **③ MATLAB — Simulink 를 Gazebo 에 붙여 돌리기**
+>
+> ```matlab
+> cd('\wsl.localhost\Ubuntu-22.04\home\<사용자명>\Capstone-Design\1_2026-2학기_강의자료\10-주차별-강의자료\W05_simulink')
+> setappdata(0, 'W05_skip_run', true);  W05_setup;  W05_vrx_run
+> ```
+>
+> | 이럴 때 | 할 것 |
+> |---|---|
+> | Gazebo 없이 오프라인만 | MATLAB 에서 `W05_setup` 한 줄 |
+> | `run_vrx.sh` 가 `화면 이상` 을 찍고 멈춤 · 로그만 나오고 **Gazebo 창이 안 뜸** | Windows PowerShell 에서 `wsl --shutdown` → 터미널을 새로 열고 ① 부터 (E-1 의 경고 상자) |
+> | 다음 실험 | ① 의 `bash stop_vrx.sh` 부터 다시 — 실험마다 VRX 를 새로 띄움 |
+
 > [!note] 4주차는 **제어**만 했음
 > - 4주차: "선수각을 45도로 맞춰라", "속도를 1.5 m/s 로 맞춰라"
 > - 그런데 **누가 45도를 정해 주는가?**
@@ -1658,6 +1689,7 @@ bash run_vrx.sh
 - 맨 앞 네 줄이 **실제로 실행하는 `ros2 launch` 명령**을 찍음. 직접 치는 것과 똑같음
 
 ```
+화면 정상 (DISPLAY=:0, 창 표시기 재시작 0 번)
 ROS_DOMAIN_ID=7  (MATLAB W0X_setup 의 값과 같아야 함)
 실행 명령:
   ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "urdf:=/home/<사용자명>/Capstone-Design/.../W03_vrx_lite/wamv_lite.urdf" "extra_gz_args:=--render-engine-gui ogre"
@@ -1666,6 +1698,33 @@ ROS_DOMAIN_ID=7  (MATLAB W0X_setup 의 값과 같아야 함)
 
 - 그 뒤로 노란 `[Wrn]` 과 빨간 `[Err]` 줄이 수백 줄 쏟아짐 — **정상임** (아래 그림)
 - 20\~40 초 뒤 **Gazebo Sim** 창이 뜨고 물 위에 배가 보이면 성공
+- 첫 줄 `화면 정상` 은 `run_vrx.sh` 가 Gazebo 를 띄우기 **전에** WSL 의 화면 상태를 본 결과임 (`check_gui.sh`, 바로 아래 경고 상자)
+
+> [!caution] 로그는 쏟아지는데 **Gazebo 창이 안 뜰 때** — `wsl --shutdown` 한 줄로 고침 (2026-10-23 기준 노트북 실측)
+> - 증상: `run_vrx.sh` 뒤 경고 줄이 계속 나오고 `ros2 topic list` 에 토픽도 보이는데, Windows 화면에 Gazebo 창이 **나타나지 않음**. 오류 메시지는 없음
+> - 원인: 리눅스 창을 Windows 화면에 그려 주는 프로그램(`msrdc.exe`, WSLg 의 일부)이 30 초마다 꺼졌다 켜지기를 반복하는 상태. Gazebo 만이 아니라 **리눅스 창이 전부** 안 뜸. 노트북을 재웠다 깨우거나 며칠 켜 두면 생김
+> - `run_vrx.sh` 가 이 상태를 먼저 알아보고 멈춤 — 첫 줄이 이렇게 나옴
+>
+> ```
+> 화면 이상: Windows 쪽 창 표시기(msrdc.exe)가 5 번 다시 켜졌음 → Gazebo 창이 안 뜸
+>   고치는 법: Windows PowerShell 에서  wsl --shutdown
+> ```
+>
+> 고치는 순서
+> 1. 열려 있는 WSL 터미널을 모두 닫음 (VS Code 의 WSL 창도)
+> 2. `Win` 키 → `powershell` 입력 → **Windows PowerShell** 클릭
+> 3. 아래 한 줄을 침 — 아무것도 찍히지 않고 바로 끝나는 것이 정상
+>
+> ```powershell
+> wsl --shutdown
+> ```
+>
+> 4. 터미널을 새로 열고 (WSL 이 다시 켜지는 데 10\~30 초) 위 3번 `bash stop_vrx.sh` 부터 다시
+> 5. 따로 확인하려면 `bash check_gui.sh` → `화면 정상 (... 재시작 0 번)` 이면 됨
+>
+> 고친 뒤의 화면 — Windows 바탕화면에 **Gazebo Sim** 창이 따로 뜸
+>
+> ![Gazebo 창이 Windows 화면에 뜬 모습](../assets/w05-gazebo-window.png)
 
 ![터미널 1 — 쏟아지는 경고는 정상](../assets/w05-terminal1-log.png)
 
@@ -1951,6 +2010,7 @@ W05_plot(out, 'VRX / LOS')
 | 동기 점검 $k$ | — | 1.003 | — | 1.010 |
 | 궤적 평균 / 최대 이격 [m] | | 1.49 / 1.80 | | 0.57 / 1.24 |
 
+- 2026-10-23 3회째 (`wsl --shutdown` 으로 화면을 고친 뒤 같은 노트북): 완주 232.2 / 231.7 s, 정착 후 $\lvert y_e vert$ 0.858 / 0.839 m, `u` 1.500 / 1.500 m/s, $k$ = 1.005, 평균 / 최대 이격 0.65 / 1.15 m (VRX / 오프라인 순)
 - 오프라인 값이 두 번 조금 다른 까닭: 오프라인은 매번 **그 실행의 VRX 초기 선수각**으로 출발함. 선수각이 0.01° 단위로 달라짐
 - 참고 — 기준 데스크톱(스폰 200, 2026-09-19, 추진기 단을 고치기 전)은 같은 표가 완주 205.9 / 206.7 s, 정착 후 $\lvert y_e \rvert$ 0.784 / 0.702 m, `u` 1.501 / 1.500 m/s 였음. 출발점이 $(0,\ 0)$ 이라 완주가 26 s 짧음
 
@@ -2191,6 +2251,7 @@ build_w05_models
 | 배가 두 척 보임 · 토픽 값이 튐 · RTF 가 갑자기 반 | 앞서 띄운 VRX 가 고아로 남음 | `bash stop_vrx.sh` → `끈 뒤: 0 개` 확인 후 다시 띄움. 안 되면 PowerShell 에서 `wsl --shutdown` |
 | Gazebo 화면이 1 fps · RTF 0.001 | 카메라·LiDAR 를 켠 xacro 를 기본 엔진으로 띄움 | E-1 의 `run_vrx.sh` 로 (E-2 경고 표) |
 | `run_vrx.sh` 뒤 `[Wrn]`·`[Err]` 가 수백 줄 | 정상 경고 | 무시함 (E-1 4번의 표) |
+| **로그는 나오는데 Gazebo 창이 안 뜸** · `화면 이상: ... msrdc.exe` | WSLg 의 창 표시기가 재시작을 반복 | WSL 터미널을 모두 닫고 PowerShell 에서 `wsl --shutdown` → 새 터미널에서 다시 (E-1 경고 상자) |
 | 배가 마지막 점을 지나 계속 감 | `gate` 미연결 | `build_w05_models` 로 재생성 |
 | 웨이포인트를 다 건너뜀 | R 이 웨이포인트 간격보다 큼 | R 을 줄일 것 |
 | 배가 한 바퀴 돌아 목표로 감 | 각도 wrap 누락 | `HeadingErr` 의 `atan2(sin,cos)` 확인 |

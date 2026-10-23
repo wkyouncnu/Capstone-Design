@@ -49,6 +49,7 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
 | "색이 없는데" · 도면이 흑백 | `check_colour(모델)` → 0 이 합격선. 표는 `_tools/gnc_roles.m` | 스킬 `simulink-gnc-models` |
 | **"이 컴퓨터에서 처음부터 돌아가는지" · "GitHub 에서 받아서 되는지" · "N주차 VRX 까지 다 돌려 봐"** | 옛 clone 을 옮기고 **새로 `git clone`** → 학생 경로(UNC)로 오프라인 → VRX | **`references/fresh-clone-check.md`** |
 | "VRX 로 돌려서 확인해줘" | WSL 배포판 `Ubuntu-22.04` 확인부터 | `references/vrx-runbook.md` |
+| **"가제보 화면이 안 떠" · "Gazebo 창이 안 나와"** | `bash W03_vrx_lite/check_gui.sh` — `화면 이상` 이면 PowerShell `wsl --shutdown`. 창이 떴는지는 **전체 화면 캡처**로 확인 (WSLg 창은 `xshot` 으로는 떠도 Windows 에 안 보일 수 있음) | `references/vrx-runbook.md` §4 |
 | "오프라인이랑 대조해줘" | 겹치는 시간 구간만. 이격은 **위상 오차인 경우가 많다** | `references/vrx-runbook.md` |
 | "주차를 옮기자 / 순서 바꾸자" | 파급 범위를 먼저 나열한다 (문서 4곳 이상) | `references/vault-upkeep.md` |
 | **"전체 다 고쳐줘" · "다른 주차도" · 규칙·도구·형식이 바뀜** | **전수 조사 표부터 만든다.** 도구 → 전 주차 → 수치 → 그림 → MD → PDF | **`references/vault-wide-update.md`** |
@@ -193,6 +194,9 @@ description: 캡스톤디자인 2026-2 강의 볼트에서 강의자료를 만�
     - VRX 수치에는 **스폰 좌표 · RTF · 동기 점검 $k$** 를 함께 적는다. $k > 1.08$ 인 실행은 쓰지 않는다
     - 새로 설치해야 하는 것이 생기면 **반드시 그 주차 자료에** 설치 명령과 정상 출력을 둔다. 스크립트 파일이 늘면 폴더 계층도·배포 파일 표·`ls` 정상 출력을 함께 고친다
     - VRX 를 띄우기 전에는 `W03_vrx_lite/stop_vrx.sh` — 고아 `gz sim server` 는 TERM 을 무시한다
+    - **주차 문서 첫 장(시작 전 확인 바로 아래)에 "이번 주차 실행 요약" 을 둔다** (교수 지시 2026-10-23, 5·6주차).
+      터미널 1(Gazebo 띄우기) · 터미널 2(토픽 확인) · MATLAB(연동 실행) 세 덩어리 + "이럴 때" 표. 뒤의 긴 절을 안 읽어도
+      무엇을 쳐야 하는지 알게 하는 것이 목적이다. 명령은 그 날 실제로 쳐서 확인하고, 확인한 날짜·결과 한 줄을 붙인다
 
 ---
 

@@ -1251,6 +1251,7 @@ gz service -s /gui/follow/offset --reqtype gz.msgs.Vector3d --reptype gz.msgs.Bo
 | `make_wamv_lite.sh` | 켤 센서를 골라 URDF 를 직접 만듦 | 방법 B |
 | `measure_vrx.sh` | 떠 있는 VRX 의 **평균 RTF** 와 **화면 fps** 를 잼 | 진단 · 확인 |
 | `stop_vrx.sh` | 떠 있는 VRX·Gazebo·브리지를 **모두 끔**. 남은 고아 서버까지 강제로 정리 (2026-10-16 추가) | 실험마다 띄우기 전 |
+| `check_gui.sh` | WSL 화면(WSLg)이 Windows 로 창을 낼 수 있는지 봄. `run_vrx.sh` 가 먼저 부름 — Gazebo 창이 안 뜨면 `wsl --shutdown` 을 일러 줌 (2026-10-23 추가, 5주차 E-1) | 진단 · 확인 |
 
 1. 저장소를 최신으로 받음 (처음이면 문서 첫머리의 "강의자료 저장소" 표대로 `git clone` 부터)
 
@@ -1264,7 +1265,7 @@ cd ~/Capstone-Design && git pull
 cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite
 ```
 
-3. 파일이 다섯 개 보이는지 확인
+3. 파일이 여섯 개 보이는지 확인
 
 ```bash
 ls
@@ -1273,7 +1274,7 @@ ls
 - 정상 출력
 
 ```
-make_wamv_lite.sh  measure_vrx.sh  run_vrx.sh  stop_vrx.sh  wamv_lite.urdf
+check_gui.sh  make_wamv_lite.sh  measure_vrx.sh  run_vrx.sh  stop_vrx.sh  wamv_lite.urdf
 ```
 
 > [!tip] 한글 폴더 이름은 치지 않는다
@@ -2777,6 +2778,7 @@ cd ~/Capstone-Design/1_2026*/10*/W03_vrx_lite && bash measure_vrx.sh 20
 | `make_wamv_lite.sh` | 켤 센서를 골라 `~/capstone_ws/wamv/wamv_lite.urdf` 를 만듦 (`camera` · `lidar`) |
 | `measure_vrx.sh` | 평균 RTF · 구간별 흔들림 · 화면 fps 를 재고 판정함 |
 | `stop_vrx.sh` | 떠 있는 VRX 를 끄고 0 개가 됐는지 확인함 (`check` 를 붙이면 끄지 않고 보여 주기만) |
+| `check_gui.sh` | Gazebo 창이 안 뜨는 WSLg 상태(창 표시기 재시작 반복)를 찾아 `wsl --shutdown` 을 일러 줌 |
 
 ### 공식 문서
 
