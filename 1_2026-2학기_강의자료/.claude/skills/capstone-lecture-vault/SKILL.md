@@ -275,6 +275,11 @@ bash .claude/skills/capstone-lecture-vault/scripts/vault_check.sh
 
 ## 5. 작업이 끝나면 GitHub 로 올린다
 
+> [!important] 그리고 **시작할 때는 먼저 받는다** (교수 지시 2026-10-23)
+> 세션을 열면 SessionStart 훅이 `_tools/git_autopull.sh` 로 GitHub 최신판을 받는다. 훅이 안 걸렸으면
+> 첫 동작으로 `bash _tools/git_autopull.sh` 를 직접 돌린다. 다른 PC·다른 세션이 올린 것을 받지 않고
+> 고치지 않는다 → 스킬 `capstone-git-sync` 1-0 장
+
 자료를 고쳤으면 **커밋하고 푸시하는 것까지가 한 작업**이다. 커밋만 해 두면 다른
 PC 와 어긋나고, Dropbox 동기화와 git 이 서로 다른 상태를 들고 있게 된다.
 

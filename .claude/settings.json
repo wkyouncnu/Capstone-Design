@@ -1,13 +1,27 @@
 {
-  "_설명": "저장소 루트에서 Claude Code 를 열었을 때에도 자동 커밋·푸시가 걸리도록 볼트와 같은 훅을 둔다.",
+  "_설명": "저장소 루트에서 Claude Code 를 열었을 때도 볼트와 같은 훅. 시작: GitHub 최신판 받기 / 끝: 커밋·푸시. 경로는 CLAUDE_PROJECT_DIR 기준이라 PC·계정이 달라도 동작 (예전엔 /c/Users/admin 이 박혀 있었음)",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-$PWD}/1_2026-2학기_강의자료/_tools/git_autopull.sh\" || true",
+            "timeout": 90,
+            "statusMessage": "GitHub 최신판 확인 (git pull)"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"/c/Users/admin/Dropbox/캡스톤디자인/1_2026-2학기_강의자료/_tools/git_autopush.sh\"",
-            "timeout": 180
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-$PWD}/1_2026-2학기_강의자료/_tools/hook_stop.sh\" || true",
+            "timeout": 900,
+            "statusMessage": "MD -> PDF 동기화 후 푸시"
           }
         ]
       }
