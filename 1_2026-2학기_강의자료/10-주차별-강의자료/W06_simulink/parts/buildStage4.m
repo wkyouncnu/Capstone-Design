@@ -36,7 +36,7 @@ function [chain, boxes] = buildStage4(m)
     addOuterLoop   (m,  700,  60);
     addInnerLoop   (m, 1150, 280, true);    % true = BowOn 스위치 (2단에서 생긴 뒤 계속 붙어 있다)
     addThrusters   (m, 1600, 280);
-    addMotionModel (m, 2050, 280);
+    plant('add', m, 2050, 280);   % 오프라인: MotionModel / VRX 판: Gazebo 토픽 (plant.m)
 
     wireGuid(m, {'x_n','y_n','psi'}, ...
                 {'x_ref','y_ref','psi_ref','gate','phase'}, 520, 60);
@@ -49,12 +49,12 @@ function [chain, boxes] = buildStage4(m)
     end
 
     wireThrusterGotos(m, 1840, 290);
-    feedForces(m, 'MotionModel', 1980, 300);
-    wireNavGotos(m, 'MotionModel', 2410, 280);
+    feedForces(m, plant('in'), 1980, 300);
+    wireNavGotos(m, plant('out'), 2410 + plant('dx'), 280);
 
     %  NotYet 상자가 없다 — 로깅·그림이 쓰는 태그를 이제 전부 모델이 낸다
     boxes = addBoxes(m, {'psi_ref','psi'; 'x_ref','x_n'; 'y_ref','y_n'; ...
-                         '','u'; '','v'}, 2510, 60, true);
+                         '','u'; '','v'}, 2510 + plant('dx'), 60, true);
 
     sl_note(m, 'n4', ['W06 4단  —  도착 판정과 정지 게이트 (멈추는 법)' newline ...
         '새로 생긴 것 : 유도부의 도착 판정(phase 래치) + AutoStop 상자' newline ...
@@ -64,5 +64,5 @@ function [chain, boxes] = buildStage4(m)
         '실행 전: W06_setup (stage = 4)'], 250, -160);
 
     save_system(m);  close_system(m);
-    chain = {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'};
+    chain = plant('chain', {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'});
 end

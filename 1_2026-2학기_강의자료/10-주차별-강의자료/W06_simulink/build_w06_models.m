@@ -1,10 +1,24 @@
-function build_w06_models(stages)
+function build_w06_models(stages, which)
 % BUILD_W06_MODELS  6주차 Simulink 모델을 **단계별로** 생성한다.
 %
 %     >> W06_setup
 %     >> build_w06_models            % 여덟 단계 전부
 %     >> build_w06_models(1)         % 1단만
 %     >> build_w06_models(1:3)       % 1~3단
+%     >> build_w06_models(1:8,'vrx') % VRX 쌍둥이만 (W06_1_point_vrx ...)
+%     >> build_w06_models(1:8,'off') % 오프라인 여덟 개만
+%
+%   예제마다 오프라인과 VRX 가 **쌍**이다 (스킬 규칙 20). 같은 buildStage<N> 이
+%   둘을 만들고, 다른 것은 운동모델 자리 하나뿐이다 (parts/plant.m)
+%
+%     오프라인          VRX 쌍둥이            VRX 실행
+%     W06_1_point       W06_1_point_vrx       W06_vrx_run(1)
+%     W06_2_sway        W06_2_sway_vrx        W06_vrx_run(2)
+%     W06_3_thrust      W06_3_thrust_vrx      W06_vrx_run(3)
+%     W06_4_stop        W06_4_stop_vrx        W06_vrx_run(4)
+%     W06_5_dock        W06_6_vrx  (6단)      W06_vrx_run(5) = W06_6_vrx_run
+%     W06_7_front       W06_7_front_vrx       W06_vrx_run(7)
+%     W06_8_ned         W06_8_ned_vrx         W06_vrx_run(8)
 %
 %   쉬운 모델부터 하나씩 쌓는다. 한 단계에 새로 생기는 것은 하나뿐이다.
 %
@@ -38,17 +52,39 @@ function build_w06_models(stages)
         error('먼저 W06_setup 을 실행하십시오.');
     end
     if nargin < 1, stages = 1:8; end
+    if nargin < 2, which = 'both'; end
+    do_off = ~strcmp(which, 'vrx');
+    do_vrx = ~strcmp(which, 'off');
 
     name = {'W06_1_point','W06_2_sway','W06_3_thrust','W06_4_stop', ...
             'W06_5_dock', 'W06_6_vrx', 'W06_7_front','W06_8_ned'};
 
     for s = stages(:)'
+        if ~do_off, break; end
         m  = name{s};
         bs = str2func(sprintf('buildStage%d', s));
         [chain, boxes] = bs(m);
         n = finishStage(m, chain, boxes);
         fprintf('  %-14s  생성 완료 — check_lines 지적 %d건\n', m, n);
     end
+
+    %  VRX 쌍둥이 — 같은 빌더로, 운동모델 자리만 Gazebo 토픽으로 바꾼다 (parts/plant.m)
+    %    5단의 쌍둥이는 6단(W06_6_vrx) 이 맡는다. 오프라인 모델은 다시 만들지 않는다
+    for s = intersect(stages(:)', [1 2 3 4 7 8])
+        if ~do_vrx, break; end
+        m  = [name{s} '_vrx'];
+        bs = str2func(sprintf('buildStage%d', s));
+        setappdata(0, 'W06_build_vrx', true);
+        try
+            [chain, boxes] = bs(m);
+            n = finishStage(m, chain, boxes);
+        catch err
+            setappdata(0, 'W06_build_vrx', false);  rethrow(err);
+        end
+        setappdata(0, 'W06_build_vrx', false);
+        fprintf('  %-18s  생성 완료 (VRX 쌍둥이) — check_lines 지적 %d건\n', m, n);
+    end
+    if ~do_off, return; end
 
     %  강의노트가 쓰는 서브시스템 도면 (img/Guidance.png 등)
     %    선체고정 사슬(1~7단) 가운데 **가장 높은 단계**의 것을 쓴다 — 그 단계가

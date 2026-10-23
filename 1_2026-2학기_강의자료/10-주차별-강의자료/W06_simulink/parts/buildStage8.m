@@ -39,7 +39,7 @@ function [chain, boxes] = buildStage8(m)
     addOuterLoopNED (m,  700,  60);
     addInnerLoopNED (m, 1150, 280, true);   % true = BowOn 스위치 (2단에서 생긴 뒤 계속 붙어 있다)
     addThrusters    (m, 1600, 280);
-    addMotionModel  (m, 2050, 280);
+    plant('add', m, 2050, 280);   % 오프라인: MotionModel / VRX 판: Gazebo 토픽 (plant.m)
 
     wireGuid(m, {'x_n','y_n','psi'}, ...
                 {'x_ref','y_ref','psi_ref','gate','phase'}, 520, 60);
@@ -51,11 +51,11 @@ function [chain, boxes] = buildStage8(m)
     end
 
     wireThrusterGotos(m, 1840, 290);
-    feedForces(m, 'MotionModel', 1980, 300);
-    wireNavGotos(m, 'MotionModel', 2410, 280);
+    feedForces(m, plant('in'), 1980, 300);
+    wireNavGotos(m, plant('out'), 2410 + plant('dx'), 280);
 
     boxes = addBoxes(m, {'psi_ref','psi'; 'x_ref','x_n'; 'y_ref','y_n'; ...
-                         '','u'; '','v'}, 2510, 60, true);
+                         '','u'; '','v'}, 2510 + plant('dx'), 60, true);
 
     sl_note(m, 'n8', ['W06 8단  —  NED 좌표계 위치제어 접안 (제어 좌표계를 바꾼다)' newline ...
         '새로 생긴 것 : 위치 오차를 돌리지 않고 북·동 축에서 바로 제어' newline ...
@@ -65,5 +65,5 @@ function [chain, boxes] = buildStage8(m)
         '실행 전: W06_setup (stage = 8)'], 250, -190);
 
     save_system(m);  close_system(m);
-    chain = {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'};
+    chain = plant('chain', {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'});
 end

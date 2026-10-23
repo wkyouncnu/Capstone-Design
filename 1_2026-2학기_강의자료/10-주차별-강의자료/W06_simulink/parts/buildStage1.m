@@ -15,17 +15,17 @@ function [chain, boxes] = buildStage1(m)
     addGuidanceConst(m,  250,  60);
     addOuterLoop    (m,  700,  60);
     addInnerLoop    (m, 1150, 280);
-    addMotionModel  (m, 1600, 280);
+    plant('add', m, 1600, 280);   % 오프라인: MotionModel / VRX 판: Gazebo 토픽 (plant.m)
 
     wireGuid(m, {}, {'x_ref','y_ref','psi_ref','gate'}, 520, 60);
     wireLoops(m, 620, 200, 1020, 60);
     wireForceGotos(m, 1390, 290);
-    feedForces(m, 'MotionModel', 1530, 300);
-    wireNavGotos(m, 'MotionModel', 1960, 280);
+    feedForces(m, plant('in'), 1530, 300);
+    wireNavGotos(m, plant('out'), 1960 + plant('dx'), 280);
 
     addStubs(m, {'nprop','Ferr','phase'}, 1600, 760);
     boxes = addBoxes(m, {'psi_ref','psi'; 'x_ref','x_n'; 'y_ref','y_n'; ...
-                         '','u'; '','v'}, 2060, 60, false);
+                         '','u'; '','v'}, 2060 + plant('dx'), 60, false);
 
     sl_note(m, 'n1', ['W06 1단  —  목표 자세로 가서 선다  (가장 단순한 모델)' newline ...
         '새로 생긴 것 : 위치 고리 하나 + 속도 고리 둘 + 선수각 고리 하나 + 추력 배분' newline ...
@@ -35,5 +35,5 @@ function [chain, boxes] = buildStage1(m)
         '실행 전: W06_setup (stage = 1)'], 250, -160);
 
     save_system(m);  close_system(m);
-    chain = {'Guidance','OuterLoop','InnerLoop','MotionModel'};
+    chain = plant('chain', {'Guidance','OuterLoop','InnerLoop','MotionModel'});
 end

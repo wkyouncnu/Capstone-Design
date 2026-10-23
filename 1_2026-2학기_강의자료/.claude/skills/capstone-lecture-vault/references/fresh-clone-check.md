@@ -90,6 +90,7 @@ cd "$D" && git -c core.quotepath=off status --porcelain | sed 's/^...//' | while
 | `measure_sway.sh` 가 한쪽만 `요 유지 틀림` (+33° / −4.9°) | 스폰이 해안 옆이라 우현으로 밀면 해안에 닿음 | `to_open_water.sh` (`set_pose`) 를 먼저 부름 |
 | 배가 두 척 · 토픽이 튐 | 고아 `gz sim server` 가 **SIGTERM 을 무시** | `W03_vrx_lite/stop_vrx.sh` — TERM 3 초 뒤 KILL |
 | (2026-10-23) `run_vrx.sh` 뒤 로그는 나오는데 **Gazebo 창이 안 뜸** | WSLg 창 표시기(msrdc)가 재시작 반복 — 노트북을 이틀 켜 둔 뒤 | `W03_vrx_lite/check_gui.sh` + 두 실행 스크립트가 먼저 검사, 해결은 `wsl --shutdown`. 5주차 E-1 경고 상자 |
+| (2026-10-23) 6주차 1·2·3·4·7·8단에 VRX 판이 없음 — 규칙 20 위반 | 쌍둥이를 5단↔6단 하나만 만들어 둠 | `parts/plant.m` 로 단마다 `_vrx.slx`, `W06_vrx_run(k)` 로 일곱 쌍 모두 Gazebo 검증 (걸림 0.6 s 이하, 물체까지 6.9 m 이상) |
 | (환경) Simulink 만 아무것도 못 받음 | 노트북 WSL·프로필 도메인 8, 자료 표준 7 | 노트북을 7 로. `W06_6_vrx_run` 이 프로필 불일치에서 멈추게 함 |
 
 - 판정 문장: **같은 컴퓨터라도 스폰·속도·CPU 가 데스크톱과 다르면 같은 스크립트가 다른 실험이 된다.**

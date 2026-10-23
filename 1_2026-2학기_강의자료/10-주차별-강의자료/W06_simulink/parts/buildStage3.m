@@ -59,7 +59,7 @@ function [chain, boxes] = buildStage3(m)
     addOuterLoop    (m,  700,  60);
     addInnerLoop    (m, 1150, 280, true);   % true = BowOn 스위치 (2단에서 생긴 뒤 계속 붙어 있다)
     addThrusters    (m, 1600, 280);
-    addMotionModel  (m, 2050, 280);
+    plant('add', m, 2050, 280);   % 오프라인: MotionModel / VRX 판: Gazebo 토픽 (plant.m)
 
     wireGuid(m, {}, {'x_ref','y_ref','psi_ref','gate'}, 520, 60);
     wireLoops(m, 620, 200, 1020, 60);
@@ -72,12 +72,12 @@ function [chain, boxes] = buildStage3(m)
     end
 
     wireThrusterGotos(m, 1840, 290);
-    feedForces(m, 'MotionModel', 1980, 300);
-    wireNavGotos(m, 'MotionModel', 2410, 280);
+    feedForces(m, plant('in'), 1980, 300);
+    wireNavGotos(m, plant('out'), 2410 + plant('dx'), 280);
 
     addStubs(m, {'phase'}, 2050, 760);
     boxes = addBoxes(m, {'psi_ref','psi'; 'x_ref','x_n'; 'y_ref','y_n'; ...
-                         '','u'; '','v'}, 2510, 60, false);
+                         '','u'; '','v'}, 2510 + plant('dx'), 60, false);
 
     sl_note(m, 'n3', ['W06 3단  —  추진기 자리 (Gazebo 플러그인이 하는 일)' newline ...
         '새로 생긴 것 : Thrusters 하나 — 역 프로펠러 법칙을 플러그인 소스 순서대로 적음' newline ...
@@ -88,5 +88,5 @@ function [chain, boxes] = buildStage3(m)
         '실행 전: W06_setup (stage = 3)'], 250, -160);
 
     save_system(m);  close_system(m);
-    chain = {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'};
+    chain = plant('chain', {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'});
 end

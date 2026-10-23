@@ -156,6 +156,7 @@ t = double(m.header.stamp.sec) + double(m.header.stamp.nanosec)*1e-9;
 | **VRX 완주가 오프라인보다 수십 초 짧은데 궤적은 겹침** | 실시간 화면 부하로 Simulink 가 늦음 — 노트북에서 화면 켬 44.8 s · 끔 79.55 s (오프라인 78.7) | VRX 실행은 `animate = 0`. 판정은 **동기 점검 $k$** = 지나간 거리 ÷ 속도의 모델 시각 적분, 1.08 초과면 버림 |
 | 열린 고리 측정(`measure_sway`)이 한쪽 방향만 요가 크게 돎 | 스폰이 해안 옆 — 우현으로 밀면 해안에 닿음 | `W06_vrx_lite/to_open_water.sh` 로 `set_pose` 해 넓은 물에서 잼 |
 | **로그·토픽은 정상인데 Gazebo 창이 Windows 에 안 뜸** (`gz sim gui` 프로세스는 살아 있음, `xdotool` 로도 창 없음) | WSLg 의 창 표시기 `msrdc.exe` 가 30 초마다 재시작을 반복 — `/mnt/wslg/stderr.log` 에 `exited with status` 줄이 쌓임. 리눅스 창이 **전부** 안 뜸 (2026-10-23 노트북, 이틀 켜 둔 뒤) | PowerShell `wsl --shutdown` → 새 터미널. `W03_vrx_lite/check_gui.sh` 가 3 번 이상이면 경고하고, `run_vrx.sh` · `run_vrx_bow.sh` 가 띄우기 전에 멈춤 (`IGNORE_GUI=1` 로 무시). 확인은 `xeyes` 창 또는 전체 화면 캡처 |
+| 목표·경로가 부표·부두에 닿는지 모름 | `sydney_regatta` 스폰 둘레 고정 물체 — 부표 여섯 개 ENU x=-528, y=186~191 (스폰 162 기준 북 24~29 · 동 4 m), 말뚝·안테나 y=148~157 (남쪽 해안). 좌표는 `gz model -m <이름> -p` (2026-10-23) | `W06_vrx_run` 이 `가장 가까이 지난 물체` 를 찍음 — 중심선 기준 5 m 안이면 목표를 옮김. 6주차 전 단 6.9 m 이상 |
 | 배가 두 척 · 토픽 값이 튐 · `pkill` 뒤에도 `gz sim server` 가 남음 | 고아 서버가 **SIGTERM 을 무시** (2026-10-16 실측) | `W03_vrx_lite/stop_vrx.sh` — TERM 3 초 뒤 KILL, 0 개 확인 |
 | `*_step_compare` 가 VRX 를 떠 있는데도 오프라인만 돔 | `WXX_setup` 이 환경변수를 `7` 로 박고, PC 의 WSL·프로필은 `8` | 측정 스크립트 첫머리에서 프로필 값으로 `setenv` (`W04_vrx_record` 와 같은 블록). 이 노트북은 2026-09-25 현재 WSL·프로필 모두 8 |
 

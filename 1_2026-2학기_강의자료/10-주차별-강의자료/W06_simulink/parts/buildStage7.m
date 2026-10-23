@@ -44,7 +44,7 @@ function [chain, boxes] = buildStage7(m)
     addOuterLoop    (m,  700,  60);
     addInnerLoop    (m, 1150, 280, true);   % true = BowOn 스위치 (2단에서 생긴 뒤 계속 붙어 있다)
     addThrusters    (m, 1600, 280);
-    addMotionModel  (m, 2050, 280);
+    plant('add', m, 2050, 280);   % 오프라인: MotionModel / VRX 판: Gazebo 토픽 (plant.m)
 
     %  유도부가 속도 u·v 도 받는다 — 도착 판정에 속도 조건이 들어 있다
     %  (5단 유도부는 거리만 본다. addGuidanceFront 머리글 참조)
@@ -58,11 +58,11 @@ function [chain, boxes] = buildStage7(m)
     end
 
     wireThrusterGotos(m, 1840, 290);
-    feedForces(m, 'MotionModel', 1980, 300);
-    wireNavGotos(m, 'MotionModel', 2410, 280);
+    feedForces(m, plant('in'), 1980, 300);
+    wireNavGotos(m, plant('out'), 2410 + plant('dx'), 280);
 
     boxes = addBoxes(m, {'psi_ref','psi'; 'x_ref','x_n'; 'y_ref','y_n'; ...
-                         '','u'; '','v'}, 2510, 60, true);
+                         '','u'; '','v'}, 2510 + plant('dx'), 60, true);
 
     sl_note(m, 'n7', ['W06 7단  —  전진 접안 (선수를 선석으로 들이댄다)' newline ...
         '새로 생긴 것 : 접안 선수각이 선석 방위에 수직 (psi_f = psi_t - side*90 deg)' newline ...
@@ -72,5 +72,5 @@ function [chain, boxes] = buildStage7(m)
         '실행 전: W06_setup (stage = 7)'], 250, -190);
 
     save_system(m);  close_system(m);
-    chain = {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'};
+    chain = plant('chain', {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'});
 end

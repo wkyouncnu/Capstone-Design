@@ -53,6 +53,7 @@ bash _tools/git_autopull.sh
   - 아직 안 올린 내 커밋은 받은 커밋 뒤로 옮긴다(rebase)
   - 충돌하면 되돌리고(abort) 알리기만 한다 → 직접 `git pull --rebase` 후 충돌 해결
 - 작업 중에도 **푸시 직전에 한 번 더** 받는다 — `git_autopush.sh` 가 거절당하면(`fetch first`) 이 스크립트부터
+- **끝날 때도 받는다** (교수 지시 2026-10-23) — Stop 훅의 `hook_stop.sh` 가 PDF 동기화 → `git_autopull.sh` → `git_autopush.sh` 순으로 부른다. 손으로 끝낼 때도 같은 순서
 - 2026-10-23 확인: 한 커밋 뒤처진 clone 에 로컬 수정을 남긴 채 돌려 → 최신 커밋을 받고 수정도 그대로 남음. 최신일 때는 출력 없음
 
 ## 1. 처음 한 번 — SSH 키를 GitHub 에 등록
