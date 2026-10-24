@@ -5,7 +5,8 @@ function S = W06_vrx_run(k, T_end)
 %   >> W06_vrx_run(2)        % 2단 — 순수 횡이동                (W06_2_sway_vrx)
 %   >> W06_vrx_run(3)        % 3단 — 추진기 동역학              (W06_3_thrust_vrx)
 %   >> W06_vrx_run(4)        % 4단 — 도착 판정과 정지           (W06_4_stop_vrx)
-%   >> W06_vrx_run(5)        % 5단 — 옆걸음 접안 = 6단 W06_6_vrx (W06_6_vrx_run 과 같음)
+%   >> W06_vrx_run(5)        % 5단 — 옆걸음 접안                (W06_5_dock_vrx)
+%                            %        6단이 돌리는 모델이 이것이다 (W06_6_vrx_run 과 같음)
 %   >> W06_vrx_run(7)        % 7단 — 전진 접안                  (W06_7_front_vrx)
 %   >> W06_vrx_run(8)        % 8단 — NED 위치제어 접안          (W06_8_ned_vrx)
 %   >> W06_vrx_run(1, 90)    % 실행 길이를 직접 [s]
@@ -26,9 +27,9 @@ function S = W06_vrx_run(k, T_end)
 %     4. 결과 그림 + 동기 점검 k + 걸림 검사(육지·부두·부표에 닿았는가)
 %     5. 같은 k 단 오프라인을 **같은 초기 선수각**으로 돌려 여섯 칸 대조
 %
-%   남는 그림 (img/)
-%     5단 : W06_6_vrx_result.png · W06_vrx_vs_offline.png   (강의노트 G-7 과 같은 이름)
-%     그 밖: W06_<k>_vrx_result.png · W06_<k>_vrx_vs_offline.png
+%   남는 그림 (img/) — 단마다 이름 규칙이 같다
+%     W06_<k>_vrx_result.png        VRX 단독 결과 (W06_plot 이 그리는 네 칸)
+%     W06_<k>_vrx_vs_offline.png    오프라인 ↔ VRX 여섯 칸 대조
 
 if nargin < 1, k = 5; end
 if k == 6, k = 5; end                       % 6단 = 5단의 VRX 쌍둥이
@@ -47,8 +48,8 @@ B = @(v) evalin('base', v);                 % W06_setup 이 만든 변수를 읽
 %% 0. 설정 — k 단의 목표·게인 그대로
 setup_stage(k, T_end);
 offline = B('mdl');
-if k == 5, twin = 'W06_6_vrx'; else, twin = [offline '_vrx']; end
-if k == 5, tag = '6'; else, tag = sprintf('%d', k); end
+twin = [offline '_vrx'];                    % 단마다 이름 규칙이 같다 (6단 예외가 없다)
+tag  = sprintf('%d', k);
 dom = B('ros_domain_id');
 
 %  Simulink 블록은 ROS 네트워크 프로필의 Domain ID 를, ros2* 함수는 환경변수를
@@ -176,7 +177,6 @@ sep = hypot(V.x(1:numel(tm)) - interp1(O.t, O.x, tm), ...
 S.sep = [mean(sep) max(sep)];
 
 f2 = sprintf('W06_%s_vrx_vs_offline.png', tag);
-if k == 5, f2 = 'W06_vrx_vs_offline.png'; end
 draw_compare(k, V, O, S, So, tm, sep, fullfile(IMG, f2));
 fprintf('6) 대조 그림 저장: img/%s\n', f2);
 

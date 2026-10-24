@@ -32,6 +32,11 @@ function [chain, boxes] = buildStage5(m)
 %
 %   모델에서 달라지는 것은 유도부 하나뿐이다. 바깥 고리·안쪽 고리·추진기·
 %   운동모델·상자는 4단 그대로다. 사다리의 값어치가 여기서 드러난다.
+%
+%   VRX 쌍둥이 W06_5_dock_vrx
+%     이 빌더 하나가 두 모델을 만든다. 운동모델 자리만 Gazebo 토픽으로 바뀌고
+%     (plant.m) 유도부·고리 둘·추력배분은 글자까지 같다. 6단이 그 쌍둥이를
+%     실물로 돌리는 단이다 — W06_vrx_run(5) 또는 W06_6_vrx_run.
     sl_fresh(m);
     sl_solver(m, 'T_run');
 
@@ -39,7 +44,7 @@ function [chain, boxes] = buildStage5(m)
     addOuterLoop   (m,  700,  60);
     addInnerLoop   (m, 1150, 280, true);    % true = BowOn 스위치 (2단에서 생긴 뒤 계속 붙어 있다)
     addThrusters   (m, 1600, 280);
-    addMotionModel (m, 2050, 280);
+    plant('add', m, 2050, 280);   % 오프라인: MotionModel / VRX 판: Gazebo 토픽 (plant.m)
 
     wireGuid(m, {'x_n','y_n','psi'}, ...
                 {'x_ref','y_ref','psi_ref','gate','phase'}, 520, 60);
@@ -51,11 +56,11 @@ function [chain, boxes] = buildStage5(m)
     end
 
     wireThrusterGotos(m, 1840, 290);
-    feedForces(m, 'MotionModel', 1980, 300);
-    wireNavGotos(m, 'MotionModel', 2410, 280);
+    feedForces(m, plant('in'), 1980, 300);
+    wireNavGotos(m, plant('out'), 2410 + plant('dx'), 280);
 
     boxes = addBoxes(m, {'psi_ref','psi'; 'x_ref','x_n'; 'y_ref','y_n'; ...
-                         '','u'; '','v'}, 2510, 60, true);
+                         '','u'; '','v'}, 2510 + plant('dx'), 60, true);
 
     sl_note(m, 'n5', ['W06 5단  —  단계 전이로 접안 (목표가 하나가 아니다)' newline ...
         '새로 생긴 것 : 유도부가 task_mode 로 과업을 고르고 단계마다 목표를 바꿈' newline ...
@@ -65,5 +70,5 @@ function [chain, boxes] = buildStage5(m)
         '실행 전: W06_setup (stage = 5)'], 250, -190);
 
     save_system(m);  close_system(m);
-    chain = {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'};
+    chain = plant('chain', {'Guidance','OuterLoop','InnerLoop','Thrusters','MotionModel'});
 end

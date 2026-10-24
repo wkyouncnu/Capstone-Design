@@ -28,9 +28,12 @@ if ~isequal(getappdata(0, 'W06_skip_run'), true), clc; end
 %       3    W06_3_thrust      추진기 동역학 (추력<->회전수, 모터 지연, 포화)
 %       4    W06_4_stop        도착 판정과 정지 게이트
 %       5    W06_5_dock        단계 전이 (접근 -> 선수각 정렬 -> 횡이동 접안)
-%       6    W06_6_vrx         Gazebo 연동 (운동모델만 실물로 바뀐다)
+%       6    W06_5_dock_vrx    Gazebo 연동 — 5단의 쌍둥이를 실물로 돌린다
 %       7    W06_7_front       전진 접안 (bow-first)
 %       8    W06_8_ned         NED 좌표계 위치제어 접안
+%
+%     단마다 오프라인과 VRX 쌍둥이가 쌍이다 (W06_<단>_<이름> ↔ 같은 이름 + _vrx).
+%     6단만 오프라인 판이 없다 — 5단의 쌍둥이를 Gazebo 로 돌리는 단이기 때문이다
 % =====================================================================
 stage = 1;
 
@@ -293,7 +296,7 @@ Ts_ctrl = 0.05;                          % 제어 주기 [s]
 beta_c  = deg2rad(current_direction);    % 조류 방향 [rad]
 
 model_name = {'W06_1_point','W06_2_sway','W06_3_thrust','W06_4_stop', ...
-              'W06_5_dock', 'W06_6_vrx', 'W06_7_front','W06_8_ned'};
+              'W06_5_dock', 'W06_5_dock_vrx', 'W06_7_front','W06_8_ned'};
 stage_name = {'목표 자세로 가서 선다','순수 횡이동','추진기 동역학','도착 판정과 정지', ...
               '접안 (옆걸음)','Gazebo 연동','전진 접안','NED 위치제어 접안'};
 mdl = model_name{stage};

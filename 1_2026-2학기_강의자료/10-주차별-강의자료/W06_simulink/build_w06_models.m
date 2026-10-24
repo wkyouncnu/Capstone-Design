@@ -6,7 +6,7 @@ function build_w06_models(stages, which)
 %     >> build_w06_models(1)         % 1단만
 %     >> build_w06_models(1:3)       % 1~3단
 %     >> build_w06_models(1:8,'vrx') % VRX 쌍둥이만 (W06_1_point_vrx ...)
-%     >> build_w06_models(1:8,'off') % 오프라인 여덟 개만
+%     >> build_w06_models(1:8,'off') % 오프라인 일곱 개만
 %
 %   예제마다 오프라인과 VRX 가 **쌍**이다 (스킬 규칙 20). 같은 buildStage<N> 이
 %   둘을 만들고, 다른 것은 운동모델 자리 하나뿐이다 (parts/plant.m)
@@ -16,9 +16,12 @@ function build_w06_models(stages, which)
 %     W06_2_sway        W06_2_sway_vrx        W06_vrx_run(2)
 %     W06_3_thrust      W06_3_thrust_vrx      W06_vrx_run(3)
 %     W06_4_stop        W06_4_stop_vrx        W06_vrx_run(4)
-%     W06_5_dock        W06_6_vrx  (6단)      W06_vrx_run(5) = W06_6_vrx_run
+%     W06_5_dock        W06_5_dock_vrx        W06_vrx_run(5) = W06_6_vrx_run
 %     W06_7_front       W06_7_front_vrx       W06_vrx_run(7)
 %     W06_8_ned         W06_8_ned_vrx         W06_vrx_run(8)
+%
+%   6단은 모델을 더하는 단이 아니다 — 5단의 쌍둥이 W06_5_dock_vrx 를 Gazebo
+%   에 붙여 돌리는 단이다. 그래서 오프라인 모델은 일곱 개, 쌍둥이도 일곱 개다
 %
 %   쉬운 모델부터 하나씩 쌓는다. 한 단계에 새로 생기는 것은 하나뿐이다.
 %
@@ -27,7 +30,7 @@ function build_w06_models(stages, which)
 %     3  W06_3_thrust   추진기 동역학 (추력<->회전수, 모터 지연, 포화)
 %     4  W06_4_stop     도착 판정과 정지 게이트
 %     5  W06_5_dock     단계 전이 (접근 -> 선수각 정렬 -> 횡이동 접안)
-%     6  W06_6_vrx      Gazebo 연동 (운동모델만 실물로 바뀐다)
+%     6  (5단의 쌍둥이) Gazebo 연동 — 운동모델 자리만 실물로 바뀐다
 %     7  W06_7_front    전진 접안 (bow-first)
 %     8  W06_8_ned      NED 좌표계 위치제어 접안
 %
@@ -56,11 +59,14 @@ function build_w06_models(stages, which)
     do_off = ~strcmp(which, 'vrx');
     do_vrx = ~strcmp(which, 'off');
 
+    %  6 번째 자리는 5단의 쌍둥이다 — 6단은 그 모델을 Gazebo 로 돌리는 단이고
+    %  오프라인 판이 따로 없다 (아래 루프에서 건너뛴다)
     name = {'W06_1_point','W06_2_sway','W06_3_thrust','W06_4_stop', ...
-            'W06_5_dock', 'W06_6_vrx', 'W06_7_front','W06_8_ned'};
+            'W06_5_dock', 'W06_5_dock_vrx', 'W06_7_front','W06_8_ned'};
 
     for s = stages(:)'
         if ~do_off, break; end
+        if s == 6, continue; end        % 6단은 5단 쌍둥이를 쓴다 — 새로 만들 것이 없다
         m  = name{s};
         bs = str2func(sprintf('buildStage%d', s));
         [chain, boxes] = bs(m);
@@ -69,8 +75,8 @@ function build_w06_models(stages, which)
     end
 
     %  VRX 쌍둥이 — 같은 빌더로, 운동모델 자리만 Gazebo 토픽으로 바꾼다 (parts/plant.m)
-    %    5단의 쌍둥이는 6단(W06_6_vrx) 이 맡는다. 오프라인 모델은 다시 만들지 않는다
-    for s = intersect(stages(:)', [1 2 3 4 7 8])
+    %    6단은 5단의 쌍둥이를 그대로 쓰므로 목록에서 빠진다 (중복 생성 방지)
+    for s = intersect(stages(:)', [1 2 3 4 5 7 8])
         if ~do_vrx, break; end
         m  = [name{s} '_vrx'];
         bs = str2func(sprintf('buildStage%d', s));
@@ -92,9 +98,9 @@ function build_w06_models(stages, which)
     %    속이 아예 다르므로 섞지 않고 OuterLoopNED · InnerLoopNED 로 따로 뽑는다
     %    (8단의 유도부·추진기·운동모델은 5단과 같은 그림이다)
     shots = cell(0,3);
-    %    6단은 빼 둔다 — 그 단계의 플랜트가 Gazebo 라 MotionModel 이 없고, 사슬
-    %    끝이 CmdPublisher · PoseSubscriber 다. 서브시스템 도면은 선체고정 사슬이
-    %    모두 들어 있는 7단에서 뽑는다 (6단의 유도부·고리·추진기는 5단과 같은 그림)
+    %    6단은 빼 둔다 — 오프라인 모델이 없는 단이고, 쓰는 쌍둥이는 플랜트가
+    %    Gazebo 라 MotionModel 이 없다 (사슬 끝이 CmdPublisher · PoseSubscriber).
+    %    도면은 선체고정 사슬이 모두 들어 있는 7단에서 뽑는다
     body  = stages(stages <= 7 & stages ~= 6);
     if ~isempty(body)
         shots = [shots; {name{max(body)}, '', ...
