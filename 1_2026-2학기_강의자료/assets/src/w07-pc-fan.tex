@@ -1,0 +1,109 @@
+% assets/w07-pc-fan.svg — p_c 를 바꾸면 그 자리의 화살표가 어떻게 돌아가는가
+%
+%   bash _tools/tikz2svg.sh assets/src/w07-pc-fan.tex assets/w07-pc-fan.svg
+%
+% 요점: 같은 자리(r = 32 m, r_d = 25 m)에서 p_c 만 바꿔 본다.
+%       부호는 화살표를 e_theta 의 어느 쪽에 놓을지를, 크기는 e_r 반대쪽에
+%       얼마나 가깝게 놓을지를 정한다.
+%
+%   alpha = atan2(p_c * r, -(r - r_d)) = atan2(p_c*32, -7)
+%     p_c =  0.150 -> atan2( 4.80, -7) =  145.6 deg
+%     p_c =  0.313 -> atan2(10.02, -7) =  124.9 deg
+%     p_c =  1.000 -> atan2(32.00, -7) =  102.3 deg
+%     p_c = -0.313 -> atan2(-10.02,-7) = -124.9 deg
+%     p_c = -1.000 -> atan2(-32.00,-7) = -102.3 deg
+%   TikZ 각 = (90 - theta) - alpha = 40 - alpha
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\Rd{32.5}
+\def\Rp{41.6}
+\def\Aer{40}
+\def\Aet{-50}
+
+\coordinate (O) at (0,0);
+\coordinate (P) at (40:\Rp mm);
+
+% ---- 목표 원 · 중심 -------------------------------------------------------
+\draw[pathc, line width=2.0pt, opacity=0.16] (O) circle (\Rd mm);
+\fill[ink] (O) circle (1.2);
+\node[note, fill=white, inner sep=0.6pt, anchor=north] at (2.0,-2.0) {중심};
+\draw[pathc, line width=0.7pt] (O) -- (215:\Rd mm);
+\node[note, pathc, fill=white, inner sep=0.8pt] at (215:19mm) {$r_d = 25$\,m};
+\draw[ink, line width=0.6pt, densely dotted] (O) -- (P);
+\node[note, fill=white, inner sep=0.8pt] at (40:27mm) {$r = 32$\,m};
+
+% ---- 배 자리의 두 기준 방향 -----------------------------------------------
+\draw[soft, line width=0.4pt, densely dashed, -{Stealth[length=3pt,width=2.4pt]}]
+      (P) -- ++(\Aer:17mm);
+\node[note, anchor=south west, inner sep=1pt] at ($(P)+(\Aer:17.5mm)$) {$\hat{e}_r$};
+\draw[soft, line width=0.4pt, densely dashed, -{Stealth[length=3pt,width=2.4pt]}]
+      (P) -- ++(\Aet:30mm);
+\node[note, anchor=west, inner sep=1pt] at ($(P)+(\Aet:31mm)$) {$\hat{e}_\theta$};
+
+% ---- p_c > 0 — 시계 방향 ---------------------------------------------------
+\foreach \pc/\dir/\lab in {0.15/-105.6/{$p_c = 0.15$}, 0.313/-84.9/{$p_c = 0.313$}, 1.0/-62.3/{$p_c = 1.0$}}{
+  \draw[guid, line width=1.0pt, -{Stealth[length=4.5pt,width=3.5pt]}]
+       (P) -- ++(\dir:26mm);
+}
+\node[note, guid, anchor=north east, inner sep=1pt] at ($(P)+(-105.6:27mm)$) {$p_c = 0.15$};
+\node[note, guid, anchor=north,      inner sep=1pt] at ($(P)+(-84.9:27.5mm)$) {$0.313$};
+\node[note, guid, anchor=north west, inner sep=1pt] at ($(P)+(-62.3:27mm)$) {$1.0$};
+
+% ---- p_c < 0 — 반시계 방향 -------------------------------------------------
+\foreach \dir in {164.9, 142.3}{
+  \draw[errc, line width=1.0pt, -{Stealth[length=4.5pt,width=3.5pt]}]
+       (P) -- ++(\dir:26mm);
+}
+\node[note, errc, anchor=east,       inner sep=1pt] at ($(P)+(164.9:27mm)$) {$p_c = -0.313$};
+\node[note, errc, anchor=south east, inner sep=1pt] at ($(P)+(142.3:27mm)$) {$-1.0$};
+
+% ---- 배 ---------------------------------------------------------------------
+\fill[ink] (P) circle (1.6);
+\node[sname, anchor=south, fill=white, inner sep=1pt] at ($(P)+(0,2.2)$) {배};
+
+% ---- alpha 호 두 개 (양·음 각각 하나만) ------------------------------------
+\draw[guid, line width=0.5pt, densely dotted, -{Stealth[length=3pt,width=2.4pt]}]
+      ($(P)+(\Aer:11mm)$) arc (\Aer:-84.9:11mm);
+\node[note, guid, fill=white, inner sep=0.8pt] at ($(P)+(-22:13mm)$) {$\alpha>0$};
+\draw[errc, line width=0.5pt, densely dotted, -{Stealth[length=3pt,width=2.4pt]}]
+      ($(P)+(\Aer:8mm)$) arc (\Aer:164.9:8mm);
+\node[note, errc, fill=white, inner sep=0.8pt] at ($(P)+(104:10mm)$) {$\alpha<0$};
+
+% ---- 회전 방향 미니 그림 (왼쪽 아래) ---------------------------------------
+\begin{scope}[shift={(-46,-46)}]
+  \draw[guid, line width=1.2pt, -{Stealth[length=7pt,width=5pt]}]
+        (120:11mm) arc (120:-170:11mm);
+  \node[note, guid, anchor=north, text width=26mm, align=center] at (0,-13.5)
+       {$p_c>0$\\ 시계 방향};
+\end{scope}
+\begin{scope}[shift={(-10,-46)}]
+  \draw[errc, line width=1.2pt, -{Stealth[length=7pt,width=5pt]}]
+        (60:11mm) arc (60:350:11mm);
+  \node[note, errc, anchor=north, text width=26mm, align=center] at (0,-13.5)
+       {$p_c<0$\\ 반시계 방향};
+\end{scope}
+
+% ---- 읽는 법 ---------------------------------------------------------------
+\node[anchor=north west, text width=66mm] at (28,-34)
+     {\small $\alpha = \operatorname{atan2}\!\big(p_c\,r,\; -(r-r_d)\big)$};
+
+\node[note, anchor=north west, text width=68mm] at (28,-43)
+     {\textbf{부호} — $\alpha$ 가 $\hat{e}_\theta$ 쪽(양)인지 반대쪽(음)인지만 바뀐다.
+      거리를 좁히는 $\dot{r}$ 성분은 그대로다\\[2pt]
+      \textbf{크기} — $|p_c|$ 가 작을수록 $\alpha$ 가 $180^\circ$ 에 가까워진다.
+      $180^\circ$ 는 $\hat{e}_r$ 의 정반대 = 중심을 곧장 향함\\[2pt]
+      $|p_c|$ 0.15 / 0.313 / 1.0 $\rightarrow$ $\alpha$ $145.6^\circ$ / $124.9^\circ$ / $102.3^\circ$\\[2pt]
+      $|p_c|$ 가 커질수록 $\alpha \rightarrow 90^\circ$ — 거의 돌기만 하고 원으로 붙지 않는다};
+
+\node[wnote, anchor=north west, text width=112mm] at (-50,-72)
+     {$r$ 가 바뀌면 같은 $p_c$ 라도 $\alpha$ 가 바뀐다 — 멀리 있을수록 $-(r-r_d)$ 가 커져
+      $\alpha$ 가 $180^\circ$ 쪽으로 간다. 그래서 먼 데서는 중심 쪽으로 곧장 오고,
+      원에 가까워질수록 접선 쪽으로 눕는다. 이것이 한 식으로 접근과 선회를 같이 처리하는 방식이다};
+
+\end{tikzpicture}
+\end{document}

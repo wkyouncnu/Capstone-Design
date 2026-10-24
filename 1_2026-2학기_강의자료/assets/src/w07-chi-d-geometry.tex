@@ -1,0 +1,153 @@
+% assets/w07-chi-d-geometry.svg — 식 (13) 의 각 항을 그림에서 찾는다
+%
+%   bash _tools/tikz2svg.sh assets/src/w07-chi-d-geometry.tex assets/w07-chi-d-geometry.svg
+%
+% 요점: chi_d = theta + atan2(r*thetadot, rdot) 의 글자 네 개가 각각
+%       그림의 어느 선·어느 호인지 한 장에서 보이게 한다.
+%
+% 좌표: 화면 위 = 북(x), 오른쪽 = 동(y). TikZ 각은 동에서 반시계,
+%       theta 와 chi_d 는 북에서 시계로 잰다 -> TikZ 각 = 90 - (각).
+%       단위벡터 e_theta 는 theta 가 커지는 쪽 = 화면에서 시계방향.
+%
+% 숫자는 식 (9) 에 본 과목 값을 넣어 계산한 것이다.
+%   r_d = 25 m, p_c = 0.313, v_d = 1.5 m/s, r = 32 m
+%   rdot      = -1.5*(32-25)/sqrt(7^2 + (0.313*32)^2) = -0.859 m/s
+%   r*thetadot=  1.5*0.313*32/sqrt(...)               =  1.229 m/s
+%   alpha = atan2(1.229, -0.859) = 124.9 deg
+%   theta = 50 deg  ->  chi_d = 174.9 deg (거의 정남)
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\Rd{32.5}        % 목표 반경 25 m * 1.3 mm/m
+\def\Rp{41.6}        % 배의 거리 32 m * 1.3 mm/m
+\def\Ath{40}         % 배 위치의 TikZ 각 = 90 - theta(50)
+\def\Avel{-84.9}     % 속도의 TikZ 각 = 90 - chi_d(174.9)
+\def\Aer{40}         % e_r 의 TikZ 각 = 90 - theta
+\def\Aet{-50}        % e_theta 의 TikZ 각 = -theta
+
+\coordinate (O) at (0,0);
+\coordinate (P) at (\Ath:\Rp mm);
+
+% ---- N · E 축 -------------------------------------------------------------
+\begin{scope}[shift={(-48,34)}]
+  \draw[axis, -{Stealth[length=3.5pt,width=2.8pt]}] (0,0) -- (0,9);
+  \draw[axis, -{Stealth[length=3.5pt,width=2.8pt]}] (0,0) -- (9,0);
+  \node[font=\small, anchor=south] at (0,9.3) {$x$ (북)};
+  \node[font=\small, anchor=west]  at (9.3,0) {$y$ (동)};
+  \node[note, anchor=north west, text width=34mm] at (-1,-2.5)
+       {각은 모두 북에서 \textbf{시계} 방향};
+\end{scope}
+
+% ---- 목표 원 --------------------------------------------------------------
+\draw[pathc, line width=2.0pt, opacity=0.16] (O) circle (\Rd mm);
+\draw[pathc, line width=0.7pt] (O) -- (205:\Rd mm);
+\node[note, pathc, fill=white, inner sep=0.8pt] at (205:19mm) {$r_d$};
+\node[note, pathc, anchor=east, fill=white, inner sep=0.8pt] at (200:37mm) {목표 원};
+
+% ---- 중심 · 북 기준선 · theta ---------------------------------------------
+\fill[ink] (O) circle (1.2);
+\node[note, fill=white, inner sep=0.6pt, anchor=north east] at (-1.5,-1.5) {중심 $(x_c, y_c)$};
+\draw[axis, densely dotted] (O) -- (90:46mm);
+\node[note, anchor=south] at (90:47mm) {북};
+\draw[errc, line width=0.6pt, -{Stealth[length=3pt,width=2.4pt]}]
+      (90:14mm) arc (90:\Ath:14mm);
+\node[note, errc, fill=white, inner sep=0.8pt] at (65:17.5mm) {$\theta$};
+\node[note, errc, anchor=west, text width=31mm] at (-47,22)
+     {$\theta$ — 중심에서 배를 본 \textbf{방위}. 북에서 시계로 잰 각 ($50^\circ$)};
+\draw[errc, line width=0.35pt, densely dotted] (-15,22) -- (62:15.5mm);
+
+% ---- r ---------------------------------------------------------------------
+\draw[ink, line width=0.7pt, -{Stealth[length=4pt,width=3pt]}] (O) -- (P);
+\node[sname, fill=white, inner sep=1pt] at (\Ath:26mm) {$r$};
+
+% ---- 배 위치의 두 단위 방향 -----------------------------------------------
+\draw[soft, line width=0.4pt, densely dashed, -{Stealth[length=3pt,width=2.4pt]}]
+      (P) -- ++(\Aer:20mm);
+\node[note, anchor=south west, inner sep=1pt] at ($(P)+(\Aer:20.5mm)$) {$\hat{e}_r$};
+\draw[soft, line width=0.4pt, densely dashed, -{Stealth[length=3pt,width=2.4pt]}]
+      (P) -- ++(\Aet:28mm);
+\node[note, anchor=west, inner sep=1pt] at ($(P)+(\Aet:29mm)$) {$\hat{e}_\theta$};
+
+% ---- 두 성분과 그 합 -------------------------------------------------------
+% rdot 은 음수이므로 e_r 의 반대쪽 = 중심 쪽으로 그린다
+\draw[guid, line width=0.8pt, -{Stealth[length=4pt,width=3pt]}]
+      (P) -- ++(\Aer+180:15.5mm);
+\node[note, guid, anchor=east, fill=white, inner sep=0.8pt] at ($(P)+(\Aer+180:16.5mm)$)
+     {$\dot{r}<0$};
+\draw[thr, line width=0.8pt, -{Stealth[length=4pt,width=3pt]}]
+      (P) -- ++(\Aet:22.1mm);
+\node[note, thr, anchor=west, fill=white, inner sep=0.8pt] at ($(P)+(\Aet:16mm)+(2.6,2.2)$)
+     {$r\dot{\theta}>0$};
+% 평행사변형 — 두 성분이 합쳐져 속도가 된다
+\draw[soft, line width=0.35pt, densely dotted]
+      ($(P)+(\Aer+180:15.5mm)$) -- ($(P)+(\Avel:27mm)$)
+      -- ($(P)+(\Aet:22.1mm)$);
+% 합 = 속도. 크기는 언제나 v_d
+\draw[plant, line width=1.3pt, -{Stealth[length=5pt,width=4pt]}]
+      (P) -- ++(\Avel:27mm);
+\node[sname, plant, anchor=west, fill=white, inner sep=1pt] at ($(P)+(\Avel:28mm)$)
+     {$v_d$};
+
+% ---- 배 ---------------------------------------------------------------------
+\fill[errc] (P) circle (1.6);
+\node[sname, errc, anchor=east, fill=white, inner sep=1pt] at ($(P)+(-2.2,3.0)$)
+     {배 $(x, y)$};
+
+% ---- alpha = atan2(r*thetadot, rdot) ---------------------------------------
+\draw[thr, line width=0.6pt, -{Stealth[length=3pt,width=2.4pt]}]
+      ($(P)+(\Aer:10mm)$) arc (\Aer:\Avel:10mm);
+\node[note, thr, fill=white, inner sep=0.8pt] at ($(P)+(-22:12.5mm)$) {$\alpha$};
+
+% ---- chi_d — 배 자리에서 북에서 시계로 ------------------------------------
+\draw[axis, densely dotted] (P) -- ++(0,24);
+\node[note, anchor=south, inner sep=1pt] at ($(P)+(0,24.3)$) {북};
+\draw[guid, line width=0.6pt, densely dotted, -{Stealth[length=3pt,width=2.4pt]}]
+      ($(P)+(90:19mm)$) arc (90:\Avel:19mm);
+\node[note, guid, fill=white, inner sep=0.8pt] at ($(P)+(10:21.5mm)$) {$\chi_d$};
+
+% ---- 속도 삼각형 확대 (왼쪽 아래) -----------------------------------------
+\begin{scope}[shift={(-46,-54)}]
+  \node[sname, anchor=south west] at (-2,27) {속도 삼각형 — $\alpha$ 는 이 직각삼각형의 각};
+  \draw[axis, -{Stealth[length=3pt,width=2.4pt]}] (-18,0) -- (12,0);
+  \draw[axis, -{Stealth[length=3pt,width=2.4pt]}] (0,-4) -- (0,25);
+  \node[note, anchor=north] at (12,-0.8) {$\hat{e}_r$ 쪽 $\rightarrow$};
+  \node[note, anchor=east] at (-0.8,24) {$\uparrow\ \hat{e}_\theta$ 쪽};
+  % rdot = -0.859 m/s -> 왼쪽 15.5 mm, r*thetadot = 1.229 -> 위 22.1 mm
+  \draw[guid, line width=0.8pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (-15.5,0);
+  \draw[thr,  line width=0.8pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,22.1);
+  \draw[soft, line width=0.35pt, densely dotted] (-15.5,0) -- (-15.5,22.1) -- (0,22.1);
+  \draw[plant, line width=1.3pt, -{Stealth[length=5pt,width=4pt]}] (0,0) -- (-15.5,22.1);
+  \draw[thr, line width=0.6pt, -{Stealth[length=3pt,width=2.4pt]}] (8,0) arc (0:125:8);
+  \node[note, thr] at (3.0,4.0) {$\alpha$};
+  \node[note, guid, anchor=north] at (-8,-1.2) {$-0.86$};
+  \node[note, thr, anchor=west] at (0.8,12) {$1.23$};
+  \node[note, plant, anchor=west] at (-9.5,16.5) {$1.5$};
+  \node[note, anchor=north west, text width=40mm] at (-18,-5)
+       {$r=32$\,m 에서 식 (9) 로 계산한 값 [m/s].\\
+        $\alpha = \operatorname{atan2}(1.23,\,-0.86) = 124.9^\circ$};
+\end{scope}
+
+% ---- 글자 ↔ 그림 대응표 ---------------------------------------------------
+\node[anchor=north west, text width=76mm] at (-2,-27)
+     {\small $\chi_d \;=\; \theta \;+\; \underbrace{\operatorname{atan2}\!\left(r\dot{\theta},\ \dot{r}\right)}_{\textstyle \alpha}$};
+
+\node[note, anchor=north west, text width=78mm] at (-2,-40)
+     {$r$ — 중심에서 배까지 거리 [m]. 그림의 검은 화살표\\[1pt]
+      $\theta$ — 중심에서 본 배의 방위. 중심에 있는 주황 호\\[1pt]
+      $\dot{r}$ — $\hat{e}_r$ 방향 속도 성분. 지금은 음수라 중심 쪽을 향함\\[1pt]
+      $r\dot{\theta}$ — $\hat{e}_\theta$ 방향 속도 성분. 돌아가는 성분\\[1pt]
+      $\alpha$ — 두 성분이 만드는 각. $\hat{e}_r$ 에서 $\hat{e}_\theta$ 쪽으로 잼\\[1pt]
+      $\chi_d$ — 가야 할 침로. \textbf{배 자리에서} 북에서 시계로 잰 각\\[1pt]
+      $v_d$ — 두 성분의 합. 크기는 어디서나 $v_d$ (식 (9) 의 분모)};
+
+\node[wnote, anchor=north west, text width=78mm] at (-2,-71)
+     {$\theta$ 를 더하는 까닭 — $\alpha$ 는 \textbf{반경 방향에서 잰} 상대 각이고,
+      그 반경 방향 자체가 북에서 $\theta$ 만큼 돌아가 있다.
+      두 각을 더하면 북 기준의 절대 침로가 된다};
+
+\end{tikzpicture}
+\end{document}
