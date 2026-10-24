@@ -1,0 +1,153 @@
+% assets/w07-rdot-rthetadot.svg — rdot 과 r*thetadot 이 그림의 어느 선인가
+%
+%   bash _tools/tikz2svg.sh assets/src/w07-rdot-rthetadot.tex assets/w07-rdot-rthetadot.svg
+%
+% 요점 둘
+%   (1) 짧은 시간 dt 동안 배가 움직인 자취를 두 조각으로 쪼개면 그 둘이 바로
+%       반경 조각(dr)과 호 조각(r*dtheta)이다. 두 조각은 서로 직각이다.
+%   (2) 같은 둘을 속도에서 보면 — 속도 화살표를 두 축에 내린 그림자(정사영)다.
+%
+% 왼쪽 그림의 dtheta 는 보이라고 크게 그린 것이다. 실제로는 아주 작다.
+% 호 길이 = 반경 x 각 (rad) 이므로 r*dtheta 이고, dt 로 나누면 r*thetadot 이다.
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===========================================================================
+% 왼쪽 — 짧은 시간 동안 움직인 자취를 두 조각으로 쪼갠다
+% ===========================================================================
+\begin{scope}[shift={(-48,0)}]
+
+  \def\Rone{42}      % 지금 거리 r
+  \def\Rtwo{34}      % 조금 뒤 거리 r + dr  (dr < 0, 안으로 들어왔다)
+  \def\Aone{72}      % 지금 위치의 TikZ 각
+  \def\Atwo{44}      % 조금 뒤 위치의 TikZ 각 (시계로 돌았다)
+
+  \coordinate (O)  at (0,0);
+  \coordinate (P1) at (\Aone:\Rone mm);
+  \coordinate (Q)  at (\Atwo:\Rone mm);
+  \coordinate (P2) at (\Atwo:\Rtwo mm);
+
+  \node[sname, anchor=south] at (6,50) {$\Delta t$ 동안 움직인 자취를 두 조각으로};
+
+  % 중심과 두 반경선
+  \fill[ink] (O) circle (1.2);
+  \node[note, anchor=north east, inner sep=1pt] at (-1,-1) {중심};
+  \draw[ink, line width=0.6pt] (O) -- (P1);
+  \draw[ink, line width=0.6pt] (O) -- (Q);
+  \node[note, fill=white, inner sep=0.8pt] at (\Aone:24mm) {$r$};
+  \node[note, fill=white, inner sep=0.8pt] at (\Atwo:21mm) {$r+\Delta r$};
+
+  % 중심의 dtheta
+  \draw[errc, line width=0.6pt, -{Stealth[length=3pt,width=2.4pt]}]
+        (\Aone:12mm) arc (\Aone:\Atwo:12mm);
+  \node[note, errc, anchor=west, inner sep=1pt] at (\Atwo+14:14.5mm) {$\Delta\theta$};
+
+  % 호 조각 — 반경을 그대로 둔 채 각만 바뀐 몫
+  \draw[thr, line width=1.2pt, -{Stealth[length=4.5pt,width=3.5pt]}]
+        (\Aone:\Rone mm) arc (\Aone:\Atwo:\Rone mm);
+  \node[note, thr, anchor=south west, text width=30mm] at (\Aone-13:46mm)
+       {호 조각 — 각만 바뀐 몫\\ 길이 $= r\,\Delta\theta$};
+
+  % 반경 조각 — 각을 그대로 둔 채 거리만 바뀐 몫
+  \draw[guid, line width=1.2pt, -{Stealth[length=4.5pt,width=3.5pt]}] (Q) -- (P2);
+  \node[note, guid, anchor=west, text width=26mm] at ($(Q)+(3.0,1.0)$)
+       {반경 조각 — 거리만 바뀐 몫\\ 길이 $= \Delta r$ (지금은 음수)};
+
+  % 두 조각은 직각이다
+  \draw[soft, line width=0.4pt]
+        ($(Q)+(\Atwo+90:2.4mm)$) -- ($(Q)+(\Atwo+90:2.4mm)+(\Atwo+180:2.4mm)$)
+        -- ($(Q)+(\Atwo+180:2.4mm)$);
+
+  % 실제로 간 길 — 두 조각의 합
+  \draw[plant, line width=0.7pt, densely dashed, -{Stealth[length=4pt,width=3pt]}]
+        (P1) -- (P2);
+
+  \fill[errc] (P1) circle (1.5);
+  \node[sname, errc, anchor=south east, inner sep=1.5pt] at ($(P1)+(-0.6,0.8)$) {지금};
+  \fill[plant] (P2) circle (1.5);
+  \node[sname, plant, anchor=north west, inner sep=1.5pt] at ($(P2)+(0.8,-0.6)$)
+       {$\Delta t$ 뒤};
+
+  \node[note, anchor=north west, text width=58mm] at (-26,-14)
+       {두 조각을 $\Delta t$ 로 나누면 그대로 속도 성분이 된다\\[3pt]
+        \textcolor{guid}{$\dfrac{\Delta r}{\Delta t} \rightarrow \dot{r}$}
+        \qquad
+        \textcolor{thr}{$\dfrac{r\,\Delta\theta}{\Delta t} \rightarrow r\dot{\theta}$}};
+
+  \node[note, anchor=north west, text width=52mm] at (-26,-33)
+       {$\Delta\theta$ 는 보이라고 크게 그린 것이다. 실제로는 아주 작고,
+        그때 호 조각은 직선과 구별되지 않는다};
+
+\end{scope}
+
+% ===========================================================================
+% 오른쪽 — 같은 둘을 속도에서 보면 그림자다
+% ===========================================================================
+\begin{scope}[shift={(46,0)}]
+
+  \def\Rp{40}        % 중심에서 배까지
+  \def\Ap{58}        % 배 위치의 TikZ 각
+  \def\Aer{58}       % e_r 방향 = 배 위치 각
+  \def\Aet{-32}      % e_theta 방향 = 그보다 90도 시계
+
+  \coordinate (O) at (0,0);
+  \coordinate (P) at (\Ap:\Rp mm);
+
+  \node[sname, anchor=south] at (2,50) {속도 화살표가 두 축에 드리우는 \textbf{그림자}};
+
+  \fill[ink] (O) circle (1.2);
+  \node[note, anchor=north east, inner sep=1pt] at (-1,-1) {중심};
+  \draw[ink, line width=0.6pt, -{Stealth[length=4pt,width=3pt]}] (O) -- (P);
+  \node[note, fill=white, inner sep=0.8pt] at (\Ap:22mm) {$r$};
+
+  % 배 자리의 두 축 — e_r 은 반경선의 연장, e_theta 는 거기에 수직
+  \draw[soft, line width=0.5pt, -{Stealth[length=3.5pt,width=2.8pt]}] (P) -- ++(\Aer:22mm);
+  \node[note, anchor=south west, text width=24mm, inner sep=1pt] at ($(P)+(\Aer:22.5mm)$)
+       {$\hat{e}_r$ — 중심에서 멀어지는 쪽};
+  \draw[soft, line width=0.5pt, -{Stealth[length=3.5pt,width=2.8pt]}] (P) -- ++(\Aet:30mm);
+  \node[note, anchor=north west, inner sep=1pt] at ($(P)+(\Aet:30.5mm)$)
+       {$\hat{e}_\theta$ — 도는 쪽};
+  % 두 축은 직각
+  \draw[soft, line width=0.4pt]
+        ($(P)+(\Aer:3mm)$) -- ($(P)+(\Aer:3mm)+(\Aet:3mm)$) -- ($(P)+(\Aet:3mm)$);
+
+  % 속도 — 안으로 들어오며 도는 중
+  % 각 = \Aer - alpha = 58 - 125 = -67. 두 그림자의 합과 정확히 맞춘 값이다
+  \draw[plant, line width=1.4pt, -{Stealth[length=5pt,width=4pt]}] (P) -- ++(-67:27mm);
+  \node[sname, plant, anchor=west, fill=white, inner sep=1pt] at ($(P)+(-67:28mm)$)
+       {$v_d$};
+  \coordinate (V) at ($(P)+(-67:27mm)$);
+
+  % 그림자 둘 — 수선을 내린다
+  \draw[soft, line width=0.35pt, densely dotted] (V) -- ($(P)+(\Aer+180:15.5mm)$);
+  \draw[soft, line width=0.35pt, densely dotted] (V) -- ($(P)+(\Aet:22.1mm)$);
+
+  \draw[guid, line width=1.2pt, -{Stealth[length=4.5pt,width=3.5pt]}]
+        (P) -- ++(\Aer+180:15.5mm);
+  \node[note, guid, anchor=south east, text width=25mm, align=right]
+       at ($(P)+(\Aer+180:16.5mm)+(0,1.5)$)
+       {$\dot{r}$ — $\hat{e}_r$ 축의 그림자. 지금은 \textbf{뒤쪽}이라 음수};
+
+  \draw[thr, line width=1.2pt, -{Stealth[length=4.5pt,width=3.5pt]}]
+        (P) -- ++(\Aet:22.1mm);
+  \node[note, thr, anchor=north west, text width=25mm] at ($(P)+(\Aet:17mm)+(1.5,-1.5)$)
+       {$r\dot{\theta}$ — $\hat{e}_\theta$ 축의 그림자};
+
+  \node[note, anchor=north west, text width=54mm] at (-30,-14)
+       {$\dot{r}$ 은 \textbf{중심까지 거리가 줄어드는 빠르기},
+        $r\dot{\theta}$ 는 \textbf{중심 둘레를 도는 빠르기}다.
+        두 축이 직각이므로 두 그림자를 다시 합치면 원래 화살표가 된다};
+
+  \node[wnote, anchor=north west, text width=54mm] at (-30,-33)
+       {$\dot{\theta}$ 가 아니라 $r\dot{\theta}$ 인 까닭 — $\dot{\theta}$ 는 각속도
+        [rad/s] 라 속도가 아니다. 호 길이 $=$ 반경 $\times$ 각 이므로
+        $r$ 을 곱해야 [m/s] 가 된다. 같은 각속도라도 바깥에 있을수록 빨리 돌아야 한다};
+
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

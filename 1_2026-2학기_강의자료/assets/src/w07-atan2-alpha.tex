@@ -1,0 +1,131 @@
+% assets/w07-atan2-alpha.svg — atan2 가 왜 그 각인가
+%
+%   bash _tools/tikz2svg.sh assets/src/w07-atan2-alpha.tex assets/w07-atan2-alpha.svg
+%
+% 요점 둘
+%   (1) 배 자리의 두 성분은 서로 직각이다. 그래서 둘은 직각삼각형의 밑변과
+%       높이이고, alpha 는 밑변에서 빗변까지의 각이다. tan(alpha) = 높이/밑변.
+%   (2) 비 하나만으로는 각이 정해지지 않는다. 같은 비를 주는 점이 반대쪽에
+%       하나 더 있고, 그 둘의 침로는 180도 어긋난다. 그래서 atan 이 아니라 atan2.
+%
+% 스케일: 1 m/s = 18 mm  (1-5절 기하 그림의 속도 삼각형과 같다)
+%   rdot = -0.859 -> -15.5 mm,  r*thetadot = 1.229 -> 22.1 mm,  v_d = 1.5 -> 27 mm
+%   alpha = atan2(1.229, -0.859) = 124.9 deg
+%   반대쪽 점 (0.859, -1.229) 의 각 = -55.1 deg,  두 점의 비는 똑같이 -1.43
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===========================================================================
+% 왼쪽 — 두 성분은 직각이다
+% ===========================================================================
+\begin{scope}[shift={(-52,0)}]
+
+  \node[sname, anchor=south] at (-5,34)
+       {두 성분은 서로 \textbf{직각} — 그래서 직각삼각형};
+
+  \draw[axis, -{Stealth[length=3.5pt,width=2.8pt]}] (-24,0) -- (14,0);
+  \draw[axis, -{Stealth[length=3.5pt,width=2.8pt]}] (0,-6) -- (0,29);
+  \node[note, anchor=north] at (13,-1) {$\hat{e}_r$ 쪽};
+  \node[note, anchor=east]  at (-1,28) {$\hat{e}_\theta$ 쪽};
+
+  % 밑변 — rdot (음수라 왼쪽으로)
+  \draw[guid, line width=0.9pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (-15.5,0);
+  \node[note, guid, anchor=north] at (-8,-1.4) {밑변 $=\dot{r}=-0.86$};
+
+  % 높이 — r*thetadot (밑변 끝에서 올린다)
+  \draw[thr, line width=0.9pt, -{Stealth[length=4pt,width=3pt]}] (-15.5,0) -- (-15.5,22.1);
+  \node[note, thr, anchor=east, align=right] at (-17.2,13)
+       {높이 $=r\dot{\theta}$\\$=+1.23$};
+
+  % 직각 표시
+  \draw[soft, line width=0.4pt] (-13.3,0) -- (-13.3,2.2) -- (-15.5,2.2);
+
+  % 빗변 — v_d
+  \draw[plant, line width=1.3pt, -{Stealth[length=5pt,width=4pt]}] (0,0) -- (-15.5,22.1);
+  \node[note, plant, anchor=south west, align=left] at (-7.0,16.0)
+       {빗변 $=v_d$\\$=1.50$};
+
+  % alpha 호
+  \draw[thr, line width=0.6pt, -{Stealth[length=3pt,width=2.4pt]}] (8,0) arc (0:124.9:8);
+  \node[sname, thr, fill=white, inner sep=1pt] at (4.6,9.0) {$\alpha$};
+
+  \node[note, anchor=north west, text width=56mm] at (-24,-9)
+       {$\tan\alpha \;=\; \dfrac{\text{높이}}{\text{밑변}}
+         \;=\; \dfrac{r\dot{\theta}}{\dot{r}}
+         \;=\; \dfrac{1.23}{-0.86} \;=\; -1.43$};
+
+  \node[note, anchor=north west, text width=46mm] at (-24,-24)
+       {밑변이 \textbf{음수}라 화살표가 왼쪽 위를 향한다.
+        그래서 $\alpha$ 는 $90^\circ$ 를 넘는다 ($124.9^\circ$)};
+
+\end{scope}
+
+% ===========================================================================
+% 오른쪽 — 비 하나로는 각이 정해지지 않는다
+% ===========================================================================
+\begin{scope}[shift={(34,0)}]
+
+  \node[sname, anchor=south] at (0,34)
+       {비 $-1.43$ 을 주는 점은 \textbf{둘}이다};
+
+  \draw[axis, -{Stealth[length=3.5pt,width=2.8pt]}] (-26,0) -- (26,0);
+  \draw[axis, -{Stealth[length=3.5pt,width=2.8pt]}] (0,-28) -- (0,29);
+  \node[note, anchor=north] at (25,-1) {$\dot{r}$};
+  \node[note, anchor=east]  at (-1,28) {$r\dot{\theta}$};
+
+  % 같은 기울기 위에 두 점이 있다
+  \draw[soft, line width=0.4pt, densely dashed] (18.5,-26.4) -- (-18.5,26.4);
+
+  % 점 A — 실제로 쓰는 쪽
+  \draw[plant, line width=1.2pt, -{Stealth[length=5pt,width=4pt]}] (0,0) -- (-15.5,22.1);
+  \fill[plant] (-15.5,22.1) circle (1.3);
+  \draw[thr, line width=0.6pt, -{Stealth[length=3pt,width=2.4pt]}] (8,0) arc (0:124.9:8);
+  \node[sname, thr, fill=white, inner sep=1pt] at (4.6,9.4) {$\alpha$};
+  \node[note, plant, anchor=east, text width=29mm, align=right] at (-17,15)
+       {$(\dot{r},\, r\dot{\theta})$\\
+        $= (-0.86,\, +1.23)$\\
+        $\alpha = +124.9^\circ$\\
+        접근하며 시계로 돎};
+
+  % 점 B — 비는 같지만 정반대
+  \draw[errc, line width=1.2pt, -{Stealth[length=5pt,width=4pt]}] (0,0) -- (15.5,-22.1);
+  \fill[errc] (15.5,-22.1) circle (1.3);
+  \draw[errc, line width=0.6pt, -{Stealth[length=3pt,width=2.4pt]}] (13,0) arc (0:-55.1:13);
+  \node[sname, errc, fill=white, inner sep=1pt] at (13.0,-5.2) {$\alpha$};
+  \node[note, errc, anchor=west, text width=29mm] at (17,-15)
+       {$(\dot{r},\, r\dot{\theta})$\\
+        $= (+0.86,\, -1.23)$\\
+        $\alpha = -55.1^\circ$\\
+        멀어지며 반시계로 돎};
+
+  \node[wnote, anchor=north, text width=60mm, align=center] at (0,-34)
+       {두 침로는 정확히 $180^\circ$ 어긋나 있다.
+        $\arctan(-1.43)$ 은 둘 다 $-55.1^\circ$ 로 답한다};
+
+\end{scope}
+
+% ===========================================================================
+% 아래 — 읽는 법
+% ===========================================================================
+\node[sname, anchor=north west] at (-76,-52) {$\operatorname{atan2}$ 를 읽는 법};
+
+\node[note, anchor=north west, text width=66mm] at (-76,-58)
+     {$\operatorname{atan2}(y,\ x)$ 는 \textbf{원점에서 점 $(x,\ y)$ 를 본 각}이다.
+      가로축에서 재고, 범위는 $-180^\circ$ 부터 $180^\circ$ 까지 한 바퀴 전부다.\\[2pt]
+      인수 순서가 \textbf{(세로, 가로)} 로 뒤집혀 있다 — 헷갈리는 자리가 여기다.
+      가로가 $\dot{r}$, 세로가 $r\dot{\theta}$ 이므로
+      $\alpha = \operatorname{atan2}(r\dot{\theta},\ \dot{r})$ 로 쓴다};
+
+\node[note, anchor=north west, text width=66mm] at (-4,-58)
+     {$\arctan$ 으로 쓸 수 없는 까닭 셋\\[2pt]
+      ① 두 성분의 \textbf{부호}를 잃는다 — 위 오른쪽 그림의 두 점을 구별하지 못한다\\[1pt]
+      ② 값의 범위가 $-90^\circ \sim 90^\circ$ 뿐이다. 원을 도는 유도는 한 바퀴가 다 필요하다\\[1pt]
+      ③ $r = r_d$ 일 때 $\dot{r} = 0$ 이라 나눗셈이 터진다.
+      $\operatorname{atan2}$ 는 그 자리에서 $\pm 90^\circ$ 를 그대로 돌려준다};
+
+\end{tikzpicture}
+\end{document}
