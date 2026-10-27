@@ -1,0 +1,147 @@
+% assets/w09-lidar-mount.svg — 선수추진기 WAM-V 에 3D LiDAR 를 어디에 다는가 (실측, 2026-10-27)
+%
+%   bash _tools/tikz2svg.sh assets/src/w09-lidar-mount.tex assets/w09-lidar-mount.svg
+%
+% 이 그림이 말하는 것 하나
+%   라이다 높이는 계산이 아니라 **실측**으로 정했다. 1.6 m 로 계산해 두었더니
+%   들어온 값의 82 % 가 장애물이 아니라 자기 배였다. 윗면이 z=1.765 m 인 전장함
+%   (cpu_cases_link) 때문이다. 1.80 부터 0 % 가 되고, 파도에 기우는 것까지 보아 1.90 으로 둔다.
+%
+% 선체 좌표계 : x 전방, y 좌현, z 상방 (URDF/ROS 관례 — FLU)
+% 화면 : x 오른쪽, z 위쪽.  1 m = 15 mm
+% 측면도의 7.09 m 는 그림이 너무 길어져 치수선을 끊어 그렸다 (중간의 빗금 두 개)
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\S{15}   % 1 m
+
+% ===================== 평면도 =====================
+\begin{scope}
+  \node[font=\small\bfseries, anchor=west] at (-46,30) {평면도 — 위에서 본 모습};
+
+  % 라이다는 한 바퀴를 다 본다 (360 deg) — 10주차 카메라와 가장 다른 점
+  \draw[errc, densely dotted, opacity=0.55] (0.700*\S,0) circle (30mm);
+  \draw[errc, line width=0.4pt] (31.7,21.2) -- (38,25);
+  \node[note, errc, anchor=west] at (38.5,25) {라이다 수평 시야 $360^\circ$};
+
+  % 선체 두 개 (y = +-1.027 m)
+  \draw[flow, line width=0.7pt, rounded corners=2mm]
+       (-2.374*\S-9,  1.027*\S-3) rectangle (0.9*\S+9,  1.027*\S+3);
+  \draw[flow, line width=0.7pt, rounded corners=2mm]
+       (-2.374*\S-9, -1.027*\S-3) rectangle (0.9*\S+9, -1.027*\S+3);
+  \node[note, flow, anchor=west] at (0.9*\S+11,  1.027*\S) {좌현 $y_b=+1.03$};
+  \node[note, flow, anchor=west] at (0.9*\S+11, -1.027*\S) {우현 $y_b=-1.03$};
+
+  % 추진기 셋 — 6주차 배치 그대로
+  \draw[thr, line width=0.7pt] (-2.374*\S-4,  1.027*\S-3) rectangle (-2.374*\S+4,  1.027*\S+3);
+  \draw[thr, line width=0.7pt] (-2.374*\S-4, -1.027*\S-3) rectangle (-2.374*\S+4, -1.027*\S+3);
+  \node[note, thr, anchor=west] at (-2.374*\S-9, 1.027*\S+6.5) {좌·우 추진기 $x_b=-2.37$};
+
+  \draw[thr, line width=0.7pt] (0.750*\S-3,-4) rectangle (0.750*\S+3,4);
+  \draw[thr, -{Stealth[length=4pt,width=3pt]}] (0.750*\S,4) -- (0.750*\S,11);
+  \node[note, thr, anchor=west] at (0.750*\S+2,11)
+       {선수추진기 $x_b=0.75$ — 옆으로 민다};
+
+  % 기준점과 축
+  \fill[ink] (0,0) circle (1.1);
+  \node[note, anchor=north east] at (-3,-1.8) {\texttt{base\_link}};
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (7,0);
+  \node[note, anchor=south west] at (1.5,0.8) {$x_b$};
+  \draw[axis, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,11);
+  \node[note, anchor=east] at (-1,9.5) {$y_b$ 좌현};
+
+  % 라이다 — 선수추진기 바로 위라 평면도에서는 겹쳐 보인다
+  \draw[errc, line width=0.9pt] (0.700*\S,0) circle (2.6);
+  \fill[errc] (0.700*\S,0) circle (0.9);
+  \draw[errc, line width=0.4pt] (0.700*\S-1.8,-1.9) -- (-6,-10);
+  \node[note, errc, anchor=east] at (-6.5,-10)
+       {3D LiDAR $x_b=0.70$ — 선수추진기 바로 위};
+
+  % GPS / IMU
+  \fill[flow] (-0.850*\S,0) circle (1.4);
+  \node[note, flow, anchor=south] at (-0.850*\S,2) {GPS};
+  \fill[nav]  (0,-0.200*\S) circle (1.2);
+  \node[note, nav, anchor=north west] at (1.5,-4.2) {IMU};
+\end{scope}
+
+% ===================== 측면도 =====================
+\begin{scope}[shift={(0,-70)}]
+  \node[font=\small\bfseries, anchor=west] at (-46,36) {측면도 — 높이를 정한 근거};
+
+  \draw[flow, densely dashed] (-44,0) -- (88,0);
+  \node[note, flow, anchor=south] at (70,0.8) {수면};
+  \draw[flow, line width=0.7pt, rounded corners=2mm]
+       (-2.374*\S-9,-3) rectangle (0.9*\S+9,3);
+
+  \fill[ink] (0,0) circle (1.1);
+  \node[note, anchor=north] at (0,-4.5) {\texttt{base\_link}};
+
+  % 전장함 — 이것이 범인이다
+  \fill[warn, opacity=0.18]
+       (-0.295*\S,1.295*\S) rectangle (0.295*\S,1.765*\S);
+  \draw[warn, line width=0.6pt]
+       (-0.295*\S,1.295*\S) rectangle (0.295*\S,1.765*\S);
+  \node[note, warn, anchor=east] at (-6,22.9) {\texttt{cpu\_cases\_link}};
+
+  % 높이 셋을 오른쪽 한 줄로 읽는다
+  \draw[errc, densely dotted] (13,1.900*\S) -- (40,1.900*\S);
+  \draw[errc, line width=0.4pt] (40,1.900*\S) -- (42,30.5);
+  \node[note, errc, anchor=west] at (42.5,30.5)
+       {3D LiDAR $z_b=1.90$ — 고른 자리, 자기 배 $0\%$};
+
+  \draw[warn, densely dotted] (19,1.765*\S) -- (40,1.765*\S);
+  \draw[warn, line width=0.4pt] (40,1.765*\S) -- (42,26.5);
+  \node[note, warn, anchor=west] at (42.5,26.5) {전장함 윗면 $z_b=1.765$};
+
+  % 기둥과 라이다
+  \draw[soft, line width=0.5pt] (0.700*\S,0) -- (0.700*\S,1.900*\S);
+  \fill[errc] (0.700*\S,1.900*\S) circle (1.8);
+
+  % 틀렸던 자리
+  \draw[soft, line width=0.7pt] (0.700*\S,1.600*\S) circle (1.3);
+  \draw[soft, densely dotted] (13,1.600*\S) -- (40,1.600*\S);
+  \draw[soft, line width=0.4pt] (40,1.600*\S) -- (42,22);
+  \node[note, soft, anchor=west] at (42.5,22)
+       {$1.60$ — 계산으로 골랐던 자리, $82\%$ 가 자기 배};
+
+  % 여유
+  \draw[axis, {Stealth[length=3pt,width=2.5pt]}-{Stealth[length=3pt,width=2.5pt]}]
+       (6.5,1.765*\S) -- (6.5,1.900*\S);
+  \draw[axis, line width=0.4pt] (6.5,1.900*\S) -- (6.5,29.0);
+  \node[note, anchor=south east] at (7,29.0) {여유 $13.5$ cm};
+
+  % 세로 시야 아래쪽 광선 -15 deg
+  \draw[pathc, line width=0.7pt] (0.700*\S,1.900*\S) -- (38,21.13);
+  \draw[pathc, line width=0.5pt] (0.700*\S+7,1.900*\S) arc (0:-15:7);
+
+  % 그 광선이 수면에 닿는 곳 — 치수선을 끊어 그린다
+  \draw[pathc, densely dotted] (0.700*\S,-3) -- (0.700*\S,-12.5);
+  \draw[pathc, densely dotted] (80,0) -- (80,-12.5);
+  \fill[pathc] (80,0) circle (1.2);
+  \draw[pathc, {Stealth[length=3pt,width=2.5pt]}-{Stealth[length=3pt,width=2.5pt]}]
+       (0.700*\S,-13) -- (80,-13);
+  \draw[pathc, line width=0.6pt] (46,-14.5) -- (47.5,-11.5);
+  \draw[pathc, line width=0.6pt] (48.5,-14.5) -- (50,-11.5);
+  \node[note, pathc, anchor=north, text width=70mm, align=center] at (45,-14.8)
+       {가장 아래 광선($-15^\circ$)이 수면에 닿는 곳 $7.09$ m\\
+        — 이보다 가까운 물 위는 라이다가 못 본다};
+
+  % 선수추진기 프로펠러
+  \fill[thr] (0.750*\S,0.318*\S-0.509*\S) circle (1.2);
+  \node[note, thr, anchor=north west] at (0.750*\S+2,-3.4) {선수추진기};
+\end{scope}
+
+% ===================== 주의 =====================
+\node[wnote, anchor=north west, text width=130mm] at (-46,-96)
+     {높이를 \textbf{계산으로 1.60 m} 라 정했다가 실측에서 틀린 것을 알았다 — 들어온 값의
+      82 \% 가 장애물이 아니라 자기 배였다. $1.75 \to 1.80$ 사이에서 82 \% 가 0 \% 로 뚝 떨어진다.
+      파도에 기우는 것(여유 $13.5$ cm $\approx$ 횡동요 $18^\circ$)까지 보아 \textbf{1.90 m} 로 둔다.
+      값은 비싸지 않다 — 부표를 처음 보는 거리가 $4.9 \to 5.2$ m 로 느는 것뿐이다.
+      이 그림의 $y_b$ 는 \textbf{좌현이 양(+)} 이다 — 5주차 이후 NED 수식과 부호가 반대다};
+
+\end{tikzpicture}
+\end{document}

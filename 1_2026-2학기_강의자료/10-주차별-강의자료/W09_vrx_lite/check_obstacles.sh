@@ -53,7 +53,7 @@ import os, math, rclpy, numpy as np
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Odometry
 from std_msgs.msg import Float64
 
 SECS = float(os.environ.get('SECS', '40'))
@@ -67,7 +67,10 @@ best = QoSProfile(depth=1); best.reliability = ReliabilityPolicy.BEST_EFFORT
 
 box = {'scan': None, 'pose': None}
 n.create_subscription(LaserScan, BASE + '/scan', lambda m: box.__setitem__('scan', m), best)
-n.create_subscription(PoseStamped, '/wamv/gps_pose', lambda m: box.__setitem__('pose', m), best)
+#  위치는 VRX 가 바로 내는 참값 오도메트리에서 받는다. /wamv/gps_pose 는 VRX 토픽이
+#  아니라 연구실 노드가 만드는 것이라, 그 노드를 안 띄우면 값이 영영 안 온다
+n.create_subscription(Odometry, '/wamv/sensors/position/ground_truth_odometry',
+                      lambda m: box.__setitem__('pose', m), best)
 pubs = [n.create_publisher(Float64, f'/wamv/thrusters/{s}/thrust', 10) for s in ('left', 'right')]
 
 print()
@@ -98,7 +101,7 @@ while rclpy.ok():
 
     d = float('nan')
     if box['pose'] is not None:
-        q = box['pose'].pose.position
+        q = box['pose'].pose.pose.position
         if p0 is None:
             p0 = (q.x, q.y)
         d = math.hypot(q.x - p0[0], q.y - p0[1])
