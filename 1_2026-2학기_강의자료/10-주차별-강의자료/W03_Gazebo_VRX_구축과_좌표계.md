@@ -2080,7 +2080,7 @@ ls ~/vrx_ws/src/vrx/vrx_gz/worlds/ | head
 
 | 월드 | 본 과목에서 |
 |---|---|
-| `stationkeeping_task` | 9주차 동적위치유지 |
+| `stationkeeping_task` | 6주차 위치제어 접안 · 9주차 장애물회피 |
 | `wayfinding_task` | 5주차 웨이포인트 유도 |
 | `navigation_task` | Term Project 1구간 |
 | `scan_dock_deliver_task` | Term Project 마지막 구간 |

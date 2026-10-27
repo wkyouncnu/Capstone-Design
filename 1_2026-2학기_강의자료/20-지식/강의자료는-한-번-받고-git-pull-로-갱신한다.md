@@ -145,5 +145,4 @@ Your branch is up to date with 'origin/main'.
 ## 연결
 
 - [[W02_ROS2_기초_노드와_토픽]] 2-7 — 처음 받는 곳
-- [[W11_VSCode와_Claude_에이전트_첫_제어노드]] — VS Code 의 WSL 창
 - [[환경구축-실패가-가장-비싼-비용이다]]

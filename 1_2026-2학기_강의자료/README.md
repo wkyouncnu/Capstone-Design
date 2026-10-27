@@ -41,7 +41,7 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 전반부는 **Gazebo 운동모델 위에서 Simulink 제어기로 배를 움직이는 것**,
 후반부는 **VSCode + Claude 에이전트로 LiDAR·영상 인지 노드를 직접 만드는 것**이다.
 
-- 과목 전체 원칙 — 예제마다 **오프라인 운동모델로 먼저**, VRX(Gazebo)는 그다음 (3주차 1-8 절 WAM-V 3자유도 운동모델을 3\~11주차가 함께 씀)
+- 과목 전체 원칙 — 예제마다 **오프라인 운동모델로 먼저**, VRX(Gazebo)는 그다음 (3주차 1-8 절 WAM-V 3자유도 운동모델을 3\~9주차가 함께 씀)
 - 기호 — 북·동 위치 $x$, $y$ (코드 `x_n`, `y_n`), $N$ 은 요 모멘트 전용
 
 ---
@@ -56,16 +56,16 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | 4 전 | [[A1_Simulink_기초]] | 17장 · PDF 53쪽 | **부록 A1 · Simulink 속성 입문 (3시간 x 2회)** · 1일차 블록·솔버·MATLAB Function·Subsystem·버스·PID·로깅 · 2일차 Mux·Unit Delay·Integrator·Switch·Enabled·Mask · **모델 26개 배포 (빈칸본 13 + 완성본 13)** |
 | 4 | [[W04_Simulink_PID와_첫_제어기]] | 55장 · PDF 97쪽 | **PID 입문 — 직접 조립·pseudo-derivative·안티와인드업** · Simulink↔ROS 2 연동 · 직진·선회·헤딩·속도 제어 · **오프라인 쌍둥이 먼저 → VRX** · **모델 10개 배포 (VRX 4 + 오프라인 3 + PID 입문 3)** |
 | 5 | [[W05_웨이포인트_유도_atan2와_LOS]] | 17장 · PDF 46쪽 | 웨이포인트 유도 atan2 vs LOS · 조류 실험 · **오프라인+VRX 모델 2개** |
-| 6 | [[W07_한점을_중심으로_도는_로이터링]] | 8장 · PDF 29쪽 | 벡터필드 로이터링 · 방향·속도·반경 변경 · **오프라인+VRX 모델 2개** |
-| 7 | [[W08_Stateflow_미션_웨이포인트와_로이터링]] | 8장 · PDF 30쪽 | **Stateflow 미션 FSM** · WP → 로이터 → WP · **오프라인+VRX 모델 2개** |
-| 8 | [[W09_틸팅추진기_추력배분과_동적위치유지]] | 9장 · PDF 34쪽 | **방위추진기 ±45°** · 추력 배분 · **동적위치유지(DP)** · 바람·파랑 · **모델 2개** |
-| 9 | [[W10_VRX_심화_모델구조와_토픽조사]] | 11장 · PDF 49쪽 | WAM-V URDF·Xacro · 센서 배치 · 토픽 전수조사 · Mapviz · **과제 월드와 채점** · **ros2 bag** · **센서 모델** · **모델 3개 배포 (오프라인 `W10_0_offline` 먼저)** · **실시간 화면** |
-| 10 | [[W11_VSCode와_Claude_에이전트_첫_제어노드]] | 7장 · PDF 36쪽 | VS Code 설치 · Claude Code 연동 · 첫 제어 노드 (**`wamv_sim.py` 먼저, VRX 다음**) · **MATLAB MCP** 연동 |
-| 11 | *(예정)* | | LiDAR 신호처리 · 부표 탐지 |
-| 12 | *(예정)* | | LiDAR 기반 충돌회피 · **역할 로테이션** |
-| 13 | *(예정)* | | 영상처리 · LiDAR-카메라 융합 · 도킹 표식 |
-| 14 | *(예정)* | | 도킹 접근(9주차 DP 재사용) · 통합 검증 · 성능 정량화 |
-| 15 | *(예정)* | | 최종 발표 |
+| 6 | [[W06_선수추진기와_위치제어_접안]] | 38장 · PDF 85쪽 | **선수추진기 — 추진기 셋** · 추력 배분 · 위치제어 · 접안 사다리 여덟 단 · **모델 14개 배포 (오프라인 7 + VRX 7)** |
+| 7 | [[W07_한점을_중심으로_도는_로이터링]] | 8장 · PDF 29쪽 | 벡터필드 로이터링 · 방향·속도·반경 변경 · **오프라인+VRX 모델 2개** |
+| 8 | [[W08_Stateflow_미션_웨이포인트와_로이터링]] | 8장 · PDF 30쪽 | **Stateflow 미션 FSM** · WP → 로이터 → WP · **오프라인+VRX 모델 2개** |
+| 9 | [[W09_라이다_장애물회피_파이썬유도와_시뮬링크제어]] | 8장 · PDF 36쪽 | **라이다 장착과 실측** · 호 다발 회피기 · **파이썬 유도 + 시뮬링크 제어 이음새** · 극좌표 실시간 그림 · **중간 발표 주간** |
+| 10 | *(예정)* | | LiDAR 신호처리 — `/points` 열여섯 고리 전처리 · 부표 탐지 |
+| 11 | *(예정)* | | 영상처리 · LiDAR-카메라 융합 · 도킹 표식 인식 |
+| 12 | *(예정)* | | 도킹 제어 · 미션 매니저 · 통합 검증 · 성능 정량화 |
+| 13 | *(예정)* | | Term Project 제작 |
+| 14 | *(예정)* | | Term Project 제작 · **역할 로테이션** |
+| 15 | *(예정)* | | 최종 발표 및 데모 |
 
 > [!note] `W01_슬라이드.html`
 > 이전에 만든 HTML 슬라이드 덱. 필요하면 쓰되 **더 만들지 않는다.**
@@ -190,18 +190,20 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 | 5 | `w05-lookahead.svg` | lookahead distance Δ 가 하는 일 |
 | 5 | `w05-switching.svg` | 웨이포인트 전환 판정 두 가지 |
 | 5 | `w05-atan2-vs-los.svg` | 두 유도법칙 궤적 대비 + 실측 표 |
+| 6 | `w06-cascade.svg` | 위치 → 속도 → 추력 사다리 |
+| 6 | `w06-alloc-geometry.svg` | 추진기 셋의 배치와 추력 배분 기하 |
+| 6 | `w06-bodyfixed-loop.svg` · `w06-ned-loop.svg` | 선체고정 좌표 되먹임 · NED 되먹임 |
+| 6 | `w06-berth-geometry.svg` · `w06-berth-phases.svg` · `w06-berth-flow.svg` | 접안 기하 · 단계 · 흐름 |
+| 6 | `w06-control-loop.svg` · `w06-pid-structure.svg` · `w06-step-response-terms.svg` · `w06-openloop-vs-feedback.svg` · `w06-rotation.svg` | 제어 루프와 용어 그림 |
+| 6 | `w06-*.png` (실행 화면 6장) | Gazebo 스폰 · MATLAB 실행 · 터미널 1·2 · Simulink 창 |
+| 6 | `W06_simulink/img/*.png` (50장) | 예제마다의 블록도와 결과 그래프 |
 | 7 | `w07-vector-field.svg` | 벡터필드 로이터링 개념 |
 | 8 | `w08-mission-fsm.svg` | 미션 상태기계와 모델 구조 |
-| 9 | `w09-dp-loop.svg` | DP 제어 루프 |
-| 10 | `w10-sensor-layout.svg` | WAM-V 센서 배치와 사각지대 |
-| 10 | `w10-topic-map.svg` | 토픽 흐름 한 바퀴 |
-| 10 | `w10-rviz-lidar.png` · `w10-rviz-tf-frames.png` | RViz2 점군·카메라 · TF 프레임 |
-| 10 | `w10-mapviz-*.png` (2장) | Mapviz 원점 오류 · 시드니 해역 위 항적 |
-| 10 | `w10-task-stationkeeping.png` | VRX 정지유지 과제 월드 |
-| 11 | `w11-agent-loop.svg` | AI 에이전트 동작 루프와 사람의 몫 |
-| 11 | `w11-verify.svg` | 검증 세 겹 |
-| 11 | `w11-vscode-claude.svg` | VS Code · Claude · MATLAB 설치 위치 |
-| 11 | `w11-download-vscode.png` · `w11-vscode-vault.png` · `w11-claudecode-docs.png` · `w11-restricted-mode.png` | VS Code 내려받기 · 볼트 열기 · Claude Code 문서 · Restricted Mode |
+| 9 | `w09-role-split.svg` | 역할 분담 — 유도는 둘, 제어는 하나. 토픽 다섯이 세 세계를 잇는다 |
+| 9 | `w09-lidar-mount.svg` | 라이다 장착 위치와 자기 배 간섭 — 높이는 실측으로 정했다 |
+| 9 | `w09-arc-bank.svg` | 호 다발 21개를 깔고·지우고·점수 매기는 법 |
+| 9 | `w09-rviz-lidar.png` · `w09-rviz-tf-frames.png` | Rviz2 점군 · TF 프레임 |
+| 9 | `W09_simulink/img/*.png` (3장) | AvoidSeam · GoalPublisher · `W09_1_vrx` 전체 블록도 |
 
 ## 📦 자산 인벤토리 — `40-자산/`
 
@@ -273,10 +275,9 @@ SORT file.name ASC
 
 - [ ] MATLAB ROS Toolbox ↔ ROS 2 Humble 실통신 검증 (개강 2주 전)
 - [ ] WSL 프리빌드 이미지 `wsl --export` 로 제작·배포 → [[환경구축-실패가-가장-비싼-비용이다]]
-- [ ] **커스텀 월드 배포 패키지 제작** (9주차 전) — `sydney_regatta_ca` · `scan_dock_deliver_full` ·
+- [ ] **커스텀 월드 배포 패키지 제작** (12주차 전) — `sydney_regatta_ca` · `scan_dock_deliver_full` ·
       `competition4docking.launch.py` · `custom_docking_station` 은 upstream VRX 에 없음 → [[VRX-월드와-패키지]]
 - [ ] 학생 노트북 사양 사전조사, 미달자용 워크스테이션 준비
 - [ ] MATLAB 라이선스 동시접속 수 확인 (팀당 1석)
-- [ ] **Claude 계정 확보** (11주차 전) — 무료 플랜은 Claude Code 불가. 개인 구독 / 공용 계정 / API 키 결정
 - [ ] GitHub Organization 개설 및 팀 레포 템플릿
-- [ ] 11\~15주차 자료 작성 (부록 A1 · 1\~11주차 완료)
+- [ ] 10\~15주차 자료 작성 (부록 A1 · 1\~9주차 완료)

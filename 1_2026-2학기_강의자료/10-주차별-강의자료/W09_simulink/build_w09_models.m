@@ -45,8 +45,8 @@ m = 'W09_1_vrx';
 build_vrx(here, m);
 
 %  배치 — 5주차와 같은 차례다. 사슬에 AvoidSeam 한 칸이 늘고,
-%  포트 없는 상자에 GoalPublisher 하나가 늘었다
-boxes = {'GoalPublisher','Logging','Observe','AutoStop'};
+%  포트 없는 상자가 둘(GoalPublisher · VizPublisher) 늘었다
+boxes = {'GoalPublisher','VizPublisher','Logging','Observe','AutoStop'};
 lay_chain(m, {'Guidance','AvoidSeam','InnerLoop','Thrusters','CmdPublisher','PoseSubscriber'}, ...
           'Boxes', boxes, 'Wrap', 3);
 
@@ -67,8 +67,8 @@ save_system(m);
 check_lines(m, false); export_diagram(m);
 close_system(m, 0);
 
-%  속 그림 — 이 주차에 새로 생긴 상자 둘만 따로 뽑는다. 나머지는 5주차 그림이 그대로 맞다
-for nm = {'AvoidSeam','GoalPublisher'}
+%  속 그림 — 이 주차에 새로 생긴 상자 셋만 따로 뽑는다. 나머지는 5주차 그림이 그대로 맞다
+for nm = {'AvoidSeam','GoalPublisher','VizPublisher'}
     f = export_diagram(m, '', nm{1});
     movefile(f, fullfile(here, 'img', [nm{1} '.png']), 'f');
 end
@@ -133,6 +133,7 @@ function build_vrx(here, m)
 
     % --- 4) 목표점 발행 -------------------------------------------------
     addGoalPublisher(m, 1660, 1100);
+    addVizPublisher(m, 1660, 1300);
 
     % --- 5) 로깅·화면 ---------------------------------------------------
     addLogging(m, 2400, 60);
@@ -319,6 +320,13 @@ function addGoalPublisher(m, x, y)
 %       파이썬은 **월드 ENU** 로 말한다 (x 동, y 북). 그래서
 %           ENU x = (웨이포인트 동) + origin_east
 %           ENU y = (웨이포인트 북) + origin_north
+%
+%   한 칸 어긋나면 배가 제자리에서 돈다 — 2026-10-27 에 걸렸다
+%       유도부가 내는 wp_idx 는 **구간 번호** 다. 구간 k 는 k 번 점에서 k+1 번 점으로
+%       간다 (W05 GuidanceLaw 의 `xk1 = wp_x(k+1)`). 그래서 목표점은 wp(idx) 가
+%       아니라 **wp(idx+1)** 이다. wp(idx) 를 내보냈더니 파이썬에게 건네진 목표가
+%       언제나 배 **뒤** 에 있었고, 회피기는 "뒤로 돌아라" 를 내고 LOS 는 앞으로
+%       끌어 배가 북 294 m 에서 제자리걸음을 했다. 회피처럼 보이지만 회피가 아니다.
     s = add_subsys(m, 'GoalPublisher', [x y x+160 y+80], {}, {}, gnc_colour('ros'));
 
     add_block('simulink/Signal Routing/From', [s '/Fr_wp_idx'], ...
@@ -330,11 +338,11 @@ function addGoalPublisher(m, x, y)
 'function [ex, ey] = Goal(idx, wn, we, orgN, orgE)'                            newline ...
 '%#codegen'                                                                    newline ...
 '% 지금 쫓는 웨이포인트를 월드 ENU 로 바꾼다.'                                 newline ...
-'%   들어오는 것  idx  유도부가 센 웨이포인트 번호 (1..n)'                      newline ...
+'%   들어오는 것  idx  유도부가 달리고 있는 **구간 번호** (1..n-1)'             newline ...
 '%   나가는 것    ex   ENU x = 동,   ey   ENU y = 북'                           newline ...
 ''                                                                             newline ...
 'n = numel(wn);'                                                               newline ...
-'k = min(max(round(idx), 1), n);   % 마지막을 지나도 마지막 점을 계속 가리킨다' newline ...
+'k = min(max(round(idx), 1) + 1, n);  % 구간 k 의 **끝점**(k+1 번 점) 이 목표다' newline ...
 ''                                                                             newline ...
 'ex = we(k) + orgE;'                                                           newline ...
 'ey = wn(k) + orgN;']);
@@ -456,4 +464,60 @@ function retitle(m, txt, x, y)
         try, delete(A(i)); catch, end
     end
     add_block('built-in/Note', [m '/n1'], 'Position',[x y x y], 'Text', txt);
+end
+
+% =====================================================================
+% 그림용 발행 — 모델만 아는 값 둘을 파이썬 그림판에 넘긴다
+% =====================================================================
+%  ca_viz.py 의 극좌표 그림에는 선이 넷이다. 그중 둘(현재 헤딩·회피 명령)은
+%  파이썬이 이미 갖고 있지만, **LOS 가 낸 명령과 제어기가 실제로 받은 명령**은
+%  시뮬링크 안에만 있다. 이 두 개를 내보내지 않으면 그림의 초록·검정 선이
+%  영영 그려지지 않는다 (2026-10-27 에 실제로 비어 있었다).
+%
+%  단위는 **라디안·NED 그대로** 내보낸다. ENU 로 바꾸지 않는다 —
+%  ca_viz.py 가 "Simulink 쪽은 이미 NED 다" 라고 적고 그대로 쓴다.
+%  바깥에서 들어오는 /vfh/command 만 ENU 라 AvoidSeam 에서 한 번 돌린다.
+function addVizPublisher(m, x, y)
+    s = add_subsys(m, 'VizPublisher', [x y x+160 y+80], {}, {}, gnc_colour('ros'));
+
+    %  {태그, 토픽, 설명} — 둘 다 똑같은 네 블록짜리 줄이다
+    rows = { 'psi_los', '/sim/psi_los', 'LOS 가 낸 명령'
+             'psi_ref', '/sim/psi_cmd', '제어기가 실제로 받은 명령' };
+
+    for k = 1:size(rows,1)
+        tag = rows{k,1};  topic = rows{k,2};  dy = (k-1)*200;
+        fr  = ['Fr_'    tag];  bl = ['Blank_' tag];
+        asg = ['Asg_'   tag];  pb = ['Pub_'   tag];
+
+        add_block('simulink/Signal Routing/From', [s '/' fr], ...
+                  'GotoTag', tag, 'Position',[60 100+dy 150 125+dy]);
+
+        add_block('ros2lib/Blank Message', [s '/' bl], ...
+                  'Position',[300 90+dy 400 130+dy]);
+        set_param([s '/' bl], 'entityType','std_msgs/Float64', ...
+                  'messageType','std_msgs/Float64', 'SampleTime','Ts_ctrl');
+
+        add_block('simulink/Signal Routing/Bus Assignment', [s '/' asg], ...
+                  'Position',[480 80+dy 560 170+dy]);
+        set_param([s '/' asg], 'AssignedSignals','data');
+
+        add_block('ros2lib/Publish', [s '/' pb], ...
+                  'Position',[660 100+dy 780 140+dy]);
+        set_param([s '/' pb], 'topicSource','Specify your own', ...
+                  'topic', topic, 'messageType','std_msgs/Float64');
+
+        add_line(s, [bl  '/1'], [asg '/1'], 'autorouting','on');
+        add_line(s, [fr  '/1'], [asg '/2'], 'autorouting','on');
+        add_line(s, [asg '/1'], [pb  '/1'], 'autorouting','on');
+    end
+
+    add_block('built-in/Note', [s '/note'], 'Position',[60 460], 'Text', sprintf([ ...
+        '그림용 발행 — 제어에는 쓰이지 않는다' newline ...
+        '' newline ...
+        '  /sim/psi_los   LOS 가 낸 명령        [rad, NED]' newline ...
+        '  /sim/psi_cmd   제어기가 받은 명령    [rad, NED]' newline ...
+        '' newline ...
+        'ca_viz.py 가 이 둘을 받아 극좌표에 초록 점선·검정 실선으로 그린다.' newline ...
+        '두 선이 갈라져 있는 동안이 곧 회피 구간이다.' newline ...
+        '단위를 ENU 로 바꾸지 않는다 — 받는 쪽이 NED 로 읽는다.']));
 end
