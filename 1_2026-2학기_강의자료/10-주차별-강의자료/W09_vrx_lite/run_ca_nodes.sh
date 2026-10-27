@@ -7,7 +7,7 @@
 #
 #   띄우는 것 셋
 #     ca_bridge.py           참값 오도메트리 -> /wamv/gps_pose   (자를 하나로 맞춘다, 3-2)
-#     collision_avoidance_enu  /scan 을 보고 /vfh/command 와 /vfh/oa_flag 를 낸다
+#     collision_avoidance_enu  라이다(.../lidar_wamv_sensor/scan)를 보고 /vfh/command 와 /vfh/oa_flag 를 낸다
 #     ca_viz.py              궤적 · 장애물 · 헤딩 명령 넷을 실시간으로 그린다 (2-6)
 #
 #   띄우지 **않는** 것 둘 — 이 주차의 요점이 여기에 있다
