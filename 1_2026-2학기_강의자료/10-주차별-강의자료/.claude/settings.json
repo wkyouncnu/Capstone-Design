@@ -1,5 +1,5 @@
 {
-  "_설명": "10-주차별-강의자료 폴더에서 세션을 열어도 볼트와 같은 훅이 걸리게 한다 (Claude Code 는 연 폴더의 settings 만 읽는다). 시작: git_autopull.sh / 끝: PDF 동기화 + 커밋·푸시",
+  "_설명": "10-주차별-강의자료 폴더에서 세션을 열어도 볼트와 같은 훅이 걸리게 한다 (Claude Code 는 연 폴더의 settings 만 읽는다). 시작: git_autopull.sh / 끝: PDF 동기화 + 커밋·푸시 / SubagentStop(서브에이전트마다 push) 은 제거 — 상위 볼트 settings.json 의 설명 참고 (2026-10-27)",
   "hooks": {
     "Stop": [
       {
@@ -9,17 +9,6 @@
             "command": "d=\"${CLAUDE_PROJECT_DIR:-$PWD}\"; while [ \"$d\" != \"/\" ] && [ ! -f \"$d/_tools/hook_stop.sh\" ]; do d=$(dirname \"$d\"); done; [ -f \"$d/_tools/hook_stop.sh\" ] && bash \"$d/_tools/hook_stop.sh\" || true",
             "timeout": 900,
             "statusMessage": "MD -> PDF 동기화 후 푸시"
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "d=\"${CLAUDE_PROJECT_DIR:-$PWD}\"; while [ \"$d\" != \"/\" ] && [ ! -f \"$d/_tools/git_autopush.sh\" ]; do d=$(dirname \"$d\"); done; [ -f \"$d/_tools/git_autopush.sh\" ] && bash \"$d/_tools/git_autopush.sh\" || true",
-            "timeout": 180
           }
         ]
       }

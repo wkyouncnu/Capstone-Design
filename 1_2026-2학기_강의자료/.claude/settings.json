@@ -1,5 +1,5 @@
 {
-  "_설명": "세션이 끝날 때 (1) MD 가 PDF 보다 새로우면 PDF 재생성 (2) 커밋·푸시. 볼트 경로는 훅이 스스로 찾으므로 계정·PC 가 달라도 동작한다. 손으로 돌리려면 bash _tools/pdf_sync.sh / bash _tools/git_autopush.sh / 세션을 열 때 GitHub 최신판을 먼저 받음 (git_autopull.sh, 2026-10-23)",
+  "_설명": "세션이 끝날 때 (1) MD 가 PDF 보다 새로우면 PDF 재생성 (2) 커밋·푸시. 볼트 경로는 훅이 스스로 찾으므로 계정·PC 가 달라도 동작한다. 손으로 돌리려면 bash _tools/pdf_sync.sh / bash _tools/git_autopush.sh / 세션을 열 때 GitHub 최신판을 먼저 받음 (git_autopull.sh, 2026-10-23) / SubagentStop(서브에이전트마다 push) 은 제거했다 — 병렬 탐색이면 push 가 경합해 .idx 없는 고아 pack 이 쌓였고(2026-10-27 1.3GB 정리), Stop 훅이 이미 pull→push 를 하므로 기능 손실은 없다",
   "hooks": {
     "Stop": [
       {
@@ -9,17 +9,6 @@
             "command": "d=\"${CLAUDE_PROJECT_DIR:-$PWD}\"; while [ \"$d\" != \"/\" ] && [ ! -f \"$d/_tools/hook_stop.sh\" ]; do d=$(dirname \"$d\"); done; [ -f \"$d/_tools/hook_stop.sh\" ] && bash \"$d/_tools/hook_stop.sh\" || true",
             "timeout": 900,
             "statusMessage": "MD -> PDF 동기화 후 푸시"
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "d=\"${CLAUDE_PROJECT_DIR:-$PWD}\"; while [ \"$d\" != \"/\" ] && [ ! -f \"$d/_tools/git_autopush.sh\" ]; do d=$(dirname \"$d\"); done; [ -f \"$d/_tools/git_autopush.sh\" ] && bash \"$d/_tools/git_autopush.sh\" || true",
-            "timeout": 180
           }
         ]
       }
