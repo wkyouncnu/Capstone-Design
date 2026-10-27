@@ -1,0 +1,108 @@
+% assets/w09-role-split.svg — 9주차의 역할 분담 : 유도는 둘, 제어는 하나
+%
+%   bash _tools/tikz2svg.sh assets/src/w09-role-split.tex assets/w09-role-split.svg
+%
+% 이 그림이 말하는 것 하나
+%   제어기는 5주차 것 그대로다. 바뀐 자리는 **제어기에 들어가는 명령을 누가 내는가**
+%   하나뿐이고, 그 자리가 AvoidSeam 이다. 토픽 다섯이 두 세계를 잇는다.
+%
+% 함정 둘 — 둘 다 2026-10-27 에 걸렸다
+%   (1) 줄바꿈은 두 겹 역슬래시만 쓴다. 길이를 달면 kotex/standalone 조합에서 수식
+%       시작으로 읽혀 "Command \scriptsize invalid in math mode" 가 난다
+%   (2) 이 파일은 **Write 도구로** 쓴다. 셸 히어독을 거치면 두 겹 역슬래시가 한 겹으로
+%       줄어 줄바꿈이 통째로 사라진다 — 오류 없이 한 줄로 붙어 나오므로 더 나쁘다
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===================== Simulink 사슬 (위) =====================
+\node[gblk, text width=24mm, align=center] (los)  at ( 22,90)
+     {LOS 유도 \\ {\scriptsize 5주차 그대로}};
+\node[gblk, text width=26mm, align=center] (seam) at ( 58,90)
+     {\textbf{AvoidSeam} \\ {\scriptsize 어느 명령을 쓸까}};
+\node[cblk, text width=30mm, align=center] (ctrl) at ( 98,90)
+     {헤딩 P-D · 속도 PI \\ {\scriptsize 한 줄도 안 바뀜}};
+\node[tblk, text width=20mm, align=center] (alloc) at (134,90) {추력배분};
+\node[nblk, text width=28mm, align=center] (goal)  at ( 22,68) {GoalPublisher};
+
+\draw[sig] (los.east)  -- (seam.west);
+\draw[sig] (seam.east) -- (ctrl.west);
+\draw[sig] (ctrl.east) -- (alloc.west);
+\node[note, anchor=south] at (40,91.5) {$\psi_{los}$};
+\node[note, anchor=south] at (78,91.5) {$\psi_{ref}$};
+
+\node[grp, fit=(los)(seam)(ctrl)(alloc)(goal)] (sim) {};
+\node[note, anchor=north west] at (sim.north west) {\textbf{Simulink} — 제어는 여기 하나뿐};
+
+% ===================== 파이썬 (아래 왼쪽) =====================
+\node[nblk, text width=54mm, align=center] (avoid) at (38,48)
+     {회피기 \texttt{collision\_avoidance\_enu} \\ {\scriptsize 호 다발 21개 중 하나를 고른다}};
+\node[nblk, text width=30mm, align=center] (bridge) at (38,28) {\texttt{ca\_bridge}};
+
+\node[grp, fit=(avoid)(bridge)] (py) {};
+\node[note, anchor=south west] at (py.north west) {\textbf{ROS 2 · Python} — 유도 하나를 더 낸다};
+
+% ===================== Gazebo (아래 오른쪽) =====================
+\node[pblk, text width=30mm, align=center] (lidar) at (120,48)
+     {3D LiDAR \\ {\scriptsize $z_b=1.90$ m · $16\times440$}};
+\node[pblk, text width=30mm, align=center] (odom)  at (120,28) {위치 · 자세};
+\node[tblk, text width=20mm, align=center] (thrb)  at (154,38) {추진기 셋};
+
+\node[grp, fit=(lidar)(odom)(thrb)] (gz) {};
+\node[note, anchor=south west] at (gz.north west) {\textbf{Gazebo · VRX} \texttt{stationkeeping\_task}};
+
+% ===================== 센서 둘 =====================
+\draw[sig] (lidar.west) -- (avoid.east);
+\node[note, anchor=south] at (85,49.5) {\texttt{lidar\_wamv\_sensor/scan}};
+
+\draw[sig] (odom.west) -- (bridge.east);
+\node[note, anchor=south] at (81,29.5) {\texttt{ground\_truth\_odometry}};
+
+\draw[sig] (bridge.north) -- (avoid.south);
+\node[note, anchor=west] at (39.5,38) {\texttt{/wamv/gps\_pose}};
+
+% ===================== 이음새로 올라가는 토픽 둘 =====================
+\draw[sig] (58,52.5) -- (seam.south);
+\node[note, anchor=west, text width=40mm] at (59.5,67)
+     {\texttt{/vfh/command} \\ angular.z $=$ 절대 방위각 (ENU, rad) \\ ~ \\
+      \texttt{/vfh/oa\_flag} \\ 피하는 중이면 true};
+
+% ===================== 목표점은 거꾸로 내려온다 =====================
+\draw[fb] (los.south) -- (goal.north);
+\node[note, anchor=west] at (23.5,79) {\texttt{wp\_idx}};
+\draw[sig] (goal.south) -- (22,52.5);
+% 이 꼬리표는 y=59 에 두면 아래 파이썬 묶음의 제목줄과 겹친다 (2026-10-27 에 겹쳤다)
+\node[note, anchor=east] at (20.5,62) {\texttt{/usv/state/goal\_enu}};
+
+% ===================== 위치는 양쪽이 같은 토픽에서 받는다 =====================
+\draw[fb] (odom.east) -- (170,28) -- (170,105) -- (98,105) -- (ctrl.north);
+\node[note, anchor=south east] at (168,106) {같은 토픽 — 자를 하나로 쓴다};
+
+% ===================== 추력 =====================
+\draw[sig] (134,82.5) -- (134,58) -- (154,58) -- (thrb.north);
+% 오른쪽으로 뻗게 두면 x=170 되먹임선을 뚫고 그림 밖으로 나간다. 가로선 위에 얹는다
+\node[note, anchor=south] at (144,58.8) {\texttt{/wamv/thrusters/*/thrust}};
+
+% ===================== 그림은 파이썬이 그린다 =====================
+\node[nblk, text width=42mm, align=center] (viz) at (84,6)
+     {\texttt{ca\_viz} — 극좌표 실시간 그림};
+
+\draw[fb] (14,43.5) -- (14,16) -- (84,16) -- (viz.north);
+\node[note, anchor=west] at (38,17.5) {스캔 · 위치 · 회피 명령};
+
+\draw[fb] (sim.west) -- (-4,80) -- (-4,6) -- (viz.west);
+% 한 줄로 두면 ca_viz 상자를 뚫고 지나간다. 두 줄로 접어 상자 아래에 둔다
+\node[note, anchor=north west, text width=60mm] at (-2,1)
+     {\texttt{/sim/psi\_los} · \texttt{/sim/psi\_cmd} \\ 모델이 자기만 아는 값 둘을 낸다};
+
+% ===================== 주의 =====================
+\node[wnote, anchor=north west, text width=150mm] at (-4,-12)
+     {\textbf{이 그림에서 5주차와 달라진 자리는 \texttt{AvoidSeam} 한 칸뿐이다.}
+      헤딩 P-D · 속도 PI · 추력배분 · 운동모델은 블록 하나도 바뀌지 않았다.
+      유도가 둘(LOS 와 회피)로 늘고, 그 둘 중 하나를 고르는 상자가 생긴 것이 전부다};
+
+\end{tikzpicture}
+\end{document}

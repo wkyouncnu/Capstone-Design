@@ -1,0 +1,135 @@
+% assets/w09-arc-bank.svg — 호 다발 21개 중 하나를 고르는 법 (collision_avoidance_enu.py)
+%
+%   bash _tools/tikz2svg.sh assets/src/w09-arc-bank.tex assets/w09-arc-bank.svg
+%
+% 이 그림이 말하는 것 하나
+%   회피기는 "어디로 갈까" 를 자유롭게 고르지 않는다. **배가 실제로 낼 수 있는 선회율**
+%   21개를 미리 깔아 두고 (-12 ~ +12 deg/s), 각각을 3초 앞까지 따라가 보고, 부딪히는 것을
+%   지우고 남은 것 중 점수가 가장 높은 하나를 고른다. 3초는 4.5 m 다 — 자기 배 길이(4.9 m)
+%   보다 짧다. 그래서 이 회피기는 멀리 보는 기계가 아니라 가까이를 놓치지 않는 기계다.
+%
+% 화면 : 위가 선수(x_b), 오른쪽이 우현. 즉 배를 위에서 본 그림이다. 1 m = 20 mm
+%   배치 규칙 — 그림(호·선체·장애물)은 \S 로 재고, 글상자는 mm 절대좌표로 둔다.
+%   글상자까지 \S 로 재면 축척을 바꿀 때마다 글이 그림 밖으로 날아간다 (2026-10-27 에 겪었다)
+%
+% 호의 식 : 선회율 r, 속력 u 로 돌면 반지름 R = u/r, 시간 T 뒤 선회각 Phi = r*T
+%   u=1.5, r=12 deg/s -> R = 7.16 m, Phi = 36 deg, 호 길이 4.5 m, 끝점 (-1.368, 4.209)
+%   좌선회는 화면 왼쪽으로 휘므로 가로 성분에 음부호가 붙는다 (2026-10-27 에 한 번 틀렸다)
+%
+% 함정 둘 — 둘 다 2026-10-27 에 걸렸다
+%   (1) 줄바꿈은 두 겹 역슬래시만 쓴다. 길이를 달면(`[2pt]`) kotex/standalone 조합에서
+%       수식 시작으로 읽혀 "Command \scriptsize invalid in math mode" 가 난다
+%   (2) 이 파일은 **Write 도구로** 쓴다. 셸 히어독을 거치면 두 겹 역슬래시가 한 겹으로
+%       줄어 줄바꿈이 통째로 사라진다 — 오류 없이 한 줄로 붙어 나오므로 더 나쁘다
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\def\S{20}        % 1 m = 20 mm
+
+% 호 하나 — #1 반지름[m] (양수면 좌선회, 음수면 우선회), #2 선회각[deg], #3 스타일
+\newcommand{\arcpath}[3]{%
+  \draw[#3] plot[domain=0:#2, samples=28, variable=\t]
+       ({-(#1)*\S*(1-cos(\t))}, {abs(#1)*\S*sin(\t)});}
+
+% ===================== 호 다발 =====================
+% 선회율 -12..+12 deg/s 를 21개로 나누면 간격 1.2 deg/s. 그림에는 둘 건너 하나씩 11개만
+% 그린다 — 21개를 다 그리면 선이 붙어 읽히지 않는다 (코드는 21개 전부를 시험한다)
+
+% (가) 우선회 다발 — 장애물 쪽. 3초 안에 선체가 닿는다
+\arcpath{-7.16}{36}{warn, densely dotted, line width=0.6pt}     % r = -12.0 deg/s
+\arcpath{-8.95}{28.8}{warn, densely dotted, line width=0.6pt}   % r =  -9.6
+\arcpath{-11.94}{21.6}{warn, densely dotted, line width=0.6pt}  % r =  -7.2
+\arcpath{-17.90}{14.4}{warn, densely dotted, line width=0.6pt}  % r =  -4.8
+\arcpath{-35.81}{7.2}{warn, densely dotted, line width=0.6pt}   % r =  -2.4
+
+% (나) 직진 — 목표로 바로 가는 길. 이것이 막혔는가가 oa_flag 의 질문이다
+\draw[warn, densely dotted, line width=0.8pt] (0,0) -- (0,4.5*\S);
+
+% (다) 좌선회 다발 — 열린 쪽. 살아남은 호
+\arcpath{35.81}{7.2}{soft, line width=0.6pt}
+\arcpath{17.90}{14.4}{soft, line width=0.6pt}
+\arcpath{11.94}{21.6}{soft, line width=0.6pt}
+\arcpath{8.95}{28.8}{soft, line width=0.6pt}
+
+% (라) 고른 호 — 좌선회 최대 +12 deg/s
+\arcpath{7.16}{36}{pathc, line width=1.8pt}
+\fill[pathc] (-1.368*\S, 4.209*\S) circle (1.6);
+
+% 3초 뒤의 배 — 36 deg 돌아 있다 (좌선회이므로 화면에서 반시계)
+\begin{scope}[shift={(-1.368*\S, 4.209*\S)}, rotate=36]
+  \draw[pathc, line width=0.7pt, densely dashed]
+       (-1.23*\S, -2.4*\S) rectangle (1.23*\S, 2.5*\S);
+\end{scope}
+\node[note, pathc, anchor=east, text width=38mm, align=right] at (-90, 126)
+     {3초 뒤의 배 \\ $36^\circ$ 돌았고 $4.5$ m 갔다};
+\draw[pathc, line width=0.4pt] (-89, 123) -- (-77, 112);
+
+% ===================== 지금의 배 =====================
+% 직사각형이다. 원이 아니다 — 4.9 m x 2.46 m 로 길고 좁다
+\draw[plant, line width=1.0pt]
+     (-1.23*\S, -2.4*\S) rectangle (1.23*\S, 2.5*\S);
+\fill[ink] (0,0) circle (1.4);
+% 선수 화살표는 선체 **바깥** 오른쪽에 둔다. 호 21개가 전부 원점에서 뻗어 나오므로
+% 가운데에 그리면 호 다발에 묻혀 읽히지 않는다 (2026-10-27 에 한 번 묻혔다)
+\draw[axis, -{Stealth[length=5pt,width=4pt]}]
+     (1.23*\S+8, 1.4*\S) -- (1.23*\S+8, 2.4*\S);
+\node[note, anchor=west] at (1.23*\S+12, 1.9*\S) {$x_b$ 선수};
+\node[note, plant, anchor=north, text width=50mm, align=center] at (0,-2.4*\S-4)
+     {선체 외곽 $4.9 \times 2.46$ m \\ 원이 아니라 직사각형으로 잰다};
+
+% ===================== 장애물 둘 =====================
+\foreach \px/\py in {0.7/6.1, 1.1/5.2, 1.6/5.9, 1.9/5.0, 1.2/6.5, 2.3/5.6}
+  {\fill[errc] ({\px*\S},{\py*\S}) circle (1.3);}
+\node[note, errc, anchor=west] at (2.3*\S+6, 5.35*\S) {장애물 묶음 1};
+
+\foreach \px/\py in {3.6/2.4, 4.0/3.0, 3.3/3.3, 4.3/2.1}
+  {\fill[errc] ({\px*\S},{\py*\S}) circle (1.3);}
+\node[note, errc, anchor=west] at (4.3*\S+6, 2.7*\S) {장애물 묶음 2};
+
+% 직진을 지우는 점 하나 — 선체 폭(+-1.23 m) 안에 들어와 있다
+\draw[warn, line width=0.6pt] (0.7*\S, 6.1*\S) circle (3.2);
+\draw[warn, line width=0.4pt] (0.7*\S+2.6, 6.1*\S+2.0) -- (96, 136);
+\node[note, warn, anchor=north west, text width=52mm] at (97, 139)
+     {이 점 하나가 선체 폭 $\pm1.23$ m 안에 들어와 있다 \\
+      — 직진이 지워지는 이유이고 \texttt{oa\_flag} 가 1 이 되는 이유다};
+
+% ===================== 목표 방향 =====================
+\draw[fb] (0,0) -- (2.6*\S, 7.7*\S);
+\node[note, guid, anchor=south east] at (2.55*\S, 7.75*\S) {목표점 쪽};
+
+% ===================== 범례 — 그림 아래 =====================
+\node[note, warn, anchor=north west, text width=150mm] at (-128, -66)
+     {붉은 점선 — 3초 안에 선체가 닿는 호. 점수를 매기지 않고 바로 지운다};
+\node[note, anchor=north west, text width=150mm] at (-128, -75)
+     {회색 실선 — 살아남은 호. 이 중에서 점수로 고른다};
+\node[note, pathc, anchor=north west, text width=150mm] at (-128, -84)
+     {굵은 청록 — 고른 호. 선회율 $+12^\circ$/s, 반지름 $7.16$ m};
+
+% ===================== 점수 =====================
+\node[anchor=north west] at (-128, -98) {\small \textbf{점수} — 두 가지를 더한다};
+\node[anchor=north west] at (-128, -110)
+     {$\displaystyle \text{score} \;=\;
+       \underbrace{\bigl(1 - \text{align}\bigr)}_{\text{목표를 향하는가}}
+       \;+\; 0.3 \cdot
+       \underbrace{\text{clip}\!\left(\frac{d_{min}-r}{3},\,0,\,1\right)}_{\text{여유가 넉넉한가}}$};
+
+\node[note, anchor=north west, text width=190mm] at (-128, -134)
+     {$\text{align}$ 은 2초 뒤 헤딩이 목표 방위에서 얼마나 벗어나는가를 $0{\sim}1$ 로 잰 것이고,
+      $d_{min}$ 은 \textbf{직사각형 선체에서 장애물 점까지의 거리}, $r=0.60$ m 는 안전반지름,
+      $3$ m 는 "이만큼 여유가 있으면 만점" 의 기준이다. 가중치가 $0.3$ 이므로
+      \textbf{목표 쪽으로 가는 것이 여유보다 세 배 무겁다} — 통로가 열려 있으면 굳이 넓은 쪽으로 돌지 않는다};
+
+% ===================== 주의 =====================
+\node[wnote, anchor=north west, text width=190mm] at (-128, -154)
+     {\textbf{3초는 $4.5$ m 다 — 자기 배 길이 $4.9$ m 보다 짧다.}
+      호 다발 전체가 폭 $2.7$ m $\times$ 깊이 $4.5$ m 밖에 안 되는 손바닥만 한 부채다.
+      그래서 이 회피기는 \textbf{멀리 보는 기계가 아니라 가까이를 놓치지 않는 기계}다 —
+      라이다를 $130$ m 까지 늘려도 쓰이지 않는다 ($\texttt{lidar.max\_range\_m}$ 기본값이 $10$ m 인 이유).
+      실제 제약은 선회율이 $12^\circ$/s 뿐이라는 것이다. 3초에 $36^\circ$ 밖에 못 돈다};
+
+\end{tikzpicture}
+\end{document}
