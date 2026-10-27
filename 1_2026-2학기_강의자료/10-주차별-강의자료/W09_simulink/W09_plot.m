@@ -32,17 +32,24 @@ Ts    = evalin('base','Ts_ctrl');
 u_ref = evalin('base','u_ref');
 R_LOS = evalin('base','R_LOS');
 F_max = evalin('base','F_max');
+F_bow_max = evalin('base','F_bow_max');
 n_max = evalin('base','n_max');
 ox    = evalin('base','obs_x_n');   oy = evalin('base','obs_y_n');
 
+%  스칼라 신호를 꺼낼 때는 반드시 col 로 감싼다. 같은 스칼라인데도 저장
+%  모양이 둘로 갈리기 때문이다 — 대부분은 [N x 1] 이지만, 회피 깃발 oa 처럼
+%  ROS Bool 을 형변환해서 받은 신호는 [1 x 1 x N] 로 저장된다 (실측 2026-10-27).
+%  3차원인 채로 두면 oa(kk) 가 다시 3차원이 되어 mean 이 축을 잘못 잡고
+%  stairs 가 "입력값은 2차원이어야 합니다" 로 멈춘다
 t    = out.log_x_n.Time;
-x_n  = out.log_x_n.Data;     y_n  = out.log_y_n.Data;
-ye   = out.log_y_e.Data;     gate = out.log_gate.Data;
-psi  = out.log_psi.Data;     pref = out.log_psi_ref.Data;
-plos = out.log_psi_los.Data; poa  = out.log_psi_oa.Data;
-oa   = out.log_oa.Data;
-u    = out.log_u.Data;
-FL   = out.log_FL.Data;      FR   = out.log_FR.Data;
+x_n  = col(out.log_x_n.Data);     y_n  = col(out.log_y_n.Data);
+ye   = col(out.log_y_e.Data);     gate = col(out.log_gate.Data);
+psi  = col(out.log_psi.Data);     pref = col(out.log_psi_ref.Data);
+plos = col(out.log_psi_los.Data); poa  = col(out.log_psi_oa.Data);
+oa   = col(out.log_oa.Data);
+u    = col(out.log_u.Data);
+FL   = col(out.log_FL.Data);      FR   = col(out.log_FR.Data);
+FB   = col(out.log_FB.Data);      % 선수추진기 — 회피할 때만 0 이 아니어야 한다
 
 %  회전수는 2원소 벡터 신호다. 저장 모양이 [2 x 1 x N] 일 수도 [N x 2] 일 수도 있다
 n = squeeze(out.log_n.Data);        if size(n,1)    ~= numel(t), n    = n.';    end
@@ -69,6 +76,12 @@ S.clear_at_t = t(i_t);
 S.oa_n    = sum(diff([0; double(on(:))]) > 0);
 S.oa_time = sum(on) * Ts;
 S.oa_frac = mean(on);
+
+%  이 주차의 핵심 판정 — 회피가 꺼진 동안 선수추진기가 **정확히** 0 인가.
+%  Y_cmd = K_sway*ssa(psi_ref-psi)*oa 이므로 oa = 0 이면 곱이 0 이고,
+%  배분식의 M = N - l3*FB 도 M = N 으로 되돌아간다 (= 5주차 식 그대로)
+S.FB_on_max  = maxAbs(FB(kk(on)));
+S.FB_off_max = maxAbs(FB(kk(~on)));
 
 %% 3. 추종 성능 — LOS 구간만 --------------------------------------------
 los = ~on;
@@ -145,21 +158,33 @@ title(sprintf('회피 %d회 · 총 %.0f s (%.0f%%)', S.oa_n, S.oa_time, 100*S.oa
 
 %% 5. 추진기 — 5주차와 같은 형식 ----------------------------------------
 figure('Name',['W09 추진기  ' ttl], 'Position',[120 110 1200 380], 'Color','w');
+%  분홍 띠 밖에서 F_B 가 0 인지 **눈으로** 본다 — 이 주차가
+%  "제어는 5주차 그대로" 라고 말할 수 있는 근거가 그 한 줄이다
 subplot(1,3,1);
-plot(t(kk), FL(kk), '-', t(kk), FR(kk), '-', 'LineWidth',1.1); hold on;
+shadeOA(t(kk), on);  hold on;
+plot(t(kk), FL(kk), '-', t(kk), FR(kk), '-', 'LineWidth',1.1);
+plot(t(kk), FB(kk), '-', 'LineWidth',1.6, 'Color',[0.85 0.33 0.10]);
 yline( F_max, 'r:');  yline(-F_max, 'r:');
+yline( F_bow_max, ':', 'Color',[0.85 0.33 0.10]);
+yline(-F_bow_max, ':', 'Color',[0.85 0.33 0.10]);
+%  분홍 띠가 ±1e4 까지 뻗어 있어 자동 축이 그 쪽을 따라간다 — 손으로 잡는다
+ylim([-1 1] * 1.2 * max([F_max, max(abs([FL(kk); FR(kk); FB(kk)]))]));
 grid on; xlabel('시간 [s]'); ylabel('추력 [N]');
-legend({'F_L','F_R'}, 'Location','best');  title('좌·우 추력');
+legend({'회피 구간','F_L','F_R','F_B (선수)'}, 'Location','best');
+title(sprintf('추력 — 선수추진기는 회피 중만 (최대 %.0f N)', S.FB_on_max));
 
 subplot(1,3,2);
-plot(t(kk), n(kk,1), '-', t(kk), n(kk,2), '-', 'LineWidth',1.1); hold on;
+plot(t(kk), n(kk,1), '-', t(kk), n(kk,2), '-', ...
+     t(kk), n(kk,3), '-', 'LineWidth',1.1); hold on;
 yline( n_max, 'r:');  yline(-n_max, 'r:');
 grid on; xlabel('시간 [s]'); ylabel('회전수 [rev/s]');
-legend({'n_L','n_R'}, 'Location','best');  title('회전수');
+legend({'n_L','n_R','n_B'}, 'Location','best');  title('회전수');
 
 subplot(1,3,3);
 plot(t(kk), abs(Ferr(kk,:)), '-', 'LineWidth',1.1);
 grid on; xlabel('시간 [s]'); ylabel('|F_{err}| [N]');
+%  10^-14 지수 표시가 제목 왼쪽을 덮는다 — 눈금마다 지수를 적어 없앤다
+ytickformat('%.0e');
 title(sprintf('왕복 검산 — 최대 %.2e N', S.max_Ferr));
 
 %% 6. 숫자 --------------------------------------------------------------
@@ -174,6 +199,8 @@ fprintf('  (참고) 전 구간   %6.2f m   <- 회피가 섞여 있어 추종 지
         S.mean_ye_all);
 fprintf('  평균 속도        %6.2f m/s (지령 %.2f)\n', S.mean_u, u_ref);
 fprintf('  추력 왕복 오차   %6.2e N\n', S.max_Ferr);
+fprintf('  선수추진기 |F_B|  회피 중 최대 %6.1f N (한계 %g)\n', S.FB_on_max, F_bow_max);
+fprintf('                   평상 중 최대 %6.1f N  <- 0 이어야 한다 (5주차와 같음)\n', S.FB_off_max);
 if isnan(S.t_finish)
     fprintf('  완주             아직 (정지 시간을 늘려 다시 돌린다)\n');
 else
@@ -182,9 +209,24 @@ end
 if S.clear_min < 3
     fprintf('  [경고] 여유 3 m 미만이다 — 라이다를 보았는지, oa 가 늦게 켜졌는지 본다\n');
 end
+if S.FB_off_max > 0
+    fprintf('  [경고] 평상 구간에서 선수추진기가 0 이 아니다 — oa 게이트(SwayGate)를 본다\n');
+end
 end
 
 % ======================================================================
+function v = col(v)
+%  스칼라 신호를 [N x 1] 로 눕힌다. [1 x 1 x N] · [1 x N] · [N x 1] 을 모두 받는다
+v = reshape(v, [], 1);
+end
+
+function m = maxAbs(v)
+%  회피가 한 번도 없었던 주행이면 빈 벡터가 들어온다. max([]) 는 []
+%  이므로 fprintf 가 아무것도 못 찍는다 — 0 으로 접어 둔다
+m = max(abs(v));
+if isempty(m), m = 0; end
+end
+
 function v = nanMask(v, keep)
 %  keep 이 false 인 자리를 NaN 으로 만든다 — plot 이 그 자리를 끊어 그린다
 v(~keep) = NaN;
@@ -224,7 +266,9 @@ function drawObstacles(oy, ox)
 th = linspace(0, 2*pi, 24);
 hold on;
 for i = 1:numel(ox)
-    patch(oy(i)+2*cos(th), ox(i)+2*sin(th), [.9 .9 .9], ...
+    %  반지름 1.5 m 는 collision 실린더 값이다. 눈에 보이는 기둥(visual)은
+    %  0.75 m 로 더 가늘다 — 화면을 보고 반경을 재면 절반으로 잘못 잡는다
+    patch(oy(i)+1.5*cos(th), ox(i)+1.5*sin(th), [.9 .9 .9], ...
           'EdgeColor',[.7 .7 .7], 'HandleVisibility', onceOnly(i==1));
 end
 plot(oy, ox, '.', 'Color',[.45 .45 .45], 'MarkerSize',7, 'HandleVisibility','off');

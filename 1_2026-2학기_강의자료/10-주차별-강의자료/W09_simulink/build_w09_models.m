@@ -131,24 +131,30 @@ function build_vrx(here, m)
     add_line(m, 'AvoidSeam/2', 'Go_psi_oa/1',  'autorouting','on');
     add_line(m, 'AvoidSeam/3', 'Go_oa/1',      'autorouting','on');
 
-    % --- 4) 목표점 발행 -------------------------------------------------
+    % --- 4) 선수추진기 — 6주차 추력배분을 가져와 붙인다 -----------------
+    addBowThrust(here, m);
+
+    % --- 5) 목표점 발행 -------------------------------------------------
     addGoalPublisher(m, 1660, 1100);
     addVizPublisher(m, 1660, 1300);
 
-    % --- 5) 로깅·화면 ---------------------------------------------------
+    % --- 6) 로깅·화면 ---------------------------------------------------
     addLogging(m, 2400, 60);
-    addObserve(m, {'psi_ref','psi'; 'psi_los','psi_oa'; '','oa'; '','y_e'; '','wp_idx'}, ...
+    addObserve(m, {'psi_ref','psi'; 'psi_los','psi_oa'; '','oa'; '','y_e'; '','FB'; '','wp_idx'}, ...
                2750, 1800);
 
-    % --- 6) 설명 --------------------------------------------------------
+    % --- 7) 설명 --------------------------------------------------------
     retitle(m, ['W09 실습 D  —  LOS 와 파이썬 회피를 한 제어기에 (Gazebo 필요)' newline ...
         'Guidance -> AvoidSeam -> Inner Loop -> Thrusters -> Gazebo -> Navigation' newline ...
         '' newline ...
-        '제어는 5주차 그대로다. 헤딩 P-D 와 속도 PI 는 블록 하나도 바뀌지 않았다.' newline ...
-        '바뀐 것은 **제어기에 들어가는 명령을 누가 내는가** 하나뿐이다.' newline ...
-        '  oa_flag 가 0 : LOS 가 낸 psi_los 가 그대로 간다 (5주차와 완전히 같다)' newline ...
-        '  oa_flag 가 1 : 파이썬이 낸 psi_oa 가 대신 간다' newline ...
-        '로그의 psi_los 와 psi_ref 가 갈라지는 구간이 회피 구간이다.' newline ...
+        '제어기는 5주차 그대로다. 헤딩 P-D 와 속도 PI 는 블록 하나도 바뀌지 않았다.' newline ...
+        '바뀐 것은 둘이다 — (1) 제어기에 들어가는 명령을 누가 내는가,' newline ...
+        '                  (2) 그 명령을 추진기 **셋**에 어떻게 나누는가 (배분은 6주차 것).' newline ...
+        '  oa_flag 가 0 : LOS 가 낸 psi_los 가 그대로 가고 선수추진기는 0 이다 (5주차와 완전히 같다)' newline ...
+        '  oa_flag 가 1 : 파이썬이 낸 psi_oa 가 대신 가고, 선수추진기가 켜져 옆으로도 비킨다' newline ...
+        '배분식의 M = N - l3*FB 가 선수추진기의 요를 되받아 빼므로,' newline ...
+        '옆으로 밀리는 동안에도 선수각은 제어기가 시킨 그대로 돈다 (6주차 2-4절).' newline ...
+        '로그의 psi_los 와 psi_ref 가 갈라지는 구간이 회피 구간이고, 그 구간에서만 FB 가 0 이 아니다.' newline ...
         '' newline ...
         '실행 전: (1) W09_setup  (2) bash run_vrx_ca.sh  (3) bash run_ca_nodes.sh'], ...
         250, -330);
@@ -399,11 +405,13 @@ end
 % =====================================================================
 function addLogging(m, x, y)
 %  5주차 목록에 회피 신호 셋을 더했다 — psi_los, psi_oa, oa.
-%  psi_ref 는 이제 "제어기가 실제로 받은 명령" 이다
+%  psi_ref 는 이제 "제어기가 실제로 받은 명령" 이다.
+%  FB 도 더했다 — 선수추진기 추력 [N]. oa 가 0 인 구간에서 이 값이 정확히 0 인지
+%  보는 것이 "5주차와 같다" 는 말의 증거다 (W09_plot 이 같이 그린다)
     sig = {'x_n','y_n','psi','psi_ref','psi_los','psi_oa','oa', ...
-           'y_e','x_e','beta','chi','u','r','U','gate','FL','FR','n','F_err','wp_idx'};
+           'y_e','x_e','beta','chi','u','r','U','gate','FL','FR','FB','n','F_err','wp_idx'};
     tag = {'x_n','y_n','psi','psi_ref','psi_los','psi_oa','oa', ...
-           'y_e','x_e','beta','chi','u','r','U','gate','FL','FR','nprop','Ferr','wp_idx'};
+           'y_e','x_e','beta','chi','u','r','U','gate','FL','FR','FB','nprop','Ferr','wp_idx'};
     add_logging_box(m, sig, tag, [x y], 'Ts_ctrl');
 end
 
@@ -443,6 +451,177 @@ end
 % =====================================================================
 % 공통 헬퍼 — 5주차 빌더와 같은 것들
 % =====================================================================
+% =====================================================================
+% 선수추진기 — 6주차 추력배분을 가져와 5주차 제어기 뒤에 붙인다
+%
+%   제어기는 손대지 않는다. 헤딩 P-D 와 속도 PI 는 블록 하나도 바뀌지 않는다.
+%   바뀌는 것은 **배분**이다. 같은 X·N 요구를 받아 추진기 셋으로 나눈다.
+%
+%       5주차   X = FL + FR,   N = (FL - FR)*b
+%       9주차   X = FL + FR,   Y = FB,   N = (FL - FR)*b + l3*FB
+%
+%   Y 지령은 회피할 때만 생긴다
+%       Y_cmd = K_sway * ssa(psi_ref - psi) * oa_flag
+%   oa_flag 가 0 이면 Y_cmd = 0 -> FB = 0 -> 배분식이 5주차와 글자까지 같아진다.
+%   그래서 "제어는 5주차 그대로" 라는 이 주차의 약속이 평상 주행에서 **글자대로**
+%   참이다. 선수추진기는 회피 구간에서만 켜진다.
+%
+%   왜 요(yaw) 를 돕게 하지 않았는가 — 작동기로서 더 못하기 때문이다
+%       지레팔이 선수추진기는 l3 = 0.75 m, 선미 한 쌍은 b = 1.027 m 다.
+%       뉴턴당 모멘트가 **더 작다**. 게다가 선미 쌍은 포화되지도 않았다
+%       (SatN 의 한계가 2*F_max*half_beam = 1027 N m 이고 Kp_psi = 400 이다).
+%       빌릴 데가 없는데 빌리면, 원치 않는 옆힘만 딸려 온다 — Yv = Yvv = 100 인
+%       이 선체에서 N 의 30 % 를 선수추진기로 내면 FB = 160 N, 정상 옆속도가
+%       v = 0.86 m/s 다. u = 1.5 m/s 에서 30도 비스듬히 가는 셈이다.
+%
+%   그래서 선수추진기는 **옆걸음 전용**으로 쓴다. 호 다발 회피기가 선회 반경에
+%   묶여 못 피하는 자리를, 선수를 돌리지 않고 옆으로 비켜서 번다.
+%   (1.5 m/s 에서 r_max 약 12 deg/s 면 선회 반경이 7.1 m 다. 호 다발의 폭이
+%    2.7 x 4.5 m 로 배 길이 4.9 m 보다 짧은 것이 이 한계에서 온다.)
+%
+%   6주차의 핵심이 그대로 쓰인다 — allocFcn 의 M = N - l3*FB 한 줄이다.
+%   선수추진기가 낸 요 모멘트 l3*FB 를 선미 쌍이 되받아 빼므로, 옆으로 밀리는
+%   동안에도 선수각은 제어기가 시킨 그대로 돈다 (6주차 2-4절, 2-5절 실측).
+%
+%   포트는 **끼워 넣지 않고 뒤에 붙인다.** InnerLoop 입력 1~5번과 출력 1~2번,
+%   Thrusters 출력 1~4번이 5주차 그대로 남아 윗단 신호선을 다시 긋지 않아도 된다.
+% =====================================================================
+function addBowThrust(here, m)
+    %  6주차 배분식 본문을 **글자 그대로** 가져온다. 베껴 적지 않는다 —
+    %  두 군데에 같은 식을 적어 두면 한쪽만 고쳐져 어긋난다 (parts/allocFcn.m 머리글)
+    p6 = fullfile(here, '..', 'W06_simulink', 'parts');
+    addpath(p6);
+    cl = onCleanup(@() rmpath(p6));   %#ok<NASGU> — 함수를 빠져나갈 때 되돌린다
+
+    % ---------- 1) InnerLoop : 회피 깃발 입력 하나, 선수추력 출력 하나 ----------
+    ss = [m '/InnerLoop'];
+    add_block('simulink/Sources/In1', [ss '/oa'], ...
+              'Position', [40 460 75 490], 'Port','6');
+
+    %  Y_cmd = K_sway * ssa(psi_ref - psi) * oa
+    %  헤딩 오차는 제어기가 **이미 센 것**을 받아 쓴다 (Ssa 의 출력). 같은 오차를
+    %  두 번 세지 않는다 — 두 번 세면 한쪽만 고쳐질 자리가 하나 더 생긴다
+    add_block('simulink/Math Operations/Gain', [ss '/K_sway'], ...
+              'Position', [410 180 460 220], 'Gain','K_sway');
+    add_block('simulink/Math Operations/Product', [ss '/SwayGate'], ...
+              'Position', [540 180 575 220]);
+    add_line(ss, 'Ssa/1',    'K_sway/1',  'autorouting','on');
+    add_line(ss, 'K_sway/1', 'SwayGate/1','autorouting','on');
+    add_line(ss, 'oa/1',     'SwayGate/2','autorouting','on');
+
+    % ---------- 2) 배분을 6주차 것으로 갈아 끼운다 ----------
+    delete_line(ss, 'PI_u/1',  'Alloc/1');
+    delete_line(ss, 'SatN/1',  'Alloc/2');
+    delete_line(ss, 'HB/1',    'Alloc/3');
+    delete_line(ss, 'FM/1',    'Alloc/4');
+    delete_line(ss, 'Alloc/1', 'FL/1');
+    delete_line(ss, 'Alloc/2', 'FR/1');
+    delete_block([ss '/Alloc']);
+    delete_block([ss '/HB']);     % 상수 둘은 묶음 하나(alloc_prm)로 대신한다
+    delete_block([ss '/FM']);
+
+    add_block('simulink/User-Defined Functions/MATLAB Function', ...
+              [ss '/Alloc'], 'Position', [730 210 880 360]);
+    setFcn(ss, 'Alloc', allocFcn());        % 6주차 parts/allocFcn.m — 손대지 않았다
+
+    add_block('simulink/Sources/Constant', [ss '/PRM'], ...
+              'Position', [600 460 690 490], 'Value','alloc_prm');
+    add_block('simulink/Sinks/Out1', [ss '/FB'], ...
+              'Position', [960 370 995 400], 'Port','3');
+
+    add_line(ss,'PI_u/1',    'Alloc/1','autorouting','on');   % X  전후력
+    add_line(ss,'SwayGate/1','Alloc/2','autorouting','on');   % Y  횡력 (회피할 때만)
+    add_line(ss,'SatN/1',    'Alloc/3','autorouting','on');   % N  요 모멘트
+    add_line(ss,'PRM/1',     'Alloc/4','autorouting','on');   % p  = alloc_prm
+    add_line(ss,'Alloc/1','FL/1','autorouting','on');
+    add_line(ss,'Alloc/2','FR/1','autorouting','on');
+    add_line(ss,'Alloc/3','FB/1','autorouting','on');
+    Simulink.BlockDiagram.arrangeSystem(ss);
+
+    % ---------- 3) Thrusters : 플러그인 칸도 셋으로 ----------
+    %  5주차 칸의 식을 그대로 두고 벡터 길이만 2 -> 3 으로 늘린다.
+    %  포화·회전수·검산 세 토막은 가제보 플러그인 소스 그대로다
+    ts = [m '/Thrusters'];
+    set_param([ts '/Plugin'], 'Position', [250 60 440 320]);   % 포트 5개 자리
+    add_block('simulink/Sources/In1', [ts '/FB_cmd'], ...
+              'Position', [40 380 75 410], 'Port','3');
+    add_block('simulink/Sinks/Out1',  [ts '/FB'], ...
+              'Position', [570 380 605 410], 'Port','5');
+    setFcn(ts, 'Plugin', [ ...
+'function [FL, FR, n, F_err, FB] = Plugin(FL_cmd, FR_cmd, k, F_lim, FB_cmd)'  newline ...
+'%#codegen'                                                        newline ...
+'% Gazebo 추진기 플러그인이 하는 일을 소스와 같은 순서로 적는다.'   newline ...
+'%   gz-sim7  src/systems/thruster/Thruster.cc'                    newline ...
+'% 5주차와 다른 것은 **벡터 길이 하나**다 — 추진기가 둘에서 셋이 됐다.'  newline ...
+'% 세 토픽 모두 같은 플러그인이고 계수도 같다 (Ct=0.004422, rho=1000, D=0.2)' newline ...
+''                                                                 newline ...
+'% 1) 포화 — 플러그인은 **추력에** 건다 (OnCmdThrust, :520-521)'    newline ...
+'%      thrust = clamp(cmd, cmdMin, cmdMax),  cmdMax = max_thrust_cmd' newline ...
+'F = [FL_cmd; FR_cmd; FB_cmd];'                                    newline ...
+'F = max(-F_lim, min(F_lim, F));'                                  newline ...
+''                                                                 newline ...
+'% 2) 추력 -> 회전수 (ThrustToAngularVec, :562-584). 이 값이 조인트'  newline ...
+'%    속도 지령이 된다 — velocity_control = true (:740-756)'        newline ...
+'%      omega = sign(F*Ct)*sqrt(|F|/(rho*Ct*D^4)),  k = rho*Ct*D^4' newline ...
+'n = sign(F) .* sqrt(abs(F)/k);'                                   newline ...
+''                                                                 newline ...
+'% 3) 회전수 -> 추력 (AngularVelToThrust, :593-599) — 되돌려 보는 검산' newline ...
+'F_chk = k * abs(n) .* n;'                                          newline ...
+'F_err = F_chk - F;'                                               newline ...
+''                                                                 newline ...
+'% 4) 링크에 가는 힘은 되돌린 값이 아니라 포화만 거친 지령이다'      newline ...
+'%    (AddWorldWrench 가 desiredThrust 를 그대로 쓴다, :770-773)'   newline ...
+'FL = F(1);'                                                       newline ...
+'FR = F(2);'                                                       newline ...
+'FB = F(3);']);
+
+    add_line(ts, 'FB_cmd/1', 'Plugin/5', 'autorouting','on');
+    add_line(ts, 'Plugin/5', 'FB/1',     'autorouting','on');
+
+    %  열 잎 블록을 각자의 포트 높이에 맞춘다 — 열 선이 모두 직선이 된다
+    tin  = {'FL_cmd','FR_cmd','Kp','Flim','FB_cmd'};
+    tout = {'FL','FR','n','F_err','FB'};
+    for k = 1:5
+        align_to(ts, tin{k},  'Outport', port_xy(ts, 'Plugin', 'Inport',  k));
+        align_to(ts, tout{k}, 'Inport',  port_xy(ts, 'Plugin', 'Outport', k));
+    end
+
+    sl_note(ts, 'n_b', [ ...
+        '선수추진기가 셋째 벌로 붙었다 (6주차 가제보 모델 /wamv/thrusters/bow/thrust).' newline ...
+        '플러그인은 좌·우와 **같은 것**이고 계수도 같다 — 바뀐 것은 벡터 길이뿐이다.' newline ...
+        '주의: 이 플러그인은 전진 속도와 무관하게 지령한 힘을 그대로 낸다.' newline ...
+        '실제 선수추진기는 2~3 kn 을 넘으면 효율이 크게 떨어진다 (9주차 본문 참고)'], 250, 520);
+
+    % ---------- 4) 윗단 배관 ----------
+    add_line(m, 'InnerLoop/3', 'Thrusters/3', 'autorouting','on');   % FB 지령
+    add_line(m, 'AvoidSeam/3', 'InnerLoop/6', 'autorouting','on');   % oa 깃발 (가지)
+    G(m, 'FB', 1230, 780);
+    add_line(m, 'Thrusters/5', 'Go_FB/1', 'autorouting','on');
+
+    % ---------- 5) 발행 토픽을 셋으로 ----------
+    %  상자 안에 벌 하나를 손으로 끼우기보다 add_cmd_publisher 에 토픽 셋을
+    %  주고 다시 짓는 편이 짧다. 6주차 parts/plant.m 과 **같은 호출**이다
+    fl  = find_system(m,'SearchDepth',1,'BlockType','From','GotoTag','FL');
+    fr  = find_system(m,'SearchDepth',1,'BlockType','From','GotoTag','FR');
+    nFL = get_param(fl{1},'Name');
+    nFR = get_param(fr{1},'Name');
+    delete_line(m, [nFL '/1'], 'CmdPublisher/1');
+    delete_line(m, [nFR '/1'], 'CmdPublisher/2');
+    pos = get_param([m '/CmdPublisher'], 'Position');
+    delete_block([m '/CmdPublisher']);
+    add_cmd_publisher(m, pos(1:2), ...
+        {'/wamv/thrusters/left/thrust', ...
+         '/wamv/thrusters/right/thrust', ...
+         '/wamv/thrusters/bow/thrust'}, 'Ts_ctrl', {'FL','FR','FB'});
+
+    nFB = from_name(m, 'FB');
+    add_block('simulink/Signal Routing/From', [m '/' nFB], ...
+              'Position', [pos(1)-70 pos(2)+110 pos(1) pos(2)+135], 'GotoTag','FB');
+    add_line(m, [nFL '/1'], 'CmdPublisher/1', 'autorouting','on');
+    add_line(m, [nFR '/1'], 'CmdPublisher/2', 'autorouting','on');
+    add_line(m, [nFB '/1'], 'CmdPublisher/3', 'autorouting','on');
+end
+
 function setFcn(sys, path, code)
     S  = sfroot;
     fpos = get_param([sys '/' path], 'Position');

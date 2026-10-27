@@ -126,6 +126,7 @@ load_system(m);
 set_param(m, 'EnablePacing','on', 'PacingRate', num2str(RTF), ...
              'StopTime', num2str(T_end));
 out = sim(m);
+assignin('base','out',out);   % 그림이 실패해도 주행 데이터는 남긴다
 
 %% 4. 결과 ------------------------------------------------------------
 fprintf('4) 결과 그림\n');
