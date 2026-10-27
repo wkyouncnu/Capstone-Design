@@ -1,0 +1,81 @@
+# w09_ca.rviz — 9주차 라이다 확인용 Rviz2 판 (10주차 2-3-7 의 절차를 파일로 굳힌 것)
+#
+#   핵심 한 줄 : Fixed Frame 은 반드시 wamv/wamv/base_link 다.
+#   Rviz2 기본값 map 은 이 세계에 없는 좌표계라 모든 표시가 Status: Error 로 뜬다.
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /PointCloud2 (장애물)1
+      Splitter Ratio: 0.5
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 5
+      Plane Cell Count: 20
+      Color: 100; 100; 100
+      Alpha: 0.4
+    - Class: rviz_default_plugins/TF
+      Name: TF (좌표계 나무)
+      Enabled: false
+      Marker Scale: 2
+      Show Names: true
+    - Class: rviz_default_plugins/PointCloud2
+      Name: PointCloud2 (장애물)
+      Enabled: true
+      Topic:
+        Value: /wamv/sensors/lidars/lidar_wamv_sensor/points
+        Depth: 5
+        Durability Policy: Volatile
+        Reliability Policy: Best Effort
+      Style: Flat Squares
+      Size (m): 0.15
+      Alpha: 1
+      Color Transformer: AxisColor
+      Axis: Z
+      Autocompute Intensity Bounds: true
+      Decay Time: 0
+      Position Transformer: XYZ
+    - Class: rviz_default_plugins/LaserScan
+      Name: LaserScan (/scan, 회피가 쓰는 것)
+      Enabled: true
+      Topic:
+        Value: /wamv/sensors/lidars/lidar_wamv_sensor/scan
+        Depth: 5
+        Durability Policy: Volatile
+        Reliability Policy: Best Effort
+      Style: Spheres
+      Size (m): 0.3
+      Color: 255; 60; 60
+      Color Transformer: FlatColor
+      Decay Time: 0
+  Global Options:
+    Fixed Frame: wamv/wamv/base_link
+    Background Color: 32; 36; 40
+    Frame Rate: 20
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Distance: 45
+      Pitch: 0.65
+      Yaw: 3.6
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Target Frame: wamv/wamv/base_link
+Window Geometry:
+  Height: 800
+  Width: 1200
+  Displays:
+    collapsed: false
