@@ -149,15 +149,12 @@ case {'W06_1_point','W06_2_sway','W06_3_thrust','W06_4_stop', ...
     %   6주차는 위치 고리가 하나 더 있다 — OuterLoop 이 위치 오차를 속도 지령으로
     %   바꾸는 자리이므로 제어(주황)다. 공통 표에는 없으므로 여기서 더한다
     role = [GNC; {'OuterLoop','control'}];
-case {'W09_0_offline','W09_1_vrx'}
-    %   ZeroThr · ZeroEnv 는 VRX 모델에만 있다. Gazebo 가 힘을 만들므로 추력·외란을
-    %   계산하지 않고 0 을 태그로 내보내, Logging 이 오프라인 모델과 **같은 신호**를
-    %   받게 하는 자리다. 지령이 아니다 — 자리는 각각 추진기(4) · 환경(5) 단계다.
-    %   Constant 라고 1단계(지령)로 짐작하면 로깅 상자보다 오른쪽에 섰다고
-    %   check_flow 가 잡는다 (2026-10-01. W04_P2 의 NoiseHF·SensorNoise 와 같은 원인)
-    role = [GNC; {'DPRef','guidance'; 'WaveFilter','ros'; 'DPCtrl','control'; ...
-                  'Alloc','allocation'; 'Env','env'; ...
-                  'ZeroThr','thruster'; 'ZeroEnv','env'}];
+case 'W09_1_vrx'
+    %   AvoidSeam 은 **유도(파랑)** 다. 하는 일이 "어느 헤딩 명령을 쓸 것인가" 의
+    %   판단이지 제어가 아니다 — 5주차 Guidance 가 내는 psi_ref 와 파이썬이 내는
+    %   psi_oa 중 하나를 고르는 자리다. 그래서 Guidance 와 같은 색으로 둔다.
+    %   GoalPublisher 는 내보내기만 하므로 CmdPublisher 와 같은 연보라다 (2026-10-27)
+    role = [GNC; {'AvoidSeam','guidance'; 'GoalPublisher','ros'}];
 
 otherwise
     role = GNC;     % 이름이 관례를 따르면 그대로 맞는다
