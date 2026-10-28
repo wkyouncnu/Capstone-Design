@@ -11,6 +11,10 @@
 %     순간 지령이 끊기므로 그때 남아 있던 속도만큼 배가 더 미끄러진다.
 %     그 관성 거리를 재는 것이 이 단계의 목적이다. 1단처럼 cm 까지 붙이려면
 %     gate 를 닫지 말고 끝까지 제어해야 한다 (= 1단).
+%
+%   이 파일은 **오프라인 운동모델만** 돌린다. Gazebo(VRX) 는 쓰지 않는다.
+%   연동은 쌍둥이 W06_<n>_..._vrx 를 Simulink 에서 직접 Run 해서 한다 —
+%   그때 이 파일이 남긴 기준 궤적(ref/) 위에 겹쳐 그려 바로 대조한다.
 setappdata(0, 'W06_stage', 4);
 setappdata(0, 'W06_skip_run', true);
 W06_setup
@@ -18,6 +22,7 @@ W06_setup
 load_system(mdl);
 out = sim(mdl);
 S   = W06_plot(out, sprintf('%d단 — %s', stage, stage_name{stage}));
+W06_ref('save', stage, out, S);     % 쌍둥이가 겹쳐 그릴 기준 궤적 — [[W06_ref]]
 
 %  gate 가 닫힌 뒤 배가 얼마나 더 갔는가 — 그것이 관성 거리다
 t     = out.log_x_n.Time;

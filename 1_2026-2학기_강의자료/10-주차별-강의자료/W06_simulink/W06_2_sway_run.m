@@ -9,6 +9,10 @@
 %   이 단계에서 봐야 할 것
 %     선수각이 묶여 있는가 — 옆으로 가는 동안 psi 가 sway_deg 에서 거의
 %     벗어나지 않아야 한다. 선수가 돌면 횡이동이 아니라 선회가 된다.
+%
+%   이 파일은 **오프라인 운동모델만** 돌린다. Gazebo(VRX) 는 쓰지 않는다.
+%   연동은 쌍둥이 W06_<n>_..._vrx 를 Simulink 에서 직접 Run 해서 한다 —
+%   그때 이 파일이 남긴 기준 궤적(ref/) 위에 겹쳐 그려 바로 대조한다.
 setappdata(0, 'W06_stage', 2);
 setappdata(0, 'W06_skip_run', true);
 W06_setup
@@ -16,6 +20,7 @@ W06_setup
 load_system(mdl);
 out = sim(mdl);
 S   = W06_plot(out, sprintf('%d단 — %s (bow_on = %d)', stage, stage_name{stage}, bow_on));
+W06_ref('save', stage, out, S);     % 쌍둥이가 겹쳐 그릴 기준 궤적 — [[W06_ref]]
 
 %  횡이동이 되었는가, 선수각은 묶여 있었는가
 fprintf('\n[2단 점검] bow_on = %d,  목표 (%.3f, %.3f) m / %.2f deg\n', ...

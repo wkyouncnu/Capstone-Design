@@ -14,6 +14,10 @@
 %     같아야 한다 — 다르면 배선이 틀린 것이다. 그다음 왕복 검산 max|F_err| 이
 %     0 인지, 회전수가 참고선 n_max = sqrt(F_max/k_prop) 안에 있는지, 플러그인
 %     한계(편당 2353.5 N)까지 얼마나 남았는지 읽는다.
+%
+%   이 파일은 **오프라인 운동모델만** 돌린다. Gazebo(VRX) 는 쓰지 않는다.
+%   연동은 쌍둥이 W06_<n>_..._vrx 를 Simulink 에서 직접 Run 해서 한다 —
+%   그때 이 파일이 남긴 기준 궤적(ref/) 위에 겹쳐 그려 바로 대조한다.
 setappdata(0, 'W06_stage', 3);
 setappdata(0, 'W06_skip_run', true);
 W06_setup
@@ -21,6 +25,7 @@ W06_setup
 load_system(mdl);
 out = sim(mdl);
 S   = W06_plot(out, sprintf('%d단 — %s', stage, stage_name{stage}));
+W06_ref('save', stage, out, S);     % 쌍둥이가 겹쳐 그릴 기준 궤적 — [[W06_ref]]
 
 %  왕복 검산이 0 인가, 회전수가 참고선 안에 있는가, 끝 자세는 1단과 같은가
 n_all = squeeze(out.log_n.Data);

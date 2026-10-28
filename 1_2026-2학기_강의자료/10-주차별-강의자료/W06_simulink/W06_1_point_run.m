@@ -14,6 +14,10 @@
 %   이 단계에서 봐야 할 것
 %     목표 (hold_north, hold_east) 에 hold_deg 로 서 있는가. 세 고리와 추력
 %     배분이 제대로 짜였으면 마지막 10 초 평균 오차가 수 cm 아래로 내려간다.
+%
+%   이 파일은 **오프라인 운동모델만** 돌린다. Gazebo(VRX) 는 쓰지 않는다.
+%   연동은 쌍둥이 W06_<n>_..._vrx 를 Simulink 에서 직접 Run 해서 한다 —
+%   그때 이 파일이 남긴 기준 궤적(ref/) 위에 겹쳐 그려 바로 대조한다.
 setappdata(0, 'W06_stage', 1);
 setappdata(0, 'W06_skip_run', true);    % 설정만 받아 온다 — 실행은 이 파일이 한다
 W06_setup
@@ -21,6 +25,7 @@ W06_setup
 load_system(mdl);
 out = sim(mdl);
 S   = W06_plot(out, sprintf('%d단 — %s', stage, stage_name{stage}));
+W06_ref('save', stage, out, S);     % 쌍둥이가 겹쳐 그릴 기준 궤적 — [[W06_ref]]
 
 %  목표에 정말 갔는가 — 잰 값을 그대로 찍는다
 fprintf('\n[1단 점검] 목표  (%7.3f, %7.3f) m / %6.2f deg\n', x_d, y_d, rad2deg(psi_d));

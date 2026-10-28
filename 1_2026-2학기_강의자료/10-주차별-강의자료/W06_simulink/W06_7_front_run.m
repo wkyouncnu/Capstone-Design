@@ -10,6 +10,10 @@
 %     마지막 구간에서 선수추진기 F_B 가 5단보다 적게 쓰인다 — 붙이는 힘을
 %     선미 추진기가 내기 때문이다. 대신 선미 추력이 한계(F_max)에 더 가까이
 %     붙고, 선수각을 90 deg 돌리는 몫만큼 완료 시각이 달라진다.
+%
+%   이 파일은 **오프라인 운동모델만** 돌린다. Gazebo(VRX) 는 쓰지 않는다.
+%   연동은 쌍둥이 W06_<n>_..._vrx 를 Simulink 에서 직접 Run 해서 한다 —
+%   그때 이 파일이 남긴 기준 궤적(ref/) 위에 겹쳐 그려 바로 대조한다.
 setappdata(0, 'W06_stage', 7);
 setappdata(0, 'W06_skip_run', true);
 W06_setup
@@ -17,6 +21,7 @@ W06_setup
 load_system(mdl);
 out = sim(mdl);
 S   = W06_plot(out, sprintf('%d단 — %s', stage, stage_name{stage}));
+W06_ref('save', stage, out, S);     % 쌍둥이가 겹쳐 그릴 기준 궤적 — [[W06_ref]]
 
 %  전진 접안의 목표 선수각으로 섰는가, 추력은 어디에 쏠렸는가
 psi_dock = dock_deg - berth_side*90;

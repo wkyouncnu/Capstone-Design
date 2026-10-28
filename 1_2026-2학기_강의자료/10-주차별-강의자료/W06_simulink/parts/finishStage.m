@@ -22,6 +22,7 @@ function n = finishStage(m, chain, boxes)
     snug_tags(m);
     pack_boxes(m, boxes);
     scope_legend(m);
+    W06_set_callbacks(m);         %  InitFcn · StopFcn — 직접 Run 해도 자기 단계로 돈다
     save_system(m);  close_system(m, 0);
 
     %  이름표가 가려진 것·이름표 위를 지나는 선을 블록을 비켜서 푼다.

@@ -11,6 +11,10 @@
 %   이 단계에서 봐야 할 것
 %     세 단계가 **차례로** 올라가는가(t_phase), 단계 3 에서 선수각이 흔들리지
 %     않는가, 옆걸음 구간에서 |v| 가 v_max 근처로 버티는가.
+%
+%   이 파일은 **오프라인 운동모델만** 돌린다. Gazebo(VRX) 는 쓰지 않는다.
+%   연동은 쌍둥이 W06_<n>_..._vrx 를 Simulink 에서 직접 Run 해서 한다 —
+%   그때 이 파일이 남긴 기준 궤적(ref/) 위에 겹쳐 그려 바로 대조한다.
 setappdata(0, 'W06_stage', 5);
 setappdata(0, 'W06_skip_run', true);
 W06_setup
@@ -18,6 +22,7 @@ W06_setup
 load_system(mdl);
 out = sim(mdl);
 S   = W06_plot(out, sprintf('%d단 — %s', stage, stage_name{stage}));
+W06_ref('save', stage, out, S);     % 쌍둥이가 겹쳐 그릴 기준 궤적 — [[W06_ref]]
 
 %  세 단계가 제때 올라갔는가, 선석에 얼마나 붙었는가
 t     = out.log_x_n.Time;

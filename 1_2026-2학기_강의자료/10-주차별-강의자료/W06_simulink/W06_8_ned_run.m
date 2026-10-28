@@ -12,6 +12,10 @@
 %     끝 자세는 5단과 거의 같게 나오는가(같아야 한다 — 게인을 맞춰 두었다),
 %     대신 완료 시각이 길어지는가. NED 속도 지령은 **크기**를 V_ned_max 로
 %     묶으므로 북·동 어느 쪽도 u_max 까지 못 올라간다.
+%
+%   이 파일은 **오프라인 운동모델만** 돌린다. Gazebo(VRX) 는 쓰지 않는다.
+%   연동은 쌍둥이 W06_<n>_..._vrx 를 Simulink 에서 직접 Run 해서 한다 —
+%   그때 이 파일이 남긴 기준 궤적(ref/) 위에 겹쳐 그려 바로 대조한다.
 setappdata(0, 'W06_stage', 8);
 setappdata(0, 'W06_skip_run', true);
 W06_setup
@@ -19,6 +23,7 @@ W06_setup
 load_system(mdl);
 out = sim(mdl);
 S   = W06_plot(out, sprintf('%d단 — %s', stage, stage_name{stage}));
+W06_ref('save', stage, out, S);     % 쌍둥이가 겹쳐 그릴 기준 궤적 — [[W06_ref]]
 
 %  NED 속도 지령의 크기가 한계 안에 있었는가, 끝 자세는 5단과 같은가
 fprintf('\n[8단 점검] 선석 (%7.3f, %7.3f) m / %6.2f deg,  제어 좌표계 NED\n', ...
