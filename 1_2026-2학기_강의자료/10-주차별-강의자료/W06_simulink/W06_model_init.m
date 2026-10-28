@@ -35,7 +35,14 @@ mdl = char(mdl);
 %  (직접 Run 은 StopFcn 전에 out 을 베이스에 넣어 준다. sim() 은 돌려준 뒤에 넣는다)
 evalin('base', 'clear out');
 
-if ~isequal(getappdata(0, 'W06_cfg_for'), mdl)
+%  appdata 만 믿지 않는다 — 베이스 워크스페이스가 비워졌으면(다른 작업의 clear,
+%  MATLAB 재시작) 깃발은 남아 있어도 설정은 없다. 그대로 돌리면 W06_vrx_prep 이
+%  'T_run 은 인식할 수 없는 변수' 로 멈춘다 (2026-10-28 실측). 변수 셋을 함께 본다
+cfg_laid = isequal(getappdata(0, 'W06_cfg_for'), mdl) && ...
+    evalin('base', ['exist(''T_run'',''var'') && exist(''animate'',''var'')' ...
+                    ' && exist(''task_mode'',''var'')']) == 1;
+
+if ~cfg_laid
     fprintf('\n[%s] %d단 설정을 깐다 (InitFcn -> W06_setup)\n', mdl, st);
     setappdata(0, 'W06_stage', st);
     setappdata(0, 'W06_skip_run', true);     % 설정만. W06_setup 이 sim 을 부르면 안 된다
