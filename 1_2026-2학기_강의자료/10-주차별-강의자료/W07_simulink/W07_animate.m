@@ -12,7 +12,7 @@ function f = W07_animate(x_n, y_n, psi, psi_ref, r_dist, turns, u, u_cmd, gate, 
 %     x_n, y_n : 북쪽 x · 동쪽 y [m]   (출발점 기준 상대좌표)
 %     psi      : 선수각 [rad]          (북 기준 시계방향 +, NED)
 %     psi_ref  : 벡터필드가 낸 목표 선수각 [rad]
-%                crab_comp = 0 이면 이것이 곧 목표 침로 chi_d 다 (LoiterVF 의 식 13)
+%                이것이 곧 목표 침로 chi_d 다 (LoiterVF 가 내는 식 (30) 의 값)
 %     r_dist   : 로이터 중심까지의 실제 거리 [m]  (LoiterVF 가 내는 r. 7주차의 핵심 지표)
 %     turns    : 지금까지 돈 바퀴 수    (TurnCount 가 세는 값)
 %     u        : 서지 속도 [m/s]

@@ -37,7 +37,7 @@ for i = 1:4
     r_dot   = -vd * (r - rd) ./ D;          % 반경 방향 — 원에 붙는 성분
     rth_dot =  vd * pc * r   ./ D;          % 접선 방향 — 도는 성분
 
-    % --- 식 (13) : 극좌표 -> NED ---
+    % --- 식 (9) 의 두 성분을 NED 로 돌린다 (화살표를 그리려면 벡터 자체가 필요하다) ---
     vx = r_dot.*cos(theta) - rth_dot.*sin(theta);
     vy = r_dot.*sin(theta) + rth_dot.*cos(theta);
 
