@@ -143,12 +143,12 @@ if S.oa_n == 0
     fprintf('     - 라이다가 장애물을 보는가      bash probe_lidar.sh\n');
     fprintf('     - 목표점이 파이썬에 닿았는가    ros2 topic echo --once /usv/state/goal_enu\n');
     fprintf('     - 회피 노드가 살아 있는가       tail /tmp/w09_ca_nodes.log\n');
-elseif S.clear_min < 3
-    fprintf('   회피는 켜졌는데 여유가 %.1f m 로 좁다. oa 가 늦게 켜진 것이다 —\n', S.clear_min);
-    fprintf('   파이썬 쪽 안전거리(lidar.ignore_radius_m · 회피 반경)를 보고, 속도 u_ref 를 낮춰 본다\n');
+elseif S.gap_min < 0
+    fprintf('   참값표 기준으로 선체가 장애물에 **닿았다** (틈 %.2f m). oa 가 늦게 켜진 것이다 —\n', S.gap_min);
+    fprintf('   파이썬 쪽 안전여유(robot.safety_margin_m)를 보고, 속도 u_ref 를 낮춰 본다\n');
 else
-    fprintf('   회피 %d회 켜짐, 최소 여유 %.1f m — 이음새가 제대로 일했다\n', ...
-            S.oa_n, S.clear_min);
+    fprintf('   회피 %d회 켜짐, 최소 선체 틈 %.2f m — 이음새가 제대로 일했다\n', ...
+            S.oa_n, S.gap_min);
 end
 end
 

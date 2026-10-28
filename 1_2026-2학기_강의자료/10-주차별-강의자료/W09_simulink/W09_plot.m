@@ -17,7 +17,8 @@ function S = W09_plot(out, ttl)
 %        라이다가 잘 보았는지와 무관하게 재어진다.
 %
 %   돌려주는 것 S
-%     .clear_min .clear_at_x   최소 여유 [m] 와 그때의 x_n [m]
+%     .clear_min .clear_at_x   최소 중심거리 [m] 와 그때의 x_n [m]
+%     .gap_min                 그때의 **선체 표면 대 장애물 표면** 틈 [m]
 %     .oa_n .oa_time .oa_frac  회피가 켜진 횟수 · 회피한 시간 [s] · 비율
 %     .mean_ye_los .max_ye_los LOS 구간만의 평균·최대 |y_e| [m]
 %     .mean_ye_all             전 구간 평균 |y_e| (참고 — 회피가 섞여 있다)
@@ -63,9 +64,15 @@ s  = min(round(60/Ts), k);          % 초기 수렴 구간 제외 시작점 (5�
 on = oa(kk) > 0.5;                  % 회피 중인 샘플
 
 %% 1. 최소 여유 — 이 주차의 합격 숫자 -----------------------------------
-%  암시적 확장으로 [샘플 x 장애물] 거리표를 한 번에 만든다
+%  암시적 확장으로 [샘플 x 장애물] 거리표를 한 번에 만든다.
+%  주의 — clear_min 은 **중심 대 중심** 거리다. 학생이 보아야 할 숫자는
+%  선체가 실제로 비켜간 틈(gap_min)이므로 둘을 함께 낸다
+OBS_R      = 1.5;      % 장애물 원기둥 반지름 [m] (W09_setup 의 obs_r)
+HULL_HALF  = 1.23;     % 선체 반폭 [m] (회피기 HULL_HALF_WIDTH 와 같은 값)
+SAFE_R     = 1.20;     % 회피기 safety_margin_m — 호 판정에 쓰는 값. 이보다 좁아지면 경고
 D = hypot(x_n(kk) - ox(:).', y_n(kk) - oy(:).');
 [S.clear_min, ii] = min(D(:));
+S.gap_min    = S.clear_min - OBS_R - HULL_HALF;   % 선체 표면 대 장애물 표면
 i_t          = mod(ii-1, size(D,1)) + 1;
 S.clear_at_x = x_n(i_t);
 S.clear_at_t = t(i_t);
@@ -118,7 +125,8 @@ plot(y_n(k), x_n(k), 'ko', 'MarkerFaceColor','r', 'MarkerSize',8);
 plot(y_n(i_t), x_n(i_t), 'kp', 'MarkerFaceColor','y', 'MarkerSize',13);
 axis equal; grid on;
 xlabel('y (동쪽) [m]'); ylabel('x (북쪽) [m]');
-title(sprintf('궤적 — 최소 여유 %.1f m (x_n = %.0f)', S.clear_min, S.clear_at_x));
+title(sprintf('궤적 — 선체 틈 %.2f m (중심거리 %.1f m, x_n = %.0f)', ...
+              S.gap_min, S.clear_min, S.clear_at_x));
 legend({'장애물(월드 참값)','웨이포인트','LOS 조타','회피 조타','출발','끝','최소 여유'}, ...
        'Location','southeast', 'FontSize',7);
 
@@ -189,8 +197,10 @@ title(sprintf('왕복 검산 — 최대 %.2e N', S.max_Ferr));
 
 %% 6. 숫자 --------------------------------------------------------------
 fprintf('\n  === 9주차 회피 주행 지표 ===\n');
-fprintf('  최소 여유        %6.2f m   (t = %.0f s, x_n = %.0f m)\n', ...
-        S.clear_min, S.clear_at_t, S.clear_at_x);
+fprintf('  최소 선체 틈     %6.2f m   (t = %.0f s, x_n = %.0f m)\n', ...
+        S.gap_min, S.clear_at_t, S.clear_at_x);
+fprintf('   = 중심거리      %6.2f m   - 장애물 %.2f - 선체 반폭 %.2f\n', ...
+        S.clear_min, OBS_R, HULL_HALF);
 fprintf('  회피 켜짐        %6d 회   총 %.0f s (%.0f%%)\n', ...
         S.oa_n, S.oa_time, 100*S.oa_frac);
 fprintf('  평균 |y_e|       %6.2f m   <- LOS 구간만 (최대 %.2f)\n', ...
@@ -206,8 +216,13 @@ if isnan(S.t_finish)
 else
     fprintf('  완주 시각        %6.0f s\n', S.t_finish);
 end
-if S.clear_min < 3
-    fprintf('  [경고] 여유 3 m 미만이다 — 라이다를 보았는지, oa 가 늦게 켜졌는지 본다\n');
+if S.gap_min < 0
+    fprintf('  [경고] 선체 틈이 음수다 — 참값표 기준으로 **닿았다**. 라이다와 oa 를 본다\n');
+elseif S.gap_min < SAFE_R
+    fprintf(['  [참고] 선체 틈 %.2f m 가 회피기 안전여유 %.2f m 보다 좁다.\n' ...
+             '         라이다는 원기둥을 접선에서 맞혀 참값보다 0.5~0.7 m 멀게 보므로,\n' ...
+             '         회피기가 켜지지 않았어도 틀린 것은 아니다 (H-3 절 실측 참고)\n'], ...
+            S.gap_min, SAFE_R);
 end
 if S.FB_off_max > 0
     fprintf('  [경고] 평상 구간에서 선수추진기가 0 이 아니다 — oa 게이트(SwayGate)를 본다\n');
