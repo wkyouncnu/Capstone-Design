@@ -8,6 +8,8 @@ function f = W06_animate(x_n, y_n, psi, psi_ref, x_ref, y_ref, u, v, r, ...
 %
 %   f = W06_animate()        인자 없이 부르면 지금 열려 있는 창의 핸들을 돌려준다.
 %                            캡처할 때 쓴다 — gcf 를 쓰면 안 된다 (창이 여럿이다)
+%   W06_animate('init')      창만 **미리** 만들어 둔다. 모델의 InitFcn 이 부른다
+%                            — 창 만들기를 첫 스텝에 하면 그 사이 VRX 가 혼자 달린다
 %
 %   입력 — Animate 상자의 태그 순서와 같다
 %     x_n, y_n        북쪽 x · 동쪽 y [m]   (출발점 기준 상대좌표)
@@ -50,6 +52,21 @@ if nargin == 0
 end
 
 NMAX = 40000;        % 되돌아보기 한계. VRX 는 StopTime inf 라 무한정 쌓일 수 있다
+
+%% ---- 창만 미리 만들어 두는 호출 ----------------------------------------
+%  왜 필요한가 — 2026-10-28 VRX 실측에서 재현한 고장
+%    창 만들기(축 넷·범례 셋·부두 패치, 그래픽 개체 서른 남짓)에는 여러 초가 걸린다.
+%    그것을 **첫 스텝 안에서** 하면 그 동안 모델은 멈춰 있고 Gazebo 는 마지막으로
+%    받은 추력 명령을 그대로 지킨다. 모델 시간 0.4 s 사이에 배가 9.4 m 를 갔다
+%    (4단 VRX 실측 — 동기 점검 k = 1.52, 기준 궤적과 최대 13.1 m 이격).
+%    그러므로 창은 **시계가 돌기 전에** 만들어 둔다 — W06_model_init 이 'init' 로 부른다.
+init_only = (nargin == 1) && (ischar(x_n) || isstring(x_n));
+if init_only
+    assert(strcmpi(x_n, 'init'), 'W06_animate:arg', '인자 하나로 부를 때는 ''init'' 뿐이다');
+    [x_n, y_n, psi, psi_ref, x_ref, y_ref] = deal(0);
+    [u, v, r, gate, FL, FR, FB, phase, t]  = deal(0);
+    fig = [];  tLast = [];                  % 아래에서 새 실행으로 보이게 한다
+end
 
 %% ---- 새 실행이면 창을 다시 만든다 --------------------------------------
 newRun = isempty(tLast) || isempty(fig) || ~isvalid(fig) || t < tPrev;
@@ -239,6 +256,13 @@ if newRun
     tLast = -inf;
 end
 tPrev = t;
+
+%  'init' 호출은 창만 만들고 끝낸다. 값은 모으지 않는다 — 첫 스텝이 그린다
+if init_only
+    tLast = -inf;  tPrev = -inf;
+    if nargout > 0, f = fig; end
+    return
+end
 
 %% ---- 값 모으기 (그리기는 animate_every 마다) ---------------------------
 eN = x_ref - x_n;

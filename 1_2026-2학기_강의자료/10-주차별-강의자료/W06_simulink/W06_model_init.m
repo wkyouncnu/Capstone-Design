@@ -20,6 +20,10 @@ function W06_model_init(mdl)
 %     - 다른 모델을 누르면 그 모델의 설정으로 통째로 바뀐다
 %     판단 근거는 W06_setup 이 끝에 남기는 appdata 'W06_cfg_for' 하나다
 %
+%   실시간 화면도 여기서 **미리** 만들어 둔다. 창 만들기를 첫 스텝에 하면 그
+%   동안 모델은 멈춰 있고 Gazebo 는 마지막 추력 명령을 그대로 지킨다 — 4단
+%   VRX 에서 모델 시간 0.4 s 사이에 배가 9.4 m 를 갔다 ([[W06_animate]] 머리말).
+%
 %   VRX 쌍둥이(`*_vrx`)는 설정에 더해 W06_vrx_prep 이 Gazebo 쪽 준비까지 한다.
 %   쌍둥이는 **매번** 다시 잰다 — 실험마다 VRX 를 새로 띄우므로 스폰 위치와 RTF 가
 %   달라진다.
@@ -43,5 +47,11 @@ end
 
 if is_vrx
     W06_vrx_prep(mdl);
+end
+
+%  실시간 화면을 **지금** 만들어 둔다 — 첫 스텝에서 만들면 그 동안 모델이
+%  멈춰 있고 Gazebo 는 마지막 추력 명령을 그대로 지킨다 ([[W06_animate]] 머리말)
+if evalin('base', 'animate')
+    W06_animate('init');
 end
 end
