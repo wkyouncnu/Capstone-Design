@@ -57,6 +57,16 @@ summary: 위성지도에 웨이포인트를 찍어 LOS 추종을 돌리고 실�
 
 ## 2. `lla2ned` · `ned2lla` 설명 초안
 
+> [!note] 2026-10-29 — 이 절은 **초안이며 배포본이 더 넓다**
+> - 배포본 1부는 1-1 \~ 1-10 열 개 절로 재구성됨 (초안은 함수 설명 한 절 분량)
+> - 추가된 것: WGS84 표준의 정의와 유도값 · 위도·경도·고도의 3차원 정의 · 측지위도와 지심위도 · 두 곡률반경 ($R_N$, $R_M$) · `'flat'`·`'ellipsoid'` 내부 수식 전개 · 왕복 변환
+> - 그림 둘 추가: `assets/a2-lla-ecef.svg` (지구 + ECEF 축 + φ·λ·h), `assets/a2-ned-frame.svg` (NED 삼축 + 자오선 단면)
+> - 학생이 하나씩 실행하는 예제 9 개 추가: `A2_gcs/A2_ex1_wgs84.m` \~ `A2_ex7_roundtrip.m`, `A2_ex_all.m`, `A2_ex_lla0.m`
+>   - 전부 **함수**로 작성 — `A2_setup.m` 이 `clear` 로 시작하므로 스크립트면 베이스 워크스페이스를 지움
+> - 손으로 쓴 수식이 MATLAB 함수와 같은지 실측 대조: `'flat'` 차 **0.000e+00 m**, `'ellipsoid'` 차 **1.137e-13 m**
+>   - 따라서 배포본의 수식은 MATLAB 이 실제로 쓰는 식임 (추정 아님)
+> - 아래 초안 표는 기록으로 남김. 배포본의 설명과 어긋나면 **배포본이 맞다**
+
 - 원본 파일: `MATLAB/R2024b/toolbox/shared/coordinates/coordinates_ml/`
 - 문서상 소속은 **Navigation Toolbox**
 

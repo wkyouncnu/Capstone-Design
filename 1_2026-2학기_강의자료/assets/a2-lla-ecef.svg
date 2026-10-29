@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="570" viewBox="0 0 960 570" font-family="Malgun Gothic, sans-serif">
+  <rect width="960" height="570" fill="#ffffff"/>
+
+  <defs>
+    <marker id="a2e-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <marker id="a2e-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <text x="36" y="44" font-size="21" font-weight="bold" fill="#1e293b">위도 · 경도 · 고도 (φ, λ, h) 와 ECEF 직교좌표 (r1, r2, r3)</text>
+  <text x="36" y="72" font-size="15" fill="#64748b">WGS84 타원체 위의 점 P — 그림은 구로 그렸으나 실제 계산은 타원체로 한다</text>
+
+  <!-- 지구 -->
+  <circle cx="370" cy="290" r="160" fill="#f8fbff" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <!-- 본초자오선 (경도 0) -->
+  <ellipse cx="370" cy="290" rx="160" ry="83.2" transform="rotate(106.5 370 290)"
+           fill="none" stroke="#b8c4d4" stroke-width="1.5"/>
+  <!-- 점 P 가 있는 자오선 -->
+  <ellipse cx="370" cy="290" rx="160" ry="83.2" transform="rotate(73.5 370 290)"
+           fill="none" stroke="#1d4ed8" stroke-width="1.8"/>
+  <!-- 적도 -->
+  <ellipse cx="370" cy="290" rx="160" ry="67.6"
+           fill="none" stroke="#64748b" stroke-width="1.8" stroke-dasharray="7 5"/>
+
+  <!-- ECEF 축 -->
+  <line x1="370" y1="290" x2="370" y2="117" stroke="#334155" stroke-width="2.2" marker-end="url(#a2e-gray)"/>
+  <line x1="370" y1="290" x2="260" y2="356" stroke="#334155" stroke-width="2.2" marker-end="url(#a2e-gray)"/>
+  <line x1="370" y1="290" x2="527" y2="337" stroke="#334155" stroke-width="2.2" marker-end="url(#a2e-gray)"/>
+  <circle cx="370" cy="290" r="4" fill="#334155"/>
+  <text x="370" y="104" font-size="18" font-weight="bold" fill="#1e293b" text-anchor="middle">ê3</text>
+  <text x="248" y="374" font-size="18" font-weight="bold" fill="#1e293b" text-anchor="end">ê1</text>
+  <text x="536" y="345" font-size="18" font-weight="bold" fill="#1e293b">ê2</text>
+  <text x="360" y="280" font-size="17" font-weight="bold" fill="#334155" text-anchor="end">O</text>
+
+  <!-- 경도 λ -->
+  <line x1="370" y1="290" x2="461.8" y2="345.4" stroke="#d97706" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <path d="M 331.4 313.3 Q 370 323.5 408.6 313.3" fill="none" stroke="#d97706" stroke-width="2.4"/>
+  <text x="370" y="345" font-size="17" font-weight="bold" fill="#d97706" text-anchor="middle">λ (경도)</text>
+
+  <!-- 위도 φ -->
+  <path d="M 436.1 329.9 Q 435.9 292.0 420.6 253.4" fill="none" stroke="#0d9488" stroke-width="2.4"/>
+  <text x="452" y="302" font-size="17" font-weight="bold" fill="#0d9488">φ (위도)</text>
+
+  <!-- 위치벡터 r 과 고도 h -->
+  <line x1="370" y1="290" x2="461.4" y2="224.0" stroke="#dc2626" stroke-width="2.6" marker-end="url(#a2e-red)"/>
+  <circle cx="440.3" cy="239.2" r="4" fill="#dc2626"/>
+  <circle cx="461.4" cy="224.0" r="5" fill="#dc2626"/>
+  <text x="396" y="266" font-size="19" font-weight="bold" font-style="italic" fill="#dc2626" text-anchor="end">r</text>
+  <text x="476" y="216" font-size="17" font-weight="bold" fill="#dc2626">P = (φ, λ, h)</text>
+  <text x="476" y="242" font-size="16" fill="#dc2626">h (타원체고)</text>
+
+  <!-- 기호 -->
+  <rect x="610" y="130" width="330" height="248" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="628" y="158" font-size="16" font-weight="bold" fill="#1e293b">기호</text>
+  <text x="628" y="186" font-size="16" font-weight="bold" fill="#1e293b">φ</text><text x="668" y="186" font-size="16" fill="#334155">위도 — 법선과 적도면의 각</text>
+  <text x="628" y="212" font-size="16" font-weight="bold" fill="#1e293b">λ</text><text x="668" y="212" font-size="16" fill="#334155">경도 — 본초자오선에서 동쪽</text>
+  <text x="628" y="238" font-size="16" font-weight="bold" fill="#1e293b">h</text><text x="668" y="238" font-size="16" fill="#334155">타원체고 — 법선 방향 높이</text>
+  <text x="628" y="264" font-size="16" font-weight="bold" fill="#1e293b">r</text><text x="668" y="264" font-size="16" fill="#334155">ECEF 위치벡터 (r1, r2, r3)</text>
+  <text x="628" y="290" font-size="16" font-weight="bold" fill="#1e293b">O</text><text x="668" y="290" font-size="16" fill="#334155">지구 질량중심</text>
+  <text x="628" y="316" font-size="16" font-weight="bold" fill="#1e293b">ê1</text><text x="668" y="316" font-size="16" fill="#334155">위도 0 · 경도 0 방향</text>
+  <text x="628" y="342" font-size="16" font-weight="bold" fill="#1e293b">ê2</text><text x="668" y="342" font-size="16" fill="#334155">경도 90°E 방향</text>
+  <text x="628" y="368" font-size="16" font-weight="bold" fill="#1e293b">ê3</text><text x="668" y="368" font-size="16" fill="#334155">자전축 (북극 방향)</text>
+
+  <!-- 수식 -->
+  <rect x="610" y="392" width="330" height="136" rx="8" fill="#fffbeb" stroke="#f3dca0" stroke-width="1.5"/>
+  <text x="628" y="420" font-size="16" font-weight="bold" fill="#92400e">위경고 → ECEF</text>
+  <text x="628" y="448" font-size="16" fill="#334155">R_N = a / √(1 − e² sin²φ)</text>
+  <text x="628" y="472" font-size="16" fill="#334155">r1 = (R_N + h) cosφ cosλ</text>
+  <text x="628" y="496" font-size="16" fill="#334155">r2 = (R_N + h) cosφ sinλ</text>
+  <text x="628" y="520" font-size="16" fill="#334155">r3 = (R_N(1 − e²) + h) sinφ</text>
+
+  <text x="36" y="550" font-size="15" fill="#64748b">WGS84 : a = 6 378 137 m,  f = 1 / 298.257223563,  e² = 2f − f² = 0.006694379990</text>
+</svg>
