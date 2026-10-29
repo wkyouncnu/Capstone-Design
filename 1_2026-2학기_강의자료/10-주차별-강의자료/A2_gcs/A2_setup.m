@@ -5,8 +5,10 @@
 %
 %   >> A2_1_refpoint_done
 
-clear;
-if ~isequal(getappdata(0, 'A2_skip_clc'), true), clc; end
+%  4단(A2_live_setup) 은 5주차 제어 설정을 먼저 깔고 그 위에 이 파일을 얹는다.
+%  그때는 지우면 안 되므로 A2_keep_vars 로 막는다
+if ~isequal(getappdata(0, 'A2_keep_vars'), true), clear; end
+if ~isequal(getappdata(0, 'A2_skip_clc'),  true), clc;   end
 
 %% ====================================================================
 %  1. 기준점 — 지역 NED 좌표계의 원점
