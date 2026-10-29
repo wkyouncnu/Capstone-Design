@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="330" viewBox="0 0 980 330">
+  <rect width="980" height="330" fill="#ffffff"/>
+  <g font-family="Malgun Gothic, sans-serif">
+
+    <text x="20" y="30" font-size="17" font-weight="bold" fill="#1e293b">지도 클릭에서 배 표시까지 — 좌표가 지나가는 길</text>
+
+    <!-- 위쪽 줄: 지도 -> NED -->
+    <text x="20" y="66" font-size="14" fill="#64748b">지리 좌표 (각도)</text>
+    <text x="20" y="206" font-size="14" fill="#64748b">지역 좌표 (m)</text>
+
+    <!-- 지도 박스 -->
+    <rect x="120" y="76" width="200" height="66" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+    <text x="220" y="102" font-size="16" fill="#1d4ed8" text-anchor="middle" font-weight="bold">위성지도 클릭</text>
+    <text x="220" y="126" font-size="15" fill="#334155" text-anchor="middle">(위도, 경도)</text>
+
+    <!-- 항적 표시 박스 -->
+    <rect x="660" y="76" width="200" height="66" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+    <text x="760" y="102" font-size="16" fill="#1d4ed8" text-anchor="middle" font-weight="bold">지도에 항적 표시</text>
+    <text x="760" y="126" font-size="15" fill="#334155" text-anchor="middle">(위도, 경도)</text>
+
+    <!-- 유도/제어 박스 -->
+    <rect x="370" y="216" width="240" height="72" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+    <text x="490" y="243" font-size="16" fill="#d97706" text-anchor="middle" font-weight="bold">LOS 유도 · 제어 · 운동모델</text>
+    <text x="490" y="267" font-size="15" fill="#334155" text-anchor="middle">wp_north, wp_east  [m]</text>
+
+    <!-- 변환 박스 왼쪽 -->
+    <rect x="130" y="216" width="180" height="72" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+    <text x="220" y="243" font-size="16" fill="#0d9488" text-anchor="middle" font-weight="bold">lla2ned</text>
+    <text x="220" y="267" font-size="15" fill="#334155" text-anchor="middle">각도 → 거리</text>
+
+    <!-- 변환 박스 오른쪽 -->
+    <rect x="670" y="216" width="180" height="72" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+    <text x="760" y="243" font-size="16" fill="#0d9488" text-anchor="middle" font-weight="bold">ned2lla</text>
+    <text x="760" y="267" font-size="15" fill="#334155" text-anchor="middle">거리 → 각도</text>
+
+    <!-- 기준점 -->
+    <rect x="390" y="86" width="200" height="56" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+    <text x="490" y="110" font-size="15" fill="#dc2626" text-anchor="middle" font-weight="bold">기준점 lla0</text>
+    <text x="490" y="132" font-size="14" fill="#334155" text-anchor="middle">두 변환이 같은 값을 쓴다</text>
+
+    <!-- 화살표 정의 -->
+    <defs>
+      <marker id="ar" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 z" fill="#334155"/>
+      </marker>
+      <marker id="arr" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 z" fill="#dc2626"/>
+      </marker>
+    </defs>
+
+    <!-- 지도 -> lla2ned -->
+    <path d="M220,142 L220,216" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+    <text x="232" y="184" font-size="14" fill="#64748b">1</text>
+
+    <!-- lla2ned -> 유도 -->
+    <path d="M310,252 L370,252" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+    <text x="334" y="242" font-size="14" fill="#64748b">2</text>
+
+    <!-- 유도 -> ned2lla -->
+    <path d="M610,252 L670,252" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+    <text x="634" y="242" font-size="14" fill="#64748b">3</text>
+
+    <!-- ned2lla -> 지도 -->
+    <path d="M760,216 L760,142" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+    <text x="772" y="184" font-size="14" fill="#64748b">4</text>
+
+    <!-- 기준점 -> 두 변환 -->
+    <path d="M430,142 L300,216" stroke="#dc2626" stroke-width="1.6" stroke-dasharray="5,4" fill="none" marker-end="url(#arr)"/>
+    <path d="M550,142 L680,216" stroke="#dc2626" stroke-width="1.6" stroke-dasharray="5,4" fill="none" marker-end="url(#arr)"/>
+
+    <!-- 범위 표시 -->
+    <rect x="120" y="300" width="490" height="22" rx="4" fill="#f0fdfa" stroke="#0d9488" stroke-width="1"/>
+    <text x="365" y="316" font-size="14" fill="#0d9488" text-anchor="middle">본 부록 1~3단 (1, 2 구간)</text>
+    <rect x="620" y="300" width="240" height="22" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="740" y="316" font-size="14" fill="#64748b" text-anchor="middle">다음 단계 4~7단 (3, 4 구간)</text>
+  </g>
+</svg>
