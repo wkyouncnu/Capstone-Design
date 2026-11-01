@@ -149,6 +149,10 @@ case {'W06_1_point','W06_2_sway','W06_3_thrust','W06_4_stop', ...
     %   6주차는 위치 고리가 하나 더 있다 — OuterLoop 이 위치 오차를 속도 지령으로
     %   바꾸는 자리이므로 제어(주황)다. 공통 표에는 없으므로 여기서 더한다
     role = [GNC; {'OuterLoop','control'}];
+case {'W08_2_dock','W08_3_dock_vrx'}
+    %   8주차 실습 E 는 6주차의 위치 고리를 마지막 단계로 가져온다 — OuterLoop 이
+    %   위치 오차를 속도 지령으로 바꾸는 자리이므로 제어(주황)다 (2026-11-01)
+    role = [GNC; {'OuterLoop','control'}];
 case 'W09_1_vrx'
     %   AvoidSeam 은 **유도(파랑)** 다. 하는 일이 "어느 헤딩 명령을 쓸 것인가" 의
     %   판단이지 제어가 아니다 — 5주차 Guidance 가 내는 psi_ref 와 파이썬이 내는
