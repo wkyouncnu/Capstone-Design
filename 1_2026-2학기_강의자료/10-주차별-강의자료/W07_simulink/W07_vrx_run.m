@@ -1,19 +1,32 @@
-function S = W07_vrx_run(T_end, do_compare)
+function S = W07_vrx_run(T_end, do_compare, show)
 % W07_VRX_RUN  VRX(Gazebo) 와 연동해 W07_1_vrx 를 돌리고 결과를 그린다.
 %
 %   >> W07_setup
-%   >> W07_vrx_run              % 300초 주행 + 오프라인 대조
+%   >> W07_vrx_run                 % 300초 주행 + 오프라인 대조
 %   >> W07_vrx_run(400)
-%   >> W07_vrx_run(300, false)  % 대조 없이 VRX 만
+%   >> W07_vrx_run(300, false)     % 대조 없이 VRX 만
+%   >> W07_vrx_run(300, true, 1)   % 실시간 화면을 켜고 (빠른 PC 에서만)
 %
 %   해 주는 일은 5주차 W05_vrx_run 과 같다.
-%     1. 토픽 확인  2. RTF 측정  3. 페이싱 맞춰 실행(실시간 그림)
-%     4. 결과 그림  5. 오프라인과 궤적 겹쳐 그리기
+%     1. 토픽 확인  2. RTF 측정  3. 페이싱 맞춰 실행(실시간 화면은 기본으로 끔)
+%     4. 결과 그림 + 동기 점검 k · 걸림 검사 · 물체 이격  5. 오프라인과 궤적 겹쳐 그리기
 %
-%   실행 전에 VRX 가 떠 있어야 한다.
+%   실시간 화면을 기본으로 끄는 까닭 (2026-11-01 노트북 실측)
+%     화면을 켠 채 돌리면 300 s 모델에 벽시계 538 s 가 걸려 Simulink 가 VRX 를
+%     못 따라갔다. 같은 원을 돌았는데 두 바퀴를 193.1 s 에 끝내(오프라인 241.8 s)
+%     궤적 평균 이격이 26 m 로 나왔다. 도는 모습은 오프라인 모델(W07_setup)의
+%     실시간 화면으로 본다.
+%
+%   실행 전에 WSL 에서 VRX 가 떠 있어야 한다 (3주차 경량 모델, 실험마다 새로).
+%     cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite
+%     bash stop_vrx.sh && bash run_vrx.sh
 
 if nargin < 1 || isempty(T_end),      T_end = 300;  end
 if nargin < 2 || isempty(do_compare), do_compare = true; end
+if nargin < 3 || isempty(show),       show = 0;      end
+animUser = evalin('base','animate');               % 끝나면 W07_setup 값으로 되돌린다
+assignin('base', 'animate', show);
+cRestore = onCleanup(@() assignin('base','animate', animUser));
 
 m   = 'W07_1_vrx';
 TOP = '/wamv/sensors/position/ground_truth_odometry';
@@ -62,6 +75,8 @@ fprintf('4) 결과 그림\n');
 S     = W07_plot(out, 'VRX 로이터링');
 S.RTF = RTF;
 saveFig(S.fig, 'W07_1_vrx_result.png');    % gcf 는 추진기 창이다 — 궤적 창을 저장한다
+S.k_sync = syncCheck(out);
+[S.stuck_s, S.clear_m, S.clear_obj, S.world] = landCheck(out, x0_n, y0_n, S.t_done);
 
 if ~do_compare, return; end
 fprintf('5) 같은 초기 선수각으로 오프라인 모델 실행\n');
@@ -107,6 +122,66 @@ fprintf('  궤적 평균 이격 %6.2f m,  최대 %6.2f m\n', S.sep_mean, S.sep_m
 end
 
 % =====================================================================
+function k = syncCheck(out)
+% Simulink 가 VRX 를 따라갔는가 — 로그만으로 판정한다 (5주차 W05_vrx_run 과 같음)
+%   VRX 가 준 속도 u 는 "시뮬레이터 1 초에 몇 m" 다. Simulink 가 제때 돌았다면
+%   모델 시각으로 적분한 거리와 실제로 지나간 거리가 같다 (k = 1).
+%   Simulink 가 그림 그리기 등으로 늦어지면 같은 모델 1 초 동안 배가 더 가므로 k > 1.
+t = out.log_x_n.Time;
+s_path = sum(hypot(diff(out.log_x_n.Data), diff(out.log_y_n.Data)));
+s_int  = trapz(t, abs(out.log_u.Data));
+k = s_path / max(s_int, eps);
+fprintf('   동기 점검 k = 지나간 거리 %.1f m / 속도 적분 %.1f m = %.3f', s_path, s_int, k);
+if k > 1.08
+    fprintf('  <- Simulink 가 VRX 를 못 따라갔다\n');
+    fprintf('      이 결과는 쓰지 말 것. 실시간 화면을 끈 채(기본) VRX 를 다시 띄워 재실행\n');
+elseif k < 0.9
+    %  명령은 나가는데 배가 그만큼 가지 않음 = Gazebo 가 멈춰 있었던 것 (ros2 데몬 손상)
+    fprintf('  <- 명령만큼 배가 가지 않았다 (Gazebo 가 멈춤)\n');
+    fprintf('      이 결과는 쓰지 말 것. WSL 에서 ros2 daemon stop && ros2 daemon start 뒤 VRX 를 다시 띄워 재실행\n');
+else
+    fprintf('  (0.9 ~ 1.08 — 동기 정상)\n');
+end
+end
+
+function [L, d, name, W] = landCheck(out, on, oe, t_done)
+% 육지·부표에 닿았는가 (6주차 W06_vrx_report 와 같은 검사)
+%   걸림 — 추진기가 힘을 내는데 배가 5 초 넘게 서 있으면 무언가에 닿은 것
+%   이격 — 스폰 둘레 고정 물체(부표·남쪽 해안의 말뚝·안테나)까지 가장 가까이 지난 거리
+t = out.log_x_n.Time;   x = out.log_x_n.Data(:);   y = out.log_y_n.Data(:);
+U = abs(out.log_u.Data(:));
+F = abs(out.log_FL.Data(:)) + abs(out.log_FR.Data(:));
+b = F > 150 & U < 0.05;
+if ~isnan(t_done), b(t >= t_done) = false; end      % 두 바퀴 돌고 선 뒤는 뺀다
+b(1:find(abs(x) + abs(y) > 0, 1)) = false;          % 첫 메시지 전의 0 버스는 뺀다
+L = 0;  s = [];
+for i = 1:numel(b)
+    if b(i) && isempty(s), s = t(i); end
+    if (~b(i) || i == numel(b)) && ~isempty(s), L = max(L, t(i) - s); s = []; end
+end
+ok = abs(x) + abs(y) > 0;
+xE = y(ok) + oe;   yN = x(ok) + on;                 % 지나간 자리를 월드 ENU (x 동, y 북) 로
+W  = [min(xE) max(xE) min(yN) max(yN)];
+% 2026-10-23 gz model -m <이름> -p 로 잰 월드 ENU 좌표 [m] (6주차와 같은 표)
+O = { 'mb_marker_buoy_red',   -528.0, 191.0;   'mb_marker_buoy_black', -528.0, 190.0;
+      'mb_marker_buoy_green', -528.0, 189.0;   'mb_marker_buoy_white', -528.0, 188.0;
+      'mb_round_buoy_orange', -528.0, 187.0;   'mb_round_buoy_black',  -528.0, 186.0;
+      'post_0', -535.917, 154.363;  'post_1', -527.490, 153.855;  'post_2', -544.833, 156.672;
+      'antenna', -531.064, 147.669 };
+d = inf;  name = '';
+for i = 1:size(O,1)
+    di = min(hypot(xE - O{i,2}, yN - O{i,3}));
+    if di < d, d = di; name = O{i,1}; end
+end
+fprintf('   걸림 검사 : 힘을 내는데 서 있던 가장 긴 구간 %.1f s', L);
+if L > 5, fprintf('  <- 육지·부표에 닿았을 수 있음. Gazebo 화면과 궤적 그림을 볼 것\n');
+else,     fprintf('  (5 s 이하 — 걸리지 않음)\n'); end
+fprintf('   지나간 자리 (월드 ENU) : x %.1f ~ %.1f m,  y %.1f ~ %.1f m\n', W);
+fprintf('   가장 가까이 지난 물체 : %s 까지 %.1f m', name, d);
+if d < 5, fprintf('  <- 5 m 안. 로이터 중심을 옮길 것\n');
+else,     fprintf('  (5 m 넘게 떨어져 지남)\n'); end
+end
+
 function [RTF, x0_n, y0_n] = measureRTF(topic, sec)
 n = ros2node(sprintf('/rtf_probe_%d', randi(9999)));
 c = onCleanup(@() clear('n'));
