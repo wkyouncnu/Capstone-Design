@@ -6,7 +6,7 @@
     </marker>
   </defs>
 
-  <text x="20" y="32" font-size="19" font-weight="bold" fill="#1e293b">0.05 초마다 반복되는 한 스텝 — 상태기계가 하는 일</text>
+  <text x="20" y="32" font-size="19" font-weight="bold" fill="#1e293b">0.05 초마다 반복되는 한 스텝 — Stateflow 차트가 하는 일</text>
   <text x="20" y="58" font-size="15" fill="#64748b">차트는 연속 블록이 아니다. 시계가 똑딱일 때만 깨어나 아래 네 가지를 순서대로 한 번 한다</text>
 
   <!-- 1 -->
