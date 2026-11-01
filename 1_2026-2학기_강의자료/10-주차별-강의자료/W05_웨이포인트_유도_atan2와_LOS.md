@@ -83,7 +83,7 @@ summary: 배를 경로 위로 올려놓는 법 — 두 유도법칙을 오프라
 > **③ MATLAB — Simulink 를 Gazebo 에 붙여 돌리기**
 >
 > ```matlab
-> cd('\wsl.localhost\Ubuntu-22.04\home\<사용자명>\Capstone-Design\1_2026-2학기_강의자료\10-주차별-강의자료\W05_simulink')
+> cd('\\wsl.localhost\Ubuntu-22.04\home\<사용자명>\Capstone-Design\1_2026-2학기_강의자료\10-주차별-강의자료\W05_simulink')
 > setappdata(0, 'W05_skip_run', true);  W05_setup;  W05_vrx_run
 > ```
 >
