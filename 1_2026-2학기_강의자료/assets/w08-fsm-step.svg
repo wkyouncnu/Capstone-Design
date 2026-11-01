@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="400" viewBox="0 0 1180 400" font-family="Malgun Gothic, sans-serif">
+  <rect width="1180" height="400" fill="#ffffff"/>
+  <defs>
+    <marker id="a2" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto">
+      <path d="M0,1 L10,5 L0,9 z" fill="#334155"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="32" font-size="19" font-weight="bold" fill="#1e293b">0.05 초마다 반복되는 한 스텝 — 상태기계가 하는 일</text>
+  <text x="20" y="58" font-size="15" fill="#64748b">차트는 연속 블록이 아니다. 시계가 똑딱일 때만 깨어나 아래 네 가지를 순서대로 한 번 한다</text>
+
+  <!-- 1 -->
+  <rect x="20" y="78" width="250" height="160" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="40" y="110" font-size="17" font-weight="bold" fill="#1d4ed8">① 입력 읽기</text>
+  <text x="40" y="140" font-size="15" fill="#334155">at_loiter · turns</text>
+  <text x="40" y="162" font-size="15" fill="#334155">req_turns · at_end · phase</text>
+  <text x="40" y="190" font-size="15" fill="#64748b">그 순간의 값으로 고정됨.</text>
+  <text x="40" y="212" font-size="15" fill="#64748b">스텝 중간에 바뀌지 않는다</text>
+
+  <line x1="270" y1="158" x2="308" y2="158" stroke="#334155" stroke-width="2" marker-end="url(#a2)"/>
+
+  <!-- 2 -->
+  <rect x="315" y="78" width="250" height="160" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="335" y="110" font-size="17" font-weight="bold" fill="#0d9488">② 나가는 길만 검사</text>
+  <text x="335" y="140" font-size="15" fill="#334155">지금 켜져 있는 상태에서</text>
+  <text x="335" y="162" font-size="15" fill="#334155">나가는 전이만 본다</text>
+  <text x="335" y="190" font-size="15" fill="#64748b">번호 순서대로. WpFollow 는</text>
+  <text x="335" y="212" font-size="15" fill="#64748b">①로이터 ②접안 차례로</text>
+
+  <line x1="565" y1="158" x2="603" y2="158" stroke="#334155" stroke-width="2" marker-end="url(#a2)"/>
+
+  <!-- 3 -->
+  <rect x="610" y="78" width="250" height="160" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="630" y="110" font-size="17" font-weight="bold" fill="#d97706">③ 첫 참 하나만 실행</text>
+  <text x="630" y="140" font-size="15" fill="#334155">참인 전이를 만나면 옮기고</text>
+  <text x="630" y="162" font-size="15" fill="#334155">나머지는 보지 않는다</text>
+  <text x="630" y="190" font-size="15" fill="#64748b">도착 상태의 en: mode = N</text>
+  <text x="630" y="212" font-size="15" fill="#64748b">이 한 번 실행됨</text>
+
+  <line x1="860" y1="158" x2="898" y2="158" stroke="#334155" stroke-width="2" marker-end="url(#a2)"/>
+
+  <!-- 4 -->
+  <rect x="905" y="78" width="250" height="160" rx="10" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <text x="925" y="110" font-size="17" font-weight="bold" fill="#475569">④ mode 내보내기</text>
+  <text x="925" y="140" font-size="15" fill="#334155">1 · 2 · 3 · 4 중 한 숫자</text>
+  <text x="925" y="162" font-size="15" fill="#334155">모드 선택기가 받아 간다</text>
+  <text x="925" y="190" font-size="15" fill="#64748b">참인 전이가 없으면 상태도</text>
+  <text x="925" y="212" font-size="15" fill="#64748b">mode 도 그대로 유지됨</text>
+
+  <!-- feedback -->
+  <path d="M1030 238 L1030 300 L160 300 L160 238" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#a2)"/>
+  <rect x="380" y="276" width="420" height="48" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="400" y="296" font-size="15" font-weight="bold" fill="#dc2626">한 스텝 지연 (1/z) — ModeDly · PhaseDly</text>
+  <text x="400" y="316" font-size="15" fill="#334155">내보낸 mode 가 유도부를 돌아 다음 스텝에 되돌아온다</text>
+
+  <text x="20" y="360" font-size="15" fill="#64748b">지연이 없으면 같은 스텝 안에서 mode 가 자기 자신을 참조하게 되어 대수 루프가 된다 — Simulink 가 풀지 못한다</text>
+  <text x="20" y="384" font-size="15" fill="#64748b">그래서 상태가 바뀐 결과는 0.05 초 뒤 유도부에 닿는다. 15 분짜리 미션에서는 보이지 않는 지연이다</text>
+</svg>
