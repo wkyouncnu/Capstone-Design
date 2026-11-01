@@ -94,7 +94,8 @@ tau_n  = 0.30;
 %  8. 실시간 그림
 % =====================================================================
 animate       = 1;      % 1 = 켬, 0 = 끔
-animate_every = 0.25;   % 다시 그리는 간격 [시뮬 초]
+animate_every = 0.5;    % 다시 그리는 간격 [시뮬 초]. Ts_ctrl(0.05) 의 배수로 둘 것
+                        %   Animate 블록이 이 간격으로만 불린다 — 작게 하면 VRX 연동이 늦어진다
 boat_scale    = 1.5;    % 선체 확대 배율 (원이 작으므로 5주차보다 작게)
 
 %% ====================================================================
@@ -155,6 +156,7 @@ fprintf('  ROS_DOMAIN_ID = %s  (WSL 의 echo $ROS_DOMAIN_ID 와 같아야 함)\n
 if auto_run && ~skip_run
     fprintf('\n오프라인 모델 실행 중  (auto_run = 0 으로 두면 실행하지 않는다)\n');
     load_system('W07_0_offline');
+    if animate, W07_animate('init'); end
     out = sim('W07_0_offline', 'StopTime', num2str(T_stop));
     W07_plot(out, sprintf('%s / r_d = %g m / u = %g m/s', dir_name, r_d, u_ref));
 end

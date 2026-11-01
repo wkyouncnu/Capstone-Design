@@ -595,6 +595,12 @@ function addAnimate(m, x, y)
 %     sched_rd 가 같은 규칙으로 다시 계산한다 — 모델은 한 줄도 늘지 않는다.
     tags = {'x_n','y_n','psi','psi_ref','r_dist','turns','u','u_cmd','gate','FL','FR'};
     add_animate_box(m, tags, 'W07_animate', '', [x y], 'Ts_ctrl');
+    %  그림 함수를 **다시 그릴 때만** 부른다 (샘플 타임 = animate_every).
+    %  상속(-1)으로 두면 ode4 의 중간 스텝마다 초당 80 번 불린다. VRX 120 s 실측에서
+    %  9,601 번 불려 126 s 를 먹었고 Simulink 가 Gazebo 를 못 따라갔다 (k = 1.76,
+    %  2026-11-01 노트북). animate_every 는 Ts_ctrl(0.05 s) 의 배수여야 한다.
+    %  (EMChart 의 SampleTime 속성은 대입해도 남지 않는다 — 블록 파라미터로 건다)
+    set_param([m '/Animate/AnimateFcn'], 'SystemSampleTime', 'animate_every');
 end
 
 % =====================================================================

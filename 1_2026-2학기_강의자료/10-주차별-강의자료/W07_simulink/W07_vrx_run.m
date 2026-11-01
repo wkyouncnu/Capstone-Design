@@ -5,17 +5,17 @@ function S = W07_vrx_run(T_end, do_compare, show)
 %   >> W07_vrx_run                 % 300초 주행 + 오프라인 대조
 %   >> W07_vrx_run(400)
 %   >> W07_vrx_run(300, false)     % 대조 없이 VRX 만
-%   >> W07_vrx_run(300, true, 1)   % 실시간 화면을 켜고 (빠른 PC 에서만)
+%   >> W07_vrx_run(300, true, 0)   % 실시간 화면 없이 (가장 가볍게)
 %
 %   해 주는 일은 5주차 W05_vrx_run 과 같다.
-%     1. 토픽 확인  2. RTF 측정  3. 페이싱 맞춰 실행(실시간 화면은 기본으로 끔)
+%     1. 토픽 확인  2. RTF 측정  3. 페이싱 맞춰 실행(실시간 화면 켬)
 %     4. 결과 그림 + 동기 점검 k · 걸림 검사 · 물체 이격  5. 오프라인과 궤적 겹쳐 그리기
 %
-%   실시간 화면을 기본으로 끄는 까닭 (2026-11-01 노트북 실측)
-%     화면을 켠 채 돌리면 300 s 모델에 벽시계 538 s 가 걸려 Simulink 가 VRX 를
-%     못 따라갔다. 같은 원을 돌았는데 두 바퀴를 193.1 s 에 끝내(오프라인 241.8 s)
-%     궤적 평균 이격이 26 m 로 나왔다. 도는 모습은 오프라인 모델(W07_setup)의
-%     실시간 화면으로 본다.
+%   실시간 화면이 Simulink 를 늦추지 않게 한 것 (2026-11-01 노트북 실측)
+%     예전에는 그림 함수가 ode4 중간 스텝마다 초당 80 번 불려, 300 s 모델에
+%     벽시계 538 s 가 걸리고 궤적이 26 m 어긋났다 (동기 점검 k = 1.76).
+%     지금은 Animate 블록이 animate_every(0.5 s) 마다만 불리고, 창은 sim 전에
+%     만들어 둔다. 화면이 0.5 초마다 갱신되는 것이 정상이다.
 %
 %   실행 전에 WSL 에서 VRX 가 떠 있어야 한다 (3주차 경량 모델, 실험마다 새로).
 %     cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite
@@ -23,7 +23,7 @@ function S = W07_vrx_run(T_end, do_compare, show)
 
 if nargin < 1 || isempty(T_end),      T_end = 300;  end
 if nargin < 2 || isempty(do_compare), do_compare = true; end
-if nargin < 3 || isempty(show),       show = 0;      end
+if nargin < 3 || isempty(show),       show = 1;      end
 animUser = evalin('base','animate');               % 끝나면 W07_setup 값으로 되돌린다
 assignin('base', 'animate', show);
 cRestore = onCleanup(@() assignin('base','animate', animUser));
@@ -69,6 +69,7 @@ fprintf('3) %s 실행 (%d초)\n', m, T_end);
 load_system(m);
 set_param(m, 'EnablePacing','on', 'PacingRate', num2str(RTF), ...
              'StopTime', num2str(T_end));
+if show, W07_animate('init'); end    % 창을 시계가 돌기 전에 만든다 (첫 스텝에서 만들면 VRX 가 혼자 달린다)
 out = sim(m);
 
 fprintf('4) 결과 그림\n');

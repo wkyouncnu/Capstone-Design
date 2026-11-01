@@ -76,6 +76,17 @@ end
 %  20만이면 오프라인 2,500 s · VRX(이산 0.05 s, 초당 20 회) 10,000 s 까지 남는다.
 NMAX = 200000;
 
+%% ---- 창만 미리 만들어 두는 호출 (6주차 W06_animate 와 같음) --------------
+%  창 만들기(축 넷·범례 셋)에는 여러 초가 걸린다. 첫 스텝 안에서 하면 그 동안
+%  모델은 멈춰 있고 Gazebo 는 마지막 추력 명령을 그대로 지킨다.
+%  그래서 W07_setup · W07_vrx_run 이 sim 전에 W07_animate('init') 로 부른다.
+init_only = (nargin == 1) && (ischar(x_n) || isstring(x_n));
+if init_only
+    assert(strcmpi(x_n, 'init'), 'W07_animate:arg', '인자 하나로 부를 때는 ''init'' 뿐이다');
+    [x_n, y_n, psi, psi_ref, r_dist, turns, u, u_cmd, gate, FL, FR, t] = deal(0);
+    fig = [];  tLast = [];                  % 아래에서 새 실행으로 보이게 한다
+end
+
 %% ---- 새 실행이면 창을 다시 만든다 --------------------------------------
 newRun = isempty(tLast) || isempty(fig) || ~isvalid(fig) || t < tPrev;
 if newRun
@@ -166,6 +177,14 @@ if newRun
     %  yyaxis 는 두 축의 색을 제멋대로 칠한다. 범례가 색을 나르므로 축 글자는 검게 둔다
     axU.YAxis(1).Color = [0.15 0.15 0.15];
     axU.YAxis(2).Color = [0.15 0.15 0.15];
+    %  범위를 처음부터 고정한다 — 자동 범위는 그릴 때마다 축 배치를 다시 계산하게 만든다
+    %  (아래 pad_y 머리말). 속도는 시나리오의 1.6 배까지, 추력은 포화값까지 들어간다
+    uMax = evalin('base','u_ref') * (1 + 0.6*useSch) * 1.2;
+    Fmx  = evalin('base','F_max');
+    yyaxis(axU,'left');   ylim(axU, [-0.1*uMax, uMax]);
+    yyaxis(axU,'right');  ylim(axU, [-0.1*Fmx, 1.1*Fmx]);
+    set([axR axP axU], 'XLim', [0 60]);
+    ylim(axP, [-190 190]);
 
     %  오른쪽 세 칸의 y 이름표가 창 오른쪽 테두리에 잘리지 않게 폭을 조금 줄인다
     for a = [axR axP axU]
@@ -174,6 +193,13 @@ if newRun
 
     tv = [];  Dr = zeros(0,2);  Dp = zeros(0,2);  Dm = zeros(0,4);
     tLast = -inf;
+end
+%  'init' 호출은 창만 만들고 끝낸다. 값은 모으지 않는다 — 첫 스텝이 그린다
+if init_only
+    tPrev = -inf;
+    drawnow;
+    if nargout > 0, f = fig; end
+    return
 end
 tPrev = t;
 
@@ -193,7 +219,7 @@ end
 
 every = 0.25;
 try, every = evalin('base','animate_every'); catch, end
-if t - tLast < every, return; end
+if t - tLast < every - 1e-6, return; end   % 블록이 every 마다 불리므로 반올림 오차만 봐 준다
 tLast = t;
 
 %% ---- 왼쪽 : 목표 원 · 항적 · 선체 · 중심까지의 살 ----------------------
@@ -234,6 +260,7 @@ set(hFR,   'XData', tv, 'YData', Dm(:,4));
 %  곡선이 그림의 맨 위 테두리에 딱 붙으면 읽기 어렵다. 위아래로 조금 띄운다
 pad_y(axR, Dr);
 pad_y(axP, Dp);
+grow_t([axR axP axU], t);
 
 drawnow limitrate
 if nargout > 0, f = fig; end
@@ -276,11 +303,23 @@ d = atan2(sin(a), cos(a)) * 180/pi;
 end
 
 % ---- y 범위에 여백. 곡선이 테두리에 붙으면 읽히지 않는다 -----------------
+%  **곡선이 범위 밖으로 나갈 때만** 바꾼다. 범위를 바꿀 때마다 Simulink 는 범례·축
+%  배치를 다시 계산하는데, 페이싱을 켠 실행(VRX)에서는 한 번에 0.1 초 넘게 걸려
+%  Simulink 가 Gazebo 를 못 따라갔다 (2026-11-01 실측 — 그리기마다 바꿀 때 k = 1.34)
 function pad_y(ax, D)
 lo = min(D(:), [], 'omitnan');  hi = max(D(:), [], 'omitnan');
 if isempty(lo) || ~isfinite(lo) || ~isfinite(hi), return, end
+yl = ax.YLim;
+if strcmp(ax.YLimMode, 'manual') && lo >= yl(1) && hi <= yl(2), return, end
 %  t = 0 에서는 값이 전부 같다 (lo == hi). 그때 여백을 비율로만 잡으면 위아래
 %  한계가 같은 수가 되어 ylim 이 거부한다. 바닥값을 둔다.
-d = max((hi - lo)*0.08, max(abs([lo hi]))*0.05 + 1e-3);
+d = max((hi - lo)*0.15, max(abs([lo hi]))*0.10 + 1e-3);
 ylim(ax, [lo-d, hi+d]);
+end
+
+%  시간축도 같다 — 끝에 닿을 때만 60 초씩 늘린다 (자동 범위는 그릴 때마다 바뀐다)
+function grow_t(axs, t)
+xl = axs(1).XLim;
+if t <= xl(2), return, end
+for a = axs, a.XLim = [0, 60*ceil(t/60)]; end
 end
