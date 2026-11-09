@@ -28,7 +28,10 @@
 
 1. **WSL 은 비대화형이라 `.bashrc` 를 건너뛴다.** `ROS_DOMAIN_ID` 를 명령 안에 직접 쓴다.
    `wsl.exe -d Ubuntu-22.04 -e bash -lc 'export ROS_DOMAIN_ID=7; source /opt/ros/humble/setup.bash; …'`
-2. **VRX 를 끝낼 때 반드시 정리한다** — `ros2 run vrx_llm_dock cleanup`. 남은 `gz sim` 이 62 GB 까지 자라 OOM 을 부른다.
+2. **VRX 를 끝낼 때 반드시 정리한다.** 남은 `gz sim` 이 62 GB 까지 자라 OOM 을 부른다.
+   - 간단한 쪽: `cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite && bash stop_vrx.sh` (주차 자료가 쓰는 꼴)
+   - `cleanup` 을 쓸 때는 **오버레이를 먼저 소스한다** — 안 하면 패키지를 못 찾는다:
+     `source ~/vrx_ws/install/setup.bash; ros2 run vrx_llm_dock cleanup`
 3. **대괄호 폴더 (`강의자료/[2026-2] 강의자료`)** 는 PowerShell 에서 와일드카드로 해석된다 — `-LiteralPath` 를 쓴다. 볼트 `CLAUDE.md` 절대 규칙 참고.
 
 ## 세션이 끝날 때
