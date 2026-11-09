@@ -1637,8 +1637,11 @@ A2_6_gps_done
 4. **끝나면 반드시 정리함** — 남은 `gz sim` 이 62 GB 까지 자라 메모리를 다 먹음
 
 ```bash
+source ~/vrx_ws/install/setup.bash
 ros2 run vrx_llm_dock cleanup
 ```
+
+- 첫 줄을 빼면 `Package 'vrx_llm_dock' not found` 가 남 — 새 터미널은 오버레이를 소스하지 않은 상태임
 
 ### 정상 출력
 
@@ -1736,7 +1739,7 @@ gz service -s /world/sydney_regatta/set_pose --reqtype gz.msgs.Pose --reptype gz
    - 전환 시각이 최근접 시각보다 **이른** 까닭을 한 줄로 쓸 것
 8. 기준점에서 거리 100 m · 500 m · 1 000 m 인 점에 대해 `'flat'` 과 `'ellipsoid'` 의 차를 **cm 로** 낼 것
    - 그 값이 측정된 GPS-참값 차와 비교해 **무시할 수 있는가**를 판단해 쓸 것
-9. 끝낸 뒤 `ros2 run vrx_llm_dock cleanup` 을 돌리고, `ros2 topic list` 가 **비었음**을 캡처로 낼 것
+9. 끝낸 뒤 `source ~/vrx_ws/install/setup.bash; ros2 run vrx_llm_dock cleanup` 을 돌리고, `ros2 topic list` 가 **비었음**을 캡처로 낼 것
 
 #### 평가 배점
 
