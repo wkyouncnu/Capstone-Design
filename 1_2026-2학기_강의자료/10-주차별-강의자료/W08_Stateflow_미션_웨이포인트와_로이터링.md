@@ -61,6 +61,46 @@ summary: 상태기계로 유도를 갈아 끼운다 — 로이터링 후 복귀,
 > - 5주차 LOS 와 7주차 로이터링이 각각 동작했어야 함
 > - 배포 폴더 `W08_simulink/`
 
+> [!important] 이번 주차 실행 요약 — Gazebo(VRX) ↔ Simulink 는 이 네 덩어리만 치면 됨
+> 자세한 설명은 2부 D 절(실습 A\~D)과 E-4 절(실습 E). 아래는 2026-11-09 기준 환경에서 그대로 쳐서 확인한 순서임
+>
+> **① 터미널 1 — Gazebo 띄우기** (5·7주차와 같은 경량 모델 `run_vrx.sh`. 창이 뜨면 이 터미널은 닫지 않고 둠)
+>
+> ```bash
+> cd ~/Capstone-Design && git pull
+> cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite
+> bash stop_vrx.sh
+> bash run_vrx.sh
+> ```
+>
+> **② 터미널 2 — 토픽 확인** (`ground_truth_odometry` 와 `thrusters` 네 줄이 보이면 됨)
+>
+> ```bash
+> ros2 topic list | grep -E "thrusters|ground_truth"
+> ```
+>
+> **③ MATLAB — Simulink 를 Gazebo 에 붙여 돌리기** (420 s 주행. 벽시계로 7\~8분)
+>
+> ```matlab
+> cd('\\wsl.localhost\Ubuntu-22.04\home\<사용자명>\Capstone-Design\1_2026-2학기_강의자료\10-주차별-강의자료\W08_simulink')
+> setappdata(0, 'W08_skip_run', true);  W08_setup;  W08_vrx_run(420)
+> ```
+>
+> **④ 끝낼 때 — 반드시 정리** (남은 `gz sim` 이 메모리를 수십 GB 까지 먹음)
+>
+> ```bash
+> bash stop_vrx.sh
+> ```
+>
+> | 이럴 때 | 할 것 |
+> |---|---|
+> | **실습 E(접안)를 돌릴 때** | ① 을 `cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W06_vrx_lite` → `bash ../W03_vrx_lite/stop_vrx.sh` → `bash run_vrx_bow.sh` 로 바꿈 (선수추진기 달린 WAM-V). ③ 은 `S = W08_dock_vrx_run(420)` (E-4 절) |
+> | Gazebo 없이 오프라인만 | MATLAB 에서 `W08_setup` (실습 A\~C) · `W08_dock_setup` (실습 E) — 둘 다 실행하면 바로 돎 |
+> | `W08_vrx_run` 이 1단계에서 멈춤 | ② 의 네 줄이 보이는지 먼저 확인. 안 보이면 ① 부터 다시 |
+> | 임무 종료가 `미완료` 로 찍힘 | 300 s 로는 마지막 웨이포인트에 못 닿음 — `W08_vrx_run(420)` 처럼 인자를 줄 것 (D 절 warning) |
+> | Gazebo 창이 안 뜸 | Windows PowerShell 에서 `wsl --shutdown` → 터미널을 새로 열고 ① 부터 |
+> | 다음 실험 | ④ 부터 다시 |
+
 > [!note] 이번 주차 새로 만드는 것은 **하나뿐**이다
 > 유도법칙 두 개(LOS, 벡터필드)와 내부루프·추진기·운동모델은 이미 다 있음
 > 이번 주차에 작성하는 것은 **"언제 무엇을 쓸지 결정하는 것"** — 미션 상태기계
@@ -170,11 +210,15 @@ summary: 상태기계로 유도를 갈아 끼운다 — 로이터링 후 복귀,
    └──────────┘
 ```
 
-| 상태 | `mode` | 하는 일 |
-|---|---|---|
-| `WpFollow` | 1 | LOS 유도로 웨이포인트 따라가기 |
-| `Loiter` | 2 | 벡터필드로 원 궤도 돌기 |
-| `Finish` | 3 | 정지 |
+| 상태 | `mode` | 하는 일 | 상태 상자의 `during:` — 그 상태가 쓸 지령 |
+|---|---|---|---|
+| `WpFollow` | 1 | LOS 유도로 웨이포인트 따라가기 | `psi_ref = psi_los;` · `gate = 1;` |
+| `Loiter` | 2 | 벡터필드로 원 궤도 돌기 | `psi_ref = psi_lo;` · `gate = 1;` |
+| `Finish` | 3 | 정지 | `psi_ref = psi_los;` · `gate = 0;` |
+
+- 위 그림의 상자에는 `mode = N` 만 적었지만, **실제 차트의 상태 상자는 두 부분**임
+  - `en:` — 들어갈 때 한 번. 모드 번호를 바꿈
+  - `during:` — 머무는 동안 매 스텝. 그 상태가 쓸 선수각과 속도 문을 냄 (오른쪽 열)
 
 | 전이 | 조건 | 뜻 |
 |---|---|---|
@@ -213,18 +257,28 @@ $$
 > - 그래서 0 과 1 의 한가운데인 0.5 로 가름
 > - 부록 A1 M-4 절(SB13)에서 같은 관용구를 작은 모델로 먼저 연습함
 
-### 차트의 데이터 — 입력 4개, 출력 1개
+### 차트의 데이터 — 입력 6개, 출력 3개
 
-| 이름 | 범위 | 포트 | 어디서 오는가 |
+| 이름 | 범위 | 포트 | 어디서 오는가 / 어디로 가는가 |
 |---|---|---|---|
-| `at_loiter` | 입력 | 1 | `Guidance/WpManager` 출력 4 |
-| `turns` | 입력 | 2 | `Guidance/TurnCount` 출력 1 |
-| `req_turns` | 입력 | 3 | `Mission` 상자 안 Constant `Req` (값 `loiter_turns`) |
-| `at_end` | 입력 | 4 | `Guidance/WpManager` 출력 5 |
-| `mode` | 출력 | 1 | → `ModeSwitch` (바로), → `ModeDly` → `WpManager`·`TurnCount` (한 스텝 뒤) |
+| `psi_los` | 입력 | 1 | `Guidance/WpManager` 출력 1 — LOS 가 낸 선수각 |
+| `psi_lo` | 입력 | 2 | `Guidance/LoiterVF` 출력 1 — 벡터필드가 낸 선수각 |
+| `at_loiter` | 입력 | 3 | `Guidance/WpManager` 출력 4 |
+| `turns` | 입력 | 4 | `Guidance/TurnCount` 출력 1 |
+| `req_turns` | 입력 | 5 | `Mission` 상자 안 Constant `Req` (값 `loiter_turns`) |
+| `at_end` | 입력 | 6 | `Guidance/WpManager` 출력 5 |
+| `mode` | 출력 | 1 | → `ModeDly` → `WpManager`·`TurnCount` (한 스텝 뒤) |
+| `psi_ref` | 출력 | 2 | → `InnerLoop` 의 선수각 지령 |
+| `gate` | 출력 | 3 | → `InnerLoop` 의 속도 지령 문 — 지령은 $u_{\text{ref}} \times \text{gate}$ |
 
 - 차트 설정: 동작 언어 **MATLAB**, 갱신 방식 **Discrete**, 샘플 시간 `Ts_ctrl` (0.05 s)
 - 차트 경로: `W08_0_offline/Mission/MissionFSM`
+
+> [!important] 선수각을 **고르는 일도 차트 안**에서 한다
+> 유도 블록 둘이 낸 선수각 `psi_los`·`psi_lo` 가 차트의 1·2 번 입력으로 들어오고,
+> 상태 상자가 **자기가 쓸 것을 `during:` 동작으로** 내놓음 (1-3절)
+> - 그래서 바깥에 모드 선택 블록을 따로 두지 않음 — 상태가 하나 늘 때 **고칠 곳이 한 군데**임
+> - 상태 넷인 실습 E 는 접안 지령까지 섞어야 해서 선택을 **차트 밖 `ModeSwitch` 블록**으로 뺐음 (E-2절)
 
 ### Stateflow 가 차트를 실행하는 규칙
 
@@ -233,10 +287,10 @@ $$
 | 실행 주기 | 샘플마다 한 번 깨어나 전이 조건을 검사함 | 0.05 s 마다 |
 | 한 스텝에 전이 하나 | 전이가 일어나면 그 스텝은 끝남. 새 상태의 전이 조건은 다음 스텝에 검사 | `Loiter → WpFollow` 직후 같은 스텝에 `Finish` 로 가지 않음 |
 | **실행 순서** | 한 상태에서 나가는 전이가 둘 이상이면 **번호가 작은 쪽을 먼저** 검사하고, 먼저 참이 된 하나만 일어남. 번호는 차트의 전이 시작점 옆 `1`·`2` 로 보임 | `WpFollow` 의 두 전이 — `→ Loiter` 가 **1**, `→ Finish` 가 **2** (차트에서 확인) |
-| `en:` (entry) | 상태에 **들어갈 때** 한 번 실행 | `mode = 1;` 등 |
-| `du:` (during) | 상태에 머무는 동안, 전이가 없는 스텝마다 실행 | 이 차트는 쓰지 않음 |
+| `en:` (entry) | 상태에 **들어갈 때** 한 번 실행 | `mode = 1;` 등 — 모드 번호는 바뀔 때만 쓰면 됨 |
+| `during:` (du) | 상태에 머무는 동안, 전이가 없는 스텝마다 실행 | **세 상태 모두 씀** — 그 상태가 쓸 `psi_ref` 와 `gate` 를 0.05 s 마다 냄 |
 | `ex:` (exit) | 상태를 **떠날 때** 한 번 실행 | 이 차트는 쓰지 않음 |
-| 출력 유지 | 출력 데이터는 다시 쓰기 전까지 **값을 유지**함 | 그래서 `en:` 한 줄로 충분함 |
+| 출력 유지 | 출력 데이터는 다시 쓰기 전까지 **값을 유지**함 | 그래서 `mode` 는 `en:` 한 줄로 충분함 |
 | 차트 종류 | 기본값인 **Classic** 차트 (Moore·Mealy 아님) | `sflib/Chart` 로 만든 그대로 |
 
 > [!warning] `loiter_wp` 를 마지막 웨이포인트로 두지 않는다
@@ -255,17 +309,25 @@ $$
 ## 1-3. 두 유도법칙을 갈아 끼우기
 
 - 유도 블록 **두 개를 항상 같이 돌림.** 그리고 결과 중 하나를 고름
+- 고르는 일은 **차트 안 상태 상자**가 함. 상태마다 자기가 쓸 지령을 `during:` 에 적어 둠
 
-```matlab
-function [psi_ref, gate] = ModeSwitch(mode, psi_los, psi_lo)
-if mode > 2.5
-    psi_ref = psi_los;   gate = 0;    % 종료 — 속도 지령을 0 으로
-elseif mode > 1.5
-    psi_ref = psi_lo;    gate = 1;    % 로이터링 — 벡터필드
-else
-    psi_ref = psi_los;   gate = 1;    % 웨이포인트 — LOS
-end
 ```
+WpFollow                  Loiter                    Finish
+en: mode = 1;             en: mode = 2;             en: mode = 3;
+during:                   during:                   during:
+ psi_ref = psi_los;        psi_ref = psi_lo;         psi_ref = psi_los;
+ gate    = 1;              gate    = 1;              gate    = 0;
+```
+
+- 세 상자를 위아래로 훑으면 **"어느 상태가 어느 유도를 쓰는가"** 가 한눈에 읽힘
+- `gate = 0` 은 속도 지령을 끊는 것임 — `Finish` 에서 배가 관성으로 미끄러지다 섬
+
+> [!important] 바깥에 모드 선택 블록을 따로 두지 않는 이유
+> "지금 어느 상태인가" 와 "그 상태에서 어느 지령을 쓰는가" 는 **한 가지 판단**임
+> 차트 밖에 `if` 문 블록을 따로 두면 상태가 하나 늘 때마다 **두 곳**을 고쳐야 하고,
+> 한쪽만 고치면 모델은 조용히 틀린 값을 냄
+> - 상태 넷에 접안 지령까지 섞이는 실습 E 는 사정이 다름 — 거기서는 선택을 차트 밖
+>   `ModeSwitch` 블록으로 빼서 문 둘(`gate_p`·`gate_u`)을 곱셈으로 섞음 (1-8절 · E-2절)
 
 > [!tip] 두 경로를 동시에 계산하는 이유
 > 안 쓰는 쪽을 꺼 두면 다시 켤 때 내부 상태(적분기·인덱스)가 엉킴
@@ -400,7 +462,7 @@ MissionFSM ──→ [ 1/z ] ──mode──→ WpManager, TurnCount
 
 | 누가 | 보는 `mode` | 결과 |
 |---|---|---|
-| `ModeSwitch` | 차트 출력 그대로 (지연 없음) | 전이한 그 스텝에 유도법칙이 바뀜 |
+| 차트 자신 (`psi_ref`·`gate` 출력) | 지연 없음 — 상태가 바뀌면 그 스텝의 `during:` 가 바로 돎 | 전이한 그 스텝에 유도법칙이 바뀜 |
 | `WpManager`·`TurnCount` | `ModeDly` 를 거친 값 (0.05 s 전) | 인덱스 잠금·회전수 초기화가 한 스텝 늦게 걸림 |
 | 로그 `log_mode` (그림·출력의 전이 시각) | `ModeDly` 뒤의 태그 `mode` | 찍히는 전이 시각이 실제 전이보다 **한 스텝(0.05 s) 늦음** |
 
@@ -439,11 +501,11 @@ MissionFSM ──→ [ 1/z ] ──mode──→ WpManager, TurnCount
 
 | 5·7주차 | 8주차 | 달라진 점 |
 |---|---|---|
-| 5주차 `GuidanceLaw` 출력 `psi_ref` | `WpManager` 출력 `psi_los` | LOS 지령에 새 이름. `psi_ref` 는 이제 `ModeSwitch` 가 고른 최종 지령 |
+| 5주차 `GuidanceLaw` 출력 `psi_ref` | `WpManager` 출력 `psi_los` | LOS 지령에 새 이름. `psi_ref` 는 이제 **차트가 고른** 최종 지령 |
 | 5주차 `mode` (1 = atan2, 2 = LOS) | `mode` (1 = WpFollow, 2 = Loiter, 3 = Finish) | **같은 이름, 다른 뜻.** 8주차 웨이포인트 유도는 LOS 하나뿐이고, `mode` 는 미션 상태 |
 | 5주차 `wp_idx` | `idx` | 이름만 바뀜. 구간 시작 인덱스라는 뜻은 같음 |
 | 5주차 `sw_mode` (기본 1 = 경로 방향) | 없음 | 8주차는 모든 구간을 **수락 원** $d_{k+1} \le R$ 로 판정 (1-4절 note) |
-| 5주차 `gate` — `GuidanceLaw` 가 냄 | `gate` — `ModeSwitch` 가 냄 | `Finish` 상태에서 0 |
+| 5주차 `gate` — `GuidanceLaw` 가 냄 | `gate` — **차트가** 냄 (실습 E 는 `ModeSwitch` 가 냄) | `Finish` 상태에서 0 |
 | 7주차 `r_d` | `loiter_radius` | 이름만 바뀜 |
 | 7주차 중심 `center_north`·`center_east` | `loiter_xc`·`loiter_yc` | 지정한 웨이포인트 좌표로 자동 설정 |
 | 7주차 `required_turns` | 설정 `loiter_turns`, 차트 입력 `req_turns` | 7주차는 0 이면 **멈추지 않고 계속 돎.** 8주차는 0 이면 조건 $\text{turns} \ge 0$ 이 곧바로 참 → 다음 스텝에 `WpFollow` 로 돌아가 **사실상 로이터를 건너뜀** |
@@ -873,7 +935,7 @@ W08_setup
 | 회색 | `Finish` — 종료 |
 
 - ② 의 점선은 모드에 따라 **다른 유도법칙이 낸 값**임 — `mode 1` 이면 `WpManager` 의 LOS,
-  `mode 2` 면 `LoiterVF` 의 벡터필드. `ModeSwitch` 가 고른 뒤의 값을 받으므로 한 선에 둘이 섞여 있음.
+  `mode 2` 면 `LoiterVF` 의 벡터필드. **차트가 고른 뒤**의 값을 받으므로 한 선에 둘이 섞여 있음.
   **전이 순간에 지령선이 툭 튀는 것이 정상임** — 법칙이 갈린 지점임
 - ③ 이 `yyaxis` 로 축을 둘로 나눈 이유는 자릿수임. $u$ 는 1.x m/s, $F$ 는 수백 N 이라 한 축에 겹치면 $u$ 가 직선으로 보임
 - ③ 의 지령선은 설정값 $u_{\text{ref}}$ 가 아니라 **$u_{\text{ref}} \times \text{gate}$** 임.
@@ -957,8 +1019,7 @@ W08_setup
 | `WpManager` | 5주차 확장 | LOS + 인덱스 관리 + 도착 판정 |
 | `LoiterVF` | 7주차 그대로 | 벡터필드 유도 |
 | `TurnCount` | 7주차 수정 | 로이터 모드일 때만 회전수 누적 |
-| **`MissionFSM`** | **신규** | Stateflow 차트 — 미션 상태기계 |
-| **`ModeSwitch`** | **신규** | 두 유도 중 하나 선택 |
+| **`MissionFSM`** | **신규** | Stateflow 차트 — 미션 상태기계. **두 유도 중 하나를 고르는 일까지 차트 안에서 함** |
 | `ModeDly` | 신규 | 대수 루프를 끊는 단위지연 |
 | `InnerLoop` | 5주차 그대로 | 헤딩 P-D(연속) + 속도 PI(연속) + 배분 |
 | `Thrusters` | 5주차 그대로 | 프로펠러·모터 (1차 지연 연속) |
@@ -974,7 +1035,7 @@ W08_setup
 > `Guidance` -> `Mission` -> `InnerLoop` -> `Thrusters` -> `MotionModel`
 >
 > - `WpManager`·`LoiterVF`·`TurnCount` 는 **`Guidance` 상자 안**에 있음
-> - `MissionFSM`·`ModeSwitch`·`ModeDly` 는 **`Mission` 상자 안**에 있음
+> - `MissionFSM`·`ModeDly` 는 **`Mission` 상자 안**에 있음 (실습 E 는 `ModeSwitch` 도 그 안)
 > - 웨이포인트·로이터 중심·요구 회전수 같은 **설정값도 각 상자 안**에 있음
 > - 유도는 두 지령을 **둘 다** 내놓고, 고르는 일은 미션 상자만 함
 >   그래서 유도(파랑)와 판단(보라)이 색으로도 갈림
@@ -1133,12 +1194,16 @@ S = W08_plot(out, 'W08_my');
 
 ## D. VRX 연동 (30분)
 
-- 5·7주차와 절차가 같음
+- 5·7주차와 절차가 같음 — 띄우는 스크립트도 같은 것을 씀 (앞쪽 「이번 주차 실행 요약」 과 같은 명령임)
 
 ```bash
-ros2 launch vrx_gz competition.launch.py \
-    world:=sydney_regatta \
-    urdf:=$HOME/capstone_ws/wamv/w7_wamv.urdf.xacro
+cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite
+bash stop_vrx.sh
+bash run_vrx.sh
+```
+
+```bash
+ros2 topic list | grep -E "thrusters|ground_truth"
 ```
 
 ```matlab
@@ -1147,11 +1212,17 @@ W08_setup
 W08_vrx_run(420)
 ```
 
+- 끝낼 때는 **반드시** 정리함 — 남은 `gz sim` 이 메모리를 수십 GB 까지 먹음
+
+```bash
+bash stop_vrx.sh
+```
+
 - `W08_vrx_run.m` 이 하는 일
 
 | 단계 | 화면에 찍히는 줄 | 내용 |
 |---|---|---|
-| 0 | `0) ROS_DOMAIN_ID = 8` | Simulink 프로필과 MATLAB 의 도메인을 맞춤 |
+| 0 | `0) ROS_DOMAIN_ID = 7` | Simulink 프로필과 MATLAB 의 도메인을 맞춤 |
 | 1 | `1) VRX 토픽 확인` | ground truth 토픽이 없으면 여기서 멈춤 |
 | 2 | `2) RTF 측정 (20초)` · `스폰 위치 (x, y) = ...` | 실측 RTF 로 페이싱을 정하고, **배가 지금 있는 자리를 원점으로** 삼음 |
 | 3 | `3) W08_1_vrx 실행 (420초)` | 실시간 화면 네 칸 (D-3). 상태가 바뀌면 배 색이 바뀌고 ① 의 계단이 올라감 |
@@ -1236,7 +1307,7 @@ W08_vrx_run(420)
 
 ![실시간 미션 화면 — VRX 연동](W08_simulink/img/W08_anim_vrx.png)
 
-- 조건 — `W08_1_vrx`, `W03_vrx_lite/run_vrx.sh lite`, `ROS_DOMAIN_ID = 7`,
+- 조건 — `W08_1_vrx`, `W03_vrx_lite/run_vrx.sh`, `ROS_DOMAIN_ID = 7`,
   측정 RTF 1.070 (페이싱도 같은 값), 스폰 $(x_{\text{ENU}}, y_{\text{ENU}}) = (-532.1, 200.0)$,
   420 s 주행 / 벽시계 546.8 s, 게인·미션 설정은 A절과 같음 (2026-09-25 실측)
 - 캡처 명령 — `W08_anim_capture('vrx')`
@@ -1390,7 +1461,8 @@ W08 실습 E 설정 완료
 
 ```bash
 cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W06_vrx_lite
-bash run_vrx_bow.sh lite
+bash ../W03_vrx_lite/stop_vrx.sh
+bash run_vrx_bow.sh
 ```
 
 ```matlab
@@ -1463,9 +1535,10 @@ S = W08_dock_vrx_run(420)
 
 > [!caution] VRX 를 끝낼 때 반드시 정리한다
 > ```bash
-> source ~/vrx_ws/install/setup.bash && ros2 run vrx_llm_dock cleanup
+> bash ../W03_vrx_lite/stop_vrx.sh
 > ```
 > - 남은 `gz sim` 프로세스가 수십 GB 까지 자라 메모리가 모자라게 됨
+> - 다른 주차와 같은 스크립트임 (앞쪽 「이번 주차 실행 요약」 ④ · D 절 끝)
 
 ### 확인할 것
 
