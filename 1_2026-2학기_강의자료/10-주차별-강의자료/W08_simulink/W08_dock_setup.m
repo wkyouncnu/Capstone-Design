@@ -19,6 +19,12 @@
 
 clear; clc;
 
+%  그림 글꼴 — 한글 범례·축 이름이 깨지지 않게 못 박는다.
+%  MATLAB 기본 글꼴(Helvetica 등)에는 한글 글립이 없어 네모(□) 로 나온다.
+set(groot, 'defaultAxesFontName',   '맑은 고딕');
+set(groot, 'defaultTextFontName',   '맑은 고딕');
+set(groot, 'defaultLegendFontName', '맑은 고딕');
+
 %% ====================================================================
 %  1. 웨이포인트 경로 — 실습 A 와 같다 [m], NED
 %
