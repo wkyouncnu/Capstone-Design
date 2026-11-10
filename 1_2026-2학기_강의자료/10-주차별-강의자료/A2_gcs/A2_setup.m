@@ -10,6 +10,13 @@
 if ~isequal(getappdata(0, 'A2_keep_vars'), true), clear; end
 if ~isequal(getappdata(0, 'A2_skip_clc'),  true), clc;   end
 
+%  그림 글꼴 — 한글 축 이름·범례가 깨지지 않게 못 박는다.
+%  MATLAB 기본 글꼴(Helvetica 등)에는 한글 글립이 없어 네모(□) 로 나온다.
+%  A2 는 1~6단과 GUI 가 모두 이 파일을 거치므로 여기서 한 번만 박는다.
+set(groot, 'defaultAxesFontName',   '맑은 고딕');
+set(groot, 'defaultTextFontName',   '맑은 고딕');
+set(groot, 'defaultLegendFontName', '맑은 고딕');
+
 %% ====================================================================
 %  1. 기준점 — 지역 NED 좌표계의 원점
 %     [ 위도(deg)  경도(deg)  고도(m, WGS84 타원체 기준) ]
