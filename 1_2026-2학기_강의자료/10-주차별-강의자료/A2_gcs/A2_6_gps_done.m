@@ -21,6 +21,7 @@
 %     >> A2_6_gps_done
 %
 %   끝나면 반드시
+%     $ source ~/vrx_ws/install/setup.bash
 %     $ ros2 run vrx_llm_dock cleanup
 
 A2_6_gps_setup;
@@ -212,4 +213,7 @@ title(sprintf('성분별 오차 (북 평균 %.3f, 동 평균 %.3f m)', mean(dn),
 exportgraphics(f2, fullfile(here, 'img', 'a2-6-gps-vs-truth.png'), 'Resolution', 130);
 fprintf('그림 저장 : img/a2-6-gps-vs-truth.png\n');
 
-fprintf('\n=== 6단 끝 — WSL 에서  ros2 run vrx_llm_dock cleanup  을 잊지 말 것 ===\n');
+fprintf('\n=== 6단 끝 — WSL 에서 정리를 잊지 말 것 ===\n');
+fprintf('    $ source ~/vrx_ws/install/setup.bash\n');
+fprintf('    $ ros2 run vrx_llm_dock cleanup\n');
+fprintf('  첫 줄을 빼면 Package ''vrx_llm_dock'' not found 가 난다\n');

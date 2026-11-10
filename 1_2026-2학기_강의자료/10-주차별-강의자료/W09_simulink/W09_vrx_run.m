@@ -25,7 +25,7 @@ function S = W09_vrx_run(T_end, show)
 %       bash run_vrx_ca.sh
 %     터미널 2 (회피 노드 + 극좌표 그림)
 %       bash run_ca_nodes.sh
-%     끝낼 때 (**반드시**)  ros2 run vrx_llm_dock cleanup
+%     끝낼 때 (**반드시**)  source ~/vrx_ws/install/setup.bash; ros2 run vrx_llm_dock cleanup
 %       남은 gz sim 이 62 GB 까지 자라 메모리를 다 먹는다
 %
 %   시뮬링크 화면(show)을 기본으로 끄는 까닭

@@ -18,6 +18,7 @@
 %     >> A2_6_gps_todo
 %
 %   끝나면 반드시
+%     $ source ~/vrx_ws/install/setup.bash
 %     $ ros2 run vrx_llm_dock cleanup
 
 A2_6_gps_setup;
@@ -151,4 +152,7 @@ for k = 1:n_wp
             k-1, dg_min, t(kk(i_min)), pass, t_sw);
 end
 
-fprintf('\n=== 6단 끝 — WSL 에서  ros2 run vrx_llm_dock cleanup  을 잊지 말 것 ===\n');
+fprintf('\n=== 6단 끝 — WSL 에서 정리를 잊지 말 것 ===\n');
+fprintf('    $ source ~/vrx_ws/install/setup.bash\n');
+fprintf('    $ ros2 run vrx_llm_dock cleanup\n');
+fprintf('  첫 줄을 빼면 Package ''vrx_llm_dock'' not found 가 난다\n');

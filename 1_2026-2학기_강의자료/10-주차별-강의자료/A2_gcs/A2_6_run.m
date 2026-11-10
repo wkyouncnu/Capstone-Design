@@ -22,6 +22,7 @@ function [out, V] = A2_6_run(T_end)
 %     배는 스폰에서 출발한다 — 5주차와 같은 처방이다
 %
 %   끝나면 반드시
+%     $ source ~/vrx_ws/install/setup.bash
 %     $ ros2 run vrx_llm_dock cleanup
 %   남은 gz sim 이 62 GB 까지 자라 OOM 을 부른다
 

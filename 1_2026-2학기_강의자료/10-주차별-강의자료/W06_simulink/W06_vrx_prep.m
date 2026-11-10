@@ -14,7 +14,7 @@ function RTF = W06_vrx_prep(twin)
 %     bash ../W03_vrx_lite/stop_vrx.sh && bash run_vrx_bow.sh
 %
 %   끝나면 반드시 정리한다 — 남은 gz sim 이 수십 GB 까지 자란다
-%     ros2 run vrx_llm_dock cleanup
+%     source ~/vrx_ws/install/setup.bash; ros2 run vrx_llm_dock cleanup
 
 twin  = char(twin);
 [st, is_vrx] = W06_stage_of(twin);

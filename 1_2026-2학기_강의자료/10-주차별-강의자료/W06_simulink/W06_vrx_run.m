@@ -20,7 +20,7 @@ function R = W06_vrx_run(st, refresh)
 %     오프라인 전용이고, Gazebo 는 쌍둥이를 직접 Run 하는 길 하나만 남았다.
 %
 %   끝낼 때 반드시 정리한다 — 남은 gz sim 이 수십 GB 까지 자란다
-%     ros2 run vrx_llm_dock cleanup
+%     source ~/vrx_ws/install/setup.bash; ros2 run vrx_llm_dock cleanup
 
 if nargin < 1 || isempty(st),      st = 5;          end
 if nargin < 2 || isempty(refresh), refresh = false; end
@@ -71,5 +71,5 @@ fprintf('       InitFcn 이 도메인·토픽 확인 -> RTF 20 초 실측 -> 스
 fprintf('  3. 도는 동안 실시간 그림이 함께 뜬다 (W06_animate)\n');
 fprintf('  4. 끝나면 결과 네 칸과 기준 대조 여섯 칸이 뜨고 img/ 에 저장된다\n');
 fprintf('       img/W06_%d_vrx_result.png,  img/W06_%d_vrx_vs_offline.png\n', rst, rst);
-fprintf('  5. 끝낼 때 정리 — ros2 run vrx_llm_dock cleanup\n');
+fprintf('  5. 끝낼 때 정리 — source ~/vrx_ws/install/setup.bash; ros2 run vrx_llm_dock cleanup\n');
 end
