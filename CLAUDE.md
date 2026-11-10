@@ -24,7 +24,7 @@
   - `.../skills/capstone-git-sync/SKILL.md` — 커밋·푸시 관례
 - **VRX 실행 절차**: `.../capstone-lecture-vault/references/vrx-runbook.md` — 다시 알아내지 말고 이것을 읽는다.
 
-## 손이 자주 미끄러지는 세 가지
+## 손이 자주 미끄러지는 네 가지
 
 1. **WSL 은 비대화형이라 `.bashrc` 를 건너뛴다.** `ROS_DOMAIN_ID` 를 명령 안에 직접 쓴다.
    `wsl.exe -d Ubuntu-22.04 -e bash -lc 'export ROS_DOMAIN_ID=7; source /opt/ros/humble/setup.bash; …'`
@@ -33,6 +33,10 @@
    - `cleanup` 을 쓸 때는 **오버레이를 먼저 소스한다** — 안 하면 패키지를 못 찾는다:
      `source ~/vrx_ws/install/setup.bash; ros2 run vrx_llm_dock cleanup`
 3. **대괄호 폴더 (`강의자료/[2026-2] 강의자료`)** 는 PowerShell 에서 와일드카드로 해석된다 — `-LiteralPath` 를 쓴다. 볼트 `CLAUDE.md` 절대 규칙 참고.
+4. **가제보를 둘 띄울 때 `ROS_DOMAIN_ID` 로는 안 갈린다** (2026-11-10 실측). 가제보 내부 통신은 `GZ_PARTITION` 으로 갈리고, 설정하지 않으면 `hostname:username` 한 칸을 같이 쓴다 — 같은 PC·같은 계정의 두 VRX 가 서로 붙잡는다 (배가 두 척, 토픽 값이 튐, RTF 반토막).
+   - 세션마다 다른 값을 주고, `gz topic`/`gz service` 를 치는 터미널에도 **같은 값**을 준다: `export GZ_PARTITION=a2; bash run_vrx.sh`
+   - 실측: 값이 다르면 받은 메시지 0 줄, 같으면 둘 다 받음. `GZ_PARTITION=$(hostname):$(whoami)` 로 보낸 것이 **아무것도 설정하지 않은** 구독자에게 닿음
+   - **`stop_vrx.sh` 와 `cleanup` 은 칸을 보지 않는다** — 프로세스 이름으로 끄므로 **남의 가제보까지 끈다.** 둘이 돌 때는 띄운 터미널에서 `Ctrl+C`
 
 ## 세션이 끝날 때
 

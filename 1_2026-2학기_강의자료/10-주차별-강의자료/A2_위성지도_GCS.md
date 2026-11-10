@@ -1627,6 +1627,22 @@ ROS_DOMAIN_ID=7  (MATLAB W0X_setup 의 값과 같아야 함)
 
 - `wamv_lite.urdf` 에 GPS (`navsat`, 20 Hz) 와 지상참값 (`OdometryPublisher`, 10 Hz) 이 **둘 다** 들어 있음 — 6단에서 따로 켤 것이 없음
 
+> [!caution] 한 PC 에서 가제보를 두 개 띄울 때는 `GZ_PARTITION` 을 서로 다르게 줌
+> - `ROS_DOMAIN_ID` 는 **ROS 2 쪽만** 가름. 가제보 내부 통신 (gz-transport) 은 `GZ_PARTITION` 으로 갈림
+> - 아무것도 설정하지 않으면 칸 이름이 `호스트이름:사용자이름` 하나임 — 같은 PC·같은 계정이 띄운 둘이 **같은 칸을 씀**
+> - 증상: 배가 두 척 보임 · 토픽 값이 튐 · RTF 가 갑자기 반으로 떨어짐 · `gz service` 로 보낸 위치가 엉뚱한 배에 먹음
+> - 혼자 하나만 띄울 때는 둘 필요 없음. 둘 이상일 때만 아래처럼 줌
+
+```bash
+export GZ_PARTITION=a2     # 이 터미널에서 띄우는 서버·GUI·브리지가 모두 물려받음
+bash run_vrx.sh
+```
+
+> [!caution] 끄는 스크립트는 칸을 보지 않음 — **남의 가제보까지 끔**
+> - `stop_vrx.sh` 와 `cleanup` 은 **프로세스 이름**으로 끄므로 `GZ_PARTITION` 과 무관함
+> - 한 PC 에서 둘이 돌고 있으면 자기 것만 끌 방법이 없음 — 띄운 터미널에서 `Ctrl+C` 로 끝냄
+> - `gz topic` · `gz service` 를 다른 터미널에서 칠 때도 **같은 `export GZ_PARTITION` 을 먼저 줌** — 안 주면 아무것도 안 보임
+
 3. (MATLAB) 6단을 돌림
 
 ```matlab
@@ -1903,6 +1919,10 @@ gz service -s /world/sydney_regatta/set_pose --reqtype gz.msgs.Pose --reptype gz
 | 창을 닫았는데 MATLAB 이 바쁨 | 모델이 뒤에서 계속 돎 | `set_param('A2_gui','SimulationCommand','stop')` |
 | 측정 표가 `측정할 로그가 없다` | 출발 직후에 정지해 로그가 비었음 | 다시 출발해 몇 구간 돌린 뒤 정지 |
 | 5단이 순식간에 끝남 | 페이싱이 꺼져 있음 | `EnablePacing` 확인. 5단은 **1 배 고정**임 |
+| 배가 두 척 보이거나 RTF 가 반으로 떨어짐 | 한 PC 에 가제보가 두 개 떠 있고 `GZ_PARTITION` 이 같음 | 한쪽을 끔. 둘 다 써야 하면 터미널마다 다른 `export GZ_PARTITION` 으로 띄움 |
+| `ROS_DOMAIN_ID` 를 바꿨는데도 서로 섞임 | `ROS_DOMAIN_ID` 는 가제보 내부 통신을 가르지 않음 | `GZ_PARTITION` 을 줌 — 가제보 쪽은 이 변수만 봄 |
+| `gz topic -e` 가 아무것도 안 찍음 | 그 터미널의 `GZ_PARTITION` 이 띄운 쪽과 다름 | 띄울 때 쓴 값을 같은 터미널에서 먼저 `export` 함 |
+| `stop_vrx.sh` 가 남의 가제보까지 껐음 | 프로세스 이름으로 끄므로 칸을 안 봄 | 정상 동작임. 둘이 돌 때는 띄운 터미널에서 `Ctrl+C` 로 끝냄 |
 
 ## 참고 자료
 
