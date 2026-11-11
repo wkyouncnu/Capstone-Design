@@ -59,21 +59,24 @@ summary: 상태기계로 유도를 갈아 끼운다 — 로이터링 후 복귀,
 > [!important] 시작 전 확인
 > - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull` — 문서와 코드·모델이 같은 판이 됨 ([[강의자료는-한-번-받고-git-pull-로-갱신한다]], 처음 받는 법은 2주차 2-6)
 > - 5주차 LOS 와 7주차 로이터링이 각각 동작했어야 함
-> - 배포 폴더 `W08_simulink/`
+> - 배포 폴더 `W08_simulink/` · VRX 는 6주차 폴더 `W06_vrx_lite/` 의 선수추진기 모델을 씀 (6주차를 받아 두었어야 함)
 
 > [!important] 이번 주차 실행 요약 — Gazebo(VRX) ↔ Simulink 는 이 네 덩어리만 치면 됨
 > 자세한 설명은 2부 D 절(실습 A\~D)과 E-4 절(실습 E). 아래는 2026-11-10 기준 환경에서 그대로 쳐서 확인한 순서임
 >
-> **① 터미널 1 — Gazebo 띄우기** (5·7주차와 같은 경량 모델 `run_vrx.sh`. 창이 뜨면 이 터미널은 닫지 않고 둠)
+> **① 터미널 1 — 선수추진기를 단 Gazebo 띄우기** (6주차와 같은 모델 `run_vrx_bow.sh`. 5·7주차의 `run_vrx.sh` 가 아님. 창이 뜨면 이 터미널은 닫지 않고 둠)
 >
 > ```bash
 > cd ~/Capstone-Design && git pull
-> cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite
-> bash stop_vrx.sh
-> bash run_vrx.sh
+> cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W06_vrx_lite
+> bash ../W03_vrx_lite/stop_vrx.sh
+> bash run_vrx_bow.sh
 > ```
 >
-> **② 터미널 2 — 토픽 확인** (`ground_truth_odometry` 와 `thrusters` 네 줄이 보이면 됨)
+> - 이 주차는 **실습 A\~D 와 실습 E(접안) 를 한 번 띄운 Gazebo 로** 함 — 그래서 처음부터 추진기 셋 모델을 씀
+> - 추진기가 하나 더 달렸을 뿐 좌·우 토픽 이름은 같음. 실습 A\~D 는 선수추진기에 지령을 내지 않으므로 결과가 달라지지 않음
+>
+> **② 터미널 2 — 토픽 확인** (`ground_truth_odometry` 와 `bow/thrust` 까지 `thrusters` 여섯 줄이 보이면 됨)
 >
 > ```bash
 > ros2 topic list | grep -E "thrusters|ground_truth"
@@ -89,12 +92,12 @@ summary: 상태기계로 유도를 갈아 끼운다 — 로이터링 후 복귀,
 > **④ 끝낼 때 — 반드시 정리** (남은 `gz sim` 이 메모리를 수십 GB 까지 먹음)
 >
 > ```bash
-> bash stop_vrx.sh
+> bash ../W03_vrx_lite/stop_vrx.sh
 > ```
 >
 > | 이럴 때 | 할 것 |
 > |---|---|
-> | **실습 E(접안)를 돌릴 때** | ① 을 `cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W06_vrx_lite` → `bash ../W03_vrx_lite/stop_vrx.sh` → `bash run_vrx_bow.sh` 로 바꿈 (선수추진기 달린 WAM-V). ③ 은 `S = W08_dock_vrx_run(420)` (E-4 절) |
+> | **실습 E(접안)를 돌릴 때** | ① 을 **다시 띄울 필요 없음** — 같은 모델임. ③ 만 `S = W08_dock_vrx_run(420)` 으로 바꿈 (E-4 절) |
 > | Gazebo 없이 오프라인만 | MATLAB 에서 `W08_setup` (실습 A\~C) · `W08_dock_setup` (실습 E) — 둘 다 실행하면 바로 돎 |
 > | `W08_vrx_run` 이 1단계에서 멈춤 | ② 의 네 줄이 보이는지 먼저 확인. 안 보이면 ① 부터 다시 |
 > | 임무 종료가 `미완료` 로 찍힘 | 300 s 로는 마지막 웨이포인트에 못 닿음 — `W08_vrx_run(420)` 처럼 인자를 줄 것 (D 절 warning) |
@@ -648,7 +651,8 @@ $$
 
 > [!warning] 선수추진기가 없는 WAM-V 로는 돌아가지 않는다
 > - VRX 기본 WAM-V 는 좌·우 추진기 둘뿐임. 횡력을 낼 수 없어 옆걸음이 되지 않음
-> - 실습 E 의 VRX 검증은 6주차에서 쓴 **선수추진기 달린 WAM-V** (`W06_vrx_lite/wamv_bow_lite.urdf`) 로 함 (실습 E-4)
+> - 그래서 이번 주차 VRX 는 **처음부터** 6주차의 선수추진기 WAM-V (`W06_vrx_lite/wamv_bow_lite.urdf`) 로 띄움 — 앞쪽 실행 요약 ①
+> - 실습 A\~D 는 그 모델에서 좌·우 추진기만 씀. 실습 E 에서 선수추진기가 더해짐 (실습 E-4)
 
 ### ㄷ 자 도킹 스테이션 — 치수는 선체에서 나온다
 
@@ -1203,12 +1207,12 @@ S = W08_plot(out, 'W08_my');
 
 ## D. VRX 연동 (30분)
 
-- 5·7주차와 절차가 같음 — 띄우는 스크립트도 같은 것을 씀 (앞쪽 「이번 주차 실행 요약」 과 같은 명령임)
+- 5·7주차와 절차가 같음. 다만 **띄우는 모델은 6주차의 선수추진기 모델**임 — 실습 E 까지 한 번 띄워 쓰기 위함 (앞쪽 「이번 주차 실행 요약」 ① 과 같은 명령임)
 
 ```bash
-cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite
-bash stop_vrx.sh
-bash run_vrx.sh
+cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W06_vrx_lite
+bash ../W03_vrx_lite/stop_vrx.sh
+bash run_vrx_bow.sh
 ```
 
 ```bash
@@ -1224,7 +1228,7 @@ W08_vrx_run(420)
 - 끝낼 때는 **반드시** 정리함 — 남은 `gz sim` 이 메모리를 수십 GB 까지 먹음
 
 ```bash
-bash stop_vrx.sh
+bash ../W03_vrx_lite/stop_vrx.sh
 ```
 
 - `W08_vrx_run.m` 이 하는 일
@@ -1318,7 +1322,7 @@ bash stop_vrx.sh
 
 ![실시간 미션 화면 — VRX 연동](W08_simulink/img/W08_anim_vrx.png)
 
-- 조건 — `W08_1_vrx`, `W03_vrx_lite/run_vrx.sh`, `ROS_DOMAIN_ID = 7`,
+- 조건 — `W08_1_vrx`, `W03_vrx_lite/run_vrx.sh` (**실측 당시**의 추진기 둘 모델. 지금은 ① 의 `run_vrx_bow.sh` 로 띄움 — 선수추진기가 하나 더 달렸을 뿐 A\~D 는 거기에 지령을 내지 않음), `ROS_DOMAIN_ID = 7`,
   측정 RTF 1.053 (페이싱도 같은 값), 스폰 $(x_{\text{ENU}}, y_{\text{ENU}}) = (-532.0, 200.0)$,
   420 s 주행 / 벽시계 513.4 s, 게인·미션 설정은 A절과 같음 (2026-11-10 실측)
 - 캡처 명령 — `W08_anim_capture('vrx')`
@@ -1469,6 +1473,7 @@ W08 실습 E 설정 완료
 
 > [!important] 선수추진기 달린 WAM-V 를 띄운다
 > 기본 WAM-V 는 좌·우 추진기 둘뿐임. 실습 E 는 6주차에서 쓴 세 추진기 WAM-V 를 씀
+> **앞쪽 ① 로 이미 띄워 두었으면 다시 띄우지 않음** — 같은 모델임. D 절 주행이 끝난 Gazebo 창을 그대로 쓰고 ③ 만 바꿈
 
 ```bash
 cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W06_vrx_lite
@@ -1734,7 +1739,8 @@ ye_max = max(abs(ye(k1:k2)))
 | VRX 에서 배가 멈춤 | 육지에 얹힘 | 로이터 원이 안전 수역 안인지 |
 | 주행거리와 `u` 가 2배 차이 | 페이싱 ≠ RTF | RTF 재측정 |
 | 접안으로 안 넘어감 (실습 E) | `at_end` 가 안 뜸 | 마지막 웨이포인트 수락 반경 `R_LOS` 확인 |
-| 접안 중 배가 제자리에서 돎 | 선수추진기 토픽이 없음 — 기본 WAM-V 로 띄움 | `run_vrx_bow.sh` 로 다시 띄울 것 (E-4) |
+| 접안 중 배가 제자리에서 돎 | 선수추진기 토픽이 없음 — `run_vrx.sh` (기본 WAM-V) 로 띄움 | ① 의 `run_vrx_bow.sh` 로 다시 띄울 것 (E-4) |
+| ② 에서 `thrusters` 가 네 줄만 보임 | 같은 원인 — `bow/thrust` 가 없음 | `bash ../W03_vrx_lite/stop_vrx.sh` 후 ① 을 다시 함 |
 | 옆걸음이 아니라 비스듬히 들어감 | 자세가 맞기 전에 2단계로 넘어감 | `BerthRef` 의 $5^\circ$ · $\lvert u \rvert < 0.20$ 조건 확인 |
 | 멈춘 뒤에도 벽을 밀고 들어감 | 스웨이 PI 적분기가 **얼어붙음** — 문을 닫아 오차를 0 으로 만든 경우 | `gate_d` 는 `Dock` 이후 **열린 채로 둘 것** (1-8절 warning) |
 | 접안 완료가 안 찍힘 | 선석까지 거리가 `R_stop` 안에 못 들어옴 | `L_app` 를 줄이거나 `v_max` 를 확인 |
