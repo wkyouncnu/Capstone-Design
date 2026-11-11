@@ -54,7 +54,7 @@ summary: 위경도-NED 정의와 내부 수식, 위성지도 클릭 웨이포인
 
 - **과목**: 캡스톤디자인 (2026-2) · 충남대학교 자율운항시스템공학과
 - **이번 부록 학습 내용**: 위성지도 위에서 **웨이포인트를 클릭으로 찍고**, 그 위경도를 배가 쓰는 **NED 좌표**로 내림
-- **구성**: 1부 이론 (좌표계) · 2부 실습 1\~5단
+- **구성**: 1부 이론 (좌표계) · 2부 실습 1\~6단
 
 > [!important] 시작 전 확인
 > - **강의자료부터 갱신**: VS Code WSL 창 터미널에서 `cd ~/Capstone-Design && git pull`
@@ -62,11 +62,59 @@ summary: 위경도-NED 정의와 내부 수식, 위성지도 클릭 웨이포인
 > - **인터넷 연결 필요** — 위성 사진은 실시간으로 받아 그림
 > - 5주차 LOS 유도 실습(`W05_simulink`)을 먼저 해 두면 3단 결과를 바로 이어 쓸 수 있음
 
-> [!note] 이번 부록에서는 ROS 도 Gazebo 도 VRX 도 쓰지 않는다
+> [!important] 이번 부록 실행 요약 — Gazebo(VRX) 는 **6단에서만** 띄움. 이 네 덩어리만 치면 됨
+> 자세한 설명은 2부 2-7 절. 아래는 2026-11-11 기준 노트북(스폰 ENU $(-533,\ 162)$)에서 실시간 화면을 켠 채 그대로 쳐서 확인한 순서임 (완주 107.1 s · GPS 앞-뒤 치우침 $-0.800$ m · 동기 점검 $k$ = 1.049)
+>
+> **① 터미널 1 — Gazebo 띄우기** (5주차와 같은 경량 모델 `run_vrx.sh`. 창이 뜨면 이 터미널은 닫지 않고 둠)
+>
+> ```bash
+> cd ~/Capstone-Design && git pull
+> cd ~/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite
+> bash stop_vrx.sh
+> bash run_vrx.sh
+> ```
+>
+> - `run_vrx.sh` 가 실제로 실행하는 명령은 아래 한 줄임 — 화면에도 그대로 찍힘
+>
+> ```bash
+> ros2 launch vrx_gz competition.launch.py world:=sydney_regatta "urdf:=$HOME/Capstone-Design/1_2026-2학기_강의자료/10-주차별-강의자료/W03_vrx_lite/wamv_lite.urdf" "extra_gz_args:=--render-engine-gui ogre"
+> ```
+>
+> **② 터미널 2 — 토픽 확인** (`gps/gps/fix` 한 줄, `ground_truth_odometry` 한 줄, `thrusters` 네 줄이 보이면 됨)
+>
+> ```bash
+> ros2 topic list | grep -E "gps|ground_truth|thrusters"
+> ```
+>
+> **③ MATLAB — Simulink 를 Gazebo 에 붙여 6단 돌리기** (약 3\~4분. 위성지도 창이 함께 뜨고 **1 초마다** 갱신됨)
+>
+> ```matlab
+> cd('\wsl.localhost\Ubuntu-22.04\home\<사용자명>\Capstone-Design\1_2026-2학기_강의자료\10-주차별-강의자료\A2_gcs')
+> A2_6_gps_done
+> ```
+>
+> **④ 끝나면 터미널 1 에서 `Ctrl+C`, 이어서 정리** (남은 `gz sim` 이 메모리를 계속 먹음)
+>
+> ```bash
+> bash stop_vrx.sh
+> ```
+>
+> | 이럴 때 | 할 것 |
+> |---|---|
+> | Gazebo 없이 1\~5단만 | MATLAB 에서 `A2_ex_all` → `A2_1_refpoint_done` → `A2_2_map_done` → `A2_3_click_done` → `A2_4_live_done` → `A2_5_gui_done` 순서로 한 줄씩 |
+> | ③ 이 `... 가 보이지 않는다` 로 멈춤 | ② 를 다시 봄. 토픽이 없으면 ① 부터, 있으면 `echo $ROS_DOMAIN_ID` 가 MATLAB 출력의 `ROS_DOMAIN_ID` 와 같은지 확인 |
+> | 결과에 `동기 점검 k` 가 1.08 을 넘음 | `A2_6_gps_setup.m` 의 `animate_every` 를 2.0 으로 올리고 ① 의 `bash stop_vrx.sh` 부터 다시 (2-7 의 경고 상자) |
+> | `run_vrx.sh` 가 `화면 이상` 을 찍고 멈춤 · 로그만 나오고 **Gazebo 창이 안 뜸** | Windows PowerShell 에서 `wsl --shutdown` → 터미널을 새로 열고 ① 부터 (5주차 E-1 의 경고 상자) |
+> | 6단을 한 번 더 돌림 | ① 의 `bash stop_vrx.sh` 부터 다시 — 실험마다 VRX 를 새로 띄움 |
+> | 한 PC 에서 Gazebo 를 둘 띄움 | 터미널마다 `export GZ_PARTITION=a2` 처럼 다른 값을 먼저 줌. 이때는 `stop_vrx.sh` 를 쓰지 않고 `Ctrl+C` 로만 끝냄 (2-7 의 주의 상자) |
+>
+> - 스폰 자리가 ENU $y$ = 162 인 설치에서는 배가 경로 원점보다 **38 m 남쪽**에서 출발함 — 완주 시각이 2-7 의 기준 환경 값(83.7 s)보다 길게 나오는 것이 정상임
+
+> [!note] 1\~5단에서는 ROS 도 Gazebo 도 VRX 도 쓰지 않는다
 > - WSL 도, 배도 필요 없음. **MATLAB 하나만** 켜면 됨
 > - 학습 대상은 **위경도와 NED 사이의 변환**, 그리고 **지도를 입력 장치로 쓰는 법**임
 > - 4\~5단에서 Simulink 모델을 쓰지만 **5주차에서 쓴 것과 같은 오프라인 모델**임
-> - 실제 수역·장애물이 있는 VRX 연동은 **다음 단계**에서 다룸
+> - 실제 수역이 있는 VRX 연동은 **6단**에서 다룸 — 위 실행 요약의 ①\~④
 
 ---
 
