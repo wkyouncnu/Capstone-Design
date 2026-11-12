@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="440" viewBox="0 0 920 440" font-family="Malgun Gothic, sans-serif">
+  <rect width="920" height="440" fill="#ffffff"/>
+
+  <!-- 제목 -->
+  <text x="40" y="34" font-size="20" font-weight="bold" fill="#1e293b">아지무스 추진기 둘의 기하 — 추력 하나가 힘 둘로 갈린다</text>
+
+  <!-- 동체 좌표계 삼각대 -->
+  <g stroke="#1d4ed8" stroke-width="2" fill="none">
+    <path d="M 90 150 L 90 95" marker-end="url(#ab)"/>
+    <path d="M 90 150 L 145 150" marker-end="url(#ab)"/>
+  </g>
+  <text x="80" y="88" font-size="16" fill="#1d4ed8" text-anchor="end">x_b (전후)</text>
+  <text x="152" y="155" font-size="16" fill="#1d4ed8">y_b (좌우)</text>
+
+  <defs>
+    <marker id="ab" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M 0 0 L 9 4.5 L 0 9 z" fill="#1d4ed8"/>
+    </marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+    <marker id="ag" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 z" fill="#64748b"/>
+    </marker>
+    <marker id="ag2" markerWidth="8" markerHeight="8" refX="1.5" refY="4" orient="auto">
+      <path d="M 8 0 L 0 4 L 8 8 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- 중심선 -->
+  <path d="M 300 58 L 300 345" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="7 5"/>
+
+  <!-- 선체 -->
+  <rect x="224" y="130" width="152" height="140" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <path d="M 244 70 L 264 120 L 264 300 L 224 300 L 224 120 Z" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <path d="M 356 70 L 376 120 L 376 300 L 336 300 L 336 120 Z" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <text x="300" y="205" font-size="16" fill="#64748b" text-anchor="middle">WAM-V</text>
+  <text x="300" y="228" font-size="16" fill="#64748b" text-anchor="middle">(위에서 봄)</text>
+
+  <!-- 무게중심 -->
+  <circle cx="300" cy="160" r="7" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+  <path d="M 300 153 L 300 167 M 293 160 L 307 160" stroke="#1e293b" stroke-width="2"/>
+  <text x="313" y="156" font-size="16" fill="#1e293b">CG</text>
+
+  <!-- 좌현 추진기 -->
+  <circle cx="244" cy="290" r="9" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+  <path d="M 244 290 L 286 217" stroke="#dc2626" stroke-width="3.5" marker-end="url(#ar)"/>
+  <path d="M 244 290 L 244 217" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <path d="M 244 217 L 286 217" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <path d="M 244 245 A 45 45 0 0 1 266 251" stroke="#dc2626" stroke-width="2" fill="none"/>
+  <text x="262" y="240" font-size="17" fill="#dc2626">δ_L</text>
+  <text x="296" y="212" font-size="17" font-weight="bold" fill="#dc2626">T_L</text>
+  <text x="238" y="196" font-size="16" fill="#dc2626" text-anchor="end">F_x,L</text>
+  <text x="265" y="209" font-size="16" fill="#dc2626" text-anchor="middle">F_y,L</text>
+
+  <!-- 우현 추진기 -->
+  <circle cx="356" cy="290" r="9" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+  <path d="M 356 290 L 327 211" stroke="#dc2626" stroke-width="3.5" marker-end="url(#ar)"/>
+  <path d="M 356 245 A 45 45 0 0 0 340 252" stroke="#dc2626" stroke-width="2" fill="none"/>
+  <text x="332" y="240" font-size="17" fill="#dc2626" text-anchor="end">δ_R</text>
+  <text x="334" y="203" font-size="17" font-weight="bold" fill="#dc2626">T_R</text>
+  <text x="300" y="320" font-size="16" fill="#d97706" text-anchor="middle">선미 추진기 2 기 — 각각 돌아간다</text>
+
+  <!-- 치수 b -->
+  <path d="M 244 362 L 300 362" stroke="#64748b" stroke-width="1.5" marker-start="url(#ag2)" marker-end="url(#ag)"/>
+  <path d="M 244 300 L 244 368 M 300 345 L 300 368" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="272" y="390" font-size="17" fill="#334155" text-anchor="middle">b = 1.027 m</text>
+
+  <!-- 치수 L -->
+  <path d="M 178 160 L 178 290" stroke="#64748b" stroke-width="1.5" marker-start="url(#ag2)" marker-end="url(#ag)"/>
+  <path d="M 178 160 L 294 160 M 178 290 L 238 290" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="168" y="231" font-size="17" fill="#334155" text-anchor="end">L = 2.374 m</text>
+
+  <!-- 수식 판 -->
+  <rect x="470" y="58" width="420" height="312" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="494" y="92" font-size="18" font-weight="bold" fill="#1d4ed8">추력 둘이 만드는 힘·모멘트 셋</text>
+
+  <text x="494" y="134" font-size="18" fill="#1e293b">F_x,i = T_i · cos δ_i</text>
+  <text x="494" y="162" font-size="18" fill="#1e293b">F_y,i = T_i · sin δ_i</text>
+  <path d="M 494 180 L 866 180" stroke="#93c5fd" stroke-width="1.5"/>
+
+  <text x="494" y="212" font-size="18" fill="#1e293b">X = F_x,L + F_x,R</text>
+  <text x="494" y="242" font-size="18" fill="#1e293b">Y = F_y,L + F_y,R</text>
+  <text x="494" y="272" font-size="18" fill="#1e293b">N = b (F_x,L − F_x,R) − L (F_y,L + F_y,R)</text>
+
+  <path d="M 494 290 L 866 290" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="494" y="318" font-size="16" fill="#334155">δ 는 x_b 에서 y_b 쪽으로 돌린 각이 (+)</text>
+  <text x="494" y="344" font-size="16" fill="#334155">미지수 4 개 (T_L, δ_L, T_R, δ_R) · 식 3 개 → 한 자유도 남는다</text>
+
+  <text x="40" y="420" font-size="16" fill="#64748b">선수추진기를 달지 않고 추진기를 돌리는 것만으로 X·Y·N 셋을 모두 건드릴 수 있음 — 6주차와 같은 과업을 추진기 둘로 수행</text>
+</svg>

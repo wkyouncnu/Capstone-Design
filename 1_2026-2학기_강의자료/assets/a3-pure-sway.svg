@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="490" viewBox="0 0 920 490" font-family="Malgun Gothic, sans-serif">
+  <rect width="920" height="490" fill="#ffffff"/>
+
+  <text x="40" y="34" font-size="20" font-weight="bold" fill="#1e293b">순수 횡이동 — 한쪽 추력을 뒤로 돌려야 요 모멘트가 상쇄된다</text>
+
+  <defs>
+    <marker id="s_r" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+    <marker id="s_t" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0d9488"/>
+    </marker>
+  </defs>
+
+  <!-- 중심선 -->
+  <path d="M 290 62 L 290 330" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="7 5"/>
+
+  <!-- 선체 -->
+  <rect x="214" y="110" width="152" height="140" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <path d="M 234 50 L 254 100 L 254 280 L 214 280 L 214 100 Z" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <path d="M 346 50 L 366 100 L 366 280 L 326 280 L 326 100 Z" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <text x="200" y="98" font-size="16" fill="#64748b" text-anchor="end">좌현</text>
+  <text x="380" y="98" font-size="16" fill="#64748b">우현</text>
+
+  <!-- 무게중심과 합력 -->
+  <circle cx="290" cy="150" r="7" fill="#ffffff" stroke="#1e293b" stroke-width="2"/>
+  <path d="M 290 150 L 430 150" stroke="#ffffff" stroke-width="8"/>
+  <path d="M 290 150 L 430 150" stroke="#0d9488" stroke-width="4" marker-end="url(#s_t)"/>
+  <text x="440" y="144" font-size="17" font-weight="bold" fill="#0d9488">Y</text>
+  <text x="440" y="166" font-size="15" fill="#0d9488">합력은 옆으로만</text>
+
+  <!-- 좌현 추진기 — 전진 성분 -->
+  <circle cx="234" cy="280" r="9" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+  <path d="M 234 280 L 274 188" stroke="#dc2626" stroke-width="3.5" marker-end="url(#s_r)"/>
+  <path d="M 234 232 A 48 48 0 0 1 253 239" stroke="#dc2626" stroke-width="2" fill="none"/>
+  <text x="248" y="226" font-size="16" fill="#dc2626">+23.40°</text>
+  <text x="282" y="182" font-size="17" font-weight="bold" fill="#dc2626">T_L &gt; 0</text>
+  <text x="282" y="203" font-size="15" fill="#dc2626">앞으로</text>
+
+  <!-- 우현 추진기 — 후진 성분 (반전) -->
+  <circle cx="346" cy="280" r="9" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+  <path d="M 346 280 L 386 372" stroke="#dc2626" stroke-width="3.5" marker-end="url(#s_r)"/>
+  <path d="M 346 328 A 48 48 0 0 0 365 321" stroke="#dc2626" stroke-width="2" fill="none"/>
+  <text x="352" y="348" font-size="16" fill="#dc2626">−23.40°</text>
+  <text x="396" y="368" font-size="17" font-weight="bold" fill="#dc2626">T_R &lt; 0</text>
+  <text x="396" y="389" font-size="15" fill="#dc2626">뒤로 (반전)</text>
+
+  <text x="40" y="430" font-size="16" fill="#334155">좌우 추력의 전후 성분이 크기가 같고 방향이 반대 이므로</text>
+  <text x="40" y="455" font-size="16" fill="#334155">전후 합력 X = 0, 동시에 차동 추력이 만드는 요 모멘트가 선미 횡력의 요 모멘트와 정확히 맞선다</text>
+
+  <!-- 오른쪽 판 -->
+  <rect x="470" y="58" width="420" height="390" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="494" y="92" font-size="18" font-weight="bold" fill="#0d9488">닫힌식으로 정해진다 (근사 아님)</text>
+
+  <text x="494" y="128" font-size="18" fill="#1e293b">δ_L = +atan2(b, L) = +23.40°</text>
+  <text x="494" y="156" font-size="18" fill="#1e293b">δ_R = −23.40°</text>
+  <text x="494" y="184" font-size="18" fill="#1e293b">T_L = +1.2591 · Y</text>
+  <text x="494" y="212" font-size="18" fill="#dc2626">T_R = −1.2591 · Y   ← 반전 필수</text>
+
+  <path d="M 494 232 L 866 232" stroke="#99f6e4" stroke-width="1.5"/>
+  <text x="494" y="262" font-size="18" font-weight="bold" fill="#0d9488">요 모멘트가 상쇄되는 과정</text>
+  <text x="494" y="292" font-size="17" fill="#1e293b">차동 추력   b (F_x,L − F_x,R) = + L · Y</text>
+  <text x="494" y="320" font-size="17" fill="#1e293b">선미 횡력  − L (F_y,L + F_y,R) = − L · Y</text>
+  <text x="494" y="348" font-size="18" font-weight="bold" fill="#1e293b">합계  N = 0  (구조적으로 0)</text>
+
+  <path d="M 494 368 L 866 368" stroke="#99f6e4" stroke-width="1.5"/>
+  <text x="494" y="396" font-size="16" fill="#334155">|T| ≤ 500 N  →  Y ≤ 397.1 N</text>
+  <text x="494" y="422" font-size="16" fill="#334155">→ 정상 횡속도 1.555 m/s (실측 = 닫힌식)</text>
+</svg>

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="440" viewBox="0 0 920 440" font-family="Malgun Gothic, sans-serif">
+  <rect width="920" height="440" fill="#ffffff"/>
+
+  <text x="40" y="34" font-size="20" font-weight="bold" fill="#1e293b">추력 배분의 순서 — 요구 셋에서 추진기 둘의 (추력, 각도) 까지</text>
+
+  <defs>
+    <marker id="c_a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <marker id="c_r" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <!-- 1행 -->
+  <rect x="60" y="96" width="170" height="66" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="145" y="124" font-size="17" font-weight="bold" fill="#1d4ed8" text-anchor="middle">요구 τ</text>
+  <text x="145" y="147" font-size="15" fill="#334155" text-anchor="middle">(X, Y, N) — 제어기가 낸다</text>
+
+  <rect x="260" y="96" width="170" height="66" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="345" y="124" font-size="17" font-weight="bold" fill="#0d9488" text-anchor="middle">pinv(B) · τ</text>
+  <text x="345" y="147" font-size="15" fill="#334155" text-anchor="middle">닫힌식 네 줄 · 반복 없음</text>
+
+  <rect x="460" y="96" width="170" height="66" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="545" y="124" font-size="17" font-weight="bold" fill="#0d9488" text-anchor="middle">영공간 보정 λ</text>
+  <text x="545" y="147" font-size="15" fill="#334155" text-anchor="middle">각도를 ±45° 안으로</text>
+
+  <rect x="660" y="96" width="170" height="66" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="745" y="124" font-size="17" font-weight="bold" fill="#0d9488" text-anchor="middle">극좌표 변환</text>
+  <text x="745" y="147" font-size="15" fill="#334155" text-anchor="middle">(T, δ) · |δ| ≤ 90° 로 접음</text>
+
+  <path d="M 230 129 L 256 129" stroke="#334155" stroke-width="2" marker-end="url(#c_a)"/>
+  <path d="M 430 129 L 456 129" stroke="#334155" stroke-width="2" marker-end="url(#c_a)"/>
+  <path d="M 630 129 L 656 129" stroke="#334155" stroke-width="2" marker-end="url(#c_a)"/>
+
+  <!-- 줄바꿈 -->
+  <path d="M 745 162 L 745 204 L 145 204 L 145 246" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#c_a)"/>
+
+  <!-- 2행 -->
+  <rect x="60" y="250" width="170" height="66" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="145" y="278" font-size="17" font-weight="bold" fill="#d97706" text-anchor="middle">추력 한계</text>
+  <text x="145" y="301" font-size="15" fill="#334155" text-anchor="middle">|T| ≤ 500 N · 둘을 같은 비로</text>
+
+  <rect x="260" y="250" width="170" height="66" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="345" y="278" font-size="17" font-weight="bold" fill="#d97706" text-anchor="middle">변화율 제한</text>
+  <text x="345" y="301" font-size="15" fill="#334155" text-anchor="middle">δ 가 튀지 않게</text>
+
+  <rect x="460" y="250" width="170" height="66" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <text x="545" y="278" font-size="17" font-weight="bold" fill="#334155" text-anchor="middle">추진기 2 기</text>
+  <text x="545" y="301" font-size="15" fill="#334155" text-anchor="middle">T_L δ_L · T_R δ_R</text>
+
+  <rect x="660" y="250" width="170" height="66" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="745" y="278" font-size="17" font-weight="bold" fill="#1d4ed8" text-anchor="middle">실제로 난 τ</text>
+  <text x="745" y="301" font-size="15" fill="#334155" text-anchor="middle">같은 식을 거꾸로 풀어 기록</text>
+
+  <path d="M 230 283 L 256 283" stroke="#334155" stroke-width="2" marker-end="url(#c_a)"/>
+  <path d="M 430 283 L 456 283" stroke="#334155" stroke-width="2" marker-end="url(#c_a)"/>
+  <path d="M 630 283 L 656 283" stroke="#334155" stroke-width="2" marker-end="url(#c_a)"/>
+
+  <!-- 요구와 실제의 차 -->
+  <path d="M 60 129 L 36 129 L 36 376" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4" fill="none" marker-end="url(#c_r)"/>
+  <path d="M 830 283 L 876 283 L 876 376" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4" fill="none" marker-end="url(#c_r)"/>
+  <rect x="60" y="376" width="790" height="44" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="455" y="404" font-size="17" fill="#334155" text-anchor="middle">요구 τ − 실제 τ = 못 낸 힘. 한계에 걸려도 오류 메시지는 뜨지 않으므로 항상 함께 기록한다</text>
+</svg>
