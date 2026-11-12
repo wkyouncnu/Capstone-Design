@@ -13,6 +13,15 @@ function A3_shots()
 %     img/A3_r4_d15.png      1단 + 각도 한계 ±15 deg     — 깨지는 경우
 %     img/A3_env.png         ±45 deg 도달 가능 집합 (세 칸)
 %
+%   점검 그림 (A3_check) — 각도 한계와 요구 대비 실제를 따로 본다
+%     img/A3_chk_r1_crab.png  한계가 물리지 않는다 — 요구 = 실제
+%     img/A3_chk_r3_dock.png  접안 중 잠깐 물린다
+%     img/A3_chk_r4_d15.png   각도 한계가 내내 물린다 — 요구를 못 낸다
+%
+%   실시간 화면 (A3_animate) — 돌아가는 동안 보이는 창을 그대로 내린다
+%     img/A3_anim_r1_crab.png  순수 횡이동 — 두 화살표가 서로 벌어진다
+%     img/A3_anim_r4_d15.png   각도 한계 ±15 deg — 바늘이 쐐기 경계에 붙는다
+%
 %   그림의 속은 A3_plot · A3_envelope 이 그린다. 이 파일이 하는 일은 설정을
 %   깔고 돌려 그 그림을 파일로 내리는 것뿐이다 — 노트에 붙는 그림과 학생이
 %   직접 돌려 보는 그림이 **같은 코드**에서 나와야 숫자가 어긋나지 않는다.
@@ -24,23 +33,23 @@ here = fileparts(mfilename('fullpath'));
 cd(here);
 if ~exist(fullfile(here,'img'), 'dir'), mkdir(fullfile(here,'img')); end
 
-%  이름, 단, 덮어쓸 값, 그림 제목
+%  이름, 단, 덮어쓸 값, 그림 제목, 점검 그림도 찍을 것인가, 실시간 화면도 찍을 것인가
 C = { ...
  'r1_crab',   1, struct(), ...
-              '1단 · 순수 횡이동 (기준)';
+              '1단 · 순수 횡이동 (기준)',                                true,   true;
  'r1_cur',    1, struct('current_speed',0.6, 'current_direction',45, ...
                         'crab_east',20, 'T_run',150), ...
-              '1단 · 순수 횡이동 + 조류 0.6 m/s · 45 deg';
+              '1단 · 순수 횡이동 + 조류 0.6 m/s · 45 deg',               false,  false;
  'r2_pose',   2, struct(), ...
-              '2단 · 위치·선수각 유지 (30, 20) m · 45 deg';
+              '2단 · 위치·선수각 유지 (30, 20) m · 45 deg',              false,  false;
  'r3_dock',   3, struct(), ...
-              '3단 · 단계 전이 접안';
+              '3단 · 단계 전이 접안',                                    true,   false;
  'r3_direct', 3, struct('dock_on',0), ...
-              '3단 · 단계를 나누지 않음 (dock_on = 0)';
+              '3단 · 단계를 나누지 않음 (dock_on = 0)',                  false,  false;
  'r4_norev',  1, struct('rev_on',0), ...
-              '1단 · 추력 반전 금지 (rev_on = 0)';
+              '1단 · 추력 반전 금지 (rev_on = 0)',                       false,  false;
  'r4_d15',    1, struct('d_max_deg',15), ...
-              '1단 · 각도 한계 ±15 deg' };
+              '1단 · 각도 한계 ±15 deg',                                 true,   true };
 
 fprintf('A3 결과 그림 — img/\n');
 for k = 1:size(C,1)
@@ -51,12 +60,28 @@ for k = 1:size(C,1)
     mdl = evalin('base', 'mdl');
 
     out = sim(mdl);
-    S   = A3_plot(out, C{k,4});
+    S   = A3_plot(out, C{k,4});          % 점검 창까지 같이 만든다
     f   = fullfile(here, 'img', ['A3_' C{k,1} '.png']);
     print(S.fig, '-dpng', '-r110', f);
-    close(S.fig);
     d = dir(f);
     fprintf('  %-22s  %6.1f KB\n', ['A3_' C{k,1} '.png'], d.bytes/1024);
+
+    if C{k,5}
+        fc = fullfile(here, 'img', ['A3_chk_' C{k,1} '.png']);
+        print(S.fig_chk, '-dpng', '-r110', fc);
+        d = dir(fc);
+        fprintf('  %-22s  %6.1f KB\n', ['A3_chk_' C{k,1} '.png'], d.bytes/1024);
+    end
+    if C{k,6}
+        fa = A3_animate();                 % 지금 열려 있는 실시간 창
+        if ~isempty(fa) && isgraphics(fa)
+            fn = fullfile(here, 'img', ['A3_anim_' C{k,1} '.png']);
+            print(fa, '-dpng', '-r110', fn);
+            d = dir(fn);
+            fprintf('  %-22s  %6.1f KB\n', ['A3_anim_' C{k,1} '.png'], d.bytes/1024);
+        end
+    end
+    close(S.fig);  close(S.fig_chk);
 end
 setappdata(0, 'A3_override', []);       % **반드시 비운다**
 setappdata(0, 'A3_stage',    []);

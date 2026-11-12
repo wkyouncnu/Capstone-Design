@@ -39,7 +39,7 @@ apy = dy + sd*La*cos(dpsi);
 
 Fm   = evalin('base','F_max');
 dmx  = evalin('base','d_max')*180/pi;
-Ymx  = evalin('base','Y_max');
+
 dsw  = evalin('base','d_sway')*180/pi;
 
 t     = out.log_x_n.Time;
@@ -235,32 +235,6 @@ legend({'T_L','T_R','\pmF_{max}','','0','\delta_L','\delta_R','\pm\delta_{max}'}
        'Location','best','FontSize',7.5);
 title(sprintf('추력과 방향각   (최대 |T| %.0f N · |\\delta| %.1f°)', S.T_pk, S.d_pk));
 
-% ---- 6. 요구 vs 실제 힘·모멘트 --------------------------------------
-A3_fig('A3_wrench', ['A3 요구와 실제  ' ttl], [140 100 1100 420]);
-nm = {'X 전후 [N]','Y 횡 [N]','N 요 모멘트 [N m]'};
-cm = {Xc, Yc, Nc};  am = {Xa, Ya, Na};
-for i = 1:3
-    subplot(1,4,i);
-    plot(t, cm{i}, '--', 'LineWidth',1.4); hold on;
-    plot(t, am{i}, '-',  'LineWidth',1.1);
-    if i == 2, yline( Ymx,'r:');  yline(-Ymx,'r:'); end
-    yline(0,'k:');
-    grid on; xlabel('시간 [s]'); ylabel(nm{i});
-    legend({'요구','실제'}, 'Location','best','FontSize',8);
-    title(sprintf('%s   (최대 차이 %.1f)', nm{i}, S.w_err(i)));
-end
-subplot(1,4,4);
-yyaxis left
-plot(t, kscl, '-', 'LineWidth',1.4);  ylabel('kscl 축소 계수');  ylim([0 1.1]);
-yyaxis right
-stairs(t, phase, '-', 'LineWidth',1.4); hold on;
-stairs(t, gate,  '--', 'LineWidth',1.2);
-ylabel('단계 / gate');  ylim([-0.3 max(3.3, max(phase)+0.3)]);
-grid on; xlabel('시간 [s]');
-legend({'kscl','phase','gate'}, 'Location','best','FontSize',8);
-title(sprintf('포화와 과업 진행   (축소 %.1f%% · 각도 한계 %.1f%%)', ...
-              S.f_ksat, S.f_dsat));
-
 % ---- 성능 지표 --------------------------------------------------------
 fprintf('\n===== %s =====\n', ttl);
 fprintf('  선수각 오차 RMS      %8.4f deg   <- 횡이동 중 흔들림\n', S.psi_rms);
@@ -287,5 +261,14 @@ fprintf('  최대 방향각 |delta|  %8.2f deg   (한계 %.0f deg · 순수 횡�
 fprintf('  각도 한계에 붙은 시간%8.1f %%\n', S.f_dsat);
 fprintf('  추력 축소가 걸린 시간%8.1f %%\n', S.f_ksat);
 fprintf('  요구 대비 실제 차이  X %.2f N · Y %.2f N · N %.2f N m\n', S.w_err);
+
+% ---- 점검 그림 — 각도 한계와 요구 대비 실제 ---------------------------
+%   창을 따로 쓰는 까닭 — 결과 창은 "과업을 해냈는가", 점검 창은 "배분이
+%   성립했는가" 를 본다. 보는 사람이 다르고 보는 때가 다르다
+S.chk     = A3_check(out, ttl);
+S.fig_chk = S.chk.fig;
+S.w_free  = S.chk.w_free;          % 한계가 안 물린 구간의 차이 — 0 이어야 한다
+S.w_sat   = S.chk.w_sat;           % 한계가 물린 구간의 차이 — 한계 탓이다
+figure(S.fig);                     % 결과 창을 다시 앞으로
 
 end
