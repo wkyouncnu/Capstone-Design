@@ -13,6 +13,11 @@ function A3_model_done(mdl)
 mdl = char(mdl);
 st  = A3_stage_of(mdl);
 
+%  녹화를 먼저 닫는다 — mp4 는 닫지 않으면 재생되지 않는다. 아래 그림 그리기
+%  보다 **앞**에 두어야, sim() 으로 돌린 경우(바로 return)와 그림에서 오류가
+%  난 경우에도 영상이 온전히 남는다. 녹화를 켜지 않았으면 아무 일도 하지 않는다
+try, A3_animate('close'); catch, end
+
 if evalin('base', 'exist(''out'',''var'')') ~= 1
     return                                  % sim() 으로 돌린 것 — 부른 쪽이 그린다
 end

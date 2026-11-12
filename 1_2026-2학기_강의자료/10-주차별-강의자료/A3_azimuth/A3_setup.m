@@ -52,18 +52,25 @@ d_rate_deg = 573;       % 각도 변화율 한계 [deg/s] (URDF velocity 10 rad/
 %     0  금지 — 앞으로만 민다. 순수 횡이동이 **깨진다** (A3-4 실습)
 rev_on = 1;
 
-%   영공간 보정을 켜는가 — 각도 한계를 넘을 때 횡력을 한쪽으로 몰아 준다
-%     1  켠다 — 수도인버스 + 네 줄. 요구를 바꾸지 않고 각도만 한계 안으로 넣는다
-%     0  끈다 — 수도인버스 그대로 (가장 간단한 배분). 쐐기 구간에서 90 deg 를 요구한다
+%   null-space 보정을 켜는가 — 각도 한계를 넘을 때 횡력을 한쪽으로 몰아 준다
+%     1  켠다 — pseudo-inverse + 네 줄. 요구를 바꾸지 않고 각도만 한계 안으로 넣는다
+%     0  끈다 — pseudo-inverse 그대로 (가장 간단한 배분). 쐐기 구간에서 90 deg 를 요구
 %     실측: 켜면 그대로 낼 수 있는 요구가 35.3 % 늘고, 깨지는 요구는 0 건
 split_on = 1;
 
 %   배분 방식 — 같은 해의 직선 위에서 **어느 점에 앉는가**
-%     0  공통 각도   두 대를 같은 각도로 튼다. 가장 단순함. 순수 횡이동이 불가능
-%     1  수도인버스  추력 제곱합 최소. 쐐기 구간에서 한쪽만 90 deg 를 요구
-%     2  수도인버스 + 영공간 보정  요구를 바꾸지 않고 각도만 한계 안으로 넣음
+%     0  공통 각도        두 대를 같은 각도로 튼다. 가장 단순함. 순수 횡이동이 불가능
+%     1  pseudo-inverse  추력 제곱합 최소. 쐐기 구간에서 한쪽만 90 deg 를 요구
+%     2  pseudo-inverse + null-space 보정  요구를 바꾸지 않고 각도만 한계 안으로 넣음
 %     셋을 같은 과업으로 비교하는 것이 A3_4_limit_run 이다
 alloc_mode = 2;
+
+%   낼 수 없는 각도를 요구받았을 때 — 추력을 끊는가, 각도만 자르는가
+%     1  끊는다 (기본) — Sarda et al. (2016) Fig. 22 의 처리. 낼 수 없는 방향으로는
+%        아예 밀지 않는다. 문헌이 쓰는 방식이므로 본 부록의 기본값으로 둔다
+%     0  각도만 자른다  — 요구와 다른 방향으로 힘이 나간다. 대조용으로만 둔다
+%     ±45° 안에서 풀리는 요구에는 **두 값이 같은 결과를 낸다** (각도를 안 자르므로)
+ang_sat = 1;
 
 %% ====================================================================
 %  3. 과업별 목표
@@ -120,9 +127,19 @@ current_direction = 0;  % 조류가 가는 방향 [deg, NED]
 %% ====================================================================
 %  6. 실행 시간
 % =====================================================================
-T_run     = 300;
-stop_hold = 15;
+T_run     = 300;        % 이 시간까지도 안 멈추면 강제로 끝난다 [s]
+stop_hold = 15;         % 도착 상태를 몇 초 유지하면 끝낼 것인가 [s]
 Ts_ctrl   = 0.05;
+
+%   도착 판정 — **오차가 줄어들면 멈춘다**
+%     1단은 유도부가 상수라 gate 가 끝까지 1 이다. 그대로 두면 도착한 뒤의
+%     긴 정지 구간이 T_run 까지 기록에 섞인다. 그래서 위치·선수각 오차를
+%     직접 보고 멈추는 상자를 1단에 둔다 (parts/addAutoStopErr.m).
+%     2·3단은 유도부가 이미 도착 판정을 하므로 gate 를 보는 쪽을 쓴다.
+stop_on    = 1;         % 1 = 도착하면 멈춘다,  0 = T_run 까지 끝까지 돈다
+e_stop     = 0.30;      % 위치 오차 임계 [m]      — 이 안에 들어오고
+epsi_stop  = 2.0;       % 선수각 오차 임계 [deg]  — 이 안에 들어온 상태가
+                        %                           stop_hold 초 이어지면 끝
 
 %% ====================================================================
 %  6-1. 실시간 그림
@@ -133,6 +150,21 @@ Ts_ctrl   = 0.05;
 animate       = 1;      % 1 = 켬,  0 = 끔 (끄면 훨씬 빨리 돈다)
 animate_every = 0.25;   % 몇 초마다 다시 그릴 것인가 [시뮬레이션 초]
 boat_scale    = 3;      % 선체를 몇 배로 크게 그릴 것인가 (1 = 실제 전장 4.9 m)
+
+%   실시간 그림 **녹화**
+%     켜면 실시간 창을 그리는 그대로 동영상 한 개로 받는다. 보고서나 발표에
+%     그림 여러 장을 붙이는 대신 동영상 하나를 쓸 수 있다.
+%     - 녹화는 animate 가 켜져 있을 때만 된다 (그릴 창이 있어야 한다)
+%     - 한 프레임은 animate_every 초마다 한 장이다. rec_fps 를
+%       1/animate_every 로 두면 **실시간 속도**로 재생된다
+%     - 파일은 img/ 에 단 이름으로 떨어진다 (rec_name 이 비어 있을 때)
+%     - 영상은 **저장소에 올라가지 않는다** (저장소 .gitignore 가 *.mp4 를
+%       제외한다). 내 PC 에만 남으므로 따로 지울 필요가 없다
+%     - 기준 환경 실측 — 1단 36.7 초 실행에서 147 프레임 · 3.2 MB.
+%       녹화를 켜면 벽시계 8.7 초 → 22.5 초 (화면을 떠내는 비용)
+rec_on   = 0;           % 1 = 녹화,  0 = 끔 (기본). 끄면 속도 손실이 없다
+rec_fps  = 4;           % 재생 프레임률 [frame/s]. 1/animate_every = 실시간
+rec_name = '';          % 파일 이름. 비우면 img/<모델이름>_anim.mp4 로 정한다
 
 %% ====================================================================
 %  6-2. 비교 실습이 값 하나만 바꿔 같은 과업을 다시 돌리는 자리
@@ -202,8 +234,13 @@ task_q = [ hold_north;  hold_east;  deg2rad(hold_deg);
 %   1·2단 유도부가 받는 목표 자세 묶음 — 순서가 곧 q(1..3)
 stop_q = [x_d; y_d; psi_d];
 
-%   추력 배분이 받는 기하·한계 묶음 — 순서가 곧 PRM(1..7)
-az_prm = [half_beam; l_thr; F_max; d_max; rev_on; split_on; alloc_mode];
+%   1단 정지 판정이 받는 묶음 — 순서가 곧 p(1..3)
+%     parts/addAutoStopErr.m 의 StopChk 가 읽는다. 각도는 rad 로 넘긴다
+epsi_stop_r = deg2rad(epsi_stop);
+stop_prm = [e_stop; epsi_stop_r; stop_on];
+
+%   추력 배분이 받는 기하·한계 묶음 — 순서가 곧 PRM(1..8)
+az_prm = [half_beam; l_thr; F_max; d_max; rev_on; split_on; alloc_mode; ang_sat];
 
 %   오프라인 운동모델이 받는 계수 묶음 — 순서가 곧 p(1..8)
 %     6주차와 달리 b·l_bow 가 없다. 힘·모멘트가 배분에서 이미 완성되어 들어온다
@@ -227,7 +264,7 @@ end
 fprintf('A3 설정 완료\n');
 fprintf('  %d단  %s  —  %s\n', stage, mdl, stage_name{stage});
 fprintf('  추진기 둘 · 반폭 b = %.6f m · 거리 L = %.6f m\n', half_beam, l_thr);
-%   영공간 보정은 수준 2 에서만 켜진다 — 수준 0·1 에서는 꼬리에 붙지 않는다
+%   null-space 보정은 수준 2 에서만 켜진다 — 수준 0·1 에서는 꼬리에 붙지 않는다
 if alloc_mode > 1.5 && split_on > 0.5
     spl_txt = '켬';
 elseif alloc_mode > 1.5
@@ -235,14 +272,31 @@ elseif alloc_mode > 1.5
 else
     spl_txt = '해당 없음';
 end
-alloc_txt = {'공통 각도', '수도인버스', '수도인버스 + 영공간'};
+alloc_txt = {'공통 각도', 'pseudo-inverse', 'pseudo-inverse + null-space'};
+if ang_sat > 0.5
+    sat_txt = '추력 0 (문헌 방식)';
+else
+    sat_txt = '각도만 자름';
+end
 
-fprintf('  배분 방식 %d — %s · 영공간 보정 %s\n', ...
+fprintf('  배분 방식 %d — %s · null-space 보정 %s\n', ...
         alloc_mode, alloc_txt{alloc_mode+1}, spl_txt);
 fprintf('  각도 한계 ±%.0f deg · 변화율 %.0f deg/s · 추력 반전 %s\n', ...
         d_max_deg, d_rate_deg, rev_txt);
+fprintf('  낼 수 없는 각도 처리 — %s\n', sat_txt);
 fprintf('  낼 수 있는 한계 — 횡력 %.1f N · 요 모멘트 %.1f N m\n', Y_max, N_max);
 fprintf('  목표 (%.1f, %.1f) m · %.1f deg\n', x_d, y_d, rad2deg(psi_d));
+if stop_on > 0.5
+    fprintf('  정지 — 오차 %.2f m · %.1f deg 안에서 %.0f 초 유지 (최대 %.0f 초)\n', ...
+            e_stop, epsi_stop, stop_hold, T_run);
+else
+    fprintf('  정지 끔 — T_run = %.0f 초까지 끝까지 돈다 (stop_on = 0)\n', T_run);
+end
+if rec_on > 0.5 && animate > 0.5
+    fprintf('  녹화 켜짐 — %.0f frame/s. 끄려면 rec_on = 0\n', rec_fps);
+elseif rec_on > 0.5
+    fprintf('  녹화 요청됨 — 그러나 animate = 0 이라 녹화하지 않는다\n');
+end
 
 setappdata(0, 'A3_cfg_for', mdl);
 

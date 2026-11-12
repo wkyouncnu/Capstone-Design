@@ -22,6 +22,7 @@ function S = A3_plot(out, ttl)
 %     S.f_ksat       추력 포화로 축소가 걸린 시간 비율 [%]
 %     S.w_err        요구 힘·모멘트와 실제 값의 최대 차이 [N, N, N m]
 %     S.t_phase      단계가 올라간 시각 [s]
+%     S.t_end        실제로 끝난 시각 [s] (자동정지가 걸리면 T_run 보다 짧다)
 
 if nargin < 2, ttl = ''; end
 
@@ -56,7 +57,6 @@ Xc    = out.log_X_c.Data;      Yc    = out.log_Y_c.Data;   Nc = out.log_N_c.Data
 Xa    = out.log_X_a.Data;      Ya    = out.log_Y_a.Data;   Na = out.log_N_a.Data;
 
 eN = xref - x_n;  eE = yref - y_n;
-d  = hypot(eN, eE);
 epsi = atan2(sin(pref - psi), cos(pref - psi)) * 180/pi;
 
 if mode == 3, gpsi = pref(end); end
@@ -94,6 +94,7 @@ S.d_mean     = mean([abs(dL(mv)); abs(dR(mv))]);
 S.f_dsat     = 100*mean(max(abs(dL), abs(dR)) > dmx - 0.05);
 S.f_ksat     = 100*mean(kscl < 0.999);
 S.w_err      = [max(abs(Xa-Xc)), max(abs(Ya-Yc)), max(abs(Na-Nc))];
+S.t_end      = t(end);           % 실제로 끝난 시각 — 자동정지가 걸렸으면 T_run 보다 짧다
 if mode == 3, lv = [1 2 3]; else, lv = 1; end
 S.t_phase = nan(size(lv));
 for i = 1:numel(lv)
@@ -184,15 +185,19 @@ else
            'FontSize',7.5, 'Box','off');
 end
 
-% ---- 2. 위치 오차 ----------------------------------------------------
+% ---- 2. 위치 — 목표와 실제 -------------------------------------------
+%   위치 제어의 판정은 목표와 실제를 **겹쳐 놓는 것**이다. 오차만 그리면
+%   어느 축이 못 따라가는지, 치우친 것인지 흔들리는 것인지 보이지 않는다
 subplot(2,3,2);
-plot(t, eN, 'LineWidth',1.4); hold on;
-plot(t, eE, 'LineWidth',1.4);
-plot(t, d, '-.', 'Color',[0.2 0.2 0.2], 'LineWidth',1.2);
-yline(0,'k:');  yline(Rs,':','Color',[.6 .6 .6]);  yline(-Rs,':','Color',[.6 .6 .6]);
-grid on; xlabel('시간 [s]'); ylabel('오차 [m]');
-legend({'북 오차','동 오차','거리'}, 'Location','best','FontSize',8);
-title(sprintf('위치 오차   (R_{stop} = %g m)', Rs));
+plot(t, xref, '--', 'Color',[0.55 0.70 0.90], 'LineWidth',1.6); hold on;
+plot(t, x_n,  '-',  'Color',[0 0.40 0.85],    'LineWidth',1.4);
+plot(t, yref, '--', 'Color',[0.95 0.70 0.55], 'LineWidth',1.6);
+plot(t, y_n,  '-',  'Color',[0.85 0.33 0.10], 'LineWidth',1.4);
+grid on; xlabel('시간 [s]'); ylabel('위치 [m]');
+legend({'x_{ref} 목표','x 실제','y_{ref} 목표','y 실제'}, ...
+       'Location','best','FontSize',8);
+title(sprintf('위치 — 목표와 실제   (남은 오차 북 %.3f · 동 %.3f m)', ...
+              eN(end), eE(end)));
 
 % ---- 3. 선수각 — 이 부록의 머리 그림 ---------------------------------
 subplot(2,3,3);
@@ -261,6 +266,12 @@ fprintf('  최대 방향각 |delta|  %8.2f deg   (한계 %.0f deg · 순수 횡�
 fprintf('  각도 한계에 붙은 시간%8.1f %%\n', S.f_dsat);
 fprintf('  추력 축소가 걸린 시간%8.1f %%\n', S.f_ksat);
 fprintf('  요구 대비 실제 차이  X %.2f N · Y %.2f N · N %.2f N m\n', S.w_err);
+Tr = NaN;  try, Tr = evalin('base','T_run'); catch, end
+if S.t_end < Tr - 1e-6
+    fprintf('  끝난 시각            %8.1f s     (자동정지 — T_run = %g s)\n', S.t_end, Tr);
+else
+    fprintf('  끝난 시각            %8.1f s     (T_run 까지 다 돌았다)\n', S.t_end);
+end
 
 % ---- 점검 그림 — 각도 한계와 요구 대비 실제 ---------------------------
 %   창을 따로 쓰는 까닭 — 결과 창은 "과업을 해냈는가", 점검 창은 "배분이

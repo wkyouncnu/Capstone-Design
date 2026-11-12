@@ -6,6 +6,14 @@ function f = A3_animate(x_n, y_n, psi, psi_ref, x_ref, y_ref, u, v, r, ...
 %
 %   f = A3_animate()        인자 없이 부르면 지금 열려 있는 창의 핸들을 돌려준다
 %   A3_animate('init')      창만 **미리** 만들어 둔다. 모델의 InitFcn 이 부른다
+%   A3_animate('close')     녹화를 닫는다. 모델의 StopFcn 이 부른다
+%                           (녹화를 켜지 않았으면 아무 일도 하지 않음)
+%
+%   녹화 — A3_setup.m §6-1 의 변수 셋으로 껐다 켠다
+%     rec_on = 1 로 두면 화면이 갱신될 때마다 한 장씩 영상에 담긴다.
+%     파일은 img/<모델이름>_anim.mp4 (rec_name 으로 바꿀 수 있다).
+%     rec_fps = 1/animate_every 로 두면 실제 시간과 같은 속도로 재생된다.
+%     기본값은 rec_on = 0 — 녹화는 매 프레임 화면을 떠내므로 느려진다
 %
 %   입력 — Animate 상자의 태그 순서와 같다
 %     x_n, y_n        북쪽 x · 동쪽 y [m]
@@ -27,8 +35,16 @@ function f = A3_animate(x_n, y_n, psi, psi_ref, x_ref, y_ref, u, v, r, ...
 %     가운데 아래    요구한 힘·모멘트와 실제로 난 힘·모멘트의 **차이**
 %     오른쪽 1       방향각 delta_L · delta_R 과 ±45 deg 띠
 %     오른쪽 2       추력 T_L · T_R 과 ±F_max 띠
-%     오른쪽 3       목표까지 거리와 선수각 오차
-%     오른쪽 4       속도 u · v
+%     오른쪽 3       위치 — x 목표와 실제 · y 목표와 실제 [m]
+%     오른쪽 4       선수각 — psi 목표와 실제 [deg]
+%
+%   위치·선수각 칸을 목표/실제 쌍으로 둔 까닭
+%     - 위치 제어의 판정은 목표와 실제를 **겹쳐 놓는 것**이다. 오차 하나만
+%       그리면 어느 축이 못 따라가는지, 치우친 것인지 흔들리는 것인지 안 보인다
+%     - 순수 횡이동도 결국 위치 제어다 — x 목표를 그대로 두고 y 목표만 옮긴
+%       경우일 뿐이다. 그래서 같은 칸으로 1·2·3 단 전부를 읽을 수 있다
+%     - 속도 u · v · r 는 **그래프에서 뺐다.** 항적 칸 제목줄에 숫자로만 띄우고,
+%       시간 이력은 결과 그림(A3_plot)의 속도 칸에서 본다
 %
 %   추진기 게이지를 따로 둔 까닭
 %     - 항적 칸의 화살표는 **지구에 고정된** 방향이라 배가 돌면 같이 돈다
@@ -53,9 +69,10 @@ function f = A3_animate(x_n, y_n, psi, psi_ref, x_ref, y_ref, u, v, r, ...
 persistent fig axXY axG axW axE axD axT axV ...
            hTrail hHull hHead hDot hInfo hAL hAR hALh hARh ...
            hgL hgR hgLh hgRh hgRes hgResh hgTxL hgTxR hVer hgTtl ...
-           hWX hWY hWN hBand hED hEP hDL hDR hTLp hTRp hU hV ...
+           hWX hWY hWN hBand hPx hPxr hPy hPyr hDL hDR hTLp hTRp hPsi hPsir ...
            trX trY tv De Dd Dt Dv Dw mode gx gy gpsi Rs Fm dmx dsw bb LL ...
-           tLast tPrev scFix dpkv nsat nall wpk
+           tLast tPrev scFix dpkv nsat nall wpk ...
+           vw recPath recSz recN recWarn
 
 %% ---- 인자 없이 부르면 창 핸들만 돌려준다 (캡처용) ----------------------
 if nargin == 0
@@ -64,6 +81,23 @@ if nargin == 0
 end
 
 NMAX = 40000;
+
+%% ---- 녹화를 닫는 호출 : A3_animate('close') ---------------------------
+%   mp4 는 **닫아야** 재생된다. 닫지 않은 파일은 길이 0 이거나 깨져 있다.
+%   그래서 A3_model_done (StopFcn) 이 결과 그림을 그리기 **전에** 이것을 부른다
+%   — 그림 그리기에서 오류가 나도 영상은 이미 닫혀 있게 하려는 것이다.
+%   녹화를 켜지 않았으면 아무 일도 하지 않는다 (불러도 안전함)
+if (nargin == 1) && (ischar(x_n) || isstring(x_n)) && strcmpi(x_n, 'close')
+    if ~isempty(vw)
+        try, close(vw); catch, end
+        fprintf('  녹화 저장 — %s  (%d 프레임)\n', recPath, recN);
+        vw = [];  recPath = '';  recSz = [];  recN = 0;
+    end
+    if nargout > 0
+        if ~isempty(fig) && isvalid(fig), f = fig; else, f = []; end
+    end
+    return
+end
 
 %% ---- 창만 미리 만들어 두는 호출 ----------------------------------------
 %   창 만들기를 첫 스텝 안에서 하면 그 동안 모델은 멈춰 있다. VRX 연동에서는
@@ -106,6 +140,44 @@ if newRun
                  'A3 실시간 화면 — 항적 · 추진기 방향과 크기 · 포화 감시', ...
                  [30 30 1460 900]);
     setappdata(0, 'A3_anim_fig', fig);
+
+    %  ---- 녹화 — 변수 하나로 껐다 켠다 (A3_setup.m §6-1) ---------------
+    %    rec_on   1 = 녹화,  0 = 끔 (기본값). 녹화는 프레임마다 화면을
+    %             떠내므로 느려진다 — 자료용 영상을 뽑을 때만 켠다
+    %    rec_fps  재생 프레임률 [frame/s]. 1/animate_every 로 두면 실제
+    %             시간과 같은 속도로 재생된다
+    %    rec_name 파일 이름. 비우면 img/<모델이름>_anim.mp4
+    %  앞 실행의 녹화가 열린 채 남아 있으면 먼저 닫는다 — 닫지 않은 mp4 는
+    %  깨진 파일이 되므로, 닫기를 잊은 실행이 다음 실행을 망치지 않게 한다
+    if ~isempty(vw), try, close(vw); catch, end, vw = []; end
+    recN = 0;  recSz = [];  recWarn = false;  recPath = '';
+    rec = 0;      try, rec = evalin('base','rec_on');   catch, end
+    if rec > 0.5
+        fps = 4;  try, fps = evalin('base','rec_fps');  catch, end
+        nm  = '';  try, nm  = evalin('base','rec_name'); catch, end
+        if isempty(nm)
+            mn = 'A3';  try, mn = evalin('base','mdl'); catch, end
+            nm = fullfile('img', [char(mn) '_anim.mp4']);
+        end
+        nm = char(nm);
+        [rdir, ~, rext] = fileparts(nm);
+        if ~isempty(rdir) && ~isfolder(rdir), mkdir(rdir); end
+        try
+            if strcmpi(rext, '.avi')
+                vw = VideoWriter(nm, 'Motion JPEG AVI');
+            else
+                vw = VideoWriter(nm, 'MPEG-4');
+            end
+            vw.FrameRate = max(1, fps);
+            open(vw);
+            recPath = nm;
+            fprintf('  녹화 시작 — %s  (%g frame/s)\n', nm, vw.FrameRate);
+        catch ME
+            vw = [];
+            warning('A3_animate:rec', ...
+                    '녹화를 켜지 못했다 (%s). 그림만 띄운다', ME.message);
+        end
+    end
 
     % ================= 왼쪽 큰 칸 : 항적 =================
     axXY = subplot(4,3,[1 4 7 10], 'Parent', fig);
@@ -272,35 +344,37 @@ if newRun
     legend(axT, [hTLp hTRp], {'T_L','T_R'}, ...
            'Location','southeast', 'Orientation','horizontal', 'AutoUpdate','off');
 
-    % ================= 오른쪽 3 : 오차 =================
+    % ================= 오른쪽 3 : 위치 — 목표와 실제 =================
+    %   위치 제어의 판정은 **목표와 실제를 겹쳐 놓는 것**이다. 오차 하나만
+    %   그리면 어느 축이 못 따라가는지 보이지 않는다
     axE = subplot(4,3,9, 'Parent', fig);
-    yyaxis(axE,'left');  hold(axE,'on'); grid(axE,'on');
-    hED = plot(axE, nan, nan, '-', 'Color',[0 0.45 0.74], 'LineWidth',1.5);
-    yline(axE, Rs, ':', 'Color',[0.60 0.60 0.60]);
-    ylabel(axE,'거리 [m]');
-    yyaxis(axE,'right');  hold(axE,'on');
-    hEP = plot(axE, nan, nan, '--', 'Color',[0.85 0.33 0.10], 'LineWidth',1.5);
-    ylabel(axE,'\psi 오차 [deg]');
-    title(axE, sprintf('목표까지 거리 (R_{stop} = %g m) 와 선수각 오차', Rs), ...
+    hold(axE,'on'); grid(axE,'on');
+    hPxr = plot(axE, nan, nan, '--', 'Color',[0.55 0.70 0.90], 'LineWidth',1.4);
+    hPx  = plot(axE, nan, nan, '-',  'Color',[0 0.40 0.85],    'LineWidth',1.6);
+    hPyr = plot(axE, nan, nan, '--', 'Color',[0.95 0.70 0.55], 'LineWidth',1.4);
+    hPy  = plot(axE, nan, nan, '-',  'Color',[0.85 0.33 0.10], 'LineWidth',1.6);
+    ylabel(axE,'위치 [m]');
+    title(axE, '위치 — 목표(점선)와 실제(실선)', ...
           'FontWeight','normal', 'FontSize',9);
-    axE.YAxis(1).Color = [0.15 0.15 0.15];
-    axE.YAxis(2).Color = [0.15 0.15 0.15];
+    legend(axE, [hPx hPy], {'x (북)','y (동)'}, ...
+           'Location','southeast', 'Orientation','horizontal', 'AutoUpdate','off');
 
-    % ================= 오른쪽 4 : 속도 =================
+    % ================= 오른쪽 4 : 선수각 — 목표와 실제 =================
     axV = subplot(4,3,12, 'Parent', fig);
     hold(axV,'on'); grid(axV,'on');
-    yline(axV, 0, '-', 'Color',[0.55 0.55 0.55]);
-    hU = plot(axV, nan, nan, '-',  'Color',[0 0.45 0.74], 'LineWidth',1.5);
-    hV = plot(axV, nan, nan, '--', 'Color',[0.47 0.25 0.80], 'LineWidth',1.5);
-    ylabel(axV,'속도 [m/s]');  xlabel(axV,'시간 [s]');
-    legend(axV, [hU hV], {'u (서지)','v (횡이동)'}, ...
+    hPsir = plot(axV, nan, nan, '--', 'Color',[0.62 0.62 0.62], 'LineWidth',1.4);
+    hPsi  = plot(axV, nan, nan, '-',  'Color',[0.47 0.25 0.80], 'LineWidth',1.6);
+    ylabel(axV,'\psi [deg]');  xlabel(axV,'시간 [s]');
+    title(axV, '선수각 — 목표(점선)와 실제(실선)', ...
+          'FontWeight','normal', 'FontSize',9);
+    legend(axV, [hPsir hPsi], {'\psi_{ref}','\psi'}, ...
            'Location','southeast', 'Orientation','horizontal', 'AutoUpdate','off');
 
     for a = [axD axT axE axV axW]
         p = get(a,'Position');  set(a, 'Position', [p(1) p(2) p(3)*0.92 p(4)]);
     end
 
-    tv = [];  De = zeros(0,2);  Dd = zeros(0,2);  Dt = zeros(0,2);
+    tv = [];  De = zeros(0,4);  Dd = zeros(0,2);  Dt = zeros(0,2);
     Dv = zeros(0,2);  Dw = zeros(0,3);
     tLast = -inf;  dpkv = 0;  nsat = 0;  nall = 0;  wpk = [0 0 0];
 end
@@ -334,10 +408,10 @@ epsi = atan2(sin(psi_ref - psi), cos(psi_ref - psi)) * 180/pi;
 
 trX(end+1) = x_n;  trY(end+1) = y_n;
 tv(end+1)  = t;
-De(end+1,:) = [d, epsi];
+De(end+1,:) = [x_n, x_ref, y_n, y_ref];
 Dd(end+1,:) = [dLd, dRd];
 Dt(end+1,:) = [TL, TR];
-Dv(end+1,:) = [u, v];
+Dv(end+1,:) = [psi*180/pi, psi_ref*180/pi];
 Dw(end+1,:) = dW;
 if numel(tv) > NMAX
     k = numel(tv) - NMAX + 1;
@@ -389,8 +463,8 @@ set(hInfo, 'String', { ...
     sprintf('단계: %s     gate = %.2f', phase_name(mode, phase), gate), ...
     sprintf('t = %5.1f s    x = %7.2f m    y = %7.2f m    \\psi = %6.1f°', ...
             t, x_n, y_n, ssa_deg(psi)), ...
-    sprintf('목표까지 %5.2f m     \\psi 오차 %5.1f°     v = %5.2f m/s', ...
-            d, epsi, v) });
+    sprintf('목표까지 %5.2f m   \\psi 오차 %5.1f°   u %5.2f · v %5.2f m/s · r %5.1f°/s', ...
+            d, epsi, u, v, r*180/pi) });
 
 %% ---- 가운데 위 : 추진기 게이지 (선체 고정) -----------------------------
 Rg = 2.2;
@@ -442,10 +516,12 @@ set(hDL, 'XData',tv, 'YData',Dd(:,1));
 set(hDR, 'XData',tv, 'YData',Dd(:,2));
 set(hTLp,'XData',tv, 'YData',Dt(:,1));
 set(hTRp,'XData',tv, 'YData',Dt(:,2));
-set(hU,  'XData',tv, 'YData',Dv(:,1));
-set(hV,  'XData',tv, 'YData',Dv(:,2));
-set(hED, 'XData',tv, 'YData',De(:,1));
-set(hEP, 'XData',tv, 'YData',De(:,2));
+set(hPsi, 'XData',tv, 'YData',Dv(:,1));
+set(hPsir,'XData',tv, 'YData',Dv(:,2));
+set(hPx,  'XData',tv, 'YData',De(:,1));
+set(hPxr, 'XData',tv, 'YData',De(:,2));
+set(hPy,  'XData',tv, 'YData',De(:,3));
+set(hPyr, 'XData',tv, 'YData',De(:,4));
 set(hWX, 'XData',tv, 'YData',Dw(:,1));
 set(hWY, 'XData',tv, 'YData',Dw(:,2));
 set(hWN, 'XData',tv, 'YData',Dw(:,3));
@@ -454,8 +530,7 @@ set(hWN, 'XData',tv, 'YData',Dw(:,3));
 %  그리면 "안 맞는다" 로 잘못 읽힌다. 바닥을 두면 0 에 붙은 직선으로 보인다
 yyaxis(axW,'left');   pad_y_min(axW, Dw(:,1:2), 1.0);
 yyaxis(axW,'right');  pad_y_min(axW, Dw(:,3),   1.0);
-yyaxis(axE,'left');   pad_y(axE, De(:,1));
-yyaxis(axE,'right');  pad_y_min(axE, De(:,2),   0.5);
+pad_y_min(axE, De, 0.5);
 
 %  방향각 칸 제목이 판정을 그대로 나른다
 if dpkv > dmx + 0.05
@@ -487,8 +562,35 @@ title(axW, {'요구한 힘·모멘트 대비 실제로 난 값의 차이', ws}, 
 t1 = tv(1);  t2 = max(tv(end), t1 + 1e-3);
 set(hBand, 'XData', [t1 t2 t2 t1]);
 
-pad_y(axV, Dv);
-drawnow limitrate
+pad_y_min(axV, Dv, 1.0);
+
+%  녹화 중에는 limitrate 를 쓰지 않는다 — 그리기를 건너뛴 화면을 떠내면
+%  같은 장면이 두 번 들어간다
+if isempty(vw), drawnow limitrate; else, drawnow; end
+
+%% ---- 녹화 : 갱신된 화면 한 장을 영상에 넣는다 --------------------------
+%   반드시 그림을 갱신한 **뒤**에 온다. 앞에 두면 한 스텝 전 화면이 찍힌다
+if ~isempty(vw)
+    try
+        fr = getframe(fig);
+        im = fr.cdata;
+        %  mp4 는 가로·세로가 짝수여야 한다 — 홀수면 한 줄을 버린다
+        im = im(1:2*floor(size(im,1)/2), 1:2*floor(size(im,2)/2), :);
+        if isempty(recSz) || isequal(size(im), recSz)
+            if isempty(recSz), recSz = size(im); end
+            writeVideo(vw, im);
+            recN = recN + 1;
+        elseif ~recWarn
+            recWarn = true;
+            warning('A3_animate:recsize', ...
+                ['녹화 중 창 크기가 바뀌었다 — 그 뒤 프레임은 건너뛴다. ' ...
+                 '녹화 중에는 창을 옮기거나 키우지 않는다']);
+        end
+    catch
+        %  화면을 떠내지 못한 프레임 하나로 실행을 멈추지는 않는다
+    end
+end
+
 if nargout > 0, f = fig; end
 end
 

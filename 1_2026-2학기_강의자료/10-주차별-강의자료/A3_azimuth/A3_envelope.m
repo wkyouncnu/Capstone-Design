@@ -8,9 +8,9 @@ function E = A3_envelope(b, L, Fmax, dmax_deg)
 %     "전후·횡·요를 **동시에** 요구하면 어디서 ±45° 를 넘는가"
 %
 %   재는 것이 둘이다 — 둘을 가르는 것이 이 부록의 요점이다
-%     (1) 수도인버스 그대로   pinv(B)*tau 를 그대로 (추력, 각도) 로 바꾼 것.
+%     (1) pseudo-inverse 그대로   pinv(B)*tau 를 그대로 (추력, 각도) 로 바꾼 것.
 %                             **가장 간단한** 배분이다
-%     (2) 영공간 한 줄 보정   B 의 영공간 [0 1 0 -1]' (두 추진기에 크기 같고
+%     (2) null space 한 줄 보정   B 의 null space [0 1 0 -1]' (두 추진기에 크기 같고
 %                             방향 반대인 횡력) 을 lambda 만큼 더해, 각도를
 %                             한계 안으로 넣는다. 코드 네 줄이다
 %
@@ -120,7 +120,7 @@ plot(xl, Ycap1, '--', 'LineWidth',1.8, 'Color',[0.85 0.33 0.10]);
 yline(E.Y_max, ':', 'Color',[0.5 0.5 0.5]);
 xline(2*Fmax,  ':', 'Color',[0.5 0.5 0.5]);
 grid on;  xlabel('요구 X 전후 [N]');  ylabel('함께 낼 수 있는 |Y| [N]');
-legend({'수도인버스 그대로','영공간 한 줄 보정','Y_{max}','X_{max}'}, ...
+legend({'pseudo-inverse 그대로','null space 한 줄 보정','Y_{max}','X_{max}'}, ...
        'Location','northeast', 'FontSize',8);
 title('전후와 횡을 동시에 요구할 때');
 
@@ -132,7 +132,7 @@ fprintf('  순수 횡이동 각도     %8.4f deg   (= atan2(b,L))\n', E.d_sway);
 fprintf('  낼 수 있는 한계      X %.0f N · Y %.1f N · N %.1f N m\n', E.X_max, E.Y_max, E.N_max);
 fprintf('  pinv 가 45 deg 를 넘는 X/Y 구간   %.4f ~ %.4f\n', E.wedge);
 fprintf('  N=0 단면에서 낼 수 있는 칸        pinv %.1f %%  ->  보정 후 %.1f %%\n', E.area);
-fprintf('  영공간                차원 %d · 벡터 [0 1 0 -1]'' (두 추진기 횡력 반대)\n', ...
+fprintf('  null space                차원 %d · 벡터 [0 1 0 -1]'' (두 추진기 횡력 반대)\n', ...
         size(null(B),2));
 end
 
@@ -154,7 +154,7 @@ FxL = X/2 + C;
 FxR = X/2 - C;
 lam = 0;
 if use_null
-    %  영공간 [0 1 0 -1]' 을 lambda 만큼 — 두 각도가 한계 안에 들어가게
+    %  null space [0 1 0 -1]' 을 lambda 만큼 — 두 각도가 한계 안에 들어가게
     lo = max(-td*abs(FxL) - Y/2,  Y/2 - td*abs(FxR));
     hi = min( td*abs(FxL) - Y/2,  Y/2 + td*abs(FxR));
     if lo <= hi
