@@ -1,0 +1,147 @@
+% assets/a3-wedge.svg — 45 도 한계가 요구 공간에 만드는 쐐기와 null space 보정
+%
+%   bash _tools/tikz2svg.sh assets/src/a3-wedge.tex assets/a3-wedge.svg
+%
+% 이 그림이 말하는 것
+%   추진기 하나의 각도 한계는 (F_x, F_y) 평면에서 **나비넥타이 꼴 영역**이다.
+%       |delta| <= dmax   <=>   |F_y| <= tan(dmax) |F_x|
+%   이것을 pseudo-inverse 해에 대입하면, 요구 (X, Y) 평면에 **쐐기 네 개**가 생긴다.
+%   N = 0 단면에서 1.3111 < X/Y < 3.3111 이 안 되는 구간이고,
+%   각도로는 원점에서 16.80 도 ~ 37.33 도 사이 방향이다.
+%
+%   쐐기는 pseudo-inverse **한 점**을 썼을 때의 이야기다. 같은 tau 를 내는 해가
+%   직선 하나를 이루므로, 그 직선 위를 미끄러지면(null space 보정) 상당수가 되살아난다.
+%   격자 실측 — 낼 수 있는 비율 19.7 % -> 25.3 %
+%
+% 좌표 주의
+%   (나)는 **요구 공간**이다. 배를 위에서 본 그림이 아니다.
+%   가로축 X (서지 힘), 세로축 Y (스웨이 힘). 방향만 보는 그림이라 눈금은 비율이다
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+% ===========================================================================
+% (가) 추진기 하나 — 각도 한계는 나비넥타이 꼴이다
+% ===========================================================================
+\begin{scope}[shift={(0,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (-34,46)
+       {(가) 추진기 하나의 각도 한계};
+
+  % 낼 수 있는 영역 — +-45 도 두 쪽
+  \fill[guid, opacity=0.12] (0,0) -- (45:30) arc (45:-45:30) -- cycle;
+  \fill[guid, opacity=0.12] (0,0) -- (135:30) arc (135:225:30) -- cycle;
+
+  % 축
+  \draw[axis] (-33,0) -- (33,0);
+  \draw[axis] (0,-33) -- (0,33);
+  \node[font=\scriptsize, ink, anchor=west]  at (33.5,0)  {$F_x$};
+  \node[font=\scriptsize, ink, anchor=south] at (0,33.5)  {$F_y$};
+
+  % 경계선
+  \draw[guid, line width=0.6pt] (-30,-30) -- (30,30);
+  \draw[guid, line width=0.6pt] (-30,30) -- (30,-30);
+
+  % 각도 표시
+  \draw[ctrl, line width=0.5pt, -{Stealth[length=2.6pt,width=2pt]}]
+       (14,0) arc (0:45:14);
+  \node[font=\scriptsize, ctrl, anchor=west] at (13,8) {$\delta_{\max}=45^\circ$};
+
+  % 예시 벡터
+  \draw[thr, line width=1.2pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (25:26);
+  \node[font=\scriptsize, thr, anchor=south west] at (25:27) {$(F_x, F_y)$};
+
+  \node[font=\scriptsize, guid, anchor=north] at (0,-36) {낼 수 있는 방향};
+  \node[font=\scriptsize, soft, anchor=north] at (0,-41) {(흰 쪽은 서보가 못 돌아간다)};
+
+  \node[anchor=north, font=\scriptsize, text width=70mm, align=center] at (0,-48)
+       {$\lvert \delta \rvert \le \delta_{\max}$
+        \quad$\Longleftrightarrow$\quad
+        $\lvert F_y \rvert \le \tan\delta_{\max}\,\lvert F_x \rvert$ \\[4pt]
+        추력을 뒤집을 수 있으므로($T<0$ 허용) 왼쪽 영역도 함께 쓴다};
+\end{scope}
+
+% ===========================================================================
+% (나) 요구 공간 — 쐐기 네 개
+% ===========================================================================
+\begin{scope}[shift={(96,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (-40,46)
+       {(나) $N=0$ 단면 — pseudo-inverse 가 못 내는 방향};
+
+  % 못 내는 쐐기 네 개
+  \fill[warn, opacity=0.18] (0,0) -- (16.80:32) arc (16.80:37.33:32) -- cycle;
+  \fill[warn, opacity=0.18] (0,0) -- (142.67:32) arc (142.67:163.20:32) -- cycle;
+  \fill[warn, opacity=0.18] (0,0) -- (196.80:32) arc (196.80:217.33:32) -- cycle;
+  \fill[warn, opacity=0.18] (0,0) -- (322.67:32) arc (322.67:343.20:32) -- cycle;
+
+  \draw[warn, line width=0.5pt] (0,0) -- (16.80:32);
+  \draw[warn, line width=0.5pt] (0,0) -- (37.33:32);
+  \draw[warn, line width=0.5pt] (0,0) -- (142.67:32);
+  \draw[warn, line width=0.5pt] (0,0) -- (163.20:32);
+  \draw[warn, line width=0.5pt] (0,0) -- (196.80:32);
+  \draw[warn, line width=0.5pt] (0,0) -- (217.33:32);
+  \draw[warn, line width=0.5pt] (0,0) -- (322.67:32);
+  \draw[warn, line width=0.5pt] (0,0) -- (343.20:32);
+
+  \draw[soft, line width=0.3pt, densely dotted] (0,0) circle (32);
+
+  % 축
+  \draw[axis] (-36,0) -- (36,0);
+  \draw[axis] (0,-36) -- (0,36);
+  \node[font=\scriptsize, ink, anchor=west]  at (36.5,0) {$X$ (서지 힘)};
+  \node[font=\scriptsize, ink, anchor=south] at (0,36.5) {$Y$ (스웨이 힘)};
+
+  % 가능한 두 대표 방향
+  \draw[plant, line width=1.2pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (30,0);
+  \node[font=\scriptsize, plant, anchor=north west] at (16,-1.5) {순수 전진};
+  \draw[plant, line width=1.2pt, -{Stealth[length=4pt,width=3pt]}] (0,0) -- (0,30);
+  \node[font=\scriptsize, plant, anchor=south east] at (-1.5,16)
+       {순수 횡이동 ($\delta=\pm23.4^\circ$)};
+
+  % 쐐기 각도 라벨
+  \node[font=\scriptsize, warn, anchor=west] at (27:36) {$16.80^\circ \sim 37.33^\circ$};
+  \node[font=\scriptsize, warn, anchor=east] at (207:35) {못 내는 쐐기};
+
+  \node[anchor=north, font=\scriptsize, text width=72mm, align=center] at (0,-44)
+       {요구한 방향이 쐐기 안에 들면 우현 추진기가 $45^\circ$ 를 넘겨야 한다 \\[3pt]
+        \textbf{요구 공간이다 — 배를 위에서 본 그림이 아니다}};
+\end{scope}
+
+% ===========================================================================
+% 아래 띠 — 왜 쐐기가 생기고, 어떻게 되살리는가
+% ===========================================================================
+\draw[wire, soft] (-34,-64) -- (134,-64);
+
+\node[anchor=north west, font=\scriptsize, text width=80mm] at (-34,-69)
+     {\textbf{쐐기는 계산으로 나온다 — 그려 본 것이 아니다} \\[4pt]
+      $N=0$ 일 때 pseudo-inverse 해는 \\[3pt]
+      \hspace*{4mm}$F_{x,L} = \tfrac{1}{2}\!\left(X + \tfrac{L}{b}Y\right)$,
+      \quad $F_{y,L} = \tfrac{Y}{2}$ \\[2pt]
+      \hspace*{4mm}$F_{x,R} = \tfrac{1}{2}\!\left(X - \tfrac{L}{b}Y\right)$,
+      \quad $F_{y,R} = \tfrac{Y}{2}$ \\[4pt]
+      우현에 $\lvert F_{y,R}\rvert \le \lvert F_{x,R}\rvert$ 를 넣고 풀면 \\[3pt]
+      \hspace*{4mm}$1.3111 < X/Y < 3.3111$ \; 에서 \textbf{깨진다} \\[3pt]
+      $L/b = 2.3110$ 이라는 기하 하나가 이 두 수를 정한다};
+
+\node[anchor=north west, font=\scriptsize, text width=80mm] at (54,-69)
+     {\textbf{null space 보정이 상당수를 되살린다} \\[4pt]
+      같은 $\boldsymbol\tau$ 를 내는 해가 직선 하나를 이룬다 \\[3pt]
+      \hspace*{4mm}$\mathbf{u}_e(\lambda) = \mathbf{B}^{+}\boldsymbol\tau
+        + \lambda\,\mathbf{n}$,
+      \quad $\mathbf{n} = [\,0,\ 1,\ 0,\ -1\,]^{\top}$ \\[4pt]
+      $\lambda$ 는 좌우의 횡력만 주고받게 한다 — $X, Y, N$ 은 한 톨도 변하지 않는다.
+      한계가 $\lambda$ 에 대해 1차식이라 허용 구간
+      $[\lambda_{\mathrm{lo}},\ \lambda_{\mathrm{hi}}]$ 가 닫힌식으로 나온다 \\[4pt]
+      \textbf{격자 실측} — 낼 수 있는 비율 $19.7\,\% \;\to\; 25.3\,\%$};
+
+\node[anchor=north west, font=\scriptsize, warn, text width=168mm] at (-34,-114)
+     {각도 한계를 $\pm15^\circ$ 로 좁히면 쐐기가 훨씬 넓어진다 — 기준 환경 실측에서
+      각도 포화가 시간의 $80.7\,\%$, 못 낸 힘이 $309.97$ N 까지 늘었다.
+      $\pm45^\circ$ 는 Sarda 등(2016)이 실제 WAM-V 에 달았던 서보의 한계값이다};
+
+\end{tikzpicture}
+\end{document}

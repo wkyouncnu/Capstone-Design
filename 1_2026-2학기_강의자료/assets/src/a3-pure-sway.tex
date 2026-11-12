@@ -1,0 +1,155 @@
+% assets/a3-pure-sway.svg — 순수 횡이동의 닫힌 해와 요 모멘트가 0 이 되는 이유
+%
+%   bash _tools/tikz2svg.sh assets/src/a3-pure-sway.tex assets/a3-pure-sway.svg
+%
+% 이 그림이 말하는 것
+%   tau = [0; Y; 0] 을 넣으면 pseudo-inverse 해가 한 점으로 떨어진다.
+%       u_e = (Y/2) [L/b, 1, -L/b, 1]'
+%   이때 두 추력선이 **둘 다 무게중심을 지난다**. 모멘트 팔이 0 이므로
+%   요 모멘트는 상쇄되는 것이 아니라 **애초에 생기지 않는다**.
+%       tan(delta) = b/L  <=>  (-L, -b) 에서 (L, b) 방향 = 원점을 지나는 직선
+%   실측에서 선수각 RMS 가 0.0000 도로 나온 것이 이 기하 때문이다.
+%
+% 좌표 — a3-geometry.tex 와 같은 규약. 1 m = 20 mm
+%   화면 x = y_b (우현), 화면 y = x_b (선수)
+%
+% 우현 추진기는 **역추력**이다 (T_R < 0)
+%   노즐은 -23.4 도(선수-좌현 쪽)를 보고 있는데 추력이 음수라, 실제로 나는 힘은
+%   그 반대인 선미-우현 쪽이다. 노즐 방향은 가는 선, 실제 힘은 굵은 화살표로 나눠 그린다
+%
+% 겹침을 피하려고 정한 것
+%   좌현 화살표 1.8 m, 우현 화살표 1.2 m — 길이를 다르게 해 라벨이 겹치지 않게 한다
+%   무게중심을 지나는 두 작용선은 점선으로 선체 밖까지 늘여 그린다
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\pgfmathsetmacro{\BS}{20}
+\newcommand{\BQ}[2]{{(#2)*\BS},{(#1)*\BS}}
+\newcommand{\BP}[2]{(\BQ{#1}{#2})}
+
+\pgfmathsetmacro{\bb}{1.027135}
+\pgfmathsetmacro{\LL}{2.373776}
+
+% ===========================================================================
+% (가) 두 작용선이 무게중심에서 만난다
+% ===========================================================================
+\begin{scope}[shift={(0,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (-40,62)
+       {(가) 두 추력선이 모두 무게중심을 지난다};
+
+  % --- 선체 ---------------------------------------------------------------
+  \draw[ink, line width=0.6pt, fill=white]
+       \BP{-2.75}{-\bb} -- \BP{1.3}{-\bb} -- \BP{2.4}{0} -- \BP{1.3}{\bb}
+       -- \BP{-2.75}{\bb} -- cycle;
+  \draw[soft, line width=0.3pt, densely dashed] \BP{-2.85}{0} -- \BP{2.5}{0};
+  \node[font=\scriptsize, nav, anchor=south] at \BP{2.45}{0} {$x_b$};
+
+  % --- 작용선 (무게중심을 지난다) ----------------------------------------
+  \draw[plant, line width=0.5pt, densely dotted] \BP{-2.70}{-1.168} -- \BP{0.80}{0.346};
+  \draw[plant, line width=0.5pt, densely dotted] \BP{-3.60}{1.557}  -- \BP{0.80}{-0.346};
+
+  % --- 좌현 추진기 — 노즐 +23.4 도, 추력 양수, 길이 1.8 m ----------------
+  %     끝점 x_b = -0.7220,  y_b = -0.3119
+  \draw[thr, line width=1.4pt, -{Stealth[length=4.6pt,width=3.4pt]}]
+       \BP{-\LL}{-\bb} -- \BP{-0.7220}{-0.3119};
+  \node[font=\scriptsize, thr, anchor=east] at \BP{-1.30}{-0.80} {$T_L > 0$};
+  \node[circle, draw=thr, fill=white, line width=0.7pt, minimum size=3.4mm,
+        inner sep=0pt] at \BP{-\LL}{-\bb} {};
+  \node[font=\scriptsize, ctrl, anchor=north east] at \BP{-2.52}{-1.10}
+       {$\delta_L = +23.40^\circ$};
+
+  % --- 우현 추진기 — 노즐 -23.4 도, 추력 음수(역추력), 길이 1.2 m --------
+  %     노즐이 보는 쪽 (가는 선):  x_b -1.6727, y_b +0.6500  (0.75 m)
+  %     실제 힘   (굵은 화살표):  x_b -3.4750, y_b +1.5039  (1.2 m, 반대쪽)
+  \draw[soft, line width=0.8pt] \BP{-\LL}{\bb} -- \BP{-1.6727}{0.6500};
+  \node[font=\scriptsize, soft, anchor=south west] at \BP{-1.70}{0.64} {노즐이 보는 쪽};
+  \draw[thr, line width=1.4pt, -{Stealth[length=4.6pt,width=3.4pt]}]
+       \BP{-\LL}{\bb} -- \BP{-3.4750}{1.5039};
+  \node[font=\scriptsize, thr, anchor=west] at \BP{-3.20}{1.55} {$T_R < 0$ (역추력)};
+  \node[circle, draw=thr, fill=white, line width=0.7pt, minimum size=3.4mm,
+        inner sep=0pt] at \BP{-\LL}{\bb} {};
+  \node[font=\scriptsize, ctrl, anchor=north west] at \BP{-2.52}{1.10}
+       {$\delta_R = -23.40^\circ$};
+
+  % --- 무게중심과 합력 ----------------------------------------------------
+  \draw[plant, line width=1.6pt, -{Stealth[length=5pt,width=3.6pt]}]
+       \BP{0}{0} -- \BP{0}{1.45};
+  \node[font=\scriptsize, plant, anchor=south] at \BP{0.08}{0.80} {합력 $Y$};
+  \node[dot] at \BP{0}{0} {};
+  \node[font=\scriptsize, soft, anchor=east] at \BP{-0.14}{-0.10} {무게중심};
+
+  % --- 모멘트 팔이 0 이라는 표시 -----------------------------------------
+  \node[anchor=north west, font=\scriptsize, plant, text width=86mm] at (-40,-78)
+       {\textbf{모멘트 팔이 $0$ 이다} — 상쇄되는 것이 아니라 생기지 않는다 \\[3pt]
+        $\tan\delta = b/L$ 이라는 것은, $(-L,\,-b)$ 에 앉은 추진기가
+        $(L,\,b)$ 방향을 본다는 뜻이다. 그 직선은 반드시 원점을 지난다};
+
+  \node[anchor=north west, font=\scriptsize, text width=86mm] at (-40,-94)
+       {\textbf{읽는 법} \\[3pt]
+        좌현은 앞으로, 우현은 뒤로 민다 — 앞뒤 몫은 서로 지워져 $X = 0$ \\[2pt]
+        옆으로 미는 몫은 둘 다 우현 쪽이라 더해져 $Y$ 가 된다 \\[2pt]
+        두 작용선이 무게중심에서 만나므로 $N = 0$};
+\end{scope}
+
+% ===========================================================================
+% (나) 닫힌 해 — 행렬 한 줄에서 나온다
+% ===========================================================================
+\begin{scope}[shift={(72,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (0,62)
+       {(나) 요구 $\boldsymbol\tau = [0,\ Y,\ 0]^{\top}$ 을 넣으면 해가 한 점으로 떨어진다};
+
+  \node[anchor=north, font=\small] at (52,52)
+       {$\mathbf{u}_e = \mathbf{B}^{+}\begin{bmatrix} 0 \\ Y \\ 0 \end{bmatrix}
+         = \frac{Y}{2}\begin{bmatrix}
+             \textcolor{guid}{L/b} \\ \textcolor{guid}{1} \\
+             \textcolor{ctrl}{-L/b} \\ \textcolor{ctrl}{1}
+           \end{bmatrix}
+         = Y\begin{bmatrix}
+             \textcolor{guid}{+1.1554} \\ \textcolor{guid}{+0.5} \\
+             \textcolor{ctrl}{-1.1554} \\ \textcolor{ctrl}{+0.5}
+           \end{bmatrix}$};
+
+  \draw[soft, line width=0.3pt] (0,24) -- (104,24);
+
+  \node[anchor=north west, font=\scriptsize, text width=104mm] at (0,19)
+       {\textbf{극좌표로 되돌리면 각도와 추력이 수치로 나온다} \\[4pt]
+        \hspace*{6mm}$\delta_L = \operatorname{atan2}\!\left(\tfrac{Y}{2},\ \tfrac{Y}{2}\tfrac{L}{b}\right)
+        = \arctan\dfrac{b}{L} = +23.3982^\circ$,
+        \qquad $\delta_R = -23.3982^\circ$ \\[5pt]
+        \hspace*{6mm}$T_L = -T_R = \dfrac{\sqrt{b^2 + L^2}}{2b}\,Y = 1.259069\,Y$ \\[5pt]
+        $Y$ 하나만 정하면 각도 둘과 추력 둘이 \textbf{전부 결정된다} — 조절할 것이 없다};
+
+  \draw[soft, line width=0.3pt] (0,-16) -- (104,-16);
+
+  \node[anchor=north west, font=\scriptsize, text width=104mm] at (0,-21)
+       {\textbf{요 모멘트가 0 인 것을 식으로 확인한다} \\[4pt]
+        \hspace*{2mm}$N = \underbrace{b F_{x,L} - L F_{y,L}}_{%
+            \textstyle +\frac{LY}{2} - \frac{LY}{2} = 0}
+            \;+\; \underbrace{-\,b F_{x,R} - L F_{y,R}}_{%
+            \textstyle +\frac{LY}{2} - \frac{LY}{2} = 0} \;=\; 0$ \\[6pt]
+        좌우가 서로 지우는 것이 아니라 \textbf{각자가 이미 0} 이다.
+        그래서 좌우 추진기 성능이 조금 달라도 선수각이 흔들리지 않는다};
+
+  \draw[soft, line width=0.3pt] (0,-56) -- (104,-56);
+
+  \node[anchor=north west, font=\scriptsize, text width=104mm] at (0,-61)
+       {\textbf{추력 한계가 횡이동 속도의 천장을 정한다} \\[4pt]
+        \hspace*{6mm}$\lvert T \rvert \le F_{\max} = 500$ N
+        \;$\Longrightarrow$\;
+        $Y_{\max} = \dfrac{500}{1.259069} = 397.1$ N \\[4pt]
+        기준 환경 실측 — 정상 횡이동 속도 $1.555$ m/s (닫힌식과 차이 $0.000$)};
+
+  \node[anchor=north west, font=\scriptsize, warn, text width=104mm] at (0,-84)
+       {\textbf{순수 횡이동은 위치 제어의 한 경우다.} 배분기도 운동모델도 그대로이고,
+        설정값만 $x_{\mathrm{ref}}$ 고정 $\cdot$ $y_{\mathrm{ref}}$ 이동 $\cdot$
+        $\psi_{\mathrm{ref}}$ 고정으로 둔 것뿐이다 — 코드는 한 줄도 다르지 않다};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

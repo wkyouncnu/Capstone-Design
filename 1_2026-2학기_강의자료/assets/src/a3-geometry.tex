@@ -1,0 +1,181 @@
+% assets/a3-geometry.svg — 아지무스 추진기 둘의 기하와 배분행렬 B
+%
+%   bash _tools/tikz2svg.sh assets/src/a3-geometry.tex assets/a3-geometry.svg
+%
+% 이 그림이 말하는 것
+%   추진기가 돌아가면 한 추진기가 내놓는 것이 **힘 하나가 아니라 성분 둘**이 된다.
+%   6주차의 추진기 하나 = 미지수 하나였던 자리가, 여기서는 미지수 둘이 된다.
+%       좌현 (F_x,L, F_y,L)   우현 (F_x,R, F_y,R)   -> 미지수 넷, 식 셋
+%   배분행렬 B 의 네 열은 그 넷이 X, Y, N 에 각각 얼마나 들어가는지를 적은 것이다.
+%
+% 좌표 — 배를 위에서 본다. 선체 좌표계
+%   x_b = 선수 방향(그림 위), y_b = 우현 방향(그림 오른쪽)
+%   \BP{xb}{yb} 로 적는다. 1 m = 20 mm
+%   화면 x = y_b, 화면 y = x_b 이므로 매크로 안에서 인자 순서가 뒤집힌다
+%   \BQ 는 괄호 없는 짝 — ([shift={...}]\BQ{..}{..}) 로 쓴다
+%
+% 각도 부호
+%   델타는 x_b 에서 y_b 쪽으로 재는 각 — 화면에서는 위에서 오른쪽으로(시계방향)
+%   좌현 +40 도 (길이 2.2 m), 우현 -25 도 (길이 1.2 m) 로 그렸다.
+%   둘이 서로 다른 값을 가질 수 있다는 것이 요점이므로 일부러 다르게 그린다
+%
+% 겹침을 피하려고 정한 것
+%   두 추력 벡터의 끝을 세로로 12 mm 떼어 놓았다 (길이를 2.2 m 와 1.2 m 로 다르게)
+%   F_y 두 점선이 같은 높이에 놓이면 라벨이 겹친다 — 그래서 길이를 다르게 잡았다
+%   델타 라벨은 호의 이등분선 위 반지름 11 mm 자리에 둔다
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\pgfmathsetmacro{\BS}{20}                        % 1 m = 20 mm
+\newcommand{\BQ}[2]{{(#2)*\BS},{(#1)*\BS}}       % 괄호 없는 짝
+\newcommand{\BP}[2]{(\BQ{#1}{#2})}               % #1 = x_b (선수), #2 = y_b (우현)
+
+\pgfmathsetmacro{\bb}{1.027135}                  % half_beam [m]
+\pgfmathsetmacro{\LL}{2.373776}                  % l_thr     [m]
+
+% ===========================================================================
+% (가) 추진기가 앉은 자리와 돌아간 각도
+% ===========================================================================
+\begin{scope}[shift={(0,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (-34,62)
+       {(가) 추진기 둘이 돌아가면 미지수가 넷이 된다};
+
+  % --- 선체 외곽선 -------------------------------------------------------
+  \draw[ink, line width=0.6pt, fill=white]
+       \BP{-2.75}{-\bb} -- \BP{1.3}{-\bb} -- \BP{2.4}{0} -- \BP{1.3}{\bb}
+       -- \BP{-2.75}{\bb} -- cycle;
+  \draw[soft, line width=0.3pt, densely dashed] \BP{-2.85}{0} -- \BP{2.5}{0};
+
+  % --- 선체 좌표축 -------------------------------------------------------
+  \draw[nav, line width=0.6pt, -{Stealth[length=3.4pt,width=2.4pt]}]
+       \BP{0}{0} -- \BP{2.1}{0};
+  \node[font=\scriptsize, nav, anchor=south east] at \BP{2.12}{-0.08} {$x_b$ (선수)};
+  \draw[nav, line width=0.6pt, -{Stealth[length=3.4pt,width=2.4pt]}]
+       \BP{0}{0} -- \BP{0}{0.78};
+  \node[font=\scriptsize, nav, anchor=north east] at \BP{-0.08}{0.82} {$y_b$ (우현)};
+  \node[dot] at \BP{0}{0} {};
+  \node[font=\scriptsize, soft, anchor=north east] at \BP{-0.12}{-0.08} {무게중심};
+
+  % --- 좌현 추진기 — 델타 = +40 도, 길이 2.2 m --------------------------
+  %     끝점 x_b = -0.6885,  y_b = +0.3871
+  \draw[guid, line width=0.4pt, densely dashed]
+       \BP{-\LL}{-\bb} -- \BP{-0.6885}{-\bb};
+  \draw[guid, line width=0.4pt, densely dashed]
+       \BP{-0.6885}{-\bb} -- \BP{-0.6885}{0.3871};
+  \node[font=\scriptsize, guid, anchor=east]  at \BP{-1.50}{-1.12} {$F_{x,L}$};
+  \node[font=\scriptsize, guid, anchor=south] at \BP{-0.6885}{-0.32} {$F_{y,L}$};
+  \draw[thr, line width=1.3pt, -{Stealth[length=4.4pt,width=3.2pt]}]
+       \BP{-\LL}{-\bb} -- \BP{-0.6885}{0.3871};
+  \node[font=\scriptsize, thr, anchor=west] at \BP{-0.62}{0.46} {$T_L$};
+  \draw[ctrl, line width=0.5pt, -{Stealth[length=2.6pt,width=2pt]}]
+       ([shift={(0,15)}]\BQ{-\LL}{-\bb}) arc (90:50:15mm);
+  \node[font=\scriptsize, ctrl, anchor=west]
+       at ([shift={(3.76,10.34)}]\BQ{-\LL}{-\bb}) {$\delta_L$};
+  \node[circle, draw=thr, fill=white, line width=0.7pt, minimum size=3.4mm,
+        inner sep=0pt] at \BP{-\LL}{-\bb} {};
+
+  % --- 우현 추진기 — 델타 = -25 도, 길이 1.2 m --------------------------
+  %     끝점 x_b = -1.2862,  y_b = +0.5200
+  \draw[ctrl, line width=0.4pt, densely dashed]
+       \BP{-\LL}{\bb} -- \BP{-1.2862}{\bb};
+  \draw[ctrl, line width=0.4pt, densely dashed]
+       \BP{-1.2862}{\bb} -- \BP{-1.2862}{0.5200};
+  \node[font=\scriptsize, ctrl, anchor=west]  at \BP{-1.80}{1.12} {$F_{x,R}$};
+  \node[font=\scriptsize, ctrl, anchor=north] at \BP{-1.33}{0.78} {$F_{y,R}$};
+  \draw[thr, line width=1.3pt, -{Stealth[length=4.4pt,width=3.2pt]}]
+       \BP{-\LL}{\bb} -- \BP{-1.2862}{0.5200};
+  \node[font=\scriptsize, thr, anchor=south east] at \BP{-1.24}{0.56} {$T_R$};
+  \draw[ctrl, line width=0.5pt, -{Stealth[length=2.6pt,width=2pt]}]
+       ([shift={(0,15)}]\BQ{-\LL}{\bb}) arc (90:115:15mm);
+  \node[font=\scriptsize, ctrl, anchor=east]
+       at ([shift={(-2.39,10.74)}]\BQ{-\LL}{\bb}) {$\delta_R$};
+  \node[circle, draw=thr, fill=white, line width=0.7pt, minimum size=3.4mm,
+        inner sep=0pt] at \BP{-\LL}{\bb} {};
+
+  % --- 모멘트 팔 b — 선체 아래 바깥 --------------------------------------
+  \draw[errc, line width=0.45pt, {Stealth[length=2.6pt]}-{Stealth[length=2.6pt]}]
+       \BP{-3.10}{-\bb} -- \BP{-3.10}{0};
+  \node[font=\scriptsize, errc, anchor=north] at \BP{-3.20}{-0.52} {$b = 1.027$ m};
+  \draw[errc, line width=0.25pt, densely dotted] \BP{-3.20}{-\bb} -- \BP{-2.70}{-\bb};
+  \draw[errc, line width=0.25pt, densely dotted] \BP{-3.20}{0}    -- \BP{-2.80}{0};
+
+  % --- 모멘트 팔 L — 선체 오른쪽 바깥 ------------------------------------
+  \draw[errc, line width=0.45pt, {Stealth[length=2.6pt]}-{Stealth[length=2.6pt]}]
+       \BP{0}{1.70} -- \BP{-\LL}{1.70};
+  \node[font=\scriptsize, errc, anchor=west] at \BP{-1.19}{1.78} {$L = 2.374$ m};
+  \draw[errc, line width=0.25pt, densely dotted] \BP{0}{1.78}    -- \BP{0}{1.10};
+  \draw[errc, line width=0.25pt, densely dotted] \BP{-\LL}{1.78} -- \BP{-\LL}{1.10};
+
+  % --- 아래 설명 ---------------------------------------------------------
+  \node[anchor=north west, font=\scriptsize, text width=90mm] at (-34,-76)
+       {\textbf{돌아가는 추진기 하나는 미지수 둘이다} \\[4pt]
+        추진기가 $\delta$ 만큼 돌아가 추력 $T$ 를 내면, 그 힘은 선체 앞뒤로 미는 몫과
+        옆으로 미는 몫으로 갈린다 \\[4pt]
+        \hspace*{6mm}$F_x = T\cos\delta$, \qquad $F_y = T\sin\delta$ \\[4pt]
+        5 $\cdot$ 6주차의 고정 추진기는 $\delta \equiv 0$ 이었다 — 그래서 $F_y$ 가
+        아예 없었고, 추진기 하나가 미지수 하나였다 \\[4pt]
+        $\;\to\;$ 각도가 생기면서 미지수가 \textbf{둘에서 넷}으로 늘었다.
+        식은 그대로 $X, Y, N$ 셋이다};
+\end{scope}
+
+% ===========================================================================
+% (나) 배분행렬 B — 위 그림을 그대로 옮긴 것
+% ===========================================================================
+\begin{scope}[shift={(78,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (0,62)
+       {(나) 배분행렬 $\mathbf{B}$ 의 네 열은 (가)를 옮겨 적은 것이다};
+
+  \node[anchor=north, font=\small] at (46,50)
+       {$\begin{bmatrix} X \\ Y \\ N \end{bmatrix}
+         = \underbrace{\begin{bmatrix}
+             \textcolor{guid}{1} & \textcolor{guid}{0}  & \textcolor{ctrl}{1}  & \textcolor{ctrl}{0} \\
+             \textcolor{guid}{0} & \textcolor{guid}{1}  & \textcolor{ctrl}{0}  & \textcolor{ctrl}{1} \\
+             \textcolor{guid}{b} & \textcolor{guid}{-L} & \textcolor{ctrl}{-b} & \textcolor{ctrl}{-L}
+           \end{bmatrix}}_{\textstyle \mathbf{B}\ (3\times 4)}
+           \underbrace{\begin{bmatrix}
+             \textcolor{guid}{F_{x,L}} \\ \textcolor{guid}{F_{y,L}} \\
+             \textcolor{ctrl}{F_{x,R}} \\ \textcolor{ctrl}{F_{y,R}}
+           \end{bmatrix}}_{\textstyle \mathbf{u}_e}$};
+
+  \node[anchor=north, font=\scriptsize] at (46,20)
+       {\textcolor{guid}{파란 두 열 = 좌현} \qquad \textcolor{ctrl}{주황 두 열 = 우현}};
+
+  \draw[soft, line width=0.3pt] (0,14) -- (92,14);
+
+  \node[anchor=north west, font=\scriptsize, text width=92mm] at (0,9)
+       {\textbf{세 줄을 읽는 법} \\[4pt]
+        첫째 줄 — 앞뒤로 미는 몫. 네 성분 가운데 $x$ 성분 둘이 그대로 더해진다 \\[2pt]
+        \hspace*{6mm}$X = F_{x,L} + F_{x,R}$ \\[4pt]
+        둘째 줄 — 옆으로 미는 몫. $y$ 성분 둘이 그대로 더해진다 \\[2pt]
+        \hspace*{6mm}$Y = F_{y,L} + F_{y,R}$ \\[4pt]
+        셋째 줄 — 돌리는 몫. 추진기가 $(x_r, y_r)$ 에 앉아 있으면 모멘트는
+        $N = x_r F_y - y_r F_x$ 한 줄로 나온다 \\[3pt]
+        \hspace*{6mm}좌현 $(-L,\, -b)$ \; $\to$ \;
+        $\textcolor{guid}{+\,b\,F_{x,L} - L\,F_{y,L}}$ \\[2pt]
+        \hspace*{6mm}우현 $(-L,\, +b)$ \; $\to$ \;
+        $\textcolor{ctrl}{-\,b\,F_{x,R} - L\,F_{y,R}}$ \\[4pt]
+        $\;\to\;$ $\mathbf{B}$ 에는 \textbf{기하만} 들어 있다. 각도는 한 칸도 없다};
+
+  \draw[soft, line width=0.3pt] (0,-50) -- (92,-50);
+
+  \node[anchor=north west, font=\scriptsize, text width=92mm] at (0,-55)
+       {\textbf{성분 넷을 추진기 지령 둘로 되돌린다} — 극좌표 변환 \\[4pt]
+        \hspace*{6mm}$T = \sqrt{F_x^2 + F_y^2}$, \qquad
+        $\delta = \operatorname{atan2}(F_y,\, F_x)$ \\[4pt]
+        배분이 내놓는 것은 $\mathbf{u}_e$ 네 수이고, 서보와 추진기가 받는 것은
+        각도 둘 $\cdot$ 추력 둘이다. 그 사이를 잇는 것이 이 두 줄뿐이다};
+
+  \node[anchor=north west, font=\scriptsize, warn, text width=92mm] at (0,-81)
+       {미지수 넷 $\cdot$ 식 셋 — \textbf{해가 하나로 정해지지 않는다}.
+        같은 $X, Y, N$ 을 내는 $\mathbf{u}_e$ 가 직선 하나를 이룬다.
+        그 직선에서 어느 점을 고를지가 배분 문제다 (1-4 $\cdot$ 1-7절)};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

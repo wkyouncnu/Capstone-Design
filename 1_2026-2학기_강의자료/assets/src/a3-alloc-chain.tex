@@ -1,0 +1,153 @@
+% assets/a3-alloc-chain.svg — 제어기에서 운동모델까지, 배분 사슬 전체
+%
+%   bash _tools/tikz2svg.sh assets/src/a3-alloc-chain.tex assets/a3-alloc-chain.svg
+%
+% 이 그림이 말하는 것
+%   제어기가 낸 요구 렌치 tau_c = [X; Y; N] 이
+%   (1) pseudo-inverse -> (2) null space 보정 -> (3) 극좌표 -> (4) 한계 처리
+%   를 거쳐 모터 추력 둘과 노즐 각도 둘이 되고,
+%   그것이 같은 행렬 B 로 **되돌아가** 실제 렌치 tau_a 가 된 다음 운동모델로 들어간다.
+%   요구와 실제의 차 e = tau_a - tau_c 가 실측표의 '못 낸 X, Y, N' 이다.
+%
+% 배치 — 세 줄 사슬 (좌->우, 꺾어 내려온다)
+%   A 줄 y = 0    제어기 -> (1) -> (2) -> (3)
+%   B 줄 y = -52  (4) -> (5) -> 운동모델 -> 항적
+%   C 줄 y = -92  요구와 실제의 비교
+%   폭 186 mm 에 맞춘다 (PDF 본문 폭). 상자 36 mm, 간격 14 mm
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\tikzset{
+  bx/.style  = {rectangle, rounded corners=1pt, draw, line width=0.7pt,
+                align=center, font=\scriptsize, inner sep=2.5pt,
+                minimum width=36mm, minimum height=18mm},
+  sbx/.style = {rectangle, rounded corners=1pt, draw, line width=0.7pt,
+                align=center, font=\scriptsize, inner sep=2.5pt,
+                minimum width=36mm, minimum height=12mm},
+  ar/.style  = {-{Stealth[length=4pt,width=3pt]}, ink, line width=0.7pt},
+  dar/.style = {-{Stealth[length=4pt,width=3pt]}, soft, line width=0.6pt,
+                densely dashed},
+  lb/.style  = {font=\scriptsize, ink, anchor=south, inner sep=1pt},
+}
+
+% ===========================================================================
+% A 줄 — 제어기와 배분 세 걸음
+% ===========================================================================
+\node[bx, draw=ctrl, fill=ctrl!6] (a1) at (18,0)
+     {\textbf{제어기} (W06 과 동일) \\[2pt] 위치$\cdot$선수각 오차 \\ $\longrightarrow$ 요구 렌치};
+
+\node[bx, draw=guid, fill=guid!6] (a2) at (68,0)
+     {\textbf{\textcircled{\scriptsize 1} pseudo-inverse} \\[2pt]
+      $\mathbf{u}_e = \mathbf{B}^{+}\boldsymbol\tau_c$ \\[2pt]
+      크기가 가장 작은 해};
+
+\node[bx, draw=guid, fill=guid!6] (a3) at (118,0)
+     {\textbf{\textcircled{\scriptsize 2} null space 보정} \\[2pt]
+      $\mathbf{u}_e \leftarrow \mathbf{u}_e + \lambda\,\mathbf{n}$ \\[2pt]
+      각도를 쐐기 밖으로};
+
+\node[bx, draw=thr, fill=thr!6] (a4) at (168,0)
+     {\textbf{\textcircled{\scriptsize 3} 극좌표 변환} \\[2pt]
+      $T=\sqrt{F_x^2+F_y^2}$ \\[1pt]
+      $\delta=\operatorname{atan2}(F_y, F_x)$};
+
+\draw[ar] (a1) -- (a2);
+\draw[ar] (a2) -- (a3);
+\draw[ar] (a3) -- (a4);
+
+\node[lb] at (43,10.5)  {$\boldsymbol\tau_c = [\,X,\ Y,\ N\,]^{\top}$ \ (3$\times$1)};
+\node[lb] at (93,10.5)  {$\mathbf{u}_e = [\,F_{x,L}, F_{y,L}, F_{x,R}, F_{y,R}\,]^{\top}$};
+\node[lb] at (143,10.5) {보정된 $\mathbf{u}_e$};
+
+% ===========================================================================
+% 꺾어 내려오는 선
+% ===========================================================================
+\draw[ar] (a4.south) -- (168,-28) -- (18,-28) -- (18,-43);
+\node[lb, soft] at (93,-27) {요구 추력 $T_L, T_R$ \quad 요구 각도 $\delta_L, \delta_R$};
+
+% ===========================================================================
+% B 줄 — 한계 처리, 실제 렌치, 운동모델
+% ===========================================================================
+\node[bx, draw=warn, fill=warn!6] (b1) at (18,-52)
+     {\textbf{\textcircled{\scriptsize 4} 한계 처리} \\[2pt]
+      각도 $\pm45^\circ$ $\cdot$ 변화율 $573^\circ$/s \\[1pt]
+      추력 $\pm500$ N};
+
+\node[bx, draw=plant, fill=plant!6] (b2) at (68,-52)
+     {\textbf{\textcircled{\scriptsize 5} 실제 렌치} \\[2pt]
+      $\boldsymbol\tau_a = \mathbf{B}\,\mathbf{R}(\boldsymbol\delta_a)\,\mathbf{T}_a$ \\[2pt]
+      같은 $\mathbf{B}$ 를 되짚는다};
+
+\node[bx, draw=plant, fill=plant!6] (b3) at (118,-52)
+     {\textbf{운동모델} (3 자유도) \\[2pt]
+      $\mathbf{M}\dot{\boldsymbol\nu} + \mathbf{C}(\boldsymbol\nu)\boldsymbol\nu
+       + \mathbf{D}\boldsymbol\nu = \boldsymbol\tau_a$};
+
+\node[bx, draw=nav, fill=nav!6] (b4) at (168,-52)
+     {\textbf{항적 $\cdot$ 상태} \\[2pt]
+      $x,\ y,\ \psi,\ u,\ v,\ r$};
+
+\draw[ar] (b1) -- (b2);
+\draw[ar] (b2) -- (b3);
+\draw[ar] (b3) -- (b4);
+
+\node[lb] at (43,-41.5)  {실제 $\mathbf{T}_a$, $\boldsymbol\delta_a$};
+\node[lb] at (93,-41.5)  {$\boldsymbol\tau_a = [\,X_a,\ Y_a,\ N_a\,]^{\top}$};
+\node[lb] at (143,-41.5) {$\boldsymbol\nu = [\,u,\ v,\ r\,]^{\top}$};
+
+% ===========================================================================
+% C 줄 — 요구와 실제를 맞대어 본다
+% ===========================================================================
+\node[sbx, draw=soft, dashed, fill=white] (c1) at (18,-92)
+     {요구 $\boldsymbol\tau_c$ \\ (\textcircled{\scriptsize 1} 의 입력 그대로)};
+
+\node[circle, draw=ink, line width=0.7pt, minimum size=5mm, inner sep=0pt,
+      font=\scriptsize] (sum) at (68,-92) {$-$};
+
+\node[sbx, draw=errc, fill=errc!6, minimum width=70mm] (c2) at (143,-92)
+     {\textbf{못 낸 힘} \quad
+      $\mathbf{e} = \boldsymbol\tau_a - \boldsymbol\tau_c$ \\[2pt]
+      실측표의 `못 낸 $X\cdot Y\cdot N$' 가 이 값이다};
+
+\draw[dar] (c1) -- (sum);
+\draw[dar] (sum) -- (c2);
+\draw[dar] (b2.south) -- (68,-74) -- (sum);
+\node[font=\scriptsize, soft, anchor=west, inner sep=1pt] at (70,-70)
+     {실제 $\boldsymbol\tau_a$};
+
+% ===========================================================================
+% 아래 띠 — 읽는 법
+% ===========================================================================
+\draw[wire, soft] (0,-108) -- (186,-108);
+
+\node[anchor=north west, font=\scriptsize, text width=88mm] at (0,-113)
+     {\textbf{사슬에서 꼭 볼 곳 둘} \\[4pt]
+      \textbf{(1)} \textcircled{\scriptsize 1}$\sim$\textcircled{\scriptsize 3} 은
+      $\mathbf{B}$ 를 \textbf{거꾸로} 푸는 과정이고,
+      \textcircled{\scriptsize 5} 는 같은 $\mathbf{B}$ 를 \textbf{바로} 쓰는 과정이다.
+      행렬 하나가 배분과 검산에 함께 쓰인다 \\[4pt]
+      \textbf{(2)} 한계에 물리지 않으면
+      $\boldsymbol\tau_a = \boldsymbol\tau_c$ 가 되어 $\mathbf{e}=\mathbf{0}$ 이다.
+      기준 환경 실측에서 한계 밖 구간의 차이는 $3\times10^{-14} \sim 1.4\times10^{-12}$
+      — 수치 오차 수준};
+
+\node[anchor=north west, font=\scriptsize, text width=88mm] at (98,-113)
+     {\textbf{코드에서 어디에 있는가} \\[4pt]
+      \textcircled{\scriptsize 1}$\sim$\textcircled{\scriptsize 4}
+      \quad \texttt{parts/azAllocFcn.m} \ (AzAlloc 블록) \\[2pt]
+      \textcircled{\scriptsize 5}
+      \quad \texttt{parts/wrenchFcn.m} \ (Wrench 블록) \\[2pt]
+      운동모델 \quad \texttt{A3\_*.slx} 의 Plant 서브시스템 \\[4pt]
+      두 함수가 같은 $\mathbf{B}$ 를 각자 한 줄로 적어 둔다 —
+      기하를 고치면 \textbf{두 곳을 함께} 고쳐야 한다};
+
+\node[anchor=north west, font=\scriptsize, warn, text width=186mm] at (0,-146)
+     {\textcircled{\scriptsize 2} 는 Sørdalen(1997)과 Sarda 등(2016)이 쓴 null space 이용법을
+      이 배치(추진기 둘)에 맞춰 닫힌식으로 줄인 것이다 — 반복 최적화를 돌리지 않는다};
+
+\end{tikzpicture}
+\end{document}
