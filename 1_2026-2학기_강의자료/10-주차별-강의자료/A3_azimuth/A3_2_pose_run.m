@@ -58,7 +58,7 @@ fprintf('           마지막 오차   위치 %.3f m · 선수각 %.3f deg\n', S
 fprintf('           마지막 10 초  위치 %.3f m · 선수각 %.3f deg\n', S.e_ss, S.epsi_ss);
 fprintf('           선수각 오차   RMS %.3f deg · 최대 %.3f deg\n', S.psi_rms, S.psi_pk);
 fprintf('           추력          최대 |T| %.1f N / 한계 %.0f N · 추력 포화 %.1f %%\n', ...
-        S.T_pk, F_max, S.f_ksat);
+        S.T_pk, F_max, S.f_tsat);
 fprintf('           방향각        최대 %.2f deg / 한계 %.0f deg · 각도 포화 %.1f %%\n', ...
         S.d_pk, d_max_deg, S.f_dsat);
 fprintf('           요구 대비 실제 차이  X %.2f N · Y %.2f N · N %.2f N m\n', S.w_err);
@@ -78,7 +78,7 @@ end
 %     90 deg  옆으로 선 채 비스듬히 접근 -> 요구가 쐐기 구간에 들어가기 쉽다
 psi_try = [0 45 90];
 R = struct('psi_deg', {}, 't_done', {}, 'd_gate', {}, 'e_ss', {}, ...
-           'epsi_ss', {}, 'psi_rms', {}, 'd_pk', {}, 'f_dsat', {}, 'f_ksat', {});
+           'epsi_ss', {}, 'psi_rms', {}, 'd_pk', {}, 'f_dsat', {}, 'f_tsat', {});
 
 for i_p = 1:numel(psi_try)
     s = struct('hold_deg', psi_try(i_p));
@@ -105,7 +105,7 @@ for i_p = 1:numel(psi_try)
     R(i_p).psi_rms = Si.psi_rms;
     R(i_p).d_pk    = Si.d_pk;
     R(i_p).f_dsat  = Si.f_dsat;
-    R(i_p).f_ksat  = Si.f_ksat;
+    R(i_p).f_tsat  = Si.f_tsat;
 end
 setappdata(0, 'A3_override', []);        % **반드시 비운다**
 

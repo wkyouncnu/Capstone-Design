@@ -8,9 +8,8 @@ function addLogging(m, x, y)
 %              X_a·Y_a·N_a  실제로 난 힘·모멘트  — 요구와의 차이가 곧 한계의 몫
 %              TL·TR        추진기 추력 [N]      — 음수면 뒤로 밀고 있다는 뜻
 %              dL·dR        추진기 방향각 [rad]  — ±45 deg 에 붙었는지 본다
-%              kscl         추력 포화 축소 배율  — 1 보다 작으면 요구를 못 냈다
     sig = {'x_n','y_n','psi','psi_ref','x_ref','y_ref','u','v','r','U', ...
            'beta','chi','gate','phase', ...
-           'X_c','Y_c','N_c','X_a','Y_a','N_a','TL','TR','dL','dR','kscl'};
+           'X_c','Y_c','N_c','X_a','Y_a','N_a','TL','TR','dL','dR'};
     add_logging_box(m, sig, sig, [x y], 'Ts_ctrl');
 end

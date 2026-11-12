@@ -1,5 +1,6 @@
 function f = A3_animate(x_n, y_n, psi, psi_ref, x_ref, y_ref, u, v, r, ...
-                        gate, phase, TL, dL, TR, dR, kscl, X_c, Y_c, N_c, t)
+                        gate, phase, TL, dL, TR, dR, ...
+                        X_c, Y_c, N_c, X_a, Y_a, N_a, t)
 % A3_ANIMATE  부록 A3 의 실시간 화면 — 항적 · 두 추진기의 방향과 크기 · 포화 감시
 %
 %   Simulink 의 Animate 상자가 매 스텝 이 함수를 부른다. 직접 부를 일은 없다.
@@ -25,14 +26,14 @@ function f = A3_animate(x_n, y_n, psi, psi_ref, x_ref, y_ref, u, v, r, ...
 %     phase           과업 진행 단계 (래치된 값, 0 에서 시작)
 %     TL, TR          좌 · 우 추진기 추력 [N]   (음수 = 뒤로 민다)
 %     dL, dR          좌 · 우 추진기 방향각 [rad]
-%     kscl            추력 포화로 걸린 축소 계수 (1 = 축소 없음)
 %     X_c, Y_c, N_c   제어기가 **요구한** 힘·모멘트 [N, N, N m]
+%     X_a, Y_a, N_a   운동모델이 받은 **실제** 힘·모멘트 [N, N, N m]
 %     t               시뮬레이션 시각 [s]
 %
-%   화면 배치 — 일곱 칸
+%   화면 배치 — 아홉 칸
 %     왼쪽 큰 칸     항적 + 목표 자세 + 선체 + **추진기 화살표 둘** (NED)
 %     가운데 위      추진기 게이지 — 선체 고정 시점의 방향각과 ±45 deg 쐐기
-%     가운데 아래    요구한 힘·모멘트와 실제로 난 힘·모멘트의 **차이**
+%     가운데 아래    요구와 실제를 **축마다 한 칸씩** — X · Y · N 세 칸
 %     오른쪽 1       방향각 delta_L · delta_R 과 ±45 deg 띠
 %     오른쪽 2       추력 T_L · T_R 과 ±F_max 띠
 %     오른쪽 3       위치 — x 목표와 실제 · y 목표와 실제 [m]
@@ -54,22 +55,23 @@ function f = A3_animate(x_n, y_n, psi, psi_ref, x_ref, y_ref, u, v, r, ...
 %       "추력 반전이 구조적으로 필수" 라는 뜻이다
 %
 %   요구 대비 실제 칸을 둔 까닭 (이 화면의 판정 칸이다)
-%     - 제어기가 요구한 (X_c, Y_c, N_c) 와 추진기 둘이 실제로 만든 (X_a, Y_a, N_a)
+%     - 제어기가 요구한 (X_c, Y_c, N_c) 와 운동모델이 실제로 받은 (X_a, Y_a, N_a)
 %       는 **같아야 한다.** 배분식은 등식이므로 한계가 걸리지 않는 동안은 정확히 같다
-%     - 차이가 0 에서 떨어지는 순간이 곧 **각도 한계 또는 추력 한계가 물린 순간**이다
+%     - 두 선이 벌어지는 순간이 곧 **각도 한계 또는 추력 한계가 물린 순간**이다
 %     - 이 칸이 없으면 "왜 따라가지 못하는가" 를 제어 게인 탓으로 오해하게 된다.
 %       오류 메시지는 뜨지 않는다
-%     - 실제 값은 추진기 상태에서 **다시 계산**한다 (모델의 Wrench 블록과 같은 식)
-%         X_a = T_L cos d_L + T_R cos d_R
-%         Y_a = T_L sin d_L + T_R sin d_R
-%         N_a = b (F_xL - F_xR) - L (F_yL + F_yR)
+%     - **축마다 한 칸씩** 나누어 그린다. 차이 하나만 그리면 크기가 얼마인 중의
+%       차이인지 알 수 없다 — 요구가 10 N 일 때의 2 N 과 400 N 일 때의 2 N 은
+%       전혀 다른 이야기다. 그래서 요구와 실제의 **크기를 겹쳐** 그린다
+%     - 실제 값은 운동모델이 그대로 내보낸 것이다 (출력 10~12). 화면에서 다시
+%       계산하지 않는다 — 두 곳에서 계산하면 식이 어긋났을 때 알아채지 못한다
 %
 %   그림이 느리면 A3_setup.m 에서 animate = 0 또는 animate_every 를 키운다
 
 persistent fig axXY axG axW axE axD axT axV ...
            hTrail hHull hHead hDot hInfo hAL hAR hALh hARh ...
            hgL hgR hgLh hgRh hgRes hgResh hgTxL hgTxR hVer hgTtl ...
-           hWX hWY hWN hBand hPx hPxr hPy hPyr hDL hDR hTLp hTRp hPsi hPsir ...
+           hWc hWa hBand hPx hPxr hPy hPyr hDL hDR hTLp hTRp hPsi hPsir ...
            trX trY tv De Dd Dt Dv Dw mode gx gy gpsi Rs Fm dmx dsw bb LL ...
            tLast tPrev scFix dpkv nsat nall wpk ...
            vw recPath recSz recN recWarn
@@ -109,8 +111,7 @@ if init_only
            '인자 하나로 부를 때는 init 뿐이다');
     [x_n, y_n, psi, psi_ref, x_ref, y_ref]            = deal(0);
     [u, v, r, gate, phase, TL, dL, TR, dR, t]         = deal(0);
-    [X_c, Y_c, N_c]                                   = deal(0);
-    kscl = 1;
+    [X_c, Y_c, N_c, X_a, Y_a, N_a]                    = deal(0);
     fig = [];  tLast = [];
 end
 
@@ -299,22 +300,32 @@ if newRun
     text(axG, 0, -LL-Rg-0.55, '파랑 = 앞으로 미는 추력,  빨강 = 뒤로 미는 추력', ...
          'FontSize',8.5, 'Color',[0.35 0.35 0.35], 'HorizontalAlignment','center');
 
-    % ================= 가운데 아래 : 요구 대비 실제 =================
-    axW = subplot(4,3,[8 11], 'Parent', fig);
-    yyaxis(axW,'left');  hold(axW,'on'); grid(axW,'on');
-    yline(axW, 0, '-', 'Color',[0.35 0.35 0.35], 'LineWidth',1.3);
-    hWX = plot(axW, nan, nan, '-',  'Color',[0 0.45 0.74], 'LineWidth',1.6);
-    hWY = plot(axW, nan, nan, '-',  'Color',[0.47 0.25 0.80], 'LineWidth',1.6);
-    ylabel(axW,'힘 차이 [N]');
-    yyaxis(axW,'right');  hold(axW,'on');
-    hWN = plot(axW, nan, nan, '--', 'Color',[0.85 0.33 0.10], 'LineWidth',1.6);
-    ylabel(axW,'모멘트 차이 [N m]');
-    xlabel(axW,'시간 [s]');
-    legend(axW, [hWX hWY hWN], ...
-           {'X_a - X_c', 'Y_a - Y_c', 'N_a - N_c'}, ...
-           'Location','southoutside', 'Orientation','horizontal', 'AutoUpdate','off');
-    axW.YAxis(1).Color = [0.15 0.15 0.15];
-    axW.YAxis(2).Color = [0.15 0.15 0.15];
+    % ================= 가운데 아래 : 요구 대비 실제 (축마다 한 칸) ======
+    %   한 칸에 셋을 몰아 넣으면 단위가 섞이고(N 과 N m) 크기도 섞인다.
+    %   축마다 한 칸으로 떼어 **요구(점선)와 실제(실선)를 겹쳐** 그린다 —
+    %   벌어진 폭이 곧 못 낸 몫이고, 그 폭을 요구 크기와 함께 읽을 수 있다
+    a0 = subplot(4,3,[8 11], 'Parent', fig);
+    pw = get(a0, 'Position');  delete(a0);
+    gp = 0.030;                                   % 칸 사이 틈
+    hgt = (pw(4) - 2*gp) / 3;
+    wnm = {'X 전후 [N]', 'Y 횡 [N]', 'N 요 모멘트 [N m]'};
+    axW = gobjects(1,3);  hWc = gobjects(1,3);  hWa = gobjects(1,3);
+    for k = 1:3
+        axW(k) = axes('Parent', fig, ...
+                      'Position', [pw(1), pw(2)+(3-k)*(hgt+gp), pw(3), hgt]);
+        hold(axW(k),'on'); grid(axW(k),'on');
+        yline(axW(k), 0, '-', 'Color',[0.65 0.65 0.65]);
+        hWc(k) = plot(axW(k), nan, nan, '--', ...
+                      'Color',[0.55 0.55 0.55], 'LineWidth',1.6);
+        hWa(k) = plot(axW(k), nan, nan, '-', ...
+                      'Color',[0 0.45 0.74], 'LineWidth',1.6);
+        ylabel(axW(k), wnm{k}, 'FontSize',8.5);
+        set(axW(k), 'FontSize',8.5);
+    end
+    xlabel(axW(3), '시간 [s]');
+    set(axW(1:2), 'XTickLabel', []);
+    legend(axW(1), [hWc(1) hWa(1)], {'요구', '실제'}, ...
+           'Location','northeast', 'Orientation','horizontal', 'AutoUpdate','off');
 
     % ================= 오른쪽 1 : 방향각과 ±45 deg =================
     axD = subplot(4,3,3, 'Parent', fig);
@@ -375,7 +386,7 @@ if newRun
     end
 
     tv = [];  De = zeros(0,4);  Dd = zeros(0,2);  Dt = zeros(0,2);
-    Dv = zeros(0,2);  Dw = zeros(0,3);
+    Dv = zeros(0,2);  Dw = zeros(0,6);
     tLast = -inf;  dpkv = 0;  nsat = 0;  nall = 0;  wpk = [0 0 0];
 end
 tPrev = t;
@@ -394,14 +405,8 @@ nall = nall + 1;
 if dpk > dmx - 0.05, nsat = nsat + 1; end
 fsat = 100 * nsat / max(nall, 1);          % 한계에 붙어 있던 시간 비율 [%]
 
-%  실제로 난 힘·모멘트 — 추진기 상태에서 다시 계산한다 (Wrench 블록과 같은 식)
-FxL = TL*cos(dL);  FyL = TL*sin(dL);
-FxR = TR*cos(dR);  FyR = TR*sin(dR);
-Xb  = FxL + FxR;
-Yb  = FyL + FyR;
-Nb  = bb*(FxL - FxR) - LL*(FyL + FyR);
-dW  = [Xb - X_c, Yb - Y_c, Nb - N_c];
-wpk = max(wpk, abs(dW));
+%  실제로 난 힘·모멘트는 **운동모델이 보내 준 값** 그대로다 (다시 계산하지 않음)
+wpk = max(wpk, abs([X_a - X_c, Y_a - Y_c, N_a - N_c]));
 
 d    = hypot(x_ref - x_n, y_ref - y_n);
 epsi = atan2(sin(psi_ref - psi), cos(psi_ref - psi)) * 180/pi;
@@ -412,7 +417,7 @@ De(end+1,:) = [x_n, x_ref, y_n, y_ref];
 Dd(end+1,:) = [dLd, dRd];
 Dt(end+1,:) = [TL, TR];
 Dv(end+1,:) = [psi*180/pi, psi_ref*180/pi];
-Dw(end+1,:) = dW;
+Dw(end+1,:) = [X_c, X_a, Y_c, Y_a, N_c, N_a];
 if numel(tv) > NMAX
     k = numel(tv) - NMAX + 1;
     trX(1:k) = [];  trY(1:k) = [];  tv(1:k) = [];
@@ -490,14 +495,14 @@ for i_t = 1:2
     end
 end
 %  합력 — 두 추진기가 만든 선체 기준 힘 (초록)
-lenR = max(1.7*Rg * hypot(Xb, Yb) / (2*Fm), 1e-6);
-[lx, ly, hxa, hya] = arrow_body(0, 0, atan2(Yb, Xb), lenR);
+lenR = max(1.7*Rg * hypot(X_a, Y_a) / (2*Fm), 1e-6);
+[lx, ly, hxa, hya] = arrow_body(0, 0, atan2(Y_a, X_a), lenR);
 set(hgRes,  'XData',lx,  'YData',ly);
 set(hgResh, 'XData',hxa, 'YData',hya);
 set(hgTtl, 'String', { ...
     '추진기 게이지 — 선체 고정 시점 (위쪽이 선수)', ...
-    sprintf(['합력  X = %+6.1f N   Y = %+6.1f N   N = %+7.1f N m' ...
-             '    축소 k = %.3f'], Xb, Yb, Nb, kscl) });
+    sprintf('실제 합력  X = %+6.1f N   Y = %+6.1f N   N = %+7.1f N m', ...
+            X_a, Y_a, N_a) });
 %  판정 셋 — **한계에 붙어 있는 것**은 합격이 아니다. 각도를 더 주고 싶은데
 %  못 주고 있다는 뜻이므로, 그 동안 요구한 힘을 그대로 내지 못한다
 if dpkv > dmx + 0.05
@@ -522,14 +527,16 @@ set(hPx,  'XData',tv, 'YData',De(:,1));
 set(hPxr, 'XData',tv, 'YData',De(:,2));
 set(hPy,  'XData',tv, 'YData',De(:,3));
 set(hPyr, 'XData',tv, 'YData',De(:,4));
-set(hWX, 'XData',tv, 'YData',Dw(:,1));
-set(hWY, 'XData',tv, 'YData',Dw(:,2));
-set(hWN, 'XData',tv, 'YData',Dw(:,3));
+for k = 1:3
+    set(hWc(k), 'XData',tv, 'YData',Dw(:,2*k-1));
+    set(hWa(k), 'XData',tv, 'YData',Dw(:,2*k));
+end
 
-%  y 범위에 **바닥**을 둔다 — 차이가 1e-14 일 때 축이 그 노이즈를 꽉 채워
-%  그리면 "안 맞는다" 로 잘못 읽힌다. 바닥을 두면 0 에 붙은 직선으로 보인다
-yyaxis(axW,'left');   pad_y_min(axW, Dw(:,1:2), 1.0);
-yyaxis(axW,'right');  pad_y_min(axW, Dw(:,3),   1.0);
+%  y 범위에 **바닥**을 둔다 — 요구가 1e-14 일 때 축이 그 노이즈를 꽉 채워
+%  그리면 "흔들린다" 로 잘못 읽힌다. 바닥을 두면 0 에 붙은 직선으로 보인다
+for k = 1:3
+    pad_y_min(axW(k), Dw(:,2*k-1:2*k), 1.0);
+end
 pad_y_min(axE, De, 0.5);
 
 %  방향각 칸 제목이 판정을 그대로 나른다
@@ -542,21 +549,24 @@ else
 end
 title(axD, sprintf('방향각 — 한계 ±%.0f° · 최대 %.1f° · 한계 접촉 %.1f %%', ...
                    dmx, dpkv, fsat), 'FontWeight','normal', 'FontSize',9, 'Color',cc);
-title(axT, sprintf('추력 — 한계 ±%.0f N · 최대 %.1f N · 축소 k = %.3f', ...
-                   Fm, max(max(abs(Dt(:,1))), max(abs(Dt(:,2)))), kscl), ...
-      'FontWeight','normal', 'FontSize',9);
-%  요구 대비 실제 — 0 에 붙어 있어야 정상. 떨어지면 한계가 물린 것이다
-if max(wpk(1:2)) > 0.5 || wpk(3) > 0.5
-    set(axW.Title, 'Color', [0.80 0 0]);
-    ws = sprintf('요구를 못 낸 최대폭  X %.1f N · Y %.1f N · N %.1f N m — 한계가 물렸다', ...
+Tpk = max(max(abs(Dt(:,1))), max(abs(Dt(:,2))));
+if Tpk > Fm - 0.5, tc = [0.80 0 0]; else, tc = [0.15 0.15 0.15]; end
+title(axT, sprintf('추력 — 한계 ±%.0f N · 최대 %.1f N', Fm, Tpk), ...
+      'FontWeight','normal', 'FontSize',9, 'Color',tc);
+
+%  요구 대비 실제 — 두 선이 겹쳐 있어야 정상. 벌어지면 한계가 물린 것이다
+%  맨 위 칸의 제목만 판정을 나른다 (세 칸이 같은 이야기를 세 번 하지 않도록)
+if max(wpk) > 0.5
+    wc = [0.80 0 0];
+    ws = sprintf('못 낸 최대폭  X %.1f N · Y %.1f N · N %.1f N m — 한계가 물렸다', ...
                  wpk(1), wpk(2), wpk(3));
 else
-    set(axW.Title, 'Color', [0 0.40 0.10]);
-    ws = sprintf('요구 = 실제  (최대 차이 %.2f N / %.2f N m) — 한계가 물리지 않았다', ...
+    wc = [0 0.40 0.10];
+    ws = sprintf('요구 = 실제  (최대 차이 %.2f N / %.2f N m)', ...
                  max(wpk(1:2)), wpk(3));
 end
-title(axW, {'요구한 힘·모멘트 대비 실제로 난 값의 차이', ws}, ...
-      'FontWeight','normal', 'FontSize',9);
+title(axW(1), {'요구(점선)와 실제(실선) — 축마다 한 칸', ws}, ...
+      'FontWeight','normal', 'FontSize',9, 'Color',wc);
 
 %  ±45 deg 띠 패치를 시간축만큼 늘린다 (창을 만들 때는 0~1 로 두었다)
 t1 = tv(1);  t2 = max(tv(end), t1 + 1e-3);

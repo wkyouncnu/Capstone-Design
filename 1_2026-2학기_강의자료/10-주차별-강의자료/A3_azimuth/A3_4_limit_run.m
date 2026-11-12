@@ -6,16 +6,15 @@
 %     설정값 **하나씩만** 바꿔 같은 과업을 다시 돌리고, 지표를 한 표로 모은다.
 %     모델은 1·2단 것을 그대로 쓴다. 새 모델을 만들지 않는다.
 %
-%   재는 것 일곱
+%   재는 것 여섯
 %     기준            아무것도 바꾸지 않음 (배분 수준 2)
 %     추력 반전 금지   rev_on = 0      — 추진기가 앞으로만 민다
 %     각도 한계 ±15   d_max_deg = 15  — 설계 전제를 더 보수적으로
 %     변화율 1/20     d_rate_deg = 30 — 선외기가 느리게 돌아간다
-%     배분 0 공통각도  alloc_mode = 0  — 두 대를 **같은 각도**로 튼다 (가장 단순)
 %     배분 1 pseudo-inverse alloc_mode = 1  — 추력 제곱합 최소. null space 보정 없음
 %     배분 2 +null-space   alloc_mode = 2  — 기준과 같은 설정. 표의 기준점으로 둔다
 %
-%   배분 셋은 **같은 해의 직선 위에 있는 서로 다른 점**이다
+%   배분 둘은 **같은 해의 직선 위에 있는 서로 다른 점**이다
 %     식 셋에 미지수 넷이므로 해는 점이 아니라 직선 하나다. 어느 점을 고르든
 %     X·Y·N 은 똑같이 만족한다 — 다른 것은 그 점에서의 **각도**뿐이고,
 %     그 각도가 ±45 deg 안에 드는지가 갈린다
@@ -38,14 +37,13 @@ C = { ...
     '추력 반전 금지',   struct('rev_on', 0);
     '각도 한계 ±15',   struct('d_max_deg', 15);
     '변화율 30 deg/s', struct('d_rate_deg', 30);
-    '배분0 공통각도',  struct('alloc_mode', 0);
     '배분1 pseudo-inverse', struct('alloc_mode', 1);
     '배분2 +null-space',   struct('alloc_mode', 2) };
 
 for st = [1 2]
     fprintf('\n');
     T = struct('nm', {}, 'done', {}, 'e_ss', {}, 'psi_rms', {}, 'psi_pk', {}, ...
-               'v_ss', {}, 'd_pk', {}, 'f_dsat', {}, 'f_ksat', {}, 'f_rsat', {}, 'w_pk', {});
+               'v_ss', {}, 'd_pk', {}, 'f_dsat', {}, 'f_tsat', {}, 'f_rsat', {}, 'w_pk', {});
 
     for k = 1:size(C, 1)
         setappdata(0, 'A3_override', C{k,2});
@@ -64,7 +62,7 @@ for st = [1 2]
         T(k).v_ss    = Si.v_ss;
         T(k).d_pk    = Si.d_pk;
         T(k).f_dsat  = Si.f_dsat;
-        T(k).f_ksat  = Si.f_ksat;
+        T(k).f_tsat  = Si.f_tsat;
         T(k).f_rsat  = Si.chk.f_rsat;         % 각도가 변화율 한계에 걸린 시간 [%]
         T(k).w_pk    = max(Si.w_err(1:2));    % 힘 요구를 못 낸 최대폭 [N]
     end
@@ -89,7 +87,7 @@ for st = [1 2]
             end
             fprintf('  %-16s %s   %12.3f   %13.3f   %16.2f   %12.1f   %12.1f   %10.1f   %12.2f\n', ...
                     T(k).nm, td, T(k).e_ss, T(k).psi_rms, ...
-                    T(k).d_pk, T(k).f_dsat, T(k).f_ksat, T(k).f_rsat, T(k).w_pk);
+                    T(k).d_pk, T(k).f_dsat, T(k).f_tsat, T(k).f_rsat, T(k).w_pk);
         end
     end
 

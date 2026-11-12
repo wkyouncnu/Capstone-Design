@@ -52,7 +52,7 @@ fprintf('           마지막 오차   위치 %.3f m · 선수각 %.3f deg  (판
         S.e_final, S.epsi_final, R_stop);
 fprintf('           마지막 10 초  위치 %.3f m · 선수각 %.3f deg\n', S.e_ss, S.epsi_ss);
 fprintf('           추력          최대 |T| %.1f N / 한계 %.0f N · 추력 포화 %.1f %%\n', ...
-        S.T_pk, F_max, S.f_ksat);
+        S.T_pk, F_max, S.f_tsat);
 fprintf('           방향각        최대 %.2f deg / 한계 %.0f deg · 각도 포화 %.1f %%\n', ...
         S.d_pk, d_max_deg, S.f_dsat);
 

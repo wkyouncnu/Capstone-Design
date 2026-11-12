@@ -52,26 +52,12 @@ d_rate_deg = 573;       % 각도 변화율 한계 [deg/s] (URDF velocity 10 rad/
 %     0  금지 — 앞으로만 민다. 순수 횡이동이 **깨진다** (A3-4 실습)
 rev_on = 1;
 
-%   null-space 보정을 켜는가 — 각도 한계를 넘을 때 횡력을 한쪽으로 몰아 준다
-%     1  켠다 — pseudo-inverse + 네 줄. 요구를 바꾸지 않고 각도만 한계 안으로 넣는다
-%     0  끈다 — pseudo-inverse 그대로 (가장 간단한 배분). 쐐기 구간에서 90 deg 를 요구
-%     실측: 켜면 그대로 낼 수 있는 요구가 35.3 % 늘고, 깨지는 요구는 0 건
-split_on = 1;
-
-%   배분 방식 — 같은 해의 직선 위에서 **어느 점에 앉는가**
-%     0  공통 각도        두 대를 같은 각도로 튼다. 가장 단순함. 순수 횡이동이 불가능
-%     1  pseudo-inverse  추력 제곱합 최소. 쐐기 구간에서 한쪽만 90 deg 를 요구
+%   배분 방식 — 해의 직선 위에서 **어느 점에 앉는가**. 둘 중 하나다
+%     1  pseudo-inverse                   원점에 가장 가까운 점. 가장 간단함
 %     2  pseudo-inverse + null-space 보정  요구를 바꾸지 않고 각도만 한계 안으로 넣음
-%     셋을 같은 과업으로 비교하는 것이 A3_4_limit_run 이다
+%     둘을 같은 과업으로 비교하는 것이 A3_4_limit_run 이다
+%     실측: 2 로 두면 그대로 낼 수 있는 요구가 19.7 % 에서 25.3 % 로 늘어난다
 alloc_mode = 2;
-
-%   낼 수 없는 각도를 요구받았을 때 — 각도만 자르는가, 추력을 끊는가
-%     0  각도만 자른다 (기본) — 한계까지 튼 각도로 그대로 민다. 요구와 다른 방향으로
-%        힘이 나가지만 배는 계속 움직이므로, 못 낸 힘이 그래프에 숫자로 남는다
-%     1  추력을 끊는다 — Sarda et al. (2016) Fig. 22 의 처리. 낼 수 없는 방향으로는
-%        아예 밀지 않는다. 문헌 방식이며 대조용으로 남겨 둔다 (추력 0 · 배가 멈춤)
-%     ±45° 안에서 풀리는 요구에는 **두 값이 같은 결과를 낸다** (각도를 안 자르므로)
-ang_sat = 0;
 
 %% ====================================================================
 %  3. 과업별 목표
@@ -240,8 +226,12 @@ stop_q = [x_d; y_d; psi_d];
 epsi_stop_r = deg2rad(epsi_stop);
 stop_prm = [e_stop; epsi_stop_r; stop_on];
 
-%   추력 배분이 받는 기하·한계 묶음 — 순서가 곧 PRM(1..8)
-az_prm = [half_beam; l_thr; F_max; d_max; rev_on; split_on; alloc_mode; ang_sat];
+%   추진기의 기하·한계 묶음 — 순서가 곧 PRM(1..5)
+%     배분기(AzAlloc)와 운동모델의 Wrench 가 **같은 묶음**을 받는다. 둘이 같은
+%     기하를 써야 하므로 변수를 하나로 둔다
+%     배분 방식(alloc_mode)은 이 묶음에 넣지 않는다 — 기하가 아니라 **선택**이고,
+%     모델 안에서 별도 상수 블록으로 들어간다
+az_prm = [half_beam; l_thr; F_max; d_max; rev_on];
 
 %   오프라인 운동모델이 받는 계수 묶음 — 순서가 곧 p(1..8)
 %     6주차와 달리 b·l_bow 가 없다. 힘·모멘트가 배분에서 이미 완성되어 들어온다
@@ -265,26 +255,10 @@ end
 fprintf('A3 설정 완료\n');
 fprintf('  %d단  %s  —  %s\n', stage, mdl, stage_name{stage});
 fprintf('  추진기 둘 · 반폭 b = %.6f m · 거리 L = %.6f m\n', half_beam, l_thr);
-%   null-space 보정은 수준 2 에서만 켜진다 — 수준 0·1 에서는 꼬리에 붙지 않는다
-if alloc_mode > 1.5 && split_on > 0.5
-    spl_txt = '켬';
-elseif alloc_mode > 1.5
-    spl_txt = '끔';
-else
-    spl_txt = '해당 없음';
-end
-alloc_txt = {'공통 각도', 'pseudo-inverse', 'pseudo-inverse + null-space'};
-if ang_sat > 0.5
-    sat_txt = '추력 0 (문헌 방식)';
-else
-    sat_txt = '각도만 자름 (기본)';
-end
-
-fprintf('  배분 방식 %d — %s · null-space 보정 %s\n', ...
-        alloc_mode, alloc_txt{alloc_mode+1}, spl_txt);
+alloc_txt = {'pseudo-inverse', 'pseudo-inverse + null-space 보정'};
+fprintf('  배분 방식 %d — %s\n', alloc_mode, alloc_txt{alloc_mode});
 fprintf('  각도 한계 ±%.0f deg · 변화율 %.0f deg/s · 추력 반전 %s\n', ...
         d_max_deg, d_rate_deg, rev_txt);
-fprintf('  낼 수 없는 각도 처리 — %s\n', sat_txt);
 fprintf('  낼 수 있는 한계 — 횡력 %.1f N · 요 모멘트 %.1f N m\n', Y_max, N_max);
 fprintf('  목표 (%.1f, %.1f) m · %.1f deg\n', x_d, y_d, rad2deg(psi_d));
 if stop_on > 0.5

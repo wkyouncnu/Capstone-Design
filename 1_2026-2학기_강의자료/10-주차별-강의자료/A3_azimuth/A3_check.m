@@ -15,7 +15,7 @@ function C = A3_check(out, ttl)
 %     C.d_pk       최대 |delta| [deg]
 %     C.d_over     한계를 넘은 폭 [deg]  (0 이면 한 번도 안 넘었다)
 %     C.f_dsat     각도가 한계에 붙어 있던 시간 비율 [%]
-%     C.f_ksat     추력 축소가 걸린 시간 비율 [%]
+%     C.f_tsat     추력이 한계에 붙어 있던 시간 비율 [%]
 %     C.f_rsat     각도가 변화율 한계에 걸려 있던 시간 비율 [%]
 %     C.w_err      요구 대비 실제의 최대 차이 [N, N, N m] — 전 구간
 %     C.w_free     한계가 **물리지 않은** 구간의 최대 차이 [N, N, N m]
@@ -26,10 +26,10 @@ function C = A3_check(out, ttl)
 %     배분식은 등식이다. 한계가 하나도 물리지 않으면 차이는 기계 정밀도 (1e-13) 다.
 %     그러므로 w_free 가 0 이 아니면 **식이 틀린 것**이고,
 %     w_sat 가 0 이 아닌 것은 **한계 때문**이다 — 성격이 전혀 다르다.
-%     한계는 셋이다 — 각도 한계(as) · 추력 축소(ks) · 각도 변화율(rs).
-%     변화율을 빼고 세면 공통 각도 방식에서 w_free 가 121 N 으로 나온다 (실측).
-%     식이 틀린 것이 아니라 **지령 각도가 ±45 deg 사이를 튀어** 실제 각도가
-%     따라가지 못한 것이다
+%     한계는 셋이다 — 각도 한계(as) · 추력 한계(ts) · 각도 변화율(rs).
+%     변화율을 빼고 세면 w_free 가 0 이 아닌 값으로 나오는 과업이 있다.
+%     식이 틀린 것이 아니라 **지령 각도가 크게 튀어** 실제 각도가 변화율
+%     한계 때문에 따라가지 못한 것이다
 
 if nargin < 2, ttl = ''; end
 
@@ -42,7 +42,6 @@ drt = evalin('base','d_rate')*180/pi;
 t    = out.log_x_n.Time;
 TL   = out.log_TL.Data;          TR = out.log_TR.Data;
 dL   = out.log_dL.Data*180/pi;   dR = out.log_dR.Data*180/pi;
-kscl = out.log_kscl.Data;
 phase = out.log_phase.Data;
 Xc = out.log_X_c.Data;  Yc = out.log_Y_c.Data;  Nc = out.log_N_c.Data;
 Xa = out.log_X_a.Data;  Ya = out.log_Y_a.Data;  Na = out.log_N_a.Data;
@@ -52,27 +51,26 @@ E    = [Xa-Xc, Ya-Yc, Na-Nc];           % 요구 대비 실제의 차이
 
 %  한계가 물렸는가 — 세 가지를 따로 센다
 as = dAbs > dmx - 0.05;                 % 각도가 한계에 붙어 있다
-ks = kscl < 0.999;                      % 추력이 넘쳐 전체를 줄였다
+ts = max(abs(TL), abs(TR)) > Fm - 0.5;  % 추력이 한계에 붙어 잘렸다
 
 %  각도가 **변화율 한계에 걸려 지령을 못 따라가는** 구간도 센다
 %    로그의 dL·dR 은 변화율 제한을 지난 **실제 각도**다. 지령이 ±45 deg 사이를
 %    튀면 실제 각도는 내내 슬루 중이고, 한계에 붙지 않았어도 요구와 어긋난다
-%    (공통 각도 방식에서 시간의 36.9 % 가 이 상태였다 — 실측)
 dt = diff(t);
 sl = max(abs(diff(dL))./dt, abs(diff(dR))./dt) > 0.99*drt;
 rs = [sl; false] | [false; sl];         % 변화율 한계에 걸려 있다 (앞뒤 한 스텝 포함)
 
-sat = as | ks | rs;
+sat = as | ts | rs;
 
 C.d_pk   = max(dAbs);
 C.d_over = max(0, C.d_pk - dmx);
 C.f_dsat = 100*mean(as);
-C.f_ksat = 100*mean(ks);
+C.f_tsat = 100*mean(ts);
 C.f_rsat = 100*mean(rs);
 C.w_err  = max(abs(E), [], 1);
 C.w_free = pick_max(E, ~sat);
 C.w_sat  = pick_max(E,  sat);
-C.f_cls  = 100*[mean(~as & ~ks), mean(as & ~ks), mean(~as & ks), mean(as & ks)];
+C.f_cls  = 100*[mean(~as & ~ts), mean(as & ~ts), mean(~as & ts), mean(as & ts)];
 
 C.fig = A3_fig('A3_check', ['A3 점검  ' ttl], [120 70 1480 820]);
 
@@ -206,23 +204,22 @@ for i = 1:3
     end
 end
 
-% ---- 8. 차이와 그 원인 ------------------------------------------------
-axd = subplot(2,4,8);
-shade_mask(axd, t, as & ~ks, [0.98 0.86 0.76]);  hold on;
-shade_mask(axd, t, ks, [0.86 0.90 0.99]);
-shade_mask(axd, t, rs & ~as & ~ks, [0.90 0.95 0.86]);
-yyaxis left
-plot(t, E(:,1), '-',  'Color',[0.20 0.45 0.90], 'LineWidth',1.3);
-plot(t, E(:,2), '-',  'Color',[0.60 0.20 0.75], 'LineWidth',1.3);
-ylabel('힘 차이 [N]');   pad_y_min(axd, E(:,1:2), 1.0);
-yyaxis right
-plot(t, E(:,3), '--', 'Color',[0.85 0.33 0.10], 'LineWidth',1.3);
-ylabel('모멘트 차이 [N m]');  pad_y_min(axd, E(:,3), 1.0);
-grid on;  xlabel('시간 [s]');
-legend({'각도 한계','추력 축소','변화율 한계','X_a-X_c','Y_a-Y_c','N_a-N_c'}, ...
-       'Location','southoutside', 'NumColumns',3, 'FontSize',7, 'Box','off');
-title(sprintf('못 낸 몫과 원인 [%%] 각%.0f·추%.0f·율%.0f', ...
-              C.f_dsat, C.f_ksat, C.f_rsat));
+% ---- 8. 추력 크기와 한계 ----------------------------------------------
+%   **차이를 따로 그리지 않는다.** 5~7 칸에 요구와 실제를 겹쳐 놓았으므로
+%   벌어지는 폭이 곧 차이다. 이 칸은 그 원인 가운데 **추력 쪽**을 본다
+%   (각도 쪽은 1 칸, 변화율은 제목의 수치)
+axt = subplot(2,4,8);
+shade_mask(axt, t, ts, [0.99 0.88 0.80]);  hold on;
+plot(t, abs(TL), '-',  'Color',[0 0.35 0.85], 'LineWidth',1.3);
+plot(t, abs(TR), '--', 'Color',[0.55 0.15 0.65], 'LineWidth',1.3);
+yline(Fm, 'r-', 'LineWidth',1.2);
+mark_phase(t, phase);
+grid on;  xlabel('시간 [s]');  ylabel('|T| [N]');
+ylim([0 1.15*Fm]);
+legend({'추력 한계 접촉','|T_L|','|T_R|', sprintf('한계 %.0f N', Fm)}, ...
+       'Location','southoutside', 'NumColumns',2, 'FontSize',7, 'Box','off');
+title(sprintf('추력 크기 — 한계 접촉 %.1f %% (각도 %.1f %% · 변화율 %.1f %%)', ...
+              C.f_tsat, C.f_dsat, C.f_rsat));
 
 % ---- 표로 한 번 더 ----------------------------------------------------
 fprintf('  --- 점검 ---\n');
@@ -284,12 +281,4 @@ if ~isfinite(lo) || ~isfinite(hi), return, end
 if hi - lo < 1e-9, lo = lo - 1;  hi = hi + 1; end
 m = 0.10*(hi - lo);
 ylim(ax, [lo-m, hi+m]);
-end
-
-function pad_y_min(ax, D, fl)
-%  y 범위에 바닥을 둔다 — 차이가 1e-14 일 때 축이 노이즈를 확대하지 않게
-hi = max(abs(D(:)), [], 'omitnan');
-if isempty(hi) || ~isfinite(hi), return, end
-lim = max(hi*1.15, fl);
-ylim(ax, [-lim, lim]);
 end

@@ -39,7 +39,7 @@ fprintf('           횡속도        정상 구간 %.3f m/s · 최대 %.3f m/s  
 fprintf('           전후 위치     마지막 |x_n| %.4f m   (옆으로만 갔다면 0 에 가깝다)\n', ...
         abs(out.log_x_n.Data(end)));
 fprintf('           추력          최대 |T| %.1f N / 한계 %.0f N · 각도 포화 %.1f %% · 추력 포화 %.1f %%\n', ...
-        S.T_pk, F_max, S.f_dsat, S.f_ksat);
+        S.T_pk, F_max, S.f_dsat, S.f_tsat);
 if S.psi_rms < 0.5
     fprintf('           판정          선수각이 유지됨 (RMS < 0.5 deg) — 흔들림 없음\n');
 else
@@ -101,7 +101,7 @@ fprintf('           방향각        평균 %.3f deg (조류가 없을 때 %.3f 
         S3.d_mean, S.d_mean);
 fprintf('           전후 위치     마지막 |x_n| %.3f m\n', abs(out3.log_x_n.Data(end)));
 fprintf('           추력          최대 |T| %.1f N · 각도 포화 %.1f %% · 추력 포화 %.1f %%\n', ...
-        S3.T_pk, S3.f_dsat, S3.f_ksat);
+        S3.T_pk, S3.f_dsat, S3.f_tsat);
 
 setappdata(0, 'A3_override', []);       % **반드시 비운다** — 다음 실행까지 따라온다
 S.v_cap  = v_cap;

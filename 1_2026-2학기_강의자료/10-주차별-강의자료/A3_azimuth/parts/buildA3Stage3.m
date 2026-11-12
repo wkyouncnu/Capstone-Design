@@ -21,7 +21,7 @@ function [chain, boxes] = buildA3Stage3(m)
     wireGuid (m, {'x_n','y_n','psi'}, ...
                  {'x_ref','y_ref','psi_ref','gate','phase'}, 520, 60);
     wireLoops(m, 620, 200, 1020, 60);
-    wireWrench(m, 1840, 290, 1980, 300);
+    wireAlloc(m, 1840, 290, 1980, 300);
     wireNavGotos(m, 'MotionModel', 2410, 280);
 
     boxes = addBoxesA3(m, {'psi_ref','psi'; 'x_ref','x_n'; 'y_ref','y_n'; ...

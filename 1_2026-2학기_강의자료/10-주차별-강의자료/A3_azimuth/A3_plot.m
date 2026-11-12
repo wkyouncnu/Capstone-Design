@@ -19,7 +19,7 @@ function S = A3_plot(out, ttl)
 %     S.d_pk         최대 방향각 |delta| [deg]
 %     S.d_mean       움직이는 동안의 평균 |delta| [deg]
 %     S.f_dsat       방향각이 한계에 붙어 있던 시간 비율 [%]
-%     S.f_ksat       추력 포화로 축소가 걸린 시간 비율 [%]
+%     S.f_tsat       추력이 한계에 붙어 있던 시간 비율 [%]
 %     S.w_err        요구 힘·모멘트와 실제 값의 최대 차이 [N, N, N m]
 %     S.t_phase      단계가 올라간 시각 [s]
 %     S.t_end        실제로 끝난 시각 [s] (자동정지가 걸리면 T_run 보다 짧다)
@@ -52,7 +52,6 @@ r     = out.log_r.Data;
 gate  = out.log_gate.Data;     phase = out.log_phase.Data;
 TL    = out.log_TL.Data;       TR    = out.log_TR.Data;
 dL    = out.log_dL.Data*180/pi;  dR  = out.log_dR.Data*180/pi;
-kscl  = out.log_kscl.Data;
 Xc    = out.log_X_c.Data;      Yc    = out.log_Y_c.Data;   Nc = out.log_N_c.Data;
 Xa    = out.log_X_a.Data;      Ya    = out.log_Y_a.Data;   Na = out.log_N_a.Data;
 
@@ -92,7 +91,7 @@ S.T_pk       = max(max(abs(TL)), max(abs(TR)));
 S.d_pk       = max(max(abs(dL)), max(abs(dR)));
 S.d_mean     = mean([abs(dL(mv)); abs(dR(mv))]);
 S.f_dsat     = 100*mean(max(abs(dL), abs(dR)) > dmx - 0.05);
-S.f_ksat     = 100*mean(kscl < 0.999);
+S.f_tsat     = 100*mean(max(abs(TL), abs(TR)) > Fm - 0.5);
 S.w_err      = [max(abs(Xa-Xc)), max(abs(Ya-Yc)), max(abs(Na-Nc))];
 S.t_end      = t(end);           % 실제로 끝난 시각 — 자동정지가 걸렸으면 T_run 보다 짧다
 if mode == 3, lv = [1 2 3]; else, lv = 1; end
@@ -264,7 +263,7 @@ fprintf('  최대 추력 |T|        %8.1f N     (한계 %.0f N)\n', S.T_pk, Fm);
 fprintf('  최대 방향각 |delta|  %8.2f deg   (한계 %.0f deg · 순수 횡이동 %.2f)\n', ...
         S.d_pk, dmx, dsw);
 fprintf('  각도 한계에 붙은 시간%8.1f %%\n', S.f_dsat);
-fprintf('  추력 축소가 걸린 시간%8.1f %%\n', S.f_ksat);
+fprintf('  추력 한계에 붙은 시간%8.1f %%\n', S.f_tsat);
 fprintf('  요구 대비 실제 차이  X %.2f N · Y %.2f N · N %.2f N m\n', S.w_err);
 Tr = NaN;  try, Tr = evalin('base','T_run'); catch, end
 if S.t_end < Tr - 1e-6

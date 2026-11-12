@@ -1,29 +1,39 @@
 function addAzAlloc(m, x, y)
 % addAzAlloc — 아지무스 추력 배분 상자 (부록 A3 에서 새로 만드는 것은 이것 하나다)
 %
-%   들어오는 것   X_c · Y_c · N_c   안쪽 고리가 요구한 힘·모멘트 (선체고정)
-%   나가는 것     X_a · Y_a · N_a   추진기 두 대가 **실제로** 낼 힘·모멘트
+%   들어오는 것   X_c · Y_c · N_c       안쪽 고리가 요구한 힘·모멘트 (선체고정)
+%   나가는 것     TL · dL · TR · dR     추진기 두 대에 보내는 추력과 각도
 %
-%   안에 셋이 줄지어 있다
+%   **추진기 명령까지만 낸다.** 그 명령이 선체에 얼마의 힘·모멘트로 걸리는가는
+%   운동모델 안에서 계산한다 (parts/addMotionModelXYN.m 의 Wrench).
+%   힘으로 되돌리는 계산은 추진기 배치(기하)를 알아야 하는 일이고, 그것은
+%   배가 가진 성질이므로 배 쪽 상자에 둔다.
+%
+%   안에 둘이 줄지어 있다
 %     1. AzAlloc    요구를 (추력, 각도) 둘씩으로 나눈다. 각도·추력 한계도 여기서
 %     2. RateL/R    각도 변화율 한계 — 선외기가 즉시 돌아가지는 않는다
-%     3. Wrench     잘린 각도·줄인 추력으로 **실제로 난 힘**을 되계산한다
 %
 %   2 번이 1 번 뒤에 오는 이유 — 변화율 한계는 기구(機構)의 한계이므로 지령을
 %   만든 다음에 걸린다. 1 번 안에서 걸 수는 없다 (상태를 가져야 하므로).
     ss = add_subsys(m, 'Alloc', [x y x+190 y+190], ...
-                    {'X_c','Y_c','N_c'}, {'X_a','Y_a','N_a'}, ...
+                    {'X_c','Y_c','N_c'}, {'TL','dL','TR','dR'}, ...
                     gnc_colour('allocation'));
 
-    sl_const(ss, 'PRM', 'az_prm', 60, 320);
+    %  배분 방식은 **설정값 하나**로 고른다 — 1 = pseudo-inverse,
+    %  2 = pseudo-inverse + null space 보정. A3_setup.m 의 alloc_mode 다
+    sl_const(ss, 'ALLOC', 'alloc_mode', 60, 320);
+    sl_const(ss, 'PRM',   'az_prm',     60, 390);
 
-    %  1. 배분 — 요구 셋을 (추력, 각도) 둘씩 + 축소 배율로
+    %  1. 배분 — 요구 셋을 (추력, 각도) 둘씩으로
+    %     높이를 넉넉히 잡는 이유 — MATLAB Function 블록의 포트는 높이를 균등
+    %     분할한 자리에 생긴다. 입력 다섯이 52 px 보다 촘촘하면 왼쪽에서 선과
+    %     이름표가 겹친다 (_tools/row_feed.m 이 경고를 낸다).
     add_block('simulink/User-Defined Functions/MATLAB Function', [ss '/AzAlloc'], ...
-              'Position', [330 60 510 420]);
+              'Position', [330 60 510 400]);
     sl_fcn(ss, 'AzAlloc', azAllocFcn());
-    row_feed(ss, 'AzAlloc', {'X_c','Y_c','N_c','PRM'});
+    row_feed(ss, 'AzAlloc', {'X_c','Y_c','N_c','ALLOC','PRM'});
 
-    %  2. 각도 변화율 한계 — 좌·우 각각
+    %  2. 각도 변화율 한계 — 좌·우 각각 (출력 2 번과 4 번이 각도다)
     rl = {'RateL', 2; 'RateR', 4};
     for k = 1:2
         p = port_xy(ss, 'AzAlloc', 'Outport', rl{k,2});
@@ -33,40 +43,12 @@ function addAzAlloc(m, x, y)
         add_line(ss, sprintf('AzAlloc/%d', rl{k,2}), [rl{k,1} '/1'], 'autorouting','on');
     end
 
-    %  3. 실제로 난 힘 되계산
-    %     높이를 AzAlloc 과 같게 잡는 이유 — MATLAB Function 블록의 포트는 높이를
-    %     균등 분할한 자리에 생긴다. 둘의 높이를 맞추면 출력 5개와 입력 5개의 y 가
-    %     그대로 겹치므로 TL·TR·dL·dR 네 선이 **꺾임 없이 직선**으로 들어간다.
-    %     어긋나게 두면 다섯 선이 Wrench 왼쪽 한 칸에 모여 서로 겹친다 (실측 3건).
-    add_block('simulink/User-Defined Functions/MATLAB Function', [ss '/Wrench'], ...
-              'Position', [820 60 1000 420]);
-    sl_fcn(ss, 'Wrench', wrenchFcn());
-    %     네 선 모두 **자동 배선을 쓰지 않는다.** 포트 높이가 이미 같으므로 직선
-    %     한 토막이면 끝인데, 자동 배선은 TL 선에 5 px 짜리 턱을 넣어 꺾임 4회로
-    %     보고되었다 (실측). 같은 높이끼리는 손으로 잇는 쪽이 늘 깔끔하다.
-    add_line(ss, 'AzAlloc/1', 'Wrench/1');
-    add_line(ss, 'RateL/1',   'Wrench/2');
-    add_line(ss, 'AzAlloc/3', 'Wrench/3');
-    add_line(ss, 'RateR/1',   'Wrench/4');
-
-    %     기하·한계 묶음은 **태그로** 건넨다. PRM 은 AzAlloc 왼쪽에 있으므로 선으로
-    %     이으면 AzAlloc 블록을 피해 아래로 돌아야 한다 — 꺾임 4회에 이름표를 밟는다.
-    %     태그로 받으면 Wrench 입력 포트 바로 옆에서 수평 한 토막으로 끝난다.
-    drop_tag(ss, 'PRM', 1, 'prm', 120);
-    feed_from(ss, 'prm', 'Wrench', 5);
-
-    outs = {'X_a','Y_a','N_a'};
-    for k = 1:3
-        p = port_xy(ss, 'Wrench', 'Outport', k);
-        set_param([ss '/' outs{k}], 'Position', [1080 p(2)-10 1110 p(2)+10]);
-        add_line(ss, sprintf('Wrench/%d', k), [outs{k} '/1'], 'autorouting','on');
+    %  바깥으로 — 추력은 배분기에서 바로, 각도는 변화율 한계를 거친 쪽으로
+    outs = {'TL','AzAlloc',1; 'dL','RateL',1; 'TR','AzAlloc',3; 'dR','RateR',1};
+    for k = 1:4
+        p = port_xy(ss, outs{k,2}, 'Outport', outs{k,3});
+        set_param([ss '/' outs{k,1}], 'Position', [780 p(2)-10 810 p(2)+10]);
+        add_line(ss, sprintf('%s/%d', outs{k,2}, outs{k,3}), ...
+                 [outs{k,1} '/1'], 'autorouting','on');
     end
-
-    %  추진기 상태를 로그로 뽑는다 — 각도가 한계에 붙었는지, 추력을 얼마나
-    %  줄였는지는 수치로 보아야 알 수 있다
-    drop_tag(ss, 'AzAlloc', 1, 'TL',    -90);
-    drop_tag(ss, 'AzAlloc', 3, 'TR',    -90);
-    drop_tag(ss, 'AzAlloc', 5, 'kscl',   90);
-    drop_tag(ss, 'RateL',   1, 'dL',    -70);
-    drop_tag(ss, 'RateR',   1, 'dR',     70);
 end

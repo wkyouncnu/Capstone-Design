@@ -28,7 +28,7 @@ function [chain, boxes] = buildA3Stage1(m)
 
     wireGuid (m, {}, {'x_ref','y_ref','psi_ref','gate'}, 520, 60);
     wireLoops(m, 620, 200, 1020, 60);
-    wireWrench(m, 1840, 290, 1980, 300);
+    wireAlloc(m, 1840, 290, 1980, 300);
     wireNavGotos(m, 'MotionModel', 2410, 280);
 
     addStubs(m, {'phase'}, 2050, 760);

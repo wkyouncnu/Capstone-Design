@@ -129,7 +129,8 @@
       \textbf{(1)} \textcircled{\scriptsize 1}$\sim$\textcircled{\scriptsize 3} 은
       $\mathbf{B}$ 를 \textbf{거꾸로} 푸는 과정이고,
       \textcircled{\scriptsize 5} 는 같은 $\mathbf{B}$ 를 \textbf{바로} 쓰는 과정이다.
-      행렬 하나가 배분과 검산에 함께 쓰인다 \\[4pt]
+      행렬 하나가 배분과 검산에 함께 쓰인다 — 기하를 고치면
+      \texttt{azAllocFcn.m} 과 \texttt{wrenchFcn.m} \textbf{두 곳}을 함께 고쳐야 한다 \\[4pt]
       \textbf{(2)} 한계에 물리지 않으면
       $\boldsymbol\tau_a = \boldsymbol\tau_c$ 가 되어 $\mathbf{e}=\mathbf{0}$ 이다.
       기준 환경 실측에서 한계 밖 구간의 차이는 $3\times10^{-14} \sim 1.4\times10^{-12}$
@@ -140,10 +141,10 @@
       \textcircled{\scriptsize 1}$\sim$\textcircled{\scriptsize 4}
       \quad \texttt{parts/azAllocFcn.m} \ (AzAlloc 블록) \\[2pt]
       \textcircled{\scriptsize 5}
-      \quad \texttt{parts/wrenchFcn.m} \ (Wrench 블록) \\[2pt]
-      운동모델 \quad \texttt{A3\_*.slx} 의 Plant 서브시스템 \\[4pt]
-      두 함수가 같은 $\mathbf{B}$ 를 각자 한 줄로 적어 둔다 —
-      기하를 고치면 \textbf{두 곳을 함께} 고쳐야 한다};
+      \quad \texttt{parts/wrenchFcn.m} \ (MotionModel/Wrench 블록) \\[2pt]
+      운동모델 \quad \texttt{A3\_*.slx} 의 MotionModel 서브시스템 \\[4pt]
+      \textcircled{\scriptsize 5} 는 \textbf{운동모델 안}에 있다 — 요구는 배분기 입구,
+      실제는 운동모델 출구에서 나와야 둘을 대조할 수 있다};
 
 \node[anchor=north west, font=\scriptsize, warn, text width=186mm] at (0,-146)
      {\textcircled{\scriptsize 2} 는 Sørdalen(1997)과 Sarda 등(2016)이 쓴 null space 이용법을
