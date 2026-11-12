@@ -40,10 +40,10 @@ if isnan(S.t_done)
 else
     fprintf('%.1f s  (전체 %.0f s 가운데)\n', S.t_done, T_run);
 end
-%   도착 순간의 오차와 그 뒤 **관성으로 더 간 거리**를 따로 본다
-%     gate 가 닫히면 속도 지령이 0 이 된다. 제동력을 걸지 않으므로 배는 항력으로만
-%     멈춘다 — 마지막 오차가 R_stop 보다 커지는 것은 이 타성 때문이며, 배분이
-%     요구를 못 냈기 때문이 아니다. 6주차의 도착 판정을 그대로 쓴 결과다.
+%   도착 순간의 오차와 그 뒤 **더 줄어든 거리**를 따로 본다
+%     gate 는 표시등일 뿐 고리를 끊지 않는다. 도착 뒤에도 위치 고리가 계속
+%     그 자리를 잡으므로 오차는 보통 더 줄어든다 — 아래 둘째 줄이 음수면 정상이다.
+%     (2026-11-13 이전에는 gate 를 지령에 곱했고, 그 탓에 목표점을 지나쳤다)
 dn   = hypot(x_d - out.log_x_n.Data, y_d - out.log_y_n.Data);
 i_g  = find(out.log_gate.Data < 0.5, 1);
 if isempty(i_g)
@@ -53,7 +53,7 @@ else
     d_coast = S.e_final - d_gate;
 end
 fprintf('           도착 순간     위치 오차 %.3f m  (판정선 %.1f m)\n', d_gate, R_stop);
-fprintf('           그 뒤 타성     %+.3f m  (지령 0 · 항력으로만 멈춘다)\n', d_coast);
+fprintf('           그 뒤 변화     %+.3f m  (음수 = 더 좁혔다 · 고리는 계속 잡는다)\n', d_coast);
 fprintf('           마지막 오차   위치 %.3f m · 선수각 %.3f deg\n', S.e_final, S.epsi_final);
 fprintf('           마지막 10 초  위치 %.3f m · 선수각 %.3f deg\n', S.e_ss, S.epsi_ss);
 fprintf('           선수각 오차   RMS %.3f deg · 최대 %.3f deg\n', S.psi_rms, S.psi_pk);
@@ -63,7 +63,7 @@ fprintf('           방향각        최대 %.2f deg / 한계 %.0f deg · 각도
         S.d_pk, d_max_deg, S.f_dsat);
 fprintf('           요구 대비 실제 차이  X %.2f N · Y %.2f N · N %.2f N m\n', S.w_err);
 %   합격선 — 도착 판정이 걸렸고(거리 < R_stop 이고 선수각 오차 < 5 deg),
-%   선수각을 끝까지 유지했는가. 마지막 위치 오차는 타성의 몫이므로 여기 넣지 않는다
+%   선수각을 끝까지 유지했는가
 ok = ~isnan(S.t_done) && abs(S.epsi_ss) < 2;
 if ok
     fprintf('           판정          (x, y, psi) 셋을 동시에 세웠다 — 6주차와 같은 과업 성공\n');
@@ -110,7 +110,7 @@ end
 setappdata(0, 'A3_override', []);        % **반드시 비운다**
 
 fprintf('\n[2단 점검] 목표 선수각을 바꿔 가며 (같은 목표점 (%.0f, %.0f) m)\n', x_d, y_d);
-fprintf('  목표 psi   도착 [s]   도착시 오차 [m]   타성 포함 [m]   psi RMS [deg]   최대 delta [deg]   각도포화 [%%]\n');
+fprintf('  목표 psi   도착 [s]   도착시 오차 [m]   마지막 10초 [m]   psi RMS [deg]   최대 delta [deg]   각도포화 [%%]\n');
 for i_p = 1:numel(R)
     if isnan(R(i_p).t_done)
         td = '  미완료';

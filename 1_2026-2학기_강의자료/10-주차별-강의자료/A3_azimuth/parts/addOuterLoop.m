@@ -11,11 +11,17 @@
 %   포화로 접근 속도를 묶는다. 접안에서 u_max 를 1.5 m/s 로 두는 까닭은 그보다
 %   빨리 부두에 닿으면 안 되기 때문이다.
 %
-%   gate 곱셈이 여기 있다 — 도착하면 속도 지령이 0 이 된다. 5주차에서는 안쪽
-%   고리에 있었지만, 위치 제어에서는 "속도를 0 으로" 가 곧 "멈춤" 이라 여기가 맞다.
+%   gate 곱셈이 **여기 있었으나 걷어 냈다** (2026-11-13)
+%     도착하면 속도 지령을 0 으로 끊던 자리다. 그 처리가 배를 세우지 못하고
+%     오히려 목표점을 지나치게 만들었다 — 2단 기준 환경 실측
+%       지령을 끊는 순간 비례항이 함께 사라진다. 순항 중 쌓인 **적분항은 남아**
+%       있으므로 (실측 +94.5 N) 배가 다시 앞으로 밀려 1.12 m -> 2.05 m 로 벌어졌다
+%     위치 고리를 끊지 않으면 오차가 뒤로 넘어간 순간 지령이 음수가 되어
+%     배를 되돌린다. 제자리 유지(DP)가 곧 정지다 — 따로 끊을 일이 없다
+%     gate 는 이제 **도착을 적는 표시**일 뿐이고, AutoStop 상자만 그것을 본다
 function addOuterLoop(m, x, y)
     ss = add_subsys(m, 'OuterLoop', [x y x+190 y+170], ...
-                    {'x_ref','y_ref','x_n','y_n','psi','gate'}, ...
+                    {'x_ref','y_ref','x_n','y_n','psi'}, ...
                     {'u_cmd','v_cmd'}, gnc_colour('control'));
 
     add_sum(ss, 'ErrN', '+-', [250  90]);
@@ -40,19 +46,14 @@ function addOuterLoop(m, x, y)
     sl_gain(ss, 'Kp_y', 'Kp_y', 560, 220);
     sl_sat(ss, 'SatU', 'u_max', 660,  80);
     sl_sat(ss, 'SatV', 'v_max', 660, 220);
-    add_block('simulink/Math Operations/Product', [ss '/GateU'], ...
-              'Position', [780 70 810 110]);
-    add_block('simulink/Math Operations/Product', [ss '/GateV'], ...
-              'Position', [780 210 810 250]);
     add_line(ss, 'Rotate/1','Kp_x/1');  add_line(ss, 'Kp_x/1','SatU/1');
     add_line(ss, 'Rotate/2','Kp_y/1');  add_line(ss, 'Kp_y/1','SatV/1');
-    add_line(ss, 'SatU/1','GateU/1');   add_line(ss, 'gate/1','GateU/2');
-    add_line(ss, 'SatV/1','GateV/1');   add_line(ss, 'gate/1','GateV/2');
-    add_line(ss, 'GateU/1','u_cmd/1');  add_line(ss, 'GateV/1','v_cmd/1');
+    add_line(ss, 'SatU/1','u_cmd/1');   add_line(ss, 'SatV/1','v_cmd/1');
     Simulink.BlockDiagram.arrangeSystem(ss);
 
     sl_note(ss, 'n_o', [ ...
-        '위치 오차 -> 선체고정 오차 -> 비례 제어 -> 속도 포화 -> gate' newline ...
+        '위치 오차 -> 선체고정 오차 -> 비례 제어 -> 속도 포화' newline ...
         'u_max 1.5 m/s · v_max 0.6 m/s — 접근 속도를 추력이 아니라 속도로 묶음' newline ...
-        '그래서 멀리 있어도 안쪽 적분기가 포화에 눌려 쌓이지 않음'], 250, 420);
+        '그래서 멀리 있어도 안쪽 적분기가 포화에 눌려 쌓이지 않음' newline ...
+        '도착해도 이 고리를 끊지 않음 — 오차가 뒤로 넘어가면 지령이 음수가 되어 배를 되돌림'], 250, 420);
 end

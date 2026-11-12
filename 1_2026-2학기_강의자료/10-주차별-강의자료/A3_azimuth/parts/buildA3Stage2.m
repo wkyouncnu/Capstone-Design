@@ -6,8 +6,8 @@ function [chain, boxes] = buildA3Stage2(m)
 %
 %   1단에서 새로 생긴 것
 %     유도부가 상수에서 **판정**으로 바뀐다 (addGuidanceStop)
-%       - 목표 반지름 R_stop 안에 들어오면 phase 를 1 로 올리고 gate 를 0 으로 내린다
-%       - gate 가 0 이면 속도 지령이 끊겨 배가 선다
+%       - 거리 R_stop · 선수각 5 deg · 속력 U_stop 을 모두 만족하면 phase 를 1 로 올린다
+%       - gate 는 도착 표시일 뿐이다. 위치 고리는 끊기지 않고 그 자리를 계속 잡는다
 %     AutoStop 상자가 붙는다 — gate 가 0 인 채로 stop_hold 초가 지나면 시뮬레이션 종료
 %
 %   목표는 북쪽 30 m · 동쪽 20 m · 선수각 45 deg 다 (6주차 1단과 같은 목표).
@@ -33,7 +33,7 @@ function [chain, boxes] = buildA3Stage2(m)
                            '','v'; '','dL'}, 2510, 60, true);
 
     sl_note(m, 'n2', ['A3 2단  —  위치와 선수각을 함께 맞춰 서기' newline ...
-        '새로 생긴 것 : 도착 판정(phase 래치) + 정지 게이트 + AutoStop' newline ...
+        '새로 생긴 것 : 도착 판정(거리·선수각·속력) + phase 래치 + AutoStop' newline ...
         '전후·횡·선수각을 동시에 요구받음 — 각도가 ±45 deg 에 붙는 구간이 생기는지 볼 것' newline ...
         '볼 것 : log_dL · log_dR 이 한계에 붙는 시간, log_X_a 가 log_X_c 에서 벌어지는 구간' newline ...
         '실행 전: A3_setup (stage = 2)  또는  A3_2_pose_run'], 250, -180);

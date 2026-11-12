@@ -1,0 +1,208 @@
+% assets/a3-az-polar.svg — 방향각의 부호 정의와 az_polar 의 네 규칙
+%
+%   bash _tools/tikz2svg.sh assets/src/a3-az-polar.tex assets/a3-az-polar.svg
+%
+% 이 그림이 말하는 것
+%   (가) 델타를 어디서 어느 쪽으로 재는가 — 부호 정의와 쐐기
+%   (나) 쐐기 밖의 각도를 "반대로 틀고 뒤로 민다" 로 바꿔 적는 과정 (규칙 a)
+%   (다) az_polar 이 성분 둘을 지령 둘로 바꿀 때 거치는 네 규칙의 순서
+%
+% 화면 좌표 — (가)(나) 모두 같은 규칙으로 그린다
+%   화면 x = 우현 쪽 (y_b 또는 F_y), 화면 y = 선수 쪽 (x_b 또는 F_x)
+%   델타는 x_b 에서 y_b 쪽으로 재므로 화면에서는 **위에서 오른쪽으로**(시계방향)
+%   화면 극각 theta = 90 - delta  — 아래 모든 arc 가 이 관계를 쓴다
+%       delta =   0  ->  theta =  90   (위)
+%       delta = +45  ->  theta =  45   (오른위)
+%       delta = -45  ->  theta = 135   (왼위)
+%   따라서 쐐기는 theta 가 45~135 인 위쪽 부채꼴이다
+%
+% (나) 의 숫자는 1-7 절 예제 3 의 우현 추진기다
+%   (F_x, F_y) = (-50, 100) N  ->  delta_raw = 116.565 deg  (쐐기 밖)
+%   접으면 T = -111.803 N, delta = -63.435 deg  — 여전히 쐐기 밖이라 (c) 가 깎는다
+%   눈금 0.2 mm/N — 100 N 이 20 mm
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\tikzset{
+  sbx/.style = {rectangle, rounded corners=1pt, draw, line width=0.7pt,
+                align=center, font=\scriptsize, inner sep=2.5pt,
+                minimum width=42mm, minimum height=24mm},
+  ar/.style  = {-{Stealth[length=4pt,width=3pt]}, ink, line width=0.7pt},
+  axs/.style = {nav, line width=0.6pt, -{Stealth[length=3.4pt,width=2.4pt]}},
+}
+
+% ===========================================================================
+% (가) 방향각의 부호 정의
+% ===========================================================================
+\begin{scope}[shift={(0,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (0,46)
+       {(가) $\delta$ 는 선수 방향에서 우현 쪽으로 재는 각이다};
+
+  \begin{scope}[shift={(44,0)}]
+
+    % --- 쐐기 (delta = -45 ~ +45  ->  theta = 45 ~ 135) ------------------
+    \fill[guid!10] (0,0) -- (45:30mm) arc (45:135:30mm) -- cycle;
+    \draw[guid, line width=0.4pt] (45:30mm) arc (45:135:30mm);
+
+    % --- 좌표축 ----------------------------------------------------------
+    \draw[axs] (0,-32) -- (0,34);
+    \node[font=\scriptsize, nav, anchor=south] at (0,34.5) {$x_b$ (선수)};
+    \draw[axs] (-34,0) -- (34,0);
+    \node[font=\scriptsize, nav, anchor=west] at (34.5,0) {$y_b$ (우현)};
+
+    % --- 세 기준선 -------------------------------------------------------
+    \draw[soft, line width=0.4pt, densely dashed] (0,0) -- (45:32mm);
+    \draw[soft, line width=0.4pt, densely dashed] (0,0) -- (135:32mm);
+    \node[font=\scriptsize, guid, anchor=south west] at (45:33mm) {$\delta=+45^\circ$};
+    \node[font=\scriptsize, guid, anchor=south east] at (135:33mm) {$\delta=-45^\circ$};
+    \node[font=\scriptsize, ink, anchor=south west, inner sep=1pt] at (1.5,30)
+         {$\delta=0$ — 똑바로 앞으로 밂};
+
+    % --- 추력 벡터 하나 — delta = +30  ->  theta = 60 ---------------------
+    \draw[thr, line width=1.4pt, -{Stealth[length=4.4pt,width=3.2pt]}]
+         (0,0) -- (60:26mm);
+    \node[font=\scriptsize, thr, anchor=north west, inner sep=1pt]
+         at (55:17mm) {$T>0$};
+
+    % --- delta 호 — 위(90)에서 벡터(60)까지 ------------------------------
+    \draw[ctrl, line width=0.5pt, -{Stealth[length=2.6pt,width=2pt]}]
+         (90:13mm) arc (90:60:13mm);
+    \node[font=\scriptsize, ctrl, anchor=south west, inner sep=1pt] at (73:14.5mm)
+         {$\delta$};
+
+    % --- 같은 각도에서 T < 0 — 반대 방향 ---------------------------------
+    \draw[errc, line width=0.9pt, densely dashed,
+          -{Stealth[length=4pt,width=3pt]}] (0,0) -- (240:22mm);
+    \node[font=\scriptsize, errc, anchor=north east, inner sep=1pt] at (240:23mm)
+         {$T<0$ — 같은 $\delta$, 뒤로 밂};
+
+    % --- 추진기 위치 표시 -------------------------------------------------
+    \node[circle, draw=thr, fill=white, line width=0.7pt, minimum size=3.4mm,
+          inner sep=0pt] at (0,0) {};
+  \end{scope}
+
+  \node[anchor=north west, font=\scriptsize, text width=88mm] at (0,-38)
+       {\textbf{부호를 외우지 말고 이렇게 읽는다} \\[4pt]
+        $\delta$ 는 \textbf{힘이 향하는 방향}이다 — 노즐이 아니라 힘의 방향으로 정했다 \\[2pt]
+        \hspace*{4mm}$\delta = 0$ \ 앞으로 밂 (전진) \\[2pt]
+        \hspace*{4mm}$\delta > 0$ \ 우현 쪽으로 기울어 밂 \\[2pt]
+        \hspace*{4mm}$\delta < 0$ \ 좌현 쪽으로 기울어 밂 \\[4pt]
+        $T$ 의 부호는 \textbf{방향을 뒤집는다} — 같은 $\delta$ 에서 $T<0$ 이면
+        화살표가 정반대를 가리킨다 \\[4pt]
+        $\;\to\;$ 그래서 한 힘을 적는 방법이 \textbf{언제나 둘}이다.
+        $(T,\ \delta)$ 와 $(-T,\ \delta \mp 180^\circ)$ 가 같은 힘이다.
+        (나)가 그 둘 중 쐐기에 가까운 쪽을 고르는 일이다};
+\end{scope}
+
+% ===========================================================================
+% (나) 규칙 (a) — 뒤쪽 90 도 접기
+% ===========================================================================
+\begin{scope}[shift={(98,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (0,46)
+       {(나) 쐐기 밖의 각도를 "뒤로 밂" 으로 바꿔 적는다};
+
+  \begin{scope}[shift={(44,0)}]
+
+    % --- 앞쪽 쐐기와 뒤쪽 쐐기 -------------------------------------------
+    \fill[guid!10] (0,0) -- (45:30mm) arc (45:135:30mm) -- cycle;
+    \fill[errc!8]  (0,0) -- (225:30mm) arc (225:315:30mm) -- cycle;
+    \draw[guid, line width=0.4pt] (45:30mm) arc (45:135:30mm);
+    \draw[errc, line width=0.4pt, densely dashed] (225:30mm) arc (225:315:30mm);
+    \node[font=\scriptsize, guid, anchor=south] at (90:31mm) {$T>0$ 로 낼 수 있는 쐐기};
+    \node[font=\scriptsize, errc, anchor=north] at (270:31mm) {$T<0$ 로 낼 수 있는 쐐기};
+
+    % --- 좌표축 — F_y 가 화면 오른쪽, F_x 가 화면 위 --------------------
+    \draw[axs] (0,-32) -- (0,34);
+    \node[font=\scriptsize, nav, anchor=south] at (0,34.5) {$F_x$ [N]};
+    \draw[axs] (-34,0) -- (34,0);
+    \node[font=\scriptsize, nav, anchor=west] at (34.5,0) {$F_y$ [N]};
+
+    % --- 힘 벡터 — (F_x, F_y) = (-50, 100) -> 화면 (20, -10) ------------
+    \draw[thr, line width=1.4pt, -{Stealth[length=4.4pt,width=3.2pt]}]
+         (0,0) -- (20,-10);
+    \node[font=\scriptsize, thr, anchor=north west, inner sep=1pt] at (20.5,-10.5)
+         {$(F_x, F_y) = (-50,\ 100)$};
+
+    % --- 접기 전 각도 호 — 위(90)에서 벡터(-26.565)까지 -----------------
+    \draw[warn, line width=0.5pt, -{Stealth[length=2.6pt,width=2pt]}]
+         (90:11mm) arc (90:-26.565:11mm);
+    \node[font=\scriptsize, warn, anchor=west, inner sep=1pt] at (40:12.5mm)
+         {$\delta = 116.565^\circ$};
+
+    % --- 접은 뒤의 노즐 방향 — delta = -63.435 -> theta = 153.435 -------
+    \draw[plant, line width=1.1pt, densely dashed,
+          -{Stealth[length=4pt,width=3pt]}] (0,0) -- (153.435:24mm);
+    \node[font=\scriptsize, plant, anchor=south east, inner sep=1pt]
+         at (153.435:25mm) {접은 각도 $\delta = -63.435^\circ$};
+
+    \node[circle, draw=thr, fill=white, line width=0.7pt, minimum size=3.4mm,
+          inner sep=0pt] at (0,0) {};
+  \end{scope}
+
+  \node[anchor=north west, font=\scriptsize, text width=88mm] at (0,-38)
+       {\textbf{접기는 힘을 바꾸지 않는다 — 적는 법만 바꾼다} \\[4pt]
+        \hspace*{4mm}접기 전 \quad $T = +111.803$ N, \ $\delta = +116.565^\circ$ \\[2pt]
+        \hspace*{4mm}접은 뒤 \quad $T = -111.803$ N, \ $\delta = -63.435^\circ$ \\[4pt]
+        두 줄이 가리키는 힘은 \textbf{같은 벡터}다. 서보를 반 바퀴 돌리는 대신
+        프로펠러를 거꾸로 돌린다 \\[4pt]
+        $-63.435^\circ$ 는 여전히 $\pm45^\circ$ 밖이다
+        $\;\to\;$ 규칙 (c)가 $-45^\circ$ 로 깎고, 깎인 만큼이 못 낸 힘이 된다.
+        1-7절의 null space 보정이 필요해지는 자리가 바로 여기다};
+\end{scope}
+
+% ===========================================================================
+% (다) az_polar 의 네 규칙 — 거치는 순서
+% ===========================================================================
+\draw[wire, soft] (0,-78) -- (186,-78);
+
+\node[font=\small\bfseries, anchor=north west] at (0,-83)
+     {(다) \texttt{az\_polar} 이 성분 둘을 지령 둘로 바꾸는 순서};
+
+\node[sbx, draw=guid, fill=guid!6] (p1) at (22,-108)
+     {\textbf{(a) 뒤쪽 $90^\circ$ 접기} \\[2pt]
+      $\lvert\delta\rvert > 90^\circ$ 이면 \\
+      $\delta \mathrel{-}= \operatorname{sign}(\delta)\,\pi$, \ $T \mathrel{\cdot}= -1$};
+
+\node[sbx, draw=soft, fill=white] (p2) at (70,-108)
+     {\textbf{(b) 반전 금지} \\[2pt]
+      \texttt{rev < 0.5} 이면 \\ (a)를 되돌림};
+
+\node[sbx, draw=warn, fill=warn!6] (p3) at (118,-108)
+     {\textbf{(c) 각도 한계} \\[2pt]
+      $\delta \leftarrow \operatorname{clip}(\delta, \pm d_{\max})$ \\
+      추력은 건드리지 않음};
+
+\node[sbx, draw=warn, fill=warn!6] (p4) at (166,-108)
+     {\textbf{(d) 추력 한계} \\[2pt]
+      $T \leftarrow \operatorname{clip}(T, \pm F_{\max})$ \\
+      비율로 줄이지 않음};
+
+\draw[ar] (p1) -- (p2);
+\draw[ar] (p2) -- (p3);
+\draw[ar] (p3) -- (p4);
+
+\node[font=\scriptsize, soft, anchor=south west] at (1,-93)
+     {입력 $(F_x, F_y)$ \ $\to$ \ $T=\sqrt{F_x^2+F_y^2}$, \
+      $\delta=\operatorname{atan2}(F_y,F_x)$};
+\node[font=\scriptsize, soft, anchor=south east] at (187,-93) {출력 $(T,\ \delta)$};
+
+\node[anchor=north west, font=\scriptsize, text width=88mm] at (0,-126)
+     {\textbf{(a)(b)는 요구를 지킨다} \\[4pt]
+      같은 힘을 다르게 적는 것뿐이므로 렌치가 바뀌지 않는다.
+      \texttt{rev = 0} (반전 금지)일 때만 (b)가 (a)를 되돌리고,
+      그 결과 각도가 한계를 한참 넘어 (c)에서 크게 잘린다};
+
+\node[anchor=north west, font=\scriptsize, text width=88mm] at (98,-126)
+     {\textcolor{warn}{\textbf{(c)(d)는 요구를 깎는다 — 조용히}} \\[4pt]
+      오류도 경고도 뜨지 않는다. 잘렸다는 사실은 1-10절의 요구 대비 실제
+      대조 그림에서만 보인다. 요구 전체를 같은 비율로 줄이는 처리를 두지
+      않은 이유는, 어느 축이 왜 모자랐는지가 그림에서 지워지기 때문이다};
+
+\end{tikzpicture}
+\end{document}
