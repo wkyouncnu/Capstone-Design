@@ -24,6 +24,11 @@ if ~getappdata(0, 'A3_skip_run'), clc; end
 %    1  A3_1_crab   순수 횡이동 — 옆걸음만. 선수각이 흔들리는지 본다
 %    2  A3_2_pose   위치·선수각 유지 — 목표점에 목표 선수각으로 서서 멈춘다
 %    3  A3_3_dock   단계 전이 접안 — 6주차 5단과 같은 과업
+%    4  A3_4_vrx    **가제보 연동** — 운동모델 자리에 Gazebo 를 둔다.
+%                   목표(x, y, psi) 하나만 바꿔 횡이동·위치유지·접안을 다 돌린다
+%                   (vrx_target 으로 고른다 — 모델은 하나뿐이다)
+%    5  A3_5_tilt   **서보 틸팅 확인** — 토픽이 맞는지, 각도가 ±45 deg 안에
+%                   머무는지를 배를 움직이지 않고 먼저 본다 (4단 전에 돌린다)
 stage = 1;
 
 st_in = getappdata(0, 'A3_stage');       % 다른 스크립트가 지정한 단이 있으면 그것
@@ -158,7 +163,80 @@ rec_fps  = 2;           % 재생 프레임률 [frame/s]. 1/animate_every = 실�
 rec_name = '';          % 파일 이름. 비우면 img/<모델이름>_anim.mp4 로 정한다
 
 %% ====================================================================
-%  6-2. 비교 실습이 값 하나만 바꿔 같은 과업을 다시 돌리는 자리
+%  6-2. VRX (Gazebo) 연동 — 4·5단만 쓴다
+% =====================================================================
+%   4단은 운동모델 자리에 Gazebo 를 둔다. 유도부·바깥고리·안쪽고리·배분기는
+%   오프라인 모델과 **글자 하나까지 같다**. 바뀌는 상자는 둘뿐이다.
+%
+%     오프라인   Alloc -> MotionModel (Wrench + 운동방정식 + 적분) -> 항법량
+%     4단 VRX    Alloc -> CmdPublisher (토픽 넷) -> Gazebo -> PoseSubscriber
+%
+%   모델은 **하나**다. 과업은 목표 (x, y, psi) 하나로 갈린다 — 횡이동도 접안도
+%   "그 자리에 그 자세로 서라" 의 특수한 경우일 뿐이다. 아래에서 고른다.
+vrx_target = 2;         % 1 = 순수 횡이동 · 2 = 위치·선수각 유지 · 3 = 접안 목표점
+                        %   목표값 자체는 3절에서 정한 것을 그대로 쓴다
+
+%   토픽 — 2026-11-13 실측으로 확인한 것 (3주차 경량 모델 W03_vrx_lite)
+%     추력   [N]   /wamv/thrusters/{left,right}/thrust
+%     방향각 [rad] /wamv/thrusters/{left,right}/pos
+%     넷 다 std_msgs/Float64 이고 ROS 2 쪽으로 이어져 있다
+%
+%   부호 — 가제보 조인트는 **반대로 돈다**
+%     본 부록의 delta 는 우현 쪽이 양수다. 가제보의 pos 는 좌현 쪽이 양수다.
+%     그래서 발행 직전에 -1 을 곱한다 (모델의 SignL · SignR 게인)
+%     실측 — pos = -90 deg · thrust = +300 N 에서 선체 횡속도 v = -0.311 m/s
+%            (우현으로 밀림) · r = +0.287 rad/s. delta = +90 deg 와 같은 꼴이다
+vrx_odom_topic = '/wamv/sensors/position/ground_truth_odometry';
+vrx_thr_topic  = {'/wamv/thrusters/left/thrust', '/wamv/thrusters/right/thrust'};
+vrx_pos_topic  = {'/wamv/thrusters/left/pos',    '/wamv/thrusters/right/pos'};
+vrx_pos_sign   = -1;    % pos = vrx_pos_sign * delta
+
+%   가제보를 띄울 때 준 칸과 세계 이름 — 실행 스크립트가 **일시정지를 풀** 때 쓴다
+%     칸(GZ_PARTITION)은 ROS_DOMAIN_ID 와 **다른 것**이다. 가제보 내부 통신은
+%     칸으로 갈린다. 띄운 터미널에서 export 한 값과 같아야 그 세계가 보인다
+%     멈춘 세계는 토픽도 명령도 다 받으면서 조인트만 0 으로 머문다 (_tools/vrx_play)
+vrx_partition = 'a3';
+vrx_world     = 'sydney_regatta';
+
+%   가제보 서보에 보내기 전에 지령을 다듬는 두 값 — **실측으로 정한 값**
+%     가제보의 조인트 위치 제어기(gz-sim-joint-position-controller-system)는
+%     계단 명령에 **울렁거린다**. 2026-11-13 실측 (W03_vrx_lite)
+%       계단 90 deg (-45 -> +45)        조인트가 75.7 deg 까지 넘어감
+%       계단이 이어지면                 ±180 deg 조인트 한계까지 밀려남
+%     변화율만 깎아도 남는 울렁거림이 있다 — 깎은 지령이 **계단참**이기 때문
+%       보내는 간격 50.0 Hz (한 칸 0.90 deg)  넘어감 +0.54 deg
+%       보내는 간격 12.5 Hz (한 칸 3.60 deg)  넘어감 +2.07 deg
+%     한 칸을 1 차 지연으로 뭉개면 넘어감이 사라진다 (같은 조건 실측)
+%       tau 0.15 s : +0.00 deg · tau 0.30 s : +0.00 deg
+%     즉 **지령을 다듬는 쪽**이 제어기 게인을 건드리는 것보다 안전하다
+%     (URDF 는 W03 주차 자료의 파일이므로 고치지 않는다)
+%     거는 자리는 parts/addPosSign.m 한 곳이다 — 4·5단이 같이 지난다
+svo_rate_deg = 45;      % 변화율 한계 [deg/s]
+svo_tau_s    = 0.2;     % 계단참을 뭉개는 1 차 지연 시간상수 [s]
+
+%   스폰 원점 — **설치마다 다르다.** 실행 스크립트(A3_4_vrx_run)가 ground truth
+%   첫 샘플로 재서 덮어쓴다. 여기 값은 재지 못했을 때의 자리표시다
+origin_north = 0;
+origin_east  = 0;
+
+%   5단 서보 틸팅 확인 — 각도 명령만 보내고 배는 세워 둔다
+%     한 줄이 [좌현 delta, 우현 delta] 이고 각 줄을 tilt_hold 초 유지한다
+%     ±60 deg 줄을 **일부러** 넣는다. 한계에 걸려 ±45 deg 로 깎이는 것을
+%     눈으로 보이려는 것이다 (가제보 조인트 자체의 한계는 ±180 deg 다)
+tilt_hold   = 4;        % 한 자세를 몇 초 유지하는가 [s]
+tilt_thrust = 0;        % 그 동안 줄 추력 [N]. 0 이면 배가 제자리에 있다
+tilt_deg    = [   0    0        % 중립
+                 30   30        % 둘이 같이 우현으로 조금
+                 45   45        % 한계 위
+                 60   60        % 한계 밖 -> 45 로 깎여야 한다
+                -60  -60        % 반대쪽 한계 밖
+                  0    0        % 중립
+                 45  -45        % 안쪽으로 모음
+                -45   45        % 바깥으로 벌림
+                  0    0 ];     % 중립으로 되돌리고 끝낸다
+
+%% ====================================================================
+%  6-3. 비교 실습이 값 하나만 바꿔 같은 과업을 다시 돌리는 자리
 % =====================================================================
 %   앞에서 정한 값 가운데 **이름이 같은 것**을 덮는다. 설정을 복사해 두 벌로
 %   만들지 않기 위한 장치다 — 한계를 바꿔 가며 같은 과업을 돌리는 A3-4 가 쓴다.
@@ -183,6 +261,8 @@ end
 beta_c = deg2rad(current_direction);
 d_max  = deg2rad(d_max_deg);
 d_rate = deg2rad(d_rate_deg);
+svo_rate = deg2rad(svo_rate_deg);     % 가제보 서보에 보낼 때 깎는 변화율
+svo_tau  = svo_tau_s;                 % 같은 자리에서 쓰는 1 차 지연 시간상수
 
 %   추진기 둘로 낼 수 있는 한계 — 배분식에서 바로 나온다
 %     순수 횡력   추진기 한 대의 추력 = |Y| * sqrt(b^2 + L^2) / (2b)
@@ -192,27 +272,38 @@ Y_max   = F_max / T_per_Y;                          % 낼 수 있는 횡력 한�
 N_max   = 2*half_beam*F_max;                        % 낼 수 있는 요 모멘트 한계 [N m]
 d_sway  = atan2(half_beam, l_thr);                  % 순수 횡이동 때의 각도 [rad]
 
-model_name = {'A3_1_crab','A3_2_pose','A3_3_dock'};
-stage_name = {'순수 횡이동 (crabbing)','위치·선수각 유지','단계 전이 접안'};
+model_name = {'A3_1_crab','A3_2_pose','A3_3_dock','A3_4_vrx','A3_5_tilt'};
+stage_name = {'순수 횡이동 (crabbing)','위치·선수각 유지','단계 전이 접안', ...
+              'VRX 연동 — 목표 하나로 세 과업','서보 틸팅 확인'};
 mdl = model_name{stage};
 
-switch stage
+%   목표 고르기 — **이 세 줄이 "모델 하나로 세 과업" 의 전부다**
+%     1·2·3단은 지금까지와 똑같이 움직인다 (tgt 이 stage 로 고정된다)
+%     4단만 vrx_target 을 본다 — 같은 slx 로 횡이동·위치유지·접안을 돌린다
+tgt = 2;                                     % 기본 — 위치·선수각 유지
+if stage == 1, tgt = 1; end                  % 1단은 횡이동 고정
+if stage == 4, tgt = vrx_target; end         % 4단만 고를 수 있다
+
+switch tgt
     case 1                                   % 순수 횡이동
         x_d = crab_north;  y_d = crab_east;  psi_d = deg2rad(crab_deg);
         psi_init = psi_d;                    % 이미 목표 선수각으로 서 있다
-    otherwise
+    case 3                                   % 접안 목표점 — 4단에서만 고를 수 있다
+        x_d = dock_north;  y_d = dock_east;  psi_d = deg2rad(dock_deg);
+        psi_init = atan2(y_d, x_d);
+    otherwise                                % 위치·선수각 유지
         x_d = hold_north;  y_d = hold_east;  psi_d = deg2rad(hold_deg);
         psi_init = atan2(y_d, x_d);          % 목표점을 향해 선다
 end
 
 %   과업 고르기 — 유도부(3단)와 그림이 함께 읽는다
 %     1  한 점에 그 자세로 서 있기   2  순수 횡이동   3  접안
-if stage == 1
+if tgt == 1
     task_mode = 2;
-elseif stage == 2
-    task_mode = 1;
+elseif stage == 3
+    task_mode = 3;                           % 3단만 단계 전이 유도부를 쓴다
 else
-    task_mode = 3;
+    task_mode = 1;
 end
 
 %   접안 유도부가 한 줄로 받는 묶음 — 순서가 곧 q(1..16). 6주차와 같은 꼴이다
@@ -250,6 +341,19 @@ end
 %   오프라인 모델 초기 상태 [u v r x_n y_n psi]'
 x0 = [0.1; 0; 0; 0; 0; psi_init];
 
+%   5단(서보 틸팅 확인)이 받는 묶음 — 순서가 곧 q(1..3+2n)
+%     q(1) 유지 시간 · q(2) 추력 · q(3) 줄 수 · 그 뒤로 [좌현;우현] 각도가 rad 로 쌓인다
+%     각도는 TiltCmd 안에서 **다시 한 번** ±d_max 로 깎인다 — 표에 한계 밖 값을
+%     일부러 넣어 두었으므로 그 깎임이 그림에 보인다
+if stage == 5
+    T_run  = tilt_hold * size(tilt_deg, 1);   % 표를 한 번 다 돌 만큼만 돈다
+    animate = 0;                              % 배가 움직이지 않으므로 항적이 없다
+    rec_on  = 0;
+    stop_on = 0;                              % 끝까지 돈다 — 도착 판정이 없다
+end
+tilt_q = [tilt_hold; tilt_thrust; size(tilt_deg,1); ...
+          reshape(deg2rad(tilt_deg)', [], 1)];
+
 if rev_on > 0.5
     rev_txt = '허용';
 else
@@ -264,7 +368,24 @@ fprintf('  배분 방식 %d — %s\n', alloc_mode, alloc_txt{alloc_mode});
 fprintf('  각도 한계 ±%.0f deg · 변화율 %.0f deg/s · 추력 반전 %s\n', ...
         d_max_deg, d_rate_deg, rev_txt);
 fprintf('  낼 수 있는 한계 — 횡력 %.1f N · 요 모멘트 %.1f N m\n', Y_max, N_max);
-fprintf('  목표 (%.1f, %.1f) m · %.1f deg\n', x_d, y_d, rad2deg(psi_d));
+if stage == 5
+    fprintf('  서보 틸팅 확인 — 자세 %d 가지 × %.0f 초 = %.0f 초. 추력 %.0f N\n', ...
+            size(tilt_deg,1), tilt_hold, T_run, tilt_thrust);
+    fprintf('  토픽 — %s · %s\n', vrx_pos_topic{1}, vrx_pos_topic{2});
+else
+    fprintf('  목표 (%.1f, %.1f) m · %.1f deg\n', x_d, y_d, rad2deg(psi_d));
+end
+if stage >= 4
+    fprintf(['  서보 지령 다듬기 — 변화율 %.0f deg/s · 1 차 지연 %.2f s\n' ...
+             '    계단 명령에 가제보 서보가 울렁거려 ±%.0f deg 를 넘는다 (실측)\n'], ...
+            svo_rate_deg, svo_tau_s, d_max_deg);
+end
+if stage == 4
+    tgt_txt = {'순수 횡이동','위치·선수각 유지','접안 목표점'};
+    fprintf('  VRX 목표 %d — %s (vrx_target 으로 바꾼다)\n', tgt, tgt_txt{tgt});
+    fprintf('  스폰 원점 (%.1f, %.1f) m — 실행 스크립트가 재서 덮어쓴다\n', ...
+            origin_north, origin_east);
+end
 if stop_on > 0.5
     fprintf('  정지 — 오차 %.2f m · %.1f deg 안에서 %.0f 초 유지 (최대 %.0f 초)\n', ...
             e_stop, epsi_stop, stop_hold, T_run);
@@ -287,4 +408,6 @@ if animate
 end
 load_system(mdl);
 out = sim(mdl);
-A3_plot(out, sprintf('%d단 — %s', stage, stage_name{stage}));
+if stage <= 4                 % 5단은 A3_plot 이 읽는 24 개 신호를 내지 않는다
+    A3_plot(out, sprintf('%d단 — %s', stage, stage_name{stage}));
+end

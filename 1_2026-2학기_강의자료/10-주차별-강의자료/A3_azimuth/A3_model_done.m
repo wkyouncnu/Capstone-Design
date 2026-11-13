@@ -18,6 +18,10 @@ st  = A3_stage_of(mdl);
 %  난 경우에도 영상이 온전히 남는다. 녹화를 켜지 않았으면 아무 일도 하지 않는다
 try, A3_animate('close'); catch, end
 
+if st >= 5
+    return                                  % 5단 — 서보 틸팅 확인. A3_plot 이 읽는
+end                                         %   24 개 신호가 아예 없다
+
 if evalin('base', 'exist(''out'',''var'')') ~= 1
     return                                  % sim() 으로 돌린 것 — 부른 쪽이 그린다
 end

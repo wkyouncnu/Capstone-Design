@@ -74,7 +74,7 @@ persistent fig axXY axG axW axE axD axT axV ...
            hWc hWa hBand hPx hPxr hPy hPyr hDL hDR hTLp hTRp hPsi hPsir ...
            trX trY tv De Dd Dt Dv Dw mode gx gy gpsi Rs Fm dmx dsw bb LL ...
            tLast tPrev scFix dpkv nsat nall wpk ...
-           vw recPath recSz recN recWarn
+           vw recPath recSz recN recWarn recT
 
 %% ---- 인자 없이 부르면 창 핸들만 돌려준다 (캡처용) ----------------------
 if nargin == 0
@@ -93,7 +93,17 @@ if (nargin == 1) && (ischar(x_n) || isstring(x_n)) && strcmpi(x_n, 'close')
     if ~isempty(vw)
         try, close(vw); catch, end
         fprintf('  녹화 저장 — %s  (%d 프레임)\n', recPath, recN);
-        vw = [];  recPath = '';  recSz = [];  recN = 0;
+        %  프레임이 찍힌 **벽시계 시각**을 영상 옆에 같이 남긴다.
+        %  가제보 화면과 나란히 붙일 때 (gz_split_video) 이 시각으로 짝을 맞춘다 —
+        %  둘을 같은 루프에서 찍지 않으므로 프레임 번호로는 맞출 수 없다
+        if ~isempty(recT)
+            try
+                stamp = recT(:);
+                [sd_, sn_] = fileparts(recPath);
+                save(fullfile(sd_, [sn_ '_t.mat']), 'stamp');
+            catch, end
+        end
+        vw = [];  recPath = '';  recSz = [];  recN = 0;  recT = [];
     end
     if nargout > 0
         if ~isempty(fig) && isvalid(fig), f = fig; else, f = []; end
@@ -151,7 +161,7 @@ if newRun
     %  앞 실행의 녹화가 열린 채 남아 있으면 먼저 닫는다 — 닫지 않은 mp4 는
     %  깨진 파일이 되므로, 닫기를 잊은 실행이 다음 실행을 망치지 않게 한다
     if ~isempty(vw), try, close(vw); catch, end, vw = []; end
-    recN = 0;  recSz = [];  recWarn = false;  recPath = '';
+    recN = 0;  recSz = [];  recWarn = false;  recPath = '';  recT = [];
     rec = 0;      try, rec = evalin('base','rec_on');   catch, end
     if rec > 0.5
         fps = 4;  try, fps = evalin('base','rec_fps');  catch, end
@@ -590,6 +600,10 @@ if ~isempty(vw)
             if isempty(recSz), recSz = size(im); end
             writeVideo(vw, im);
             recN = recN + 1;
+            %  짝 맞추기용 벽시계 시각. TimeZone 을 반드시 준다 — 없으면
+            %  posixtime 이 **지역시를 UTC 로 읽어** 시간대만큼 (한국 9 시간)
+            %  어긋난 값을 내놓는다. 오류는 나지 않는다
+            recT(recN) = posixtime(datetime('now', 'TimeZone', 'local'));
         elseif ~recWarn
             recWarn = true;
             warning('A3_animate:recsize', ...
