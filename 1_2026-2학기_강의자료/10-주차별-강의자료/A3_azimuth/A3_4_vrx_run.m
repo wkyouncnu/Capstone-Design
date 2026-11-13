@@ -98,10 +98,72 @@ function S = A3_4_vrx_run(task, rec, T)
     %% [2] 일시정지를 푼다 — 멈춘 세계는 오류를 내지 않는다
     vrx_play(part, world);
 
-    %% [3]·[4] 스폰 원점과 RTF — 한 구독으로 둘을 같이 잰다
-    fprintf('[3] 스폰 원점과 RTF 측정 (12 초, 그대로 기다릴 것)\n');
-    node = ros2node(sprintf('/a3_vrx_probe_%d', randi(9999)), DOMAIN);
-    sb   = ros2subscriber(node, ODOM, 'nav_msgs/Odometry');
+    %% [3] 출발 상태 맞추기 — **위치와 선수각을 오프라인 초기값에 맞춘다**
+    %    (1) 선수각 — competition.launch.py 는 WAM-V 를 ENU yaw 1.0 rad 로 놓는다
+    %          Model('wamv', 'wam-v', [-532, 200, 0, 0, 0, 1])
+    %        NED 로는 32.70 deg 다. 오프라인 모델은 psi_init 을 적분기 초기값으로
+    %        넣으므로 선수각 오차 0 에서 출발한다. 맞추지 않고 비교하면 **환경
+    %        차이가 아니라 출발 자세 차이**를 재게 된다
+    %          1단(순수 횡이동) 은 psi_d = 0 이라 배가 먼저 32.7 deg 를 돌아야
+    %          한다. 도는 동안 횡력이 북쪽 성분을 가져 x 가 부풀었다가
+    %          되돌아온다 — "순수 횡이동" 이 아니게 된다
+    %          2026-11-13 실측 · 맞추기 전 선수각 오차 최대 47.09 · RMS 12.41 deg
+    %                            맞춘 뒤                  9.29 ·      2.38 deg
+    %    (2) 위치 — 앞 과업이 끝난 자리에서 다음 과업이 출발하면 안 된다.
+    %        1단이 12 m 동쪽으로 간 자리에서 2단을 시작하면 서로 견줄 수 없다.
+    %        매 실행 전에 **스폰 지점으로 되돌린다** ("실험 간 초기화")
+    %    월드 파일은 3주차 자료가 같이 쓰는 상류 파일이므로 고치지 않는다.
+    %    실행 직전에 /world/<세계>/set_pose 로 맞춘다
+    HOME_ENU = [-532 200];       % launch.py 의 Model('wamv', ...) 스폰 지점
+    node  = ros2node(sprintf('/a3_vrx_probe_%d', randi(9999)), DOMAIN);
+    sb    = ros2subscriber(node, ODOM, 'nav_msgs/Odometry');
+    mi    = receive(sb, 15);
+    psi_i = B('psi_init');
+    psi_0 = spawn_psi(mi);
+    p0    = mi.pose.pose.position;
+    fprintf('[3] 지금 상태 — ENU (%.2f, %.2f) · 선수각 %.2f deg\n', ...
+            p0.x, p0.y, rad2deg(psi_0));
+    fprintf('    맞출 값   — ENU (%.2f, %.2f) · 선수각 %.2f deg\n', ...
+            HOME_ENU(1), HOME_ENU(2), rad2deg(psi_i));
+    if hypot(p0.x - HOME_ENU(1), p0.y - HOME_ENU(2)) > 0.5 || ...
+       abs(ssa_local(psi_0 - psi_i)) > deg2rad(0.5)
+        if ~vrx_set_pose(psi_i, [HOME_ENU p0.z], part, world)
+            error('A3_4_vrx_run:setpose', ...
+                  '출발 상태를 맞추지 못했습니다 — 위 응답을 볼 것');
+        end
+        %  되읽기는 **새 구독으로** 한다. receive 는 쌓인 옛 메시지부터 꺼내고,
+        %  오도메트리는 100 Hz 로 들어와 수백 개가 밀려 있다. 옛 구독으로
+        %  읽으면 옮기기 전의 자세를 보고 "안 움직였다" 고 오해한다
+        clear sb;  pause(0.5);
+        sb = ros2subscriber(node, ODOM, 'nav_msgs/Odometry');
+        mi = receive(sb, 15);
+        pf = mi.pose.pose.position;
+        fprintf('    맞춘 뒤   — ENU (%.2f, %.2f) · 선수각 %.2f deg\n', ...
+                pf.x, pf.y, rad2deg(spawn_psi(mi)));
+        if hypot(pf.x - HOME_ENU(1), pf.y - HOME_ENU(2)) > 1.0
+            error('A3_4_vrx_run:setpose', ...
+                  '옮겼다는데 자리가 그대로입니다 — set_pose 요청을 볼 것');
+        end
+    else
+        fprintf('    이미 맞아 있습니다 — 그대로 갑니다\n');
+    end
+
+    %  속도가 가라앉기를 기다린다 — set_pose 는 **속도를 0 으로 되돌리지 않고**,
+    %  앞 실험의 잔류 속도와 물결이 남아 있다. 남은 채로 출발하면 초반 과도가
+    %  실행마다 달라져 오프라인과 견줄 수 없다 (실측: 같은 조건에서 선수각
+    %  오차 RMS 가 2.4 ~ 7.2 deg 로 흔들렸다)
+    for k = 1:40
+        mv = receive(sb, 10);
+        lv = mv.twist.twist.linear;  av = mv.twist.twist.angular;
+        spd = hypot(lv.x, lv.y);
+        if spd < 0.03 && abs(av.z) < deg2rad(1), break; end
+        pause(1);
+    end
+    fprintf('    가라앉힘 %d 초 뒤 — 속도 %.3f m/s · 각속도 %.2f deg/s\n', ...
+            k, spd, rad2deg(av.z));
+
+    %% [3-2]·[4] 스폰 원점과 RTF — 한 구독으로 둘을 같이 잰다
+    fprintf('[3-2] 스폰 원점과 RTF 측정 (12 초, 그대로 기다릴 것)\n');
     m0   = receive(sb, 15);   w = tic;
     t0   = double(m0.header.stamp.sec) + double(m0.header.stamp.nanosec)*1e-9;
     pause(12);
@@ -124,15 +186,30 @@ function S = A3_4_vrx_run(task, rec, T)
     set_param(mdl, 'EnablePacing', 'on', 'PacingRate', num2str(RTF));
 
     %% [5] 가제보 화면 떠내기 — sim() 이 도는 동안 MATLAB 은 묶여 있다
+    %    카메라는 **고정 탑다운**이다. follow 로 선박에 매달면 배가 늘 화면
+    %    한가운데 머물러 **얼마나 갔는지가 보이지 않는다.** 배경을 멈춰 둔다
+    %    중심은 출발점과 목표점의 중점, 고도는 둘이 다 들어올 만큼
+    %    (보이는 폭 약 1.155 * 고도 [m])
     cap = [];
     if rec > 0
-        cap = gz_shot_capture(T_run/RTF + 20, 0.4, part, 'wamv', 18);
+        q   = B('stop_q');                      % [북; 동; 선수각]
+        cen = [oe + q(2)/2, on + q(1)/2];       % 중점을 ENU (동, 북) 으로
+        alt = max(25, 0.9*(hypot(q(1), q(2)) + 16));
+        cap = gz_shot_capture(T_run/RTF + 20, 0.4, part, cen, alt);
     end
 
     %% [6] 실행
     fprintf('[5] 실행 — 최대 %g 초 (실시간 약 %.0f 초)\n', T_run, T_run/RTF);
     out = sim(mdl);
     try, A3_animate('close'); catch, end         % mp4 는 닫아야 재생된다
+
+    %  초반 과도 구간을 들여다볼 때 쓰는 묶음 — 베이스의 out 은 건드리지 않는다
+    assignin('base', 'A3_dbg', struct( ...
+        't',   out.log_psi.Time,      'psi', out.log_psi.Data, ...
+        'pref',out.log_psi_ref.Data,  'xn',  out.log_x_n.Data, ...
+        'yn',  out.log_y_n.Data,      'r',   out.log_r.Data, ...
+        'dL',  out.log_dL.Data,       'dR',  out.log_dR.Data, ...
+        'TL',  out.log_TL.Data,       'TR',  out.log_TR.Data));
 
     %  중립으로 돌려 둔다 — 플러그인은 **마지막 명령을 계속 쓴다**.
     %  두고 나가면 다음 실험이 돌아간 추진기 위에서 시작한다
@@ -180,4 +257,19 @@ function S = A3_4_vrx_run(task, rec, T)
 
     setappdata(0, 'A3_override', []);            % **반드시 비운다**
     assignin('base', 'S', S);
+end
+
+% ======================================================================
+function psi = spawn_psi(msg)
+%SPAWN_PSI  오도메트리 한 건에서 NED 선수각을 꺼낸다 [rad]
+%   ENU yaw 를 쿼터니언에서 뽑고 psi = ssa(pi/2 - yaw) 로 돌린다
+    q   = msg.pose.pose.orientation;
+    yaw = atan2(2*(q.w*q.z + q.x*q.y), 1 - 2*(q.y^2 + q.z^2));
+    psi = ssa_local(pi/2 - yaw);
+end
+
+% ======================================================================
+function a = ssa_local(a)
+%SSA_LOCAL  각도를 (-pi, pi] 로 접는다
+    a = atan2(sin(a), cos(a));
 end
