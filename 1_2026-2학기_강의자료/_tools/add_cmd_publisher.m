@@ -21,6 +21,9 @@ nThr = numel(topics);
 assert(numel(inp) == nThr, 'add_cmd_publisher: 토픽 %d 개, 입력 이름 %d 개', nThr, numel(inp));
 %  블록 이름에 붙는 꼬리표 — FL -> L, FR -> R, FB -> B. 이름을 따로 짓지 않는다
 side = cellfun(@(nm) nm(2:end), inp, 'UniformOutput', false);
+%  꼬리가 겹치면(TL·dL·TR·dR -> L·L·R·R) 블록 이름이 부딪친다. 그때는 이름 전체를 쓴다
+%  (부록 A3 의 네 토픽 — 추력 둘 + 방향각 둘. 5~9주차의 FL·FR·FB 는 그대로 L·R·B)
+if numel(unique(side)) < nThr, side = inp; end
 
 s = add_subsys(m, 'CmdPublisher', [pos(1) pos(2) pos(1)+150 pos(2)+90], ...
                inp, {}, gnc_colour('ros'));
