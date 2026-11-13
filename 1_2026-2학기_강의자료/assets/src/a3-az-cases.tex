@@ -1,0 +1,190 @@
+% assets/a3-az-cases.svg — az_polar 의 네 규칙 중 어느 둘이 요구를 깎는가
+%
+%   bash _tools/tikz2svg.sh assets/src/a3-az-cases.tex assets/a3-az-cases.svg
+%
+% 이 그림이 말하는 것
+%   (가) 규칙 (b) — 역추력을 금지하면 각도가 쐐기 **밖으로** 밀려난다
+%   (나) 규칙 (c) — 각도를 깎으면 크기는 그대로인데 방향이 틀어진다
+%   두 경우 모두 오류도 경고도 뜨지 않는다. 깎인 만큼이 못 낸 힘이다
+%
+% 화면 좌표 — a3-az-polar.tex 와 같은 규칙
+%   화면 x = F_y (우현 쪽), 화면 y = F_x (선수 쪽)
+%   화면 극각 theta = 90 - delta
+%       delta =   0  ->  theta =  90   (위)
+%       delta = +45  ->  theta =  45   (오른위)
+%       delta = -45  ->  theta = 135   (왼위)
+%   쐐기는 theta 가 45~135 인 위쪽 부채꼴
+%
+% 숫자의 출처 — A3_azpolar_example.m 실행 출력 (한 자리까지 같다)
+%   (가) 경우 c:  (F_x, F_y) = (-150, 80),  rev = 0
+%        delta_raw = 151.9275  ->  접기  T = -170, delta = -28.0725
+%        ->  되돌리기  T = +170, delta = +151.9275  ->  깎기  delta = 45
+%        실제 (120.2082, 120.2082),  |e| = 273.1833 N
+%   (나) 경우 d:  (F_x, F_y) = (25, 50),  rev = 1
+%        T = 55.9017, delta = 63.4349  ->  깎기  delta = 45
+%        실제 (39.5285, 39.5285),  |e| = 17.9089 N
+%
+% 눈금
+%   (가) 0.14 mm/N — 170 N 이 23.8 mm
+%   (나) 0.40 mm/N — 55.9017 N 이 22.36 mm
+%   각도를 깎아도 T 는 그대로이므로 두 화살표의 **길이가 같다**.
+%   그래서 반지름이 같은 호 위에서 벡터가 미끄러진다
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\tikzset{
+  axs/.style  = {nav, line width=0.6pt, -{Stealth[length=3.4pt,width=2.4pt]}},
+  fvec/.style = {thr, line width=1.4pt, -{Stealth[length=4.4pt,width=3.2pt]}},
+  cvec/.style = {warn, line width=1.4pt, -{Stealth[length=4.4pt,width=3.2pt]}},
+  evec/.style = {errc, line width=0.9pt, densely dashed,
+                 -{Stealth[length=3.6pt,width=2.6pt]}},
+  hub/.style  = {circle, draw=thr, fill=white, line width=0.7pt,
+                 minimum size=3.4mm, inner sep=0pt},
+}
+
+% ===========================================================================
+% (가) 규칙 (b) — 역추력 금지가 각도를 쐐기 밖으로 밀어낸다
+% ===========================================================================
+\begin{scope}[shift={(0,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (0,48)
+       {(가) \texttt{rev = 0} — 역추력을 금지하면 각도가 쐐기 밖으로 밀려난다};
+
+  \begin{scope}[shift={(44,0)}]
+
+    % --- 앞쪽 쐐기 / 뒤쪽 쐐기 -------------------------------------------
+    \fill[guid!10] (0,0) -- (45:30mm) arc (45:135:30mm) -- cycle;
+    \fill[errc!8]  (0,0) -- (225:30mm) arc (225:315:30mm) -- cycle;
+    \draw[guid, line width=0.4pt] (45:30mm) arc (45:135:30mm);
+    \draw[errc, line width=0.4pt, densely dashed] (225:30mm) arc (225:315:30mm);
+    \node[font=\scriptsize, guid, anchor=south] at (90:31mm)
+         {$T>0$ 로 낼 수 있는 쐐기};
+    \node[font=\scriptsize, errc, anchor=north] at (270:31mm)
+         {$T<0$ 로 낼 수 있는 쐐기 — \texttt{rev = 0} 이면 금지};
+
+    % --- 좌표축 ----------------------------------------------------------
+    \draw[axs] (0,-33) -- (0,34);
+    \node[font=\scriptsize, nav, anchor=south] at (0,34.5) {$F_x$ [N]};
+    \draw[axs] (-34,0) -- (34,0);
+    \node[font=\scriptsize, nav, anchor=west] at (34.5,0) {$F_y$ [N]};
+
+    % --- 요구한 힘 — theta = 90 - 151.9275 = -61.9275, 길이 23.8 --------
+    \draw[fvec] (0,0) -- (-61.9275:23.8mm);
+    \node[font=\scriptsize, thr, anchor=north west, inner sep=1pt]
+         at (-61.9275:24.5mm) {요구 $(-150,\ 80)$};
+
+    % --- 깎인 뒤 실제로 난 힘 — theta = 45, 길이 같음 -------------------
+    \draw[cvec] (0,0) -- (45:23.8mm);
+    \node[font=\scriptsize, warn, anchor=south west, inner sep=1pt]
+         at (45:24.5mm) {실제 $(120.2,\ 120.2)$};
+
+    % --- 같은 반지름의 호 위에서 미끄러진다 ------------------------------
+    \draw[warn, line width=0.45pt, densely dotted,
+          -{Stealth[length=3pt,width=2.2pt]}]
+         (-61.9275:23.8mm) arc (-61.9275:45:23.8mm);
+
+    % --- 못 낸 힘 ---------------------------------------------------------
+    \draw[evec] (-61.9275:23.8mm) -- (45:23.8mm);
+    \node[font=\scriptsize, errc, anchor=west, inner sep=1pt] at (18,-6)
+         {$\lvert \mathbf{e} \rvert = 273.2$ N};
+
+    % --- rev = 1 이면 접은 표기가 쐐기 안이다 ----------------------------
+    \draw[plant, line width=1.0pt, densely dashed,
+          -{Stealth[length=4pt,width=3pt]}] (0,0) -- (118.0725:21mm);
+    \draw[plant, line width=0.35pt] (118.0725:21.5mm) -- (-16,-9);
+    \node[font=\scriptsize, plant, anchor=north east, inner sep=1pt, align=right]
+         at (-16,-10)
+         {\texttt{rev = 1} 이면 여기서 끝 \\ $\delta = -28.07^\circ$ — 쐐기 안};
+
+    \node[hub] at (0,0) {};
+  \end{scope}
+
+  \node[anchor=north west, font=\scriptsize, text width=88mm] at (0,-38)
+       {\textbf{(a) 접기와 (b) 되돌리기는 같은 힘을 다르게 적을 뿐이다} \\[4pt]
+        \hspace*{4mm}접기 전 \quad $T = +170$ N, \ $\delta = +151.93^\circ$ \\[2pt]
+        \hspace*{4mm}접은 뒤 \quad $T = -170$ N, \ $\delta = -28.07^\circ$
+        \quad $\to$ \ 쐐기 안 \\[2pt]
+        \hspace*{4mm}되돌린 뒤 \ $T = +170$ N, \ $\delta = +151.93^\circ$
+        \quad $\to$ \ 쐐기 밖 \\[4pt]
+        \textcolor{warn}{\textbf{요구를 깎은 것은 (b)가 아니라 그 다음의 (c)다}} \\[2pt]
+        되돌리기 자체는 힘을 바꾸지 않는다. 다만 각도를 쐐기 \textbf{밖}
+        $151.93^\circ$ 에 놓아 (c)가 $45^\circ$ 로 깎게 만든다 \\[4pt]
+        결과: 뒤로 밀어야 할 상황에서 \textbf{앞으로} $120$ N 을 민다.
+        부호가 뒤집힌 힘이므로 위치 제어가 발산한다 \\[4pt]
+        $\;\to\;$ 그래서 이 과목의 배분기는 \texttt{rev = 1} (역추력 허용)
+        을 기본값으로 둔다};
+\end{scope}
+
+% ===========================================================================
+% (나) 규칙 (c) — 각도를 깎으면 크기는 남고 방향이 틀어진다
+% ===========================================================================
+\begin{scope}[shift={(98,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (0,48)
+       {(나) 규칙 (c) — 각도를 깎으면 크기는 그대로, 방향만 틀어진다};
+
+  \begin{scope}[shift={(44,0)}]
+
+    % --- 쐐기 -------------------------------------------------------------
+    \fill[guid!10] (0,0) -- (45:30mm) arc (45:135:30mm) -- cycle;
+    \draw[guid, line width=0.4pt] (45:30mm) arc (45:135:30mm);
+    \draw[soft, line width=0.4pt, densely dashed] (0,0) -- (45:32mm);
+    \draw[soft, line width=0.4pt, densely dashed] (0,0) -- (135:32mm);
+    \node[font=\scriptsize, guid, anchor=south west] at (45:33mm)
+         {$\delta = +45^\circ$ — 한계};
+    \node[font=\scriptsize, guid, anchor=south east] at (135:33mm)
+         {$\delta = -45^\circ$};
+
+    % --- 좌표축 ----------------------------------------------------------
+    \draw[axs] (0,-10) -- (0,34);
+    \node[font=\scriptsize, nav, anchor=south] at (0,34.5) {$F_x$ [N]};
+    \draw[axs] (-34,0) -- (34,0);
+    \node[font=\scriptsize, nav, anchor=west] at (34.5,0) {$F_y$ [N]};
+
+    % --- 요구한 힘 — theta = 90 - 63.4349 = 26.5651, 길이 22.36 ---------
+    \draw[fvec] (0,0) -- (26.5651:22.36mm);
+    \node[font=\scriptsize, thr, anchor=north west, inner sep=1pt, align=left]
+         at (21,10.5) {요구 $(25,\ 50)$ \\ $\delta = 63.43^\circ$};
+
+    % --- 깎인 뒤 — theta = 45, 같은 길이 --------------------------------
+    \draw[cvec] (0,0) -- (45:22.36mm);
+    \node[font=\scriptsize, warn, anchor=south west, inner sep=1pt, align=left]
+         at (45:23.5mm) {실제 $(39.53,\ 39.53)$ \\ $\delta = 45^\circ$ — 한계에 붙음};
+
+    % --- 같은 반지름 호 ---------------------------------------------------
+    \draw[warn, line width=0.45pt, densely dotted,
+          -{Stealth[length=3pt,width=2.2pt]}]
+         (26.5651:22.36mm) arc (26.5651:45:22.36mm);
+    \node[font=\scriptsize, warn, anchor=north west, inner sep=1pt, align=left]
+         at (24,-4) {$T = 55.90$ N 고정 \\ — 화살표 길이가 같다};
+
+    % --- 못 낸 힘 ---------------------------------------------------------
+    \draw[evec] (26.5651:22.36mm) -- (45:22.36mm);
+    \draw[errc, line width=0.35pt] (18.5,13) -- (9,13);
+    \node[font=\scriptsize, errc, anchor=east, inner sep=1pt] at (8.5,13)
+         {$\lvert \mathbf{e} \rvert = 17.91$ N};
+
+    \node[hub] at (0,0) {};
+  \end{scope}
+
+  \node[anchor=north west, font=\scriptsize, text width=88mm] at (0,-38)
+       {\textbf{깎기는 벡터를 호 위에서 미끄러뜨린다} \\[4pt]
+        $T$ 는 건드리지 않으므로 화살표 \textbf{길이가 같다}.
+        방향만 한계선에 붙는다 \\[4pt]
+        \hspace*{4mm}요구 \quad $F_x = 25$, \ $F_y = 50$ \\[2pt]
+        \hspace*{4mm}실제 \quad $F_x = 39.53$, \ $F_y = 39.53$ \\[2pt]
+        \hspace*{4mm}차이 \quad $F_x$ 는 \textbf{더} 나고, $F_y$ 는 \textbf{덜} 난다 \\[4pt]
+        \textcolor{warn}{\textbf{요구하지 않은 축까지 늘어나므로 유의}} \\[2pt]
+        전진력을 요구하지 않았는데 $14.53$ N 이 앞으로 더 났다.
+        옆으로 가려는 배가 앞으로 밀린다 \\[4pt]
+        $\;\to\;$ 이 $(25,\ 50)$ 이 1-7절 예제의 \textbf{우현 추진기}다.
+        null space 보정은 깎기가 일어나기 \textbf{전에}
+        $(25,\ 25)$ 로 바꿔 놓아 이 손실을 없앤다};
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

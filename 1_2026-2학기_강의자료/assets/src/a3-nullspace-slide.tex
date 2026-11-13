@@ -1,0 +1,263 @@
+% assets/a3-nullspace-slide.svg — null space 보정은 두 힘을 반대로 미끄러뜨린다
+%
+%   bash _tools/tikz2svg.sh assets/src/a3-nullspace-slide.tex assets/a3-nullspace-slide.svg
+%
+% 이 그림이 말하는 것
+%   (가) 보정 전 — 우현 추진기의 방향각이 +-45 도 쐐기를 넘는다
+%   (나) 보정 후 — 두 추진기의 F_y 를 +lambda / -lambda 로 밀면 쐐기 안으로 들어온다
+%        요구 렌치는 하나도 바뀌지 않는다
+%   (다) lambda 를 1 차 부등식 둘로 풀어 고르는 과정
+%
+% 화면 좌표 — 평면도 (위에서 내려다본 그림)
+%   화면 x = y_b (우현 쪽),  화면 y = x_b (선수 쪽)
+%   따라서 화면 위쪽이 뱃머리, 오른쪽이 우현
+%   방향각 delta 는 x_b 에서 y_b 쪽으로 재므로 화면 극각 theta = 90 - delta
+%
+% 눈금
+%   기하  12 mm/m  — b = 1 m 가 12 mm, L = 2 m 가 24 mm
+%   힘    0.1 mm/N — 225 N 이 22.5 mm
+%   (다)  0.3 mm/N — lambda 축
+%
+% 숫자의 출처 — A3_nullspace_example.m 실행 출력 (한 자리까지 같다)
+%   요구 tau_c = [250; 100; 0],  손풀이 기하 b = 1 m, L = 2 m
+%   보정 전  u_e  = [225;  50;  25;  50]   delta = 12.5288 / 63.4349 deg
+%   보정 후  u_e* = [225;  75;  25;  25]   delta = 18.4349 / 45.0000 deg
+%   lambda 구간  좌현 [-275, 175],  우현 [25, 75],  교집합 [25, 75],  lambda* = 25
+
+\documentclass[border=6pt]{standalone}
+\input{capstone-style}
+
+\newcommand{\drawhull}{%
+  \draw[soft, line width=0.5pt]
+       (-15.5,-28) -- (-15.5,24) -- (-12,31) -- (-8.5,24) -- (-8.5,-28) -- cycle;
+  \draw[soft, line width=0.5pt]
+       ( 15.5,-28) -- ( 15.5,24) -- ( 12,31) -- (  8.5,24) -- (  8.5,-28) -- cycle;
+  \draw[soft, line width=0.5pt] (-8.5, 10) -- (8.5, 10);
+  \draw[soft, line width=0.5pt] (-8.5,-10) -- (8.5,-10);
+  \node[font=\scriptsize, soft, anchor=south] at (0,32) {선수};
+}
+
+\newcommand{\drawwedge}{%
+  \fill[guid!10] (0,0) -- (45:15mm) arc (45:135:15mm) -- cycle;
+  \draw[guid, line width=0.35pt] (45:15mm) arc (45:135:15mm);
+  \draw[soft, line width=0.35pt, densely dashed] (0,0) -- (45:16.5mm);
+  \draw[soft, line width=0.35pt, densely dashed] (0,0) -- (135:16.5mm);
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+
+\tikzset{
+  fvec/.style = {thr,   line width=1.4pt, -{Stealth[length=4.2pt,width=3pt]}},
+  bvec/.style = {warn,  line width=1.4pt, -{Stealth[length=4.2pt,width=3pt]}},
+  ovec/.style = {soft,  line width=0.8pt, densely dashed,
+                 -{Stealth[length=3.4pt,width=2.4pt]}},
+  lam/.style  = {plant, line width=0.9pt, -{Stealth[length=3.6pt,width=2.6pt]}},
+  axs/.style  = {nav,   line width=0.6pt, -{Stealth[length=3.4pt,width=2.4pt]}},
+  hub/.style  = {circle, draw=thr, fill=white, line width=0.7pt,
+                 minimum size=3mm, inner sep=0pt},
+  tag/.style  = {circle, draw=ink, fill=white, line width=0.4pt,
+                 minimum size=3.6mm, inner sep=0pt, font=\tiny},
+}
+
+% ===========================================================================
+% (가) 보정 전
+% ===========================================================================
+\begin{scope}[shift={(0,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (0,56)
+       {(가) 보정 전 — 우현 추진기가 쐐기를 넘는다};
+
+  \begin{scope}[shift={(44,14)}]
+    \drawhull
+
+    % --- 좌현 추진기 ------------------------------------------------------
+    \begin{scope}[shift={(-12,-24)}]
+      \drawwedge
+      \draw[fvec] (0,0) -- (77.4712:23.05mm);
+      \node[tag] at (77.4712:25.5mm) {L};
+      \node[hub] at (0,0) {};
+    \end{scope}
+
+    % --- 우현 추진기 — 쐐기 밖 -------------------------------------------
+    \begin{scope}[shift={(12,-24)}]
+      \drawwedge
+      \draw[bvec] (0,0) -- (26.5651:5.59mm);
+      \draw[warn, line width=0.4pt, densely dotted] (0,0) -- (26.5651:17mm);
+      \node[tag, draw=warn] at (26.5651:19.5mm) {R};
+      \node[font=\scriptsize, warn, anchor=south west, inner sep=1.5pt]
+           at (26.5651:21mm) {쐐기 밖};
+      \node[hub] at (0,0) {};
+    \end{scope}
+
+    % --- 숫자 ------------------------------------------------------------
+    \node[anchor=north west, font=\scriptsize, align=left] at (-34,-34)
+         {$\mathbf{u}_e = \mathbf{B}^{+}\boldsymbol{\tau}_c
+           = [\,225,\ 50,\ 25,\ 50\,]^{\mathsf T}$ \\[3pt]
+          L \ \ $T = 230.49$ N, \ $\delta = 12.53^\circ$ \quad
+          \textcolor{plant}{쐐기 안} \\[2pt]
+          R \ \ $T = 55.90$ N, \ $\delta = 63.43^\circ$ \quad
+          \textcolor{warn}{쐐기 밖 — $18.43^\circ$ 초과}};
+  \end{scope}
+
+  \node[anchor=north west, font=\scriptsize, text width=88mm] at (0,-34)
+       {\textbf{최소 노름 해는 각도 한계를 모른다} \\[4pt]
+        $\mathbf{B}^{+}$ 는 $\lVert \mathbf{u}_e \rVert$ 만 가장 작게 만든다.
+        쐐기는 계산에 들어가 있지 않다 \\[4pt]
+        우현의 $F_x$ 가 $25$ N 밖에 안 되는데 $F_y$ 가 $50$ N 이라
+        $\delta = \arctan(50/25) = 63.43^\circ$ 가 된다 \\[4pt]
+        \textcolor{warn}{\textbf{여기서 그냥 깎으면 요구가 줄어든다}} \\[2pt]
+        규칙 (c)가 $45^\circ$ 로 깎는다. 실제로 나는 렌치는
+        $[\,264.53,\ 89.53,\ 6.41\,]$ 로, 요구와
+        $\lVert \mathbf{e} \rVert = 19.02$ 만큼 어긋난다 \\[2pt]
+        요구하지도 않은 선회 모멘트 $6.41$ N\,m 가 따라 나온다};
+\end{scope}
+
+% ===========================================================================
+% (나) 보정 후
+% ===========================================================================
+\begin{scope}[shift={(98,0)}]
+
+  \node[font=\small\bfseries, anchor=north west] at (0,56)
+       {(나) 보정 후 — 두 힘을 $+\lambda$ 와 $-\lambda$ 로 반대로 민다};
+
+  \begin{scope}[shift={(44,14)}]
+    \drawhull
+
+    % --- 좌현 — F_y 가 50 -> 75 (+lambda) --------------------------------
+    \begin{scope}[shift={(-12,-24)}]
+      \drawwedge
+      \draw[ovec] (0,0) -- (77.4712:23.05mm);
+      \draw[fvec] (0,0) -- (71.5651:23.72mm);
+      \node[tag] at (71.5651:28mm) {L};
+      % 미끄러짐 — 끝점이 오른쪽으로 lambda*0.1 = 2.5 mm
+      \draw[lam] (5,22.5) -- (7.5,22.5);
+      \node[font=\scriptsize, plant, anchor=north, inner sep=1.5pt] at (6.2,21.6)
+           {$+\lambda$};
+    \end{scope}
+
+    % --- 우현 — F_y 가 50 -> 25 (-lambda) --------------------------------
+    \begin{scope}[shift={(12,-24)}]
+      \drawwedge
+      \draw[ovec] (0,0) -- (26.5651:5.59mm);
+      \draw[fvec] (0,0) -- (45:3.54mm);
+      \draw[plant, line width=0.4pt, densely dotted] (0,0) -- (45:17mm);
+      \node[tag, draw=plant] at (45:19.5mm) {R};
+      \draw[lam] (5,2.5) -- (2.5,2.5);
+      \node[font=\scriptsize, plant, anchor=north, inner sep=1.5pt] at (3.8,1.8)
+           {$-\lambda$};
+      \node[font=\scriptsize, plant, anchor=south west, inner sep=1.5pt]
+           at (45:21mm) {한계에 붙음};
+      \node[hub] at (0,0) {};
+    \end{scope}
+    \begin{scope}[shift={(-12,-24)}]
+      \node[hub] at (0,0) {};
+    \end{scope}
+
+    % --- 숫자 ------------------------------------------------------------
+    \node[anchor=north west, font=\scriptsize, align=left] at (-34,-34)
+         {$\mathbf{u}_e^{\ast} = \mathbf{u}_e + 25\,\mathbf{n}
+           = [\,225,\ 75,\ 25,\ 25\,]^{\mathsf T}$,
+           \quad $\mathbf{n} = [\,0,\ 1,\ 0,\ -1\,]^{\mathsf T}$ \\[3pt]
+          L \ \ $T = 237.17$ N, \ $\delta = 18.43^\circ$ \quad
+          \textcolor{plant}{쐐기 안} \\[2pt]
+          R \ \ $T = 35.36$ N, \ $\delta = 45.00^\circ$ \quad
+          \textcolor{plant}{경계에 정확히 붙음}};
+  \end{scope}
+
+  \node[anchor=north west, font=\scriptsize, text width=88mm] at (0,-34)
+       {\textbf{요구 렌치는 하나도 바뀌지 않는다} \ \
+        $\mathbf{B}\mathbf{u}_e^{\ast} = [\,250,\ 100,\ 0\,]^{\mathsf T}$ \\[4pt]
+        \hspace*{2mm}$X$ \ \ $F_x$ 를 건드리지 않았다 \\[2pt]
+        \hspace*{2mm}$Y$ \ \ 한쪽은 $+\lambda$, 다른 쪽은 $-\lambda$ —
+        더하면 $0$ \\[2pt]
+        \hspace*{2mm}$N$ \ \ 두 추진기가 \textbf{같은 전후 위치}
+        $x_b = -L$ 에 있다. 모멘트 팔이 둘 다 $-L$ 로 같으므로
+        $-L(+\lambda) - L(-\lambda) = 0$ \\[4pt]
+        \textcolor{plant}{\textbf{대가는 추력 노름뿐이다}} \ \
+        $\lVert \mathbf{u}_e \rVert$ 가 $237.17 \to 239.79$ ($+1.11\,\%$).
+        최소 노름 해에서 벗어났으니 당연하다 \\[2pt]
+        $1.11\,\%$ 더 쓰고 못 낸 힘 $19.02$ 를 $0$ 으로 만든다};
+\end{scope}
+
+% ===========================================================================
+% (다) lambda 를 고르는 법 — 1 차 부등식 둘
+% ===========================================================================
+\draw[wire, soft] (0,-84) -- (186,-84);
+
+\node[font=\small\bfseries, anchor=north west] at (0,-89)
+     {(다) $\lambda$ 는 부등식 둘의 교집합에서 고른다 — 반복도 최적화기도 없다};
+
+\begin{scope}[shift={(95,-132)}]
+
+  % --- 축 ----------------------------------------------------------------
+  \draw[axs] (-95,0) -- (62,0);
+  \node[font=\scriptsize, nav, anchor=west] at (63,0) {$\lambda$ [N]};
+
+  \foreach \v/\x in {-275/-82.5, 0/0, 25/7.5, 75/22.5, 175/52.5} {
+    \draw[ink, line width=0.4pt] (\x,-1.6) -- (\x,1.6);
+  }
+  \node[font=\scriptsize, soft, anchor=north] at (-82.5,-2) {$-275$};
+  \node[font=\scriptsize, soft, anchor=north] at (52.5,-2)  {$175$};
+  \node[font=\scriptsize, soft, anchor=north east, inner sep=1pt] at (-1,-2) {$0$};
+  \node[font=\scriptsize, plant, anchor=north west, inner sep=1pt] at (8.5,-2) {$25$};
+  \node[font=\scriptsize, plant, anchor=north west, inner sep=1pt] at (23,-2) {$75$};
+
+  % --- 좌현 구간 ----------------------------------------------------------
+  \draw[guid, line width=2pt] (-82.5,12) -- (52.5,12);
+  \draw[guid, line width=0.8pt] (-82.5,9.5) -- (-82.5,14.5);
+  \draw[guid, line width=0.8pt] ( 52.5,9.5) -- ( 52.5,14.5);
+  \node[font=\scriptsize, guid, anchor=south west, inner sep=1.5pt] at (-82.5,15)
+       {좌현 \ $\lvert 50 + \lambda \rvert \le \tan 45^\circ \cdot \lvert 225 \rvert$
+        \quad $\to$ \quad $-275 \le \lambda \le 175$ \ \ (넉넉하다)};
+
+  % --- 우현 구간 ----------------------------------------------------------
+  \draw[ctrl, line width=2pt] (7.5,27) -- (22.5,27);
+  \draw[ctrl, line width=0.8pt] ( 7.5,24.5) -- ( 7.5,29.5);
+  \draw[ctrl, line width=0.8pt] (22.5,24.5) -- (22.5,29.5);
+  \node[font=\scriptsize, ctrl, anchor=south west, inner sep=1.5pt] at (-82.5,30)
+       {우현 \ $\lvert 50 - \lambda \rvert \le \tan 45^\circ \cdot \lvert 25 \rvert$
+        \quad $\to$ \quad $25 \le \lambda \le 75$ \ \
+        \textbf{여기가 답을 결정한다}};
+  \draw[ctrl, line width=0.35pt] (-20,30) -- (7,28);
+
+  % --- 교집합 -------------------------------------------------------------
+  \draw[plant, line width=2.6pt] (7.5,-14) -- (22.5,-14);
+  \node[font=\scriptsize, plant, anchor=west, inner sep=1.5pt] at (24,-14)
+       {교집합 $[\,25,\ 75\,]$ — 이 안이면 두 추진기 모두 쐐기 안};
+
+  % --- lambda = 0 ---------------------------------------------------------
+  \draw[errc, line width=0.6pt, densely dashed] (0,-22) -- (0,20);
+  \node[font=\scriptsize, errc, anchor=north east, inner sep=1.5pt, align=right]
+       at (-1,-23)
+       {$\lambda = 0$ — 보정하지 않음 \\ 교집합 밖이다};
+
+  % --- lambda* = 25 -------------------------------------------------------
+  \draw[plant, line width=0.7pt] (7.5,-18) -- (7.5,24);
+  \node[circle, fill=plant, inner sep=0pt, minimum size=1.8mm] at (7.5,-14) {};
+  \node[font=\scriptsize, plant, anchor=north west, inner sep=1.5pt, align=left]
+       at (9,-23)
+       {$\lambda^{\ast} = 25$ — 교집합 안에서 $0$ 에 가장 가까운 값 \\
+        \texttt{lam = min(max(0, lo), hi)} 한 줄이 이것을 고른다};
+\end{scope}
+
+\node[anchor=north west, font=\scriptsize, text width=88mm] at (0,-172)
+     {\textbf{부등식이 1 차인 이유} \\[4pt]
+      각도 한계 $\lvert \delta_i \rvert \le \delta_{\max}$ 를 그대로 쓰면
+      $\arctan$ 이 들어가 풀기 어렵다 \\[2pt]
+      양변에 $\tan$ 을 씌우면
+      $\lvert F_{y,i} \rvert \le \tan\delta_{\max}\,\lvert F_{x,i} \rvert$ —
+      $\lambda$ 에 대한 1 차 부등식이 된다 \\[2pt]
+      $F_x$ 는 $\mathbf{n}$ 이 건드리지 않으므로 우변이 상수다};
+
+\node[anchor=north west, font=\scriptsize, text width=88mm] at (98,-172)
+     {\textbf{교집합이 비면} \\[4pt]
+      어떤 $\lambda$ 로도 두 추진기를 동시에 쐐기 안에 넣을 수 없다는 뜻이다 \\[2pt]
+      이때는 가운데 값 $(\mathrm{lo}+\mathrm{hi})/2$ 를 쓴다 —
+      어느 한쪽만 맞추는 것보다 \textbf{덜 넘긴다} \\[4pt]
+      \textcolor{warn}{\textbf{보정은 못 내는 요구를 내게 해 주지 않는다}} \\[2pt]
+      쐐기 밖의 요구를 쐐기 안으로 \textbf{옮겨 줄 뿐}이다.
+      요구 자체가 추력 한계를 넘으면 규칙 (d)가 그대로 깎는다};
+
+\end{tikzpicture}
+\end{document}
