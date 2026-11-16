@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="850" viewBox="0 0 1020 850" font-family="Malgun Gothic, sans-serif">
+<rect width="1020" height="850" fill="#ffffff"/>
+<text x="30" y="36" font-size="21" font-weight="bold" fill="#1e293b">TP_vrx_lite — 프로그램 계층</text>
+<text x="30" y="58" font-size="15" fill="#64748b">위에서 아래로 쓰는 순서다. 같은 줄의 것은 서로 독립이다.</text>
+
+<rect x="20" y="74" width="980" height="118" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="34" y="96" font-size="16" font-weight="bold" fill="#334155">1 · 준비 — 학기에 한 번. 월드와 배를 만든다</text>
+<rect x="40" y="108" width="300" height="68" rx="5" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="56" y="132" font-size="16" font-weight="bold" fill="#1d4ed8">make_term_world.py</text>
+<text x="56" y="156" font-size="15" fill="#334155">my_world.sdf → kaboat_term.sdf</text>
+<rect x="360" y="108" width="300" height="68" rx="5" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="376" y="132" font-size="16" font-weight="bold" fill="#1d4ed8">make_wamv_term.sh</text>
+<text x="376" y="156" font-size="15" fill="#334155">선미 2 + 선수 1 · LiDAR · 카메라</text>
+<rect x="680" y="108" width="300" height="68" rx="5" fill="#f1f5f9" stroke="#64748b" stroke-dasharray="5 4"/>
+<text x="696" y="132" font-size="15" fill="#475569">낳는 것 : kaboat_term.sdf</text>
+<text x="696" y="156" font-size="15" fill="#475569">wamv_term_components.xacro</text>
+
+<rect x="20" y="204" width="980" height="118" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="34" y="226" font-size="16" font-weight="bold" fill="#334155">2 · 띄우기·끄기 — 터미널 셋</text>
+<rect x="40" y="238" width="300" height="68" rx="5" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+<text x="56" y="262" font-size="16" font-weight="bold" fill="#0d9488">run_vrx_term.sh</text>
+<text x="56" y="286" font-size="15" fill="#334155">가제보 + ros_gz_bridge</text>
+<rect x="360" y="238" width="300" height="68" rx="5" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+<text x="376" y="262" font-size="16" font-weight="bold" fill="#0d9488">rviz_term.sh</text>
+<text x="376" y="286" font-size="15" fill="#334155">tp.rviz — Fixed Frame 고정</text>
+<rect x="680" y="238" width="300" height="68" rx="5" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+<text x="696" y="262" font-size="16" font-weight="bold" fill="#dc2626">stop_vrx.sh</text>
+<text x="696" y="286" font-size="15" fill="#334155">반드시 끝에 돌린다 (메모리)</text>
+
+<rect x="20" y="334" width="980" height="118" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="34" y="356" font-size="16" font-weight="bold" fill="#334155">3 · 배를 옮기고, 보는 눈을 옮긴다 — 확인할 자리로 간다</text>
+<rect x="40" y="368" width="460" height="68" rx="5" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+<text x="56" y="392" font-size="16" font-weight="bold" fill="#d97706">goto.sh  &lt;지점&gt;</text>
+<text x="56" y="416" font-size="15" fill="#334155">배를 16 개 지점 중 하나로 순간이동 — 물리를 건드린다</text>
+<rect x="520" y="368" width="460" height="68" rx="5" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+<text x="536" y="392" font-size="16" font-weight="bold" fill="#d97706">topview.sh  &lt;자리&gt;</text>
+<text x="536" y="416" font-size="15" fill="#334155">보는 카메라만 공중으로 — 물리는 그대로</text>
+
+<rect x="20" y="464" width="980" height="238" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="34" y="486" font-size="16" font-weight="bold" fill="#334155">4 · 구간별 인지 확인 예제 — 알고리즘이 아니라 센서가 보이는지만 본다</text>
+<rect x="40" y="498" width="940" height="46" rx="5" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="56" y="527" font-size="16" fill="#1d4ed8"><tspan font-weight="bold">tp_percep.py</tspan>  —  공용 토막 : 토픽 이름 · QoS · 색 범위 · 방위각 · 그림 저장   (단독 실행하지 않음)</text>
+<g stroke="#94a3b8" stroke-width="1.5">
+  <line x1="113" y1="544" x2="113" y2="574"/><line x1="269" y1="544" x2="269" y2="574"/>
+  <line x1="425" y1="544" x2="425" y2="574"/><line x1="581" y1="544" x2="581" y2="574"/>
+  <line x1="737" y1="544" x2="737" y2="574"/><line x1="900" y1="544" x2="900" y2="574"/>
+</g>
+<rect x="40" y="574" width="146" height="112" rx="5" fill="#ffffff" stroke="#1d4ed8"/>
+<text x="113" y="598" font-size="15" font-weight="bold" fill="#1d4ed8" text-anchor="middle">see_gate</text>
+<text x="113" y="622" font-size="15" fill="#334155" text-anchor="middle">항로추종</text>
+<text x="113" y="646" font-size="15" fill="#64748b" text-anchor="middle">카메라</text>
+<text x="113" y="670" font-size="15" fill="#64748b" text-anchor="middle">적·녹 한 쌍</text>
+
+<rect x="196" y="574" width="146" height="112" rx="5" fill="#ffffff" stroke="#1d4ed8"/>
+<text x="269" y="598" font-size="15" font-weight="bold" fill="#1d4ed8" text-anchor="middle">see_station</text>
+<text x="269" y="622" font-size="15" fill="#334155" text-anchor="middle">위치유지</text>
+<text x="269" y="646" font-size="15" fill="#64748b" text-anchor="middle">오도메트리</text>
+<text x="269" y="670" font-size="15" fill="#64748b" text-anchor="middle">5 m 안인가</text>
+
+<rect x="352" y="574" width="146" height="112" rx="5" fill="#ffffff" stroke="#0d9488"/>
+<text x="425" y="598" font-size="15" font-weight="bold" fill="#0d9488" text-anchor="middle">see_dock_cloud</text>
+<text x="425" y="622" font-size="15" fill="#334155" text-anchor="middle">도킹</text>
+<text x="425" y="646" font-size="15" fill="#64748b" text-anchor="middle">라이다</text>
+<text x="425" y="670" font-size="15" fill="#64748b" text-anchor="middle">구조물 점군</text>
+
+<rect x="508" y="574" width="146" height="112" rx="5" fill="#ffffff" stroke="#1d4ed8"/>
+<text x="581" y="598" font-size="15" font-weight="bold" fill="#1d4ed8" text-anchor="middle">see_placard</text>
+<text x="581" y="622" font-size="15" fill="#334155" text-anchor="middle">도킹</text>
+<text x="581" y="646" font-size="15" fill="#64748b" text-anchor="middle">카메라</text>
+<text x="581" y="670" font-size="15" fill="#64748b" text-anchor="middle">표식 셋</text>
+
+<rect x="664" y="574" width="146" height="112" rx="5" fill="#ffffff" stroke="#1d4ed8"/>
+<text x="737" y="598" font-size="15" font-weight="bold" fill="#1d4ed8" text-anchor="middle">see_search</text>
+<text x="737" y="622" font-size="15" fill="#334155" text-anchor="middle">탐색</text>
+<text x="737" y="646" font-size="15" fill="#64748b" text-anchor="middle">카메라</text>
+<text x="737" y="670" font-size="15" fill="#64748b" text-anchor="middle">색 → 선회쪽</text>
+
+<rect x="820" y="574" width="160" height="112" rx="5" fill="#ffffff" stroke="#0d9488"/>
+<text x="900" y="598" font-size="15" font-weight="bold" fill="#0d9488" text-anchor="middle">see_obstacle_cloud</text>
+<text x="900" y="622" font-size="15" fill="#334155" text-anchor="middle">장애물회피</text>
+<text x="900" y="646" font-size="15" fill="#64748b" text-anchor="middle">라이다</text>
+<text x="900" y="670" font-size="15" fill="#64748b" text-anchor="middle">덩어리·최근접</text>
+
+<rect x="20" y="714" width="980" height="118" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="34" y="736" font-size="16" font-weight="bold" fill="#334155">5 · 묶어 돌리고 화면을 남긴다 — 제출물이 여기서 나온다</text>
+<rect x="40" y="748" width="300" height="68" rx="5" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+<text x="56" y="772" font-size="16" font-weight="bold" fill="#0d9488">check_all.sh</text>
+<text x="56" y="796" font-size="15" fill="#334155">goto → 예제 → 캡처를 구간마다 반복</text>
+<rect x="360" y="748" width="300" height="68" rx="5" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+<text x="376" y="772" font-size="16" font-weight="bold" fill="#0d9488">rec_run.sh</text>
+<text x="376" y="796" font-size="15" fill="#334155">가제보·Rviz2·카메라 동시 녹화</text>
+<rect x="680" y="748" width="300" height="68" rx="5" fill="#ffffff" stroke="#64748b"/>
+<text x="696" y="772" font-size="15" fill="#475569"><tspan font-weight="bold">xcap.py</tspan>   창을 PNG·mp4 로 뜯는다</text>
+<text x="696" y="796" font-size="15" fill="#475569"><tspan font-weight="bold">rec_cam.py</tspan>   카메라 영상을 mp4 로</text>
+<g stroke="#94a3b8" stroke-width="1.5" fill="none">
+  <path d="M 340 782 L 360 782"/><path d="M 660 782 L 680 782"/>
+</g>
+</svg>

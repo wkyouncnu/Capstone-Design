@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="860" viewBox="0 0 980 860" font-family="Malgun Gothic, sans-serif">
+<rect width="980" height="860" fill="#ffffff"/>
+<rect x="100" y="52" width="790" height="760" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+
+<g stroke="#64748b" stroke-width="2" fill="#64748b">
+  <line x1="930" y1="130" x2="930" y2="70"/>
+  <polygon points="930,62 925,76 935,76"/>
+</g>
+<text x="930" y="150" font-size="17" fill="#334155" text-anchor="middle">북</text>
+<text x="941" y="96" font-size="15" fill="#64748b">동 →</text>
+
+<line x1="130" y1="836" x2="225" y2="836" stroke="#334155" stroke-width="3"/>
+<line x1="130" y1="830" x2="130" y2="842" stroke="#334155" stroke-width="3"/>
+<line x1="225" y1="830" x2="225" y2="842" stroke="#334155" stroke-width="3"/>
+<text x="235" y="842" font-size="16" fill="#334155">10 m</text>
+<text x="880" y="842" font-size="15" fill="#64748b" text-anchor="end">좌표는 가제보 ENU · 동(x) 북(y) · 월드 kaboat_term</text>
+
+<!-- 가상경계선 -->
+<g stroke="#dc2626" stroke-width="4" stroke-linecap="square">
+  <line x1="129" y1="316" x2="452" y2="316"/>
+  <line x1="129" y1="601" x2="452" y2="601"/>
+  <line x1="452" y1="601" x2="452" y2="573"/>
+  <line x1="452" y1="497" x2="452" y2="316"/>
+  <line x1="129" y1="601" x2="129" y2="497"/>
+  <line x1="129" y1="421" x2="129" y2="316"/>
+</g>
+<text x="290" y="306" font-size="16" fill="#dc2626" text-anchor="middle">가상경계선 — 넘으면 실격</text>
+
+<g fill="#fb923c" stroke="#c2410c" stroke-width="1.5">
+  <circle cx="243" cy="554" r="9"/><circle cx="357" cy="554" r="9"/>
+  <circle cx="186" cy="497" r="9"/><circle cx="300" cy="497" r="9"/><circle cx="414" cy="497" r="9"/>
+  <circle cx="243" cy="440" r="9"/><circle cx="357" cy="440" r="9"/>
+  <circle cx="186" cy="383" r="9"/><circle cx="300" cy="383" r="9"/><circle cx="414" cy="383" r="9"/>
+  <circle cx="243" cy="326" r="9"/><circle cx="357" cy="326" r="9"/>
+</g>
+
+<circle cx="452" cy="497" r="8" fill="#dc2626"/>
+<circle cx="452" cy="573" r="8" fill="#16a34a"/>
+<circle cx="129" cy="421" r="8" fill="#dc2626"/>
+<circle cx="129" cy="497" r="8" fill="#16a34a"/>
+
+<!-- 항로추종 게이트 8 쌍 -->
+<g>
+  <circle cx="813" cy="668" r="8" fill="#dc2626"/><circle cx="737" cy="668" r="8" fill="#16a34a"/>
+  <circle cx="832" cy="611" r="8" fill="#dc2626"/><circle cx="756" cy="611" r="8" fill="#16a34a"/>
+  <circle cx="832" cy="554" r="8" fill="#dc2626"/><circle cx="756" cy="554" r="8" fill="#16a34a"/>
+  <circle cx="813" cy="497" r="8" fill="#dc2626"/><circle cx="737" cy="497" r="8" fill="#16a34a"/>
+  <circle cx="813" cy="440" r="8" fill="#dc2626"/><circle cx="737" cy="440" r="8" fill="#16a34a"/>
+  <circle cx="832" cy="383" r="8" fill="#dc2626"/><circle cx="756" cy="383" r="8" fill="#16a34a"/>
+  <circle cx="832" cy="326" r="8" fill="#dc2626"/><circle cx="756" cy="326" r="8" fill="#16a34a"/>
+  <circle cx="813" cy="269" r="8" fill="#dc2626"/><circle cx="737" cy="269" r="8" fill="#16a34a"/>
+</g>
+
+<circle cx="699" cy="174" r="47" fill="#fffbeb" stroke="#d97706" stroke-width="2" stroke-dasharray="7 5"/>
+<circle cx="699" cy="174" r="7" fill="#f97316"/>
+<circle cx="518" cy="535" r="47" fill="#fffbeb" stroke="#d97706" stroke-width="2" stroke-dasharray="7 5"/>
+<circle cx="518" cy="535" r="7" fill="#f97316"/>
+
+<g fill="#e2e8f0" stroke="#475569" stroke-width="2">
+  <rect x="461" y="98" width="162" height="22"/>
+  <rect x="461" y="120" width="12" height="45"/>
+  <rect x="510" y="120" width="12" height="45"/>
+  <rect x="562" y="120" width="12" height="45"/>
+  <rect x="611" y="120" width="12" height="45"/>
+</g>
+<polygon points="490,103 496,115 484,115" fill="#dc2626"/>
+<circle cx="542" cy="109" r="6" fill="#16a34a"/>
+<rect x="588" y="103" width="12" height="12" fill="#2563eb"/>
+<text x="542" y="88" font-size="16" fill="#334155" text-anchor="middle">도킹 3 베이 — 개구부 남향 · 입구 북 227</text>
+
+<circle cx="623" cy="364" r="9" fill="#dc2626"/>
+<circle cx="547" cy="468" r="9" fill="#16a34a"/>
+<circle cx="490" cy="373" r="9" fill="#eab308"/>
+
+<!-- 항로 -->
+<path d="M 784 725 L 777 695 L 777 258 L 735 205 L 699 177 L 640 168 L 565 178 L 578 310 L 623 364 L 585 425 L 547 468 L 500 420 L 490 373 L 505 495 L 518 535 L 452 535 L 400 470 L 330 540 L 260 470 L 190 540 L 148 480 L 129 459"
+      fill="none" stroke="#1d4ed8" stroke-width="3" stroke-dasharray="10 6" opacity="0.7"/>
+<polygon points="129,459 147,453 145,471" fill="#1d4ed8" opacity="0.7"/>
+
+<g transform="translate(784,725)"><polygon points="0,-14 8,6 -8,6" fill="#1e293b"/></g>
+
+<g font-size="18" font-weight="bold">
+  <circle cx="690" cy="600" r="17" fill="#1d4ed8"/><text x="690" y="607" fill="#ffffff" text-anchor="middle">1</text>
+  <circle cx="752" cy="128" r="17" fill="#1d4ed8"/><text x="752" y="135" fill="#ffffff" text-anchor="middle">2</text>
+  <circle cx="542" cy="212" r="17" fill="#1d4ed8"/><text x="542" y="219" fill="#ffffff" text-anchor="middle">3</text>
+  <circle cx="575" cy="405" r="17" fill="#1d4ed8"/><text x="575" y="412" fill="#ffffff" text-anchor="middle">4</text>
+  <circle cx="470" cy="488" r="17" fill="#1d4ed8"/><text x="470" y="495" fill="#ffffff" text-anchor="middle">5</text>
+  <circle cx="290" cy="440" r="17" fill="#1d4ed8"/><text x="290" y="447" fill="#ffffff" text-anchor="middle">6</text>
+  <circle cx="162" cy="459" r="17" fill="#1d4ed8"/><text x="162" y="466" fill="#ffffff" text-anchor="middle">7</text>
+</g>
+
+<g font-size="16" fill="#334155">
+  <text x="784" y="762" text-anchor="middle">출발 (−525, 168)</text>
+  <text x="784" y="790" text-anchor="middle">항로추종 게이트 8 쌍</text>
+  <text x="784" y="812" text-anchor="middle" font-size="15" fill="#64748b">폭 8 m · 간격 6 m · 북 174 ~ 216</text>
+  <text x="699" y="248" text-anchor="middle">WP1 (−534, 226)</text>
+  <text x="518" y="602" text-anchor="middle">WP2 (−553, 188)</text>
+  <text x="640" y="358">빨강 (−542, 206)</text>
+  <text x="565" y="474">초록 (−550, 195)</text>
+  <text x="502" y="356">노랑 (−556, 205)</text>
+  <text x="440" y="540" text-anchor="end">진입 게이트 (−560)</text>
+  <text x="143" y="532">종료 게이트 (−594)</text>
+</g>
+</svg>

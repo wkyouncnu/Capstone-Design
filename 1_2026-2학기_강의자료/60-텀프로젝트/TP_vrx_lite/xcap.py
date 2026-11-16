@@ -14,6 +14,16 @@
 #       화면 뜯기 libX11 의 XGetImage   (ctypes 로 직접 부른다)
 #       PNG·mp4  OpenCV               (설치돼 있음)
 #
+#   Rviz2 의 3 차원 화면이 얼어붙는 문제 (2026-11-17 발견·수정)
+#     Rviz2 본 창만 뜯으면 **3 차원 화면이 맨 처음 장면에 멈춰 있다.**
+#     19 장을 찍어 비교했더니 3 차원 영역의 화소가 전부 같았다 (평균 차이 0.00).
+#     까닭 — Rviz2 의 OpenGL 화면은 **따로 떨어진 자식 X 창**이고, 부모 창을
+#     XGetImage 로 뜯으면 부모의 backing store (옛 장면) 가 나온다.
+#     고친 법 — 자식 창을 따로 뜯어 부모 위에 제자리에 얹는다 (기본 동작).
+#       부모 0xe00015 1400x820  ← 자식 0xe00011 933x716 (3 차원) · 0xe00017 393x152 (영상)
+#     `--raw` 를 주면 옛 동작(부모만 뜯기)으로 돌아간다. 비교할 때만 쓴다.
+#     가제보는 이 문제가 없다 — 창 하나로 그린다.
+#
 #   속도 (2026-11-16 실측)
 #     XGetImage 는 생각보다 빠르다 — 1200x1000 창을 초당 약 100 장 뜯는다.
 #     그래서 오히려 상한을 걸어야 한다 : mp4(MPEG-4) 는 프레임률 분모가 65535 를
@@ -82,29 +92,56 @@ class Grabber(object):
         return out
 
 
-def windows():
-    """xwininfo -root -tree 를 읽어 (id, 폭, 높이, 제목) 목록을 낸다."""
+#  xwininfo 한 줄 :  0xe00011 "rviz2": ("rviz2" "rviz2")  933x716+442+68  +2699+201
+#                     id      제목                        폭x높이+부모기준  +화면기준
+WPAT = re.compile(r'(0x[0-9a-f]+)\s+"([^"]*)":.*?\s(\d+)x(\d+)'
+                  r'\+(-?\d+)\+(-?\d+)\s+\+(-?\d+)\+(-?\d+)')
+
+
+def windows(small=False):
+    """xwininfo -root -tree 를 읽어 (id, 폭, 높이, 화면 x, 화면 y, 제목) 목록을 낸다."""
     out = subprocess.run(['xwininfo', '-root', '-tree'],
                          capture_output=True, text=True,
                          env=dict(os.environ, DISPLAY=os.environ.get('DISPLAY', ':0')))
     rows = []
-    pat = re.compile(r'(0x[0-9a-f]+)\s+"([^"]*)".*?\s(\d+)x(\d+)\+')
     for line in out.stdout.splitlines():
-        m = pat.search(line)
+        m = WPAT.search(line)
         if not m:
             continue
-        wid, title, w, h = int(m.group(1), 16), m.group(2), int(m.group(3)), int(m.group(4))
-        if w < 300 or h < 200:               # 1x1 더미 창과 작은 자식 창은 버린다
+        wid, title = int(m.group(1), 16), m.group(2)
+        w, h = int(m.group(3)), int(m.group(4))
+        ax, ay = int(m.group(7)), int(m.group(8))
+        if not small and (w < 300 or h < 200):   # 1x1 더미 창과 작은 자식 창은 버린다
             continue
-        rows.append((wid, w, h, title))
+        rows.append((wid, w, h, ax, ay, title))
     return rows
 
 
 def pick(name):
-    cands = [r for r in windows() if name.lower() in r[3].lower()]
+    cands = [r for r in windows() if name.lower() in r[5].lower()]
     if not cands:
         return None
     return max(cands, key=lambda r: r[1] * r[2])   # 가장 큰 것 = 본 창
+
+
+def inner_windows(parent):
+    """부모 창 안에 들어 있는 자식 창들을 (id, 폭, 높이, 부모기준 x, 부모기준 y) 로 낸다.
+
+    Rviz2 의 OpenGL 화면처럼 따로 그려지는 자식 창을 찾아내기 위한 것이다.
+    머리말 "Rviz2 의 3 차원 화면이 얼어붙는 문제" 참고.
+    """
+    pid, pw, ph, pax, pay, _ = parent
+    out = []
+    for wid, w, h, ax, ay, _t in windows(small=True):
+        if wid == pid or w < 100 or h < 50:
+            continue
+        dx, dy = ax - pax, ay - pay
+        if dx < 0 or dy < 0 or dx + w > pw or dy + h > ph:
+            continue                          # 부모 밖이면 자식이 아니다
+        if w * h > 0.95 * pw * ph:
+            continue                          # 부모와 거의 같은 크기는 부모 자신의 틀
+        out.append((wid, w, h, dx, dy))
+    return out
 
 
 def main():
@@ -117,6 +154,12 @@ def main():
     ap.add_argument('--fps', type=float, default=0.0,
                     help='만들 영상의 프레임률. 0 이면 실제로 뜯어낸 속도를 그대로 쓴다 '
                          '(그래야 영상 길이가 실제 시간과 같다)')
+    ap.add_argument('--crop', default='',
+                    help='창의 일부만 남긴다. "x,y,폭,높이" (화소). 가제보 1200x1000 창에서 '
+                         '3 차원 화면만 남기려면 --crop 0,47,783,953 (오른쪽 패널을 뗀다)')
+    ap.add_argument('--raw', action='store_true',
+                    help='자식 창을 얹지 않고 부모 창만 뜯는다. Rviz2 는 3 차원 화면이 '
+                         '옛 장면에 멈춘 채로 나온다 — 비교할 때만 쓴다')
     ap.add_argument('--max-fps', type=float, default=15.0,
                     help='뜯는 속도 상한. XGetImage 는 100 Hz 까지 나오는데 그대로 쓰면 '
                          'mp4 코덱이 안 열리고 파일도 커진다. 0 이면 상한 없음')
@@ -124,7 +167,7 @@ def main():
 
     if a.list or not a.name:
         print('%12s %12s  %s' % ('id', '크기', '제목'))
-        for wid, w, h, t in windows():
+        for wid, w, h, ax, ay, t in windows():
             print('%12s %12s  %s' % (hex(wid), '%dx%d' % (w, h), t))
         return
 
@@ -132,13 +175,40 @@ def main():
     if not hit:
         print('창을 못 찾았다 : %s   (python3 xcap.py --list 로 제목을 본다)' % a.name)
         return
-    wid, w, h, title = hit
+    wid, w, h, _ax, _ay, title = hit
     print('창 %s  %dx%d  "%s"' % (hex(wid), w, h, title))
+
+    #  따로 그려지는 자식 창 (Rviz2 의 3 차원 화면·영상 패널) 을 찾아 둔다
+    kids = [] if a.raw else inner_windows(hit)
+    for kwid, kw, kh, dx, dy in kids:
+        print('  자식 창 %s  %dx%d  자리 +%d+%d  — 따로 뜯어 얹는다'
+              % (hex(kwid), kw, kh, dx, dy))
 
     g = Grabber()
 
+    #  --crop 을 주면 뜯은 뒤 잘라낸다 (창 자체는 그대로 뜯어야 X 가 받아 준다)
+    box = None
+    if a.crop:
+        bx, by, bw, bh = [int(v) for v in a.crop.split(',')]
+        bw, bh = min(bw, w - bx), min(bh, h - by)
+        box = (bx, by, bw, bh)
+        print('잘라낼 곳 : x %d  y %d  %d x %d' % (bx, by, bw, bh))
+
+    def take():
+        im = g.grab(wid, w, h)
+        if im is None:
+            return None
+        for kwid, kw, kh, dx, dy in kids:        # 살아 있는 자식 창을 제자리에 얹는다
+            sub = g.grab(kwid, kw, kh)
+            if sub is not None:
+                im[dy:dy + kh, dx:dx + kw] = sub
+        if box is None:
+            return im
+        bx, by, bw, bh = box
+        return np.ascontiguousarray(im[by:by + bh, bx:bx + bw])
+
     if a.sec <= 0:
-        img = g.grab(wid, w, h)
+        img = take()
         if img is None:
             print('XGetImage 실패. 창이 최소화됐거나 다른 화면에 있다.')
             return
@@ -153,7 +223,7 @@ def main():
         now = time.time()
         if now - t0 >= a.sec:
             break
-        img = g.grab(wid, w, h)
+        img = take()
         if img is not None:
             frames.append(img)
         if period > 0:
@@ -173,6 +243,7 @@ def main():
     fps = min(fps, 60.0)
     ext = os.path.splitext(a.out)[1].lower()
     fourcc = cv2.VideoWriter_fourcc(*('MJPG' if ext == '.avi' else 'mp4v'))
+    h, w = frames[0].shape[:2]           # --crop 을 썼으면 자른 크기로 쓴다
     vw = cv2.VideoWriter(a.out, fourcc, fps, (w, h))
     if not vw.isOpened():
         print('VideoWriter 를 못 열었다. --out 을 .avi 로 바꿔 본다.')

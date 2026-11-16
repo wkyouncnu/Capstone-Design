@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="720" viewBox="0 0 1020 720" font-family="Malgun Gothic, sans-serif">
+<rect width="1020" height="720" fill="#ffffff"/>
+<text x="30" y="36" font-size="21" font-weight="bold" fill="#1e293b">텀프로젝트 시스템 계층 — 무엇이 어디서 도는가</text>
+<text x="30" y="58" font-size="15" fill="#64748b">제어는 Simulink·Stateflow 에서, 상황인식은 ROS 2 에서 만든다. 둘은 토픽으로만 만난다.</text>
+
+<rect x="30" y="80" width="300" height="470" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="180" y="110" font-size="18" font-weight="bold" fill="#1d4ed8" text-anchor="middle">윈도우 — MATLAB / Simulink</text>
+<text x="180" y="132" font-size="15" fill="#64748b" text-anchor="middle">학생이 만드는 곳 (제어)</text>
+
+<rect x="50" y="152" width="260" height="84" rx="5" fill="#ffffff" stroke="#1d4ed8"/>
+<text x="180" y="178" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">Stateflow 임무 관리</text>
+<text x="180" y="202" font-size="15" fill="#334155" text-anchor="middle">일곱 구간의 상태와 전이</text>
+<text x="180" y="224" font-size="15" fill="#64748b" text-anchor="middle">다음 구간으로 언제 넘길 것인가</text>
+
+<rect x="50" y="250" width="260" height="84" rx="5" fill="#ffffff" stroke="#1d4ed8"/>
+<text x="180" y="276" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">유도 — 경로·목표</text>
+<text x="180" y="300" font-size="15" fill="#334155" text-anchor="middle">LOS 추종 · 위치유지 · 접안</text>
+<text x="180" y="322" font-size="15" fill="#64748b" text-anchor="middle">Pure Pursuit / 크래빙</text>
+
+<rect x="50" y="348" width="260" height="84" rx="5" fill="#ffffff" stroke="#1d4ed8"/>
+<text x="180" y="374" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">제어 — 선수각·속도</text>
+<text x="180" y="398" font-size="15" fill="#334155" text-anchor="middle">PID / 백스테핑</text>
+<text x="180" y="420" font-size="15" fill="#64748b" text-anchor="middle">6 주차 자료가 출발점</text>
+
+<rect x="50" y="446" width="260" height="84" rx="5" fill="#ffffff" stroke="#1d4ed8"/>
+<text x="180" y="472" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">추력 배분</text>
+<text x="180" y="496" font-size="15" fill="#334155" text-anchor="middle">선미 좌·우 + 선수 추진기</text>
+<text x="180" y="518" font-size="15" fill="#64748b" text-anchor="middle">세 값을 토픽으로 내보낸다</text>
+
+<rect x="400" y="80" width="300" height="470" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+<text x="550" y="110" font-size="18" font-weight="bold" fill="#0d9488" text-anchor="middle">WSL — ROS 2 Humble</text>
+<text x="550" y="132" font-size="15" fill="#64748b" text-anchor="middle">학생이 만드는 곳 (상황인식)</text>
+
+<rect x="420" y="152" width="260" height="84" rx="5" fill="#ffffff" stroke="#0d9488"/>
+<text x="550" y="178" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">영상 인지 — OpenCV</text>
+<text x="550" y="202" font-size="15" fill="#334155" text-anchor="middle">게이트 부표 · 도킹 표식 · 탐색 색</text>
+<text x="550" y="224" font-size="15" fill="#64748b" text-anchor="middle">see_gate · see_placard · see_search</text>
+
+<rect x="420" y="250" width="260" height="84" rx="5" fill="#ffffff" stroke="#0d9488"/>
+<text x="550" y="276" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">점군 인지 — PointCloud2</text>
+<text x="550" y="300" font-size="15" fill="#334155" text-anchor="middle">도킹 구조물 · 장애물 덩어리</text>
+<text x="550" y="322" font-size="15" fill="#64748b" text-anchor="middle">see_dock_cloud · see_obstacle_cloud</text>
+
+<rect x="420" y="348" width="260" height="84" rx="5" fill="#ffffff" stroke="#0d9488"/>
+<text x="550" y="374" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">위치 확인</text>
+<text x="550" y="398" font-size="15" fill="#334155" text-anchor="middle">오도메트리로 5 m 안인지 센다</text>
+<text x="550" y="420" font-size="15" fill="#64748b" text-anchor="middle">see_station</text>
+
+<rect x="420" y="446" width="260" height="84" rx="5" fill="#ffffff" stroke="#64748b" stroke-dasharray="5 4"/>
+<text x="550" y="472" font-size="16" font-weight="bold" fill="#475569" text-anchor="middle">Rviz2 — 보는 창</text>
+<text x="550" y="496" font-size="15" fill="#475569" text-anchor="middle">Image · PointCloud2 · TF</text>
+<text x="550" y="518" font-size="15" fill="#64748b" text-anchor="middle">tp.rviz (Fixed Frame 고정)</text>
+
+<rect x="770" y="80" width="220" height="470" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+<text x="880" y="110" font-size="18" font-weight="bold" fill="#d97706" text-anchor="middle">WSL — 가제보</text>
+<text x="880" y="132" font-size="15" fill="#64748b" text-anchor="middle">주어지는 것 (건드리지 않는다)</text>
+
+<rect x="790" y="152" width="180" height="84" rx="5" fill="#ffffff" stroke="#d97706"/>
+<text x="880" y="186" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">월드</text>
+<text x="880" y="212" font-size="15" fill="#334155" text-anchor="middle">kaboat_term</text>
+
+<rect x="790" y="250" width="180" height="84" rx="5" fill="#ffffff" stroke="#d97706"/>
+<text x="880" y="284" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">WAM-V 라이트</text>
+<text x="880" y="310" font-size="15" fill="#334155" text-anchor="middle">선미 2 + 선수 1</text>
+
+<rect x="790" y="348" width="180" height="84" rx="5" fill="#ffffff" stroke="#d97706"/>
+<text x="880" y="374" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">센서</text>
+<text x="880" y="398" font-size="15" fill="#334155" text-anchor="middle">카메라 640×360</text>
+<text x="880" y="420" font-size="15" fill="#334155" text-anchor="middle">LiDAR 16×440</text>
+
+<rect x="790" y="446" width="180" height="84" rx="5" fill="#ffffff" stroke="#d97706"/>
+<text x="880" y="480" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">ros_gz_bridge</text>
+<text x="880" y="506" font-size="15" fill="#334155" text-anchor="middle">가제보 ↔ ROS 2</text>
+
+<g stroke="#64748b" stroke-width="2" fill="#64748b">
+  <line x1="700" y1="194" x2="782" y2="194"/><polygon points="790,194 778,189 778,199"/>
+  <line x1="790" y1="292" x2="708" y2="292"/><polygon points="700,292 712,287 712,297"/>
+</g>
+<text x="745" y="182" font-size="15" fill="#475569" text-anchor="middle">구독</text>
+<text x="745" y="316" font-size="15" fill="#475569" text-anchor="middle">센서</text>
+
+<g stroke="#1d4ed8" stroke-width="2.5" fill="#1d4ed8">
+  <line x1="412" y1="194" x2="338" y2="194"/><polygon points="330,194 342,189 342,199"/>
+  <line x1="330" y1="292" x2="404" y2="292"/><polygon points="412,292 400,287 400,297"/>
+</g>
+<text x="375" y="182" font-size="15" fill="#1d4ed8" text-anchor="middle">인지 결과</text>
+<text x="371" y="316" font-size="15" fill="#1d4ed8" text-anchor="middle">추력 지령</text>
+
+<rect x="30" y="570" width="960" height="126" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="46" y="594" font-size="16" font-weight="bold" fill="#334155">두 쪽이 만나는 이음새 — 토픽 이름과 자료형</text>
+<text x="46" y="620" font-size="15" fill="#334155">내보내는 것 : <tspan font-weight="bold">/wamv/thrusters/left|right|bow/thrust</tspan>  ·  std_msgs/msg/Float64</text>
+<text x="46" y="644" font-size="15" fill="#334155">받는 것 : <tspan font-weight="bold">/wamv/sensors/cameras/front_camera_sensor/image_raw</tspan> · <tspan font-weight="bold">/wamv/sensors/lidars/lidar_wamv_sensor/points</tspan></text>
+<text x="46" y="670" font-size="15" fill="#334155">        <tspan font-weight="bold">/wamv/sensors/position/ground_truth_odometry</tspan></text>
+</svg>
