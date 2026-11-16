@@ -1,0 +1,1830 @@
+<?xml version="1.0" ?>
+
+<sdf version="1.9">
+  <world name="kaboat_term">
+
+    <physics name="4ms" type="dart">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <gui fullscreen="0">
+
+      <!-- 3D scene -->
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>3D View</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.4 0.4 0.4</ambient_light>
+        <background_color>0.8 0.8 0.8</background_color>
+        <camera_pose>-478.1 148.2 13.2 0 0.25 2.94</camera_pose>
+        <camera_clip>
+          <near>0.25</near>
+          <far>10000</far>
+        </camera_clip>
+      </plugin>
+
+      <!-- Plugins that add functionality to the scene -->
+      <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
+        <gz-gui>
+          <property key="state" type="string">floating</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="MarkerManager" name="Marker manager">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="SelectEntities" name="Select Entities">
+        <gz-gui>
+          <anchors target="Select entities">
+            <line own="right" target="right"/>
+            <line own="top" target="top"/>
+          </anchors>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="VisualizationCapabilities" name="Visualization Capabilities">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <plugin filename="Spawn" name="Spawn Entities">
+        <gz-gui>
+          <anchors target="Select entities">
+            <line own="right" target="right"/>
+            <line own="top" target="top"/>
+          </anchors>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <!-- World control -->
+      <plugin filename="WorldControl" name="World control">
+        <gz-gui>
+          <title>World control</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="width">121</property>
+          <property type="double" key="z">1</property>
+
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="left" target="left"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <start_paused>false</start_paused>
+        <use_event>true</use_event>
+
+      </plugin>
+
+      <!-- World statistics -->
+      <plugin filename="WorldStats" name="World stats">
+        <gz-gui>
+          <title>World stats</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">110</property>
+          <property type="double" key="width">290</property>
+          <property type="double" key="z">1</property>
+
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+
+        <sim_time>true</sim_time>
+        <real_time>true</real_time>
+        <real_time_factor>true</real_time_factor>
+        <iterations>true</iterations>
+      </plugin>
+
+      <!-- Insert simple shapes -->
+      <plugin filename="Shapes" name="Shapes">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="x" type="double">0</property>
+          <property key="y" type="double">0</property>
+          <property key="width" type="double">250</property>
+          <property key="height" type="double">50</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="cardBackground" type="string">#666666</property>
+        </gz-gui>
+      </plugin>
+
+      <!-- Insert lights -->
+      <plugin filename="Lights" name="Lights">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="x" type="double">250</property>
+          <property key="y" type="double">0</property>
+          <property key="width" type="double">150</property>
+          <property key="height" type="double">50</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="cardBackground" type="string">#666666</property>
+        </gz-gui>
+      </plugin>
+
+      <!-- Translate / rotate -->
+      <plugin filename="TransformControl" name="Transform control">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="x" type="double">0</property>
+          <property key="y" type="double">50</property>
+          <property key="width" type="double">250</property>
+          <property key="height" type="double">50</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="cardBackground" type="string">#777777</property>
+        </gz-gui>
+
+        <!-- disable legacy features used to connect this plugin to GzScene3D -->
+        <legacy>false</legacy>
+      </plugin>
+
+      <!-- Screenshot -->
+      <plugin filename="Screenshot" name="Screenshot">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="x" type="double">250</property>
+          <property key="y" type="double">50</property>
+          <property key="width" type="double">50</property>
+          <property key="height" type="double">50</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="cardBackground" type="string">#777777</property>
+        </gz-gui>
+      </plugin>
+
+      <!-- Video recorder -->
+      <plugin filename="VideoRecorder" name="VideoRecorder">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="x" type="double">300</property>
+          <property key="y" type="double">50</property>
+          <property key="width" type="double">50</property>
+          <property key="height" type="double">50</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="cardBackground" type="string">#777777</property>
+        </gz-gui>
+
+        <record_video>
+          <use_sim_time>true</use_sim_time>
+          <lockstep>true</lockstep>
+          <bitrate>4000000</bitrate>
+        </record_video>
+
+        <!-- disable legacy features used to connect this plugin to GzScene3D -->
+        <legacy>false</legacy>
+      </plugin>
+
+      <!-- Inspector -->
+      <plugin filename="ComponentInspector" name="Component inspector">
+        <gz-gui>
+          <property type="string" key="state">docked_collapsed</property>
+        </gz-gui>
+      </plugin>
+
+      <!-- Entity tree -->
+      <plugin filename="EntityTree" name="Entity tree">
+        <gz-gui>
+          <property type="string" key="state">docked_collapsed</property>
+        </gz-gui>
+      </plugin>
+
+      <!-- View angle -->
+      <plugin filename="ViewAngle" name="View angle">
+        <gz-gui>
+          <property type="string" key="state">docked_collapsed</property>
+        </gz-gui>
+
+        <!-- disable legacy features used to connect this plugin to GzScene3D -->
+        <legacy>false</legacy>
+      </plugin>
+
+    </gui>
+
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
+    <plugin
+      filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+      <disable_on_drained_battery>true</disable_on_drained_battery>
+    </plugin>
+    <plugin
+      filename="gz-sim-imu-system"
+      name="gz::sim::systems::Imu">
+    </plugin>
+    <plugin
+      filename="gz-sim-magnetometer-system"
+      name="gz::sim::systems::Magnetometer">
+    </plugin>
+    <plugin
+      filename="gz-sim-forcetorque-system"
+      name="gz::sim::systems::ForceTorque">
+    </plugin>
+    <plugin
+      filename="gz-sim-particle-emitter2-system"
+      name="gz::sim::systems::ParticleEmitter2">
+    </plugin>
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+    <plugin
+      filename="gz-sim-contact-system"
+      name="gz::sim::systems::Contact">
+    </plugin>
+    <plugin
+      filename="gz-sim-navsat-system"
+      name="gz::sim::systems::NavSat">
+    </plugin>
+
+    <scene>
+      <sky></sky>
+      <grid>false</grid>
+      <ambient>1.0 1.0 1.0</ambient>
+      <background>0.8 0.8 0.8</background>
+    </scene>
+
+    <!-- Estimated latitude/longitude of sydneyregatta
+         from satellite imagery -->
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <world_frame_orientation>ENU</world_frame_orientation>
+      <latitude_deg>-33.724223</latitude_deg>
+      <longitude_deg>150.679736</longitude_deg>
+      <elevation>0.0</elevation>
+      <heading_deg>0.0</heading_deg>
+    </spherical_coordinates>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- <include> 육지 삭제
+      <pose> 0 0 0.2 0 0 0 </pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/sydney_regatta</uri>
+    </include> -->
+
+    <include>
+      <name>Coast Waves</name>
+      <pose>0 0 0 0 0 0</pose>
+      <uri>coast_waves</uri>
+    </include>
+
+    <model name="obs_sph_1L">
+      <static>true</static>
+      <pose>-522 174 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0.75 0 0 1</ambient>
+            <diffuse>0.75 0 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_1R">
+      <static>true</static>
+      <pose>-530 174 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0 0.6 0 1</ambient>
+            <diffuse>0 0.6 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_2L">
+      <static>true</static>
+      <pose>-520 180 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0.75 0 0 1</ambient>
+            <diffuse>0.75 0 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_2R">
+      <static>true</static>
+      <pose>-528 180 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0 0.6 0 1</ambient>
+            <diffuse>0 0.6 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_3L">
+      <static>true</static>
+      <pose>-520 186 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0.75 0 0 1</ambient>
+            <diffuse>0.75 0 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_3R">
+      <static>true</static>
+      <pose>-528 186 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0 0.6 0 1</ambient>
+            <diffuse>0 0.6 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_4L">
+      <static>true</static>
+      <pose>-522 192 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0.75 0 0 1</ambient>
+            <diffuse>0.75 0 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_4R">
+      <static>true</static>
+      <pose>-530 192 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0 0.6 0 1</ambient>
+            <diffuse>0 0.6 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_5L">
+      <static>true</static>
+      <pose>-522 198 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0.75 0 0 1</ambient>
+            <diffuse>0.75 0 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_5R">
+      <static>true</static>
+      <pose>-530 198 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0 0.6 0 1</ambient>
+            <diffuse>0 0.6 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_6L">
+      <static>true</static>
+      <pose>-520 204 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0.75 0 0 1</ambient>
+            <diffuse>0.75 0 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_6R">
+      <static>true</static>
+      <pose>-528 204 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0 0.6 0 1</ambient>
+            <diffuse>0 0.6 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_7L">
+      <static>true</static>
+      <pose>-520 210 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0.75 0 0 1</ambient>
+            <diffuse>0.75 0 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_7R">
+      <static>true</static>
+      <pose>-528 210 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0 0.6 0 1</ambient>
+            <diffuse>0 0.6 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_8L">
+      <static>true</static>
+      <pose>-522 216 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0.75 0 0 1</ambient>
+            <diffuse>0.75 0 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_sph_8R">
+      <static>true</static>
+      <pose>-530 216 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material>
+            <ambient>0 0.6 0 1</ambient>
+            <diffuse>0 0.6 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_cyl_loiter">
+      <static>true</static>
+      <pose>-550 195 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0 0.3 0 1</ambient>
+            <diffuse>0 0.3 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_cyl_1_1">
+      <static>true</static>
+      <pose>-582 186 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_cyl_1_2">
+      <static>true</static>
+      <pose>-570 186 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+        <model name="obs_cyl_2_1">
+      <static>true</static>
+      <pose>-588 191 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_cyl_2_2">
+      <static>true</static>
+      <pose>-576 191 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_cyl_2_3">
+      <static>true</static>
+      <pose>-564 191 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_cyl_3_1">
+      <static>true</static>
+      <pose>-582 196 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_cyl_3_2">
+      <static>true</static>
+      <pose>-570 196 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+        <model name="obs_cyl_4_1">
+      <static>true</static>
+      <pose>-588 201 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_cyl_4_2">
+      <static>true</static>
+      <pose>-576 201 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_cyl_4_3">
+      <static>true</static>
+      <pose>-564 201 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_cyl_5_1">
+      <static>true</static>
+      <pose>-582 206 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <model name="obs_cyl_5_2">
+      <static>true</static>
+      <pose>-570 206 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.5 0.15 0 1</ambient>
+            <diffuse>0.5 0.15 0 1</diffuse>
+          </material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+
+
+
+
+
+    <!-- <include>
+      <name>mb_marker_buoy_red</name>
+      <pose>-528 191 0 0 0 0</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/mb_marker_buoy_red</uri>
+
+      <plugin name="vrx::PolyhedraBuoyancyDrag"
+              filename="libPolyhedraBuoyancyDrag.so">
+        <fluid_density>1000</fluid_density>
+        <fluid_level>0.0</fluid_level>
+        <linear_drag>25.0</linear_drag>
+        <angular_drag>2.0</angular_drag>
+        <buoyancy name="collision_outer">
+          <link_name>link</link_name>
+          <pose>0 0 -0.3 0 0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.325</radius>
+              <length>0.1</length>
+            </cylinder>
+          </geometry>
+        </buoyancy>
+        <wavefield>
+          <topic>/vrx/wavefield/parameters</topic>
+        </wavefield>
+      </plugin>
+    </include>
+
+    <include>
+      <name>mb_marker_buoy_black</name>
+      <pose>-528 190 0 0 0 0</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/mb_marker_buoy_black</uri>
+
+      <plugin name="vrx::PolyhedraBuoyancyDrag"
+              filename="libPolyhedraBuoyancyDrag.so">
+        <fluid_density>1000</fluid_density>
+        <fluid_level>0.0</fluid_level>
+        <linear_drag>25.0</linear_drag>
+        <angular_drag>2.0</angular_drag>
+        <buoyancy name="collision_outer">
+          <link_name>link</link_name>
+          <pose>0 0 -0.3 0 0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.325</radius>
+              <length>0.1</length>
+            </cylinder>
+          </geometry>
+        </buoyancy>
+        <wavefield>
+          <topic>/vrx/wavefield/parameters</topic>
+        </wavefield>
+      </plugin>
+    </include>
+
+    <include>
+      <name>mb_marker_buoy_green</name>
+      <pose>-528 189 0 0 0 0</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/mb_marker_buoy_green</uri>
+
+      <plugin name="vrx::PolyhedraBuoyancyDrag"
+              filename="libPolyhedraBuoyancyDrag.so">
+        <fluid_density>1000</fluid_density>
+        <fluid_level>0.0</fluid_level>
+        <linear_drag>25.0</linear_drag>
+        <angular_drag>2.0</angular_drag>
+        <buoyancy name="collision_outer">
+          <link_name>link</link_name>
+          <pose>0 0 -0.3 0 0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.325</radius>
+              <length>0.1</length>
+            </cylinder>
+          </geometry>
+        </buoyancy>
+        <wavefield>
+          <topic>/vrx/wavefield/parameters</topic>
+        </wavefield>
+      </plugin>
+    </include>
+
+    <include>
+      <name>mb_marker_buoy_white</name>
+      <pose>-528 188 0 0 0 0</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/mb_marker_buoy_white</uri>
+
+      <plugin name="vrx::PolyhedraBuoyancyDrag"
+              filename="libPolyhedraBuoyancyDrag.so">
+        <fluid_density>1000</fluid_density>
+        <fluid_level>0.0</fluid_level>
+        <linear_drag>25.0</linear_drag>
+        <angular_drag>2.0</angular_drag>
+        <buoyancy name="collision_outer">
+          <link_name>link</link_name>
+          <pose>0 0 -0.3 0 0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.325</radius>
+              <length>0.1</length>
+            </cylinder>
+          </geometry>
+        </buoyancy>
+        <wavefield>
+          <topic>/vrx/wavefield/parameters</topic>
+        </wavefield>
+      </plugin>
+    </include>
+
+    <include>
+      <name>mb_round_buoy_orange</name>
+      <pose>-528 187 0 0 0 0</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/mb_round_buoy_orange</uri>
+
+      <plugin name="vrx::PolyhedraBuoyancyDrag"
+              filename="libPolyhedraBuoyancyDrag.so">
+        <fluid_density>1000</fluid_density>
+        <fluid_level>0.0</fluid_level>
+        <linear_drag>75.0</linear_drag>
+        <angular_drag>2.0</angular_drag>
+        <buoyancy name="collision_outer">
+          <link_name>link</link_name>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <sphere>
+              <radius>0.21</radius>
+          </sphere>
+          </geometry>
+        </buoyancy>
+        <wavefield>
+          <topic>/vrx/wavefield/parameters</topic>
+        </wavefield>
+      </plugin>
+    </include>
+
+    <include>
+      <name>mb_round_buoy_black</name>
+      <pose>-528 186 0 0 0 0</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/mb_round_buoy_black</uri>
+
+      <plugin name="vrx::PolyhedraBuoyancyDrag"
+              filename="libPolyhedraBuoyancyDrag.so">
+        <fluid_density>1000</fluid_density>
+        <fluid_level>0.0</fluid_level>
+        <linear_drag>75.0</linear_drag>
+        <angular_drag>2.0</angular_drag>
+        <buoyancy name="collision_outer">
+          <link_name>link</link_name>
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <sphere>
+              <radius>0.21</radius>
+          </sphere>
+          </geometry>
+        </buoyancy>
+        <wavefield>
+          <topic>/vrx/wavefield/parameters</topic>
+        </wavefield>
+      </plugin>
+    </include> -->
+
+    <!-- The posts for securing the WAM-V -->
+    <!-- <include>
+      <name>post_0</name>
+      <pose>-535.916809 154.362869 0.675884 -0.17182 0.030464 -0.005286</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/post</uri>
+    </include>
+    <include>
+      <name>post_1</name>
+      <pose>-527.48999 153.854782 0.425844 -0.1365 0  0</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/post</uri>
+    </include>
+    <include>
+      <name>post_2</name>
+      <pose>-544.832825 156.671951 0.499025 -0.162625 0 0 </pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/post</uri>
+    </include> -->
+
+    <!-- Antenna for communication with the WAM-V -->
+    <!-- <include>
+      <pose>-531.063721 147.668579 1.59471 -0.068142 0 -0.1</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/antenna</uri>
+    </include> -->
+
+    <!-- ground station tents -->
+    <!-- <include>
+      <name>ground_station_0</name>
+      <pose>-540.796448 146.493744 1.671421 -0.00834 0.01824 1.301726</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/ground_station</uri>
+    </include>
+    <include>
+      <name>ground_station_1</name>
+      <pose>-537.622681 145.827896 1.681931 -0.00603 0.018667 1.301571</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/ground_station</uri>
+    </include>
+    <include>
+      <name>ground_station_2</name>
+      <pose>-534.550537 144.910400 1.720474 -0.004994 0.020798 1.301492</pose>
+      <uri>https://fuel.gazebosim.org/1.0/openrobotics/models/ground_station</uri>
+    </include> -->
+
+    <!-- The projectile for the ball shooter -->
+    <!-- <include>
+      <name>blue_projectile</name>
+      <pose>-545 60 0.03 0 0 0</pose>
+      <uri>blue_projectile</uri>
+      <plugin name="vrx::PolyhedraBuoyancyDrag"
+              filename="libPolyhedraBuoyancyDrag.so">
+        <fluid_density>1000</fluid_density>
+        <fluid_level>0.0</fluid_level>
+        <linear_drag>25.0</linear_drag>
+        <angular_drag>2.0</angular_drag>
+        <buoyancy name="collision_outer">
+          <link_name>link</link_name>
+          <pose>0 0 -0.02 0 0 0</pose>
+          <geometry>
+            <sphere>
+              <radius>0.0285</radius>
+            </sphere>
+          </geometry>
+        </buoyancy>
+        <wavefield>
+          <topic>/vrx/wavefield/parameters</topic>
+        </wavefield>
+      </plugin>
+    </include> -->
+
+    <!-- Load the plugin for the wind -->
+    <plugin
+      filename="libUSVWind.so"
+      name="vrx::USVWind">
+      <wind_obj>
+        <name>wamv</name>
+        <link_name>wamv/base_link</link_name>
+        <coeff_vector>.5 .5 .33</coeff_vector>
+      </wind_obj>
+      <!-- Wind -->
+      <wind_direction>240</wind_direction>
+      <!-- in degrees -->
+      <wind_mean_velocity>0.0</wind_mean_velocity>
+      <var_wind_gain_constants>0</var_wind_gain_constants>
+      <var_wind_time_constants>2</var_wind_time_constants>
+      <random_seed>10</random_seed>
+      <!-- set to zero/empty to randomize -->
+      <update_rate>10</update_rate>
+      <topic_wind_speed>/vrx/debug/wind/speed</topic_wind_speed>
+      <topic_wind_direction>/vrx/debug/wind/direction</topic_wind_direction>
+     </plugin>
+
+    <!-- The wave field -->
+    <plugin filename="libPublisherPlugin.so" name="vrx::PublisherPlugin">
+      <message type="gz.msgs.Param" topic="/vrx/wavefield/parameters"
+               every="2.0">
+        params {
+          key: "direction"
+          value {
+            type: DOUBLE
+            double_value: 0.0
+          }
+        }
+        params {
+          key: "gain"
+          value {
+            type: DOUBLE
+            double_value: 0.3
+          }
+        }
+        params {
+          key: "period"
+          value {
+            type: DOUBLE
+            double_value: 5
+          }
+        }
+        params {
+          key: "steepness"
+          value {
+            type: DOUBLE
+            double_value: 0
+          }
+        }
+      </message>
+    </plugin>
+
+  
+
+    <!-- ===================== 텀프로젝트 추가물 ===================== -->
+    <!-- WP1 위치유지 (-534, 226) -->
+    <model name="wp1_buoy">
+      <static>true</static>
+      <pose>-534 226 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.5</radius></sphere></geometry>
+          <material><ambient>1.0 0.45 0.0 1.0</ambient><diffuse>1.0 0.45 0.0 1.0</diffuse></material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.5</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+    <!-- wp1_area : 반경 5.0 m 위치유지 영역 표식 (충돌체 없음) -->
+    <model name="wp1_area">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="link">
+        <visual name="seg00">
+          <pose>-529.000 226.000 0.3 0 0 1.5708</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg01">
+          <pose>-529.076 226.868 0.3 0 0 1.7453</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg02">
+          <pose>-529.302 227.710 0.3 0 0 1.9199</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg03">
+          <pose>-529.670 228.500 0.3 0 0 2.0944</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg04">
+          <pose>-530.170 229.214 0.3 0 0 2.2689</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg05">
+          <pose>-530.786 229.830 0.3 0 0 2.4435</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg06">
+          <pose>-531.500 230.330 0.3 0 0 2.6180</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg07">
+          <pose>-532.290 230.698 0.3 0 0 2.7925</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg08">
+          <pose>-533.132 230.924 0.3 0 0 2.9671</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg09">
+          <pose>-534.000 231.000 0.3 0 0 3.1416</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg10">
+          <pose>-534.868 230.924 0.3 0 0 3.3161</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg11">
+          <pose>-535.710 230.698 0.3 0 0 3.4907</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg12">
+          <pose>-536.500 230.330 0.3 0 0 3.6652</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg13">
+          <pose>-537.214 229.830 0.3 0 0 3.8397</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg14">
+          <pose>-537.830 229.214 0.3 0 0 4.0143</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg15">
+          <pose>-538.330 228.500 0.3 0 0 4.1888</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg16">
+          <pose>-538.698 227.710 0.3 0 0 4.3633</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg17">
+          <pose>-538.924 226.868 0.3 0 0 4.5379</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg18">
+          <pose>-539.000 226.000 0.3 0 0 4.7124</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg19">
+          <pose>-538.924 225.132 0.3 0 0 4.8869</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg20">
+          <pose>-538.698 224.290 0.3 0 0 5.0615</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg21">
+          <pose>-538.330 223.500 0.3 0 0 5.2360</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg22">
+          <pose>-537.830 222.786 0.3 0 0 5.4105</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg23">
+          <pose>-537.214 222.170 0.3 0 0 5.5851</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg24">
+          <pose>-536.500 221.670 0.3 0 0 5.7596</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg25">
+          <pose>-535.710 221.302 0.3 0 0 5.9341</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg26">
+          <pose>-534.868 221.076 0.3 0 0 6.1087</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg27">
+          <pose>-534.000 221.000 0.3 0 0 6.2832</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg28">
+          <pose>-533.132 221.076 0.3 0 0 6.4577</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg29">
+          <pose>-532.290 221.302 0.3 0 0 6.6323</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg30">
+          <pose>-531.500 221.670 0.3 0 0 6.8068</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg31">
+          <pose>-530.786 222.170 0.3 0 0 6.9813</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg32">
+          <pose>-530.170 222.786 0.3 0 0 7.1558</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg33">
+          <pose>-529.670 223.500 0.3 0 0 7.3304</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg34">
+          <pose>-529.302 224.290 0.3 0 0 7.5049</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg35">
+          <pose>-529.076 225.132 0.3 0 0 7.6794</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+      </link>
+    </model>
+    <!-- 도킹 스테이션 3 베이. 개구부는 남향(-y), 벽 높이 2.0 m
+         local +x = 베이 안쪽, 원점 = 가운데 베이 바닥 중심
+         표식: 월드 x -556 빨강삼각 / -550.5 초록원 / -545 파랑네모 -->
+    <model name="kaboat_dock">
+      <static>true</static>
+      <pose>-550.5 229.5 0 0 0 1.5707963</pose>
+        <link name="back_wall">
+          <pose>2.7500 0.0000 1.0000 0 0 0</pose>
+          <collision name="back_wall_collision">
+            <geometry><box><size>0.5000 17.0000 2.0000</size></box></geometry>
+          </collision>
+          <visual name="back_wall_visual">
+            <geometry><box><size>0.5000 17.0000 2.0000</size></box></geometry>
+            <material><ambient>0.55 0.54 0.50 1</ambient><diffuse>0.82 0.80 0.74 1</diffuse></material>
+          </visual>
+        </link>
+        <link name="divider0">
+          <pose>0.0000 -8.2500 1.0000 0 0 0</pose>
+          <collision name="divider0_collision">
+            <geometry><box><size>5.0000 0.5000 2.0000</size></box></geometry>
+          </collision>
+          <visual name="divider0_visual">
+            <geometry><box><size>5.0000 0.5000 2.0000</size></box></geometry>
+            <material><ambient>0.55 0.54 0.50 1</ambient><diffuse>0.82 0.80 0.74 1</diffuse></material>
+          </visual>
+        </link>
+        <link name="divider1">
+          <pose>0.0000 -2.7500 1.0000 0 0 0</pose>
+          <collision name="divider1_collision">
+            <geometry><box><size>5.0000 0.5000 2.0000</size></box></geometry>
+          </collision>
+          <visual name="divider1_visual">
+            <geometry><box><size>5.0000 0.5000 2.0000</size></box></geometry>
+            <material><ambient>0.55 0.54 0.50 1</ambient><diffuse>0.82 0.80 0.74 1</diffuse></material>
+          </visual>
+        </link>
+        <link name="divider2">
+          <pose>0.0000 2.7500 1.0000 0 0 0</pose>
+          <collision name="divider2_collision">
+            <geometry><box><size>5.0000 0.5000 2.0000</size></box></geometry>
+          </collision>
+          <visual name="divider2_visual">
+            <geometry><box><size>5.0000 0.5000 2.0000</size></box></geometry>
+            <material><ambient>0.55 0.54 0.50 1</ambient><diffuse>0.82 0.80 0.74 1</diffuse></material>
+          </visual>
+        </link>
+        <link name="divider3">
+          <pose>0.0000 8.2500 1.0000 0 0 0</pose>
+          <collision name="divider3_collision">
+            <geometry><box><size>5.0000 0.5000 2.0000</size></box></geometry>
+          </collision>
+          <visual name="divider3_visual">
+            <geometry><box><size>5.0000 0.5000 2.0000</size></box></geometry>
+            <material><ambient>0.55 0.54 0.50 1</ambient><diffuse>0.82 0.80 0.74 1</diffuse></material>
+          </visual>
+        </link>
+      <link name="placards">
+        <pose>0 0 0 0 0 0</pose>
+          <visual name="plate1">
+            <pose>2.4500 5.5000 1.2 0 0 0</pose>
+            <geometry><box><size>0.08 1.4 1.4</size></box></geometry>
+            <material><ambient>0.93 0.93 0.9 1.0</ambient><diffuse>0.93 0.93 0.9 1.0</diffuse></material>
+          </visual>
+          <visual name="symbol1">
+            <pose>2.3900 5.0000 0.7 1.5707963 0 1.5707963</pose>
+            <geometry><mesh><uri>model://symbol_triangle/mesh/triangle.dae</uri></mesh></geometry>
+            <material><ambient>0.85 0.05 0.05 1.0</ambient><diffuse>0.85 0.05 0.05 1.0</diffuse></material>
+          </visual>
+          <visual name="plate2">
+            <pose>2.4500 0.0000 1.2 0 0 0</pose>
+            <geometry><box><size>0.08 1.4 1.4</size></box></geometry>
+            <material><ambient>0.93 0.93 0.9 1.0</ambient><diffuse>0.93 0.93 0.9 1.0</diffuse></material>
+          </visual>
+          <visual name="symbol2">
+            <pose>2.3900 0.0000 1.2 0 1.5707963 0</pose>
+            <geometry><cylinder><radius>0.5</radius><length>0.03</length></cylinder></geometry>
+            <material><ambient>0.05 0.65 0.12 1.0</ambient><diffuse>0.05 0.65 0.12 1.0</diffuse></material>
+          </visual>
+          <visual name="plate3">
+            <pose>2.4500 -5.5000 1.2 0 0 0</pose>
+            <geometry><box><size>0.08 1.4 1.4</size></box></geometry>
+            <material><ambient>0.93 0.93 0.9 1.0</ambient><diffuse>0.93 0.93 0.9 1.0</diffuse></material>
+          </visual>
+          <visual name="symbol3">
+            <pose>2.3900 -5.5000 1.2 0 0 0</pose>
+            <geometry><box><size>0.03 1.0 1.0</size></box></geometry>
+            <material><ambient>0.05 0.15 0.85 1.0</ambient><diffuse>0.05 0.15 0.85 1.0</diffuse></material>
+          </visual>
+      </link>
+    </model>
+    <!-- 탐색 부표. 초록은 기존 obs_cyl_loiter(-550,195) 를 그대로 쓴다.
+         규정 5.2(6): 빨강·초록 = 우현선회 / 노랑 = 좌현선회 -->
+    <model name="search_red">
+      <static>true</static>
+      <pose>-542 206 1.0 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material><ambient>0.85 0.05 0.05 1.0</ambient><diffuse>0.85 0.05 0.05 1.0</diffuse></material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+    <model name="search_yellow">
+      <static>true</static>
+      <pose>-556 205 1.0 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material><ambient>0.95 0.85 0.05 1.0</ambient><diffuse>0.95 0.85 0.05 1.0</diffuse></material>
+        </visual>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+    <!-- WP2 위치유지 (-553, 188) — 장애물 구간 바로 앞 -->
+    <model name="wp2_buoy">
+      <static>true</static>
+      <pose>-553 188 0.5 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.5</radius></sphere></geometry>
+          <material><ambient>1.0 0.45 0.0 1.0</ambient><diffuse>1.0 0.45 0.0 1.0</diffuse></material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.5</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+    <!-- wp2_area : 반경 5.0 m 위치유지 영역 표식 (충돌체 없음) -->
+    <model name="wp2_area">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="link">
+        <visual name="seg00">
+          <pose>-548.000 188.000 0.3 0 0 1.5708</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg01">
+          <pose>-548.076 188.868 0.3 0 0 1.7453</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg02">
+          <pose>-548.302 189.710 0.3 0 0 1.9199</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg03">
+          <pose>-548.670 190.500 0.3 0 0 2.0944</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg04">
+          <pose>-549.170 191.214 0.3 0 0 2.2689</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg05">
+          <pose>-549.786 191.830 0.3 0 0 2.4435</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg06">
+          <pose>-550.500 192.330 0.3 0 0 2.6180</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg07">
+          <pose>-551.290 192.698 0.3 0 0 2.7925</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg08">
+          <pose>-552.132 192.924 0.3 0 0 2.9671</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg09">
+          <pose>-553.000 193.000 0.3 0 0 3.1416</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg10">
+          <pose>-553.868 192.924 0.3 0 0 3.3161</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg11">
+          <pose>-554.710 192.698 0.3 0 0 3.4907</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg12">
+          <pose>-555.500 192.330 0.3 0 0 3.6652</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg13">
+          <pose>-556.214 191.830 0.3 0 0 3.8397</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg14">
+          <pose>-556.830 191.214 0.3 0 0 4.0143</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg15">
+          <pose>-557.330 190.500 0.3 0 0 4.1888</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg16">
+          <pose>-557.698 189.710 0.3 0 0 4.3633</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg17">
+          <pose>-557.924 188.868 0.3 0 0 4.5379</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg18">
+          <pose>-558.000 188.000 0.3 0 0 4.7124</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg19">
+          <pose>-557.924 187.132 0.3 0 0 4.8869</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg20">
+          <pose>-557.698 186.290 0.3 0 0 5.0615</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg21">
+          <pose>-557.330 185.500 0.3 0 0 5.2360</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg22">
+          <pose>-556.830 184.786 0.3 0 0 5.4105</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg23">
+          <pose>-556.214 184.170 0.3 0 0 5.5851</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg24">
+          <pose>-555.500 183.670 0.3 0 0 5.7596</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg25">
+          <pose>-554.710 183.302 0.3 0 0 5.9341</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg26">
+          <pose>-553.868 183.076 0.3 0 0 6.1087</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg27">
+          <pose>-553.000 183.000 0.3 0 0 6.2832</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg28">
+          <pose>-552.132 183.076 0.3 0 0 6.4577</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg29">
+          <pose>-551.290 183.302 0.3 0 0 6.6323</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg30">
+          <pose>-550.500 183.670 0.3 0 0 6.8068</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg31">
+          <pose>-549.786 184.170 0.3 0 0 6.9813</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg32">
+          <pose>-549.170 184.786 0.3 0 0 7.1558</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg33">
+          <pose>-548.670 185.500 0.3 0 0 7.3304</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg34">
+          <pose>-548.302 186.290 0.3 0 0 7.5049</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="seg35">
+          <pose>-548.076 187.132 0.3 0 0 7.6794</pose>
+          <geometry><box><size>0.654 0.18 0.12</size></box></geometry>
+          <material><ambient>1.0 0.55 0.0 0.45</ambient><diffuse>1.0 0.55 0.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+      </link>
+    </model>
+    <!-- virtual_boundary : 가상경계선. 이 선을 넘으면 실격 (임무설명 Ⅲ-1) -->
+    <model name="virtual_boundary">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="link">
+        <visual name="seg0">
+          <pose>-577.0 211.0 0.4 0 0 0</pose>
+          <geometry><box><size>34.0 0.4 0.5</size></box></geometry>
+          <material><ambient>0.9 0.1 0.1 0.35</ambient><diffuse>0.9 0.1 0.1 0.35</diffuse></material>
+          <transparency>0.65</transparency>
+        </visual>
+        <visual name="seg1">
+          <pose>-577.0 181.0 0.4 0 0 0</pose>
+          <geometry><box><size>34.0 0.4 0.5</size></box></geometry>
+          <material><ambient>0.9 0.1 0.1 0.35</ambient><diffuse>0.9 0.1 0.1 0.35</diffuse></material>
+          <transparency>0.65</transparency>
+        </visual>
+        <visual name="seg2">
+          <pose>-560.0 182.5 0.4 0 0 0</pose>
+          <geometry><box><size>0.4 3.0 0.5</size></box></geometry>
+          <material><ambient>0.9 0.1 0.1 0.35</ambient><diffuse>0.9 0.1 0.1 0.35</diffuse></material>
+          <transparency>0.65</transparency>
+        </visual>
+        <visual name="seg3">
+          <pose>-560.0 201.5 0.4 0 0 0</pose>
+          <geometry><box><size>0.4 19.0 0.5</size></box></geometry>
+          <material><ambient>0.9 0.1 0.1 0.35</ambient><diffuse>0.9 0.1 0.1 0.35</diffuse></material>
+          <transparency>0.65</transparency>
+        </visual>
+        <visual name="seg4">
+          <pose>-594.0 186.5 0.4 0 0 0</pose>
+          <geometry><box><size>0.4 11.0 0.5</size></box></geometry>
+          <material><ambient>0.9 0.1 0.1 0.35</ambient><diffuse>0.9 0.1 0.1 0.35</diffuse></material>
+          <transparency>0.65</transparency>
+        </visual>
+        <visual name="seg5">
+          <pose>-594.0 205.5 0.4 0 0 0</pose>
+          <geometry><box><size>0.4 11.0 0.5</size></box></geometry>
+          <material><ambient>0.9 0.1 0.1 0.35</ambient><diffuse>0.9 0.1 0.1 0.35</diffuse></material>
+          <transparency>0.65</transparency>
+        </visual>
+      </link>
+    </model>
+    <!-- 장애물 구간 진입 게이트 (빨강 y 192 / 초록 y 184) -->
+    <model name="obs_gate_in_red">
+      <static>true</static>
+      <pose>-560 192 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material><ambient>0.85 0.05 0.05 1.0</ambient><diffuse>0.85 0.05 0.05 1.0</diffuse></material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+    <model name="obs_gate_in_green">
+      <static>true</static>
+      <pose>-560 184 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material><ambient>0.05 0.6 0.1 1.0</ambient><diffuse>0.05 0.6 0.1 1.0</diffuse></material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+    <!-- 종료 게이트 (빨강 y 200 / 초록 y 192) -->
+    <model name="goal_gate_red">
+      <static>true</static>
+      <pose>-594 200 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material><ambient>0.85 0.05 0.05 1.0</ambient><diffuse>0.85 0.05 0.05 1.0</diffuse></material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+    <model name="goal_gate_green">
+      <static>true</static>
+      <pose>-594 192 0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+          <material><ambient>0.05 0.6 0.1 1.0</ambient><diffuse>0.05 0.6 0.1 1.0</diffuse></material>
+        </visual>
+        <collision name="collision">
+          <geometry><sphere><radius>0.75</radius></sphere></geometry>
+        </collision>
+      </link>
+    </model>
+    <!-- =========================================================== -->
+  </world>
+</sdf>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- wamv_term_components.xacro — 텀프로젝트 배의 센서 배치
+     ================================================================
+     9주차 wamv_ca_components.xacro 에 **단안 카메라 한 대**를 더한 것이다.
+     나머지(GPS · IMU · P3D · 3D LiDAR) 는 9주차 값을 그대로 쓴다 —
+     자리를 바꾸면 5·6·8·9주차에서 맞춰 둔 항법·제어가 어긋난다.
+
+       xacro wamv_gazebo.urdf.xacro \
+             yaml_thruster_generation:=true  thruster_xacro_file:=<6주차 bow 배치> \
+             yaml_component_generation:=true component_xacro_file:=<이 파일>
+
+     라이다 성능은 환경변수로 고른다 (make_wamv_term.sh 가 넣어 준다)
+       CA_LIDAR_BEAMS / CA_LIDAR_SAMPLES / CA_LIDAR_RATE / CA_LIDAR_RANGE
+
+     카메라 자리 : x=1.00, y=0, z=1.60, 정면(R=P=Y=0)
+       x 를 1.00 으로 둔 까닭
+         라이다 마스트가 x=0.70 에 서 있다. 카메라를 그보다 뒤에 두면
+         굵기 15 mm 짜리 기둥이 렌즈 10 cm 앞을 가로질러 화면 가운데에
+         굵은 띠로 번진다. 마스트보다 **앞**에 두어 시야에서 뺀다.
+       z 를 1.60 으로 둔 까닭
+         표식 중심이 수면에서 1.2 m 다. 10 m 앞 표식이 화면 중심에서
+         2.3 deg 아래에 들어온다 (세로 시야 +-25 deg) — 넉넉히 들어온다.
+         부표(지름 1.5 m, 중심 0.75 m) 도 10 m 에서 5 deg 아래다.
+       기울이지 않는 까닭 (P=0)
+         내려보게 기울이면 가까운 것은 잘 보이지만 수평선이 화면 위로
+         올라가 멀리 있는 게이트가 잘린다. 인지 예제는 10~25 m 를 보므로
+         기울일 이유가 없다.
+
+     카메라 해상도 · 주기는 이 매크로가 받지 않는다 (1280x720, 30 Hz 고정).
+     WSL2 소프트 렌더에서는 그대로면 너무 비싸므로 make_wamv_term.sh 가
+     만들어진 URDF 를 sed 로 낮춘다 (lite = 640x360, 10 Hz).
+     그래서 초점거리 fx 가 판마다 달라진다 — 인지 노드는 fx 를 손으로 적지 않고
+     /wamv/sensors/cameras/front_camera_sensor/camera_info 의 K 에서 읽는다.
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="yaml_components">
+
+    <!-- 제어·항법 셋 — 6·9주차와 같은 자리 -->
+    <xacro:wamv_gps name="gps_wamv" x="-0.85"/>
+    <xacro:wamv_imu name="imu_wamv" y="-0.2"/>
+    <xacro:wamv_p3d name="p3d_wamv"/>
+
+    <!-- 3D LiDAR — 9주차에서 실측으로 정한 자리 (x=0.7, y=0, z=1.9).
+         z 가 1.75 이하면 들어온 점의 82 % 가 자기 배(cpu_cases_link, 윗면 1.765 m)였다.
+         까닭은 W09_vrx_lite/wamv_ca_components.xacro 주석에 길게 적어 두었다. -->
+    <xacro:wamv_3d_lidar name="lidar_wamv"
+                         x="$(optenv CA_LIDAR_X 0.7)" y="$(optenv CA_LIDAR_Y 0)" z="$(optenv CA_LIDAR_Z 1.9)"
+                         vertical_lasers="$(optenv CA_LIDAR_BEAMS 16)"
+                         samples="$(optenv CA_LIDAR_SAMPLES 440)"
+                         update_rate="$(optenv CA_LIDAR_RATE 10)"
+                         max_range="$(optenv CA_LIDAR_RANGE 40)"/>
+
+    <!-- 단안 카메라 — 게이트 부표 · 표식 · 탐색 부표의 색을 보는 유일한 센서 -->
+    <xacro:wamv_camera name="front_camera"
+                       x="$(optenv TP_CAM_X 1.0)" y="0" z="$(optenv TP_CAM_Z 1.6)"
+                       R="0" P="0" Y="0"/>
+  </xacro:macro>
+</robot>
