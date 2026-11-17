@@ -90,11 +90,13 @@ if want station; then
 fi
 
 # ── 3. 도킹 ────────────────────────────────────────────────────────────
+#  표식 차례는 월드마다 다르다 — 해양누리공원 월드는 실제 사진대로 파랑·초록·빨강이다
+TRUTH='서쪽 파랑 네모 · 가운데 초록 원형 · 동쪽 빨강 삼각형'
 if want dock; then
   run 04_dock_cloud dock python3 "$PERC/see_dock_cloud.py" --out "$OUT/04_dock_cloud.png"
-  ( python3 "$PERC/see_placard.py" --out "$OUT/05_dock_cam.png" ) 2>&1 | tee "$OUT/05_dock_cam.log"
+  ( python3 "$PERC/see_placard.py" --truth "$TRUTH" --out "$OUT/05_dock_cam.png" ) 2>&1 | tee "$OUT/05_dock_cam.log"
   shot 05_dock_cam
-  run 06_dock_C dock_C python3 "$PERC/see_placard.py" --out "$OUT/06_dock_C_cam.png"
+  run 06_dock_C dock_C python3 "$PERC/see_placard.py" --truth "$TRUTH" --out "$OUT/06_dock_C_cam.png"
   [ "$REC" = "1" ] && python3 "$PERC/rec_cam.py" --sec "$RECSEC" --overlay placard \
       --out "$OUT/05_dock_cam.mp4" 2>&1 | tail -2
 fi

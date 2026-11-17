@@ -12,6 +12,12 @@
      라이다 성능은 환경변수로 고른다 (make_wamv_term.sh 가 넣어 준다)
        CA_LIDAR_BEAMS / CA_LIDAR_SAMPLES / CA_LIDAR_RATE / CA_LIDAR_RANGE
 
+     자리와 자세도 모두 환경변수로 덮어쓸 수 있다 — **기본값은 지금 쓰는 값 그대로**다.
+     이 파일을 고치지 않고 한 줄로 바꿔 보려면 (단위 : m, 라디안)
+       라이다  CA_LIDAR_X 0.7 · CA_LIDAR_Y 0 · CA_LIDAR_Z 1.9 · CA_LIDAR_R/P/YAW 0
+       카메라  TP_CAM_X 1.0 · TP_CAM_Y 0 · TP_CAM_Z 1.6 · TP_CAM_R/P/YAW 0
+     바꾸는 절차와 지켜야 하는 한계는 요구조건 문서 §7-5 에 표로 적어 두었다.
+
      카메라 자리 : x=1.00, y=0, z=1.60, 정면(R=P=Y=0)
        x 를 1.00 으로 둔 까닭
          라이다 마스트가 x=0.70 에 서 있다. 카메라를 그보다 뒤에 두면
@@ -45,6 +51,7 @@
          까닭은 W09_vrx_lite/wamv_ca_components.xacro 주석에 길게 적어 두었다. -->
     <xacro:wamv_3d_lidar name="lidar_wamv"
                          x="$(optenv CA_LIDAR_X 0.7)" y="$(optenv CA_LIDAR_Y 0)" z="$(optenv CA_LIDAR_Z 1.9)"
+                         R="$(optenv CA_LIDAR_R 0)" P="$(optenv CA_LIDAR_P 0)" Y="$(optenv CA_LIDAR_YAW 0)"
                          vertical_lasers="$(optenv CA_LIDAR_BEAMS 16)"
                          samples="$(optenv CA_LIDAR_SAMPLES 440)"
                          update_rate="$(optenv CA_LIDAR_RATE 10)"
@@ -52,7 +59,7 @@
 
     <!-- 단안 카메라 — 게이트 부표 · 표식 · 탐색 부표의 색을 보는 유일한 센서 -->
     <xacro:wamv_camera name="front_camera"
-                       x="$(optenv TP_CAM_X 1.0)" y="0" z="$(optenv TP_CAM_Z 1.6)"
-                       R="0" P="0" Y="0"/>
+                       x="$(optenv TP_CAM_X 1.0)" y="$(optenv TP_CAM_Y 0)" z="$(optenv TP_CAM_Z 1.6)"
+                       R="$(optenv TP_CAM_R 0)" P="$(optenv TP_CAM_P 0)" Y="$(optenv TP_CAM_YAW 0)"/>
   </xacro:macro>
 </robot>

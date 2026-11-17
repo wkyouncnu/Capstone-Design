@@ -129,19 +129,35 @@ def inner_windows(parent):
 
     Rviz2 의 OpenGL 화면처럼 따로 그려지는 자식 창을 찾아내기 위한 것이다.
     머리말 "Rviz2 의 3 차원 화면이 얼어붙는 문제" 참고.
+
+    **X 트리에서 진짜 자식인 것만** 본다 (`xwininfo -id <부모> -tree`).
+    화면에서 겹치는지로 고르면 안 된다 — 2026-11-17 에 그러다 깨졌다.
+    가제보 창 위에 Rviz2 의 3 차원 창이 놓여 있으면 그 창이 가제보의 자식으로
+    오인되어, 가제보 사진 한가운데에 점군 화면이 통째로 얹혀 나왔다
+    (공중 사진 10 장 + 구간 사진 15 장이 모두 그 꼴이었다).
     """
     pid, pw, ph, pax, pay, _ = parent
-    out = []
-    for wid, w, h, ax, ay, _t in windows(small=True):
+    out = subprocess.run(['xwininfo', '-id', hex(pid), '-tree'],
+                         capture_output=True, text=True,
+                         env=dict(os.environ, DISPLAY=os.environ.get('DISPLAY', ':0')))
+    kids = []
+    for line in out.stdout.splitlines():
+        m = WPAT.search(line)
+        if not m:
+            continue
+        wid = int(m.group(1), 16)
+        w, h = int(m.group(3)), int(m.group(4))
+        #  자리는 화면 기준끼리 빼서 낸다 — 줄에 적힌 상대 자리는 **바로 위 창** 기준이라
+        #  손자 창에서는 어긋난다
+        dx, dy = int(m.group(7)) - pax, int(m.group(8)) - pay
         if wid == pid or w < 100 or h < 50:
             continue
-        dx, dy = ax - pax, ay - pay
         if dx < 0 or dy < 0 or dx + w > pw or dy + h > ph:
-            continue                          # 부모 밖이면 자식이 아니다
+            continue                          # 부모 밖으로 나간 자식은 버린다
         if w * h > 0.95 * pw * ph:
             continue                          # 부모와 거의 같은 크기는 부모 자신의 틀
-        out.append((wid, w, h, dx, dy))
-    return out
+        kids.append((wid, w, h, dx, dy))
+    return kids
 
 
 def main():

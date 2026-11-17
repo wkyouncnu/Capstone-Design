@@ -48,6 +48,9 @@ def main():
                     help='화면 위쪽 이 비율은 버린다 (하늘). 0 이면 다 본다')
     ap.add_argument('--water-cut', type=float, default=0.75,
                     help='화면 아래쪽 이 비율 밑은 버린다 (뱃머리·물보라)')
+    ap.add_argument('--truth', default='왼쪽 빨강 삼각형 · 가운데 초록 원형 · 오른쪽 파랑 네모',
+                    help='월드에 넣어 둔 표식 차례. 월드마다 다르므로 밖에서 준다 '
+                         '(해양누리공원 월드는 check_all.sh 가 알맞은 값을 넘긴다)')
     a = ap.parse_args()
 
     bgr, fx, cx, cy = tp.grab_image()
@@ -108,7 +111,7 @@ def main():
                                   % (b['색'], b['모양'], tp.bearing_deg(b['u'], fx, cx))
                                   for b in found[:3]))
         print()
-        print('월드에 넣어 둔 정답 : 왼쪽 빨강 삼각형 · 가운데 초록 원형 · 오른쪽 파랑 네모')
+        print('월드에 넣어 둔 정답 : %s' % a.truth)
         print('Stateflow 로 넘길 값 : 고른 베이의 상대방위 한 개 (deg)')
     else:
         print('표식이 %d 개만 잡혔다 (셋이어야 한다).' % len(found))

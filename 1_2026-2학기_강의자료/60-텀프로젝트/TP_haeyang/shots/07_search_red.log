@@ -1,0 +1,10 @@
+카메라 : 640 x 360,  fx = 381.4 px
+
+색          면적[px]    방위[deg]        채움률
+빨강           7318        0.4       0.93
+
+가장 큰 덩어리 : 빨강,  면적 7318 px,  상대방위 +0.4 deg
+규정 5.2(6) 에 따른 선회 : **우현선회**
+
+Stateflow 로 넘길 값 한 개 : turn_dir = +1   (+1 우현 / -1 좌현)
+저장 : /home/wkyoun/capstone_ws/hy_shots/07_search_red_cam.png  (640 x 360)
