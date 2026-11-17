@@ -44,7 +44,19 @@ source ~/vrx_ws/install/setup.bash
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PIDS=()
-trap 'for p in "${PIDS[@]}"; do kill $p 2>/dev/null; done' EXIT
+#  끝날 때 — 먼저 곱게(TERM), 그래도 남으면 강제로(KILL) 끈다.
+#  그림 창(ca_viz)은 TERM 을 받아도 창이 남아 CPU 한 코어를 100 % 쥔다 (2026-11-17 실측).
+#  셋이 남으면 시뮬레이터가 느려져 MATLAB 쪽 동기 점검 k 가 1.39 까지 벌어졌다
+cleanup() {
+  for p in "${PIDS[@]}"; do kill "$p" 2>/dev/null; done
+  sleep 0.5
+  for p in "${PIDS[@]}"; do kill -9 "$p" 2>/dev/null; done
+}
+trap cleanup EXIT
+
+#  앞서 띄운 것이 남아 있으면 먼저 끈다 — Ctrl+C 없이 터미널만 닫으면 남는다
+pkill -9 -f "W09_vrx_lite/(bin/)?(ca_viz|ca_bridge|vfh_avoider|collision_avoidance_enu)" 2>/dev/null   && echo "앞서 띄운 회피 노드가 남아 있어 먼저 껐다"
+pkill -9 -f "lib/vrx_control/collision_avoidance_enu" 2>/dev/null
 
 echo "ROS_DOMAIN_ID=$ROS_DOMAIN_ID"
 #  시뮬레이터가 떠 있는지 먼저 본다 — 안 떠 있으면 아래 노드들은 조용히 기다리기만 한다
@@ -112,8 +124,11 @@ if [ -n "$VIZ_SAVE" ]; then
   #  한 장만 찍으면 그 순간을 놓친다. 강의자료 그림 고를 때 쓴다
   [ -n "$VIZ_EVERY" ] && ARGS+=(--every "$VIZ_EVERY")
   pick ca_viz
-  "${CMD[@]}" "${ARGS[@]}"
+  "${CMD[@]}" "${ARGS[@]}" & VIZ=$!
 else
   pick ca_viz
-  "${CMD[@]}"
+  "${CMD[@]}" & VIZ=$!
 fi
+#  그림도 PIDS 에 넣어 둔다 — Ctrl+C 나 창 닫기 어느 쪽으로 끝나도 cleanup 이 마저 끈다
+PIDS+=($VIZ)
+wait $VIZ
