@@ -7,7 +7,7 @@ function build_w09_models()
 %   한 자리만 끊고 그 사이에 상자 하나를 끼운다.
 %
 %       5주차   Guidance ──────────────────────────────> InnerLoop -> Thrusters
-%       9주차   Guidance -> AvoidSeam -> InnerLoop -> Thrusters
+%       9주차   Guidance -> AvoidSeam -> InnerLoop ─────────────> (토픽)
 %                              ↑
 %                     파이썬의 /vfh/command · /vfh/oa_flag
 %
@@ -26,10 +26,16 @@ function build_w09_models()
 %     GoalPublisher  지금 쫓는 웨이포인트를 ENU 로 바꿔 /usv/state/goal_enu 로 낸다.
 %                    파이썬 회피기는 목표점을 모르면 "앞이 막혔는가" 를 판정할 수 없다
 %
-%   빼는 상자 하나
+%   빼는 상자 둘
 %     Animate        실시간 그림은 이 주차에서 **파이썬이 그린다** (ca_viz.py).
 %                    궤적·장애물·헤딩 명령 넷을 극좌표로 겹쳐 보여야 하는데,
 %                    장애물은 /scan 에 있고 그것은 파이썬 쪽 자료다
+%     Thrusters      5주차의 Plugin 칸은 가제보 추진기 플러그인이 하는 계산
+%                    (포화 · 추력->회전수 · 검산)을 **옮겨 적은 것**이다. 가제보가
+%                    같은 계산을 스스로 하므로 VRX 연동에서는 지령이 그대로 지나간다.
+%                    5주차에서는 오프라인 쌍둥이와 견주려고 두었으나 이 주차에는
+%                    쌍둥이가 없다 — 배분이 낸 추력을 곧장 토픽으로 보낸다
+%                    (교수 지시 2026-11-17)
 %
 %   실행 전에 반드시 >> W09_setup 을 먼저 실행할 것.
 
@@ -47,7 +53,7 @@ build_vrx(here, m);
 %  배치 — 5주차와 같은 차례다. 사슬에 AvoidSeam 한 칸이 늘고,
 %  포트 없는 상자가 둘(GoalPublisher · VizPublisher) 늘었다
 boxes = {'GoalPublisher','VizPublisher','Logging','Observe','AutoStop'};
-lay_chain(m, {'Guidance','AvoidSeam','InnerLoop','Thrusters','CmdPublisher','PoseSubscriber'}, ...
+lay_chain(m, {'Guidance','AvoidSeam','InnerLoop','CmdPublisher','PoseSubscriber'}, ...
           'Boxes', boxes, 'Wrap', 3);
 
 load_system(m);
@@ -145,7 +151,7 @@ function build_vrx(here, m)
 
     % --- 7) 설명 --------------------------------------------------------
     retitle(m, ['W09 실습 D  —  LOS 와 파이썬 회피를 한 제어기에 (Gazebo 필요)' newline ...
-        'Guidance -> AvoidSeam -> Inner Loop -> Thrusters -> Gazebo -> Navigation' newline ...
+        'Guidance -> AvoidSeam -> Inner Loop -> Gazebo -> Navigation' newline ...
         '' newline ...
         '제어기는 5주차 그대로다. 헤딩 P-D 와 속도 PI 는 블록 하나도 바뀌지 않았다.' newline ...
         '바뀐 것은 둘이다 — (1) 제어기에 들어가는 명령을 누가 내는가,' newline ...
@@ -409,9 +415,9 @@ function addLogging(m, x, y)
 %  FB 도 더했다 — 선수추진기 추력 [N]. oa 가 0 인 구간에서 이 값이 정확히 0 인지
 %  보는 것이 "5주차와 같다" 는 말의 증거다 (W09_plot 이 같이 그린다)
     sig = {'x_n','y_n','psi','psi_ref','psi_los','psi_oa','oa', ...
-           'y_e','x_e','beta','chi','u','r','U','gate','FL','FR','FB','n','F_err','wp_idx'};
+           'y_e','x_e','beta','chi','u','r','U','gate','FL','FR','FB','wp_idx'};
     tag = {'x_n','y_n','psi','psi_ref','psi_los','psi_oa','oa', ...
-           'y_e','x_e','beta','chi','u','r','U','gate','FL','FR','FB','nprop','Ferr','wp_idx'};
+           'y_e','x_e','beta','chi','u','r','U','gate','FL','FR','FB','wp_idx'};
     add_logging_box(m, sig, tag, [x y], 'Ts_ctrl');
 end
 
@@ -484,7 +490,7 @@ end
 %   동안에도 선수각은 제어기가 시킨 그대로 돈다 (6주차 2-4절, 2-5절 실측).
 %
 %   포트는 **끼워 넣지 않고 뒤에 붙인다.** InnerLoop 입력 1~5번과 출력 1~2번,
-%   Thrusters 출력 1~4번이 5주차 그대로 남아 윗단 신호선을 다시 긋지 않아도 된다.
+%   InnerLoop 의 새 포트(oa · FB)는 맨 뒤에 붙인다 — 5주차 신호선의 번호가 밀리지 않는다.
 % =====================================================================
 function addBowThrust(here, m)
     %  6주차 배분식 본문을 **글자 그대로** 가져온다. 베껴 적지 않는다 —
@@ -538,65 +544,26 @@ function addBowThrust(here, m)
     add_line(ss,'Alloc/3','FB/1','autorouting','on');
     Simulink.BlockDiagram.arrangeSystem(ss);
 
-    % ---------- 3) Thrusters : 플러그인 칸도 셋으로 ----------
-    %  5주차 칸의 식을 그대로 두고 벡터 길이만 2 -> 3 으로 늘린다.
-    %  포화·회전수·검산 세 토막은 가제보 플러그인 소스 그대로다
+    % ---------- 3) Thrusters 상자를 뺀다 ----------
+    %  5주차의 Plugin 칸은 가제보 추진기 플러그인(gz-sim7 Thruster.cc)의 계산을
+    %  옮겨 적은 것이다 — 포화(±2353 N) · 추력->회전수 · 되돌려 보는 검산.
+    %  가제보가 같은 계산을 스스로 한다. 그리고 배분(Alloc)이 이미 ±500 · ±250 N
+    %  으로 자르므로 플러그인 한계 2353 N 에는 닿지도 않는다 — 지령이 그대로 지나갈 뿐이다.
+    %  그래서 배분이 낸 F_L · F_R · F_B 를 곧장 토픽으로 보낸다
     ts = [m '/Thrusters'];
-    set_param([ts '/Plugin'], 'Position', [250 60 440 320]);   % 포트 5개 자리
-    add_block('simulink/Sources/In1', [ts '/FB_cmd'], ...
-              'Position', [40 380 75 410], 'Port','3');
-    add_block('simulink/Sinks/Out1',  [ts '/FB'], ...
-              'Position', [570 380 605 410], 'Port','5');
-    setFcn(ts, 'Plugin', [ ...
-'function [FL, FR, n, F_err, FB] = Plugin(FL_cmd, FR_cmd, k, F_lim, FB_cmd)'  newline ...
-'%#codegen'                                                        newline ...
-'% Gazebo 추진기 플러그인이 하는 일을 소스와 같은 순서로 적는다.'   newline ...
-'%   gz-sim7  src/systems/thruster/Thruster.cc'                    newline ...
-'% 5주차와 다른 것은 **벡터 길이 하나**다 — 추진기가 둘에서 셋이 됐다.'  newline ...
-'% 세 토픽 모두 같은 플러그인이고 계수도 같다 (Ct=0.004422, rho=1000, D=0.2)' newline ...
-''                                                                 newline ...
-'% 1) 포화 — 플러그인은 **추력에** 건다 (OnCmdThrust, :520-521)'    newline ...
-'%      thrust = clamp(cmd, cmdMin, cmdMax),  cmdMax = max_thrust_cmd' newline ...
-'F = [FL_cmd; FR_cmd; FB_cmd];'                                    newline ...
-'F = max(-F_lim, min(F_lim, F));'                                  newline ...
-''                                                                 newline ...
-'% 2) 추력 -> 회전수 (ThrustToAngularVec, :562-584). 이 값이 조인트'  newline ...
-'%    속도 지령이 된다 — velocity_control = true (:740-756)'        newline ...
-'%      omega = sign(F*Ct)*sqrt(|F|/(rho*Ct*D^4)),  k = rho*Ct*D^4' newline ...
-'n = sign(F) .* sqrt(abs(F)/k);'                                   newline ...
-''                                                                 newline ...
-'% 3) 회전수 -> 추력 (AngularVelToThrust, :593-599) — 되돌려 보는 검산' newline ...
-'F_chk = k * abs(n) .* n;'                                          newline ...
-'F_err = F_chk - F;'                                               newline ...
-''                                                                 newline ...
-'% 4) 링크에 가는 힘은 되돌린 값이 아니라 포화만 거친 지령이다'      newline ...
-'%    (AddWorldWrench 가 desiredThrust 를 그대로 쓴다, :770-773)'   newline ...
-'FL = F(1);'                                                       newline ...
-'FR = F(2);'                                                       newline ...
-'FB = F(3);']);
-
-    add_line(ts, 'FB_cmd/1', 'Plugin/5', 'autorouting','on');
-    add_line(ts, 'Plugin/5', 'FB/1',     'autorouting','on');
-
-    %  열 잎 블록을 각자의 포트 높이에 맞춘다 — 열 선이 모두 직선이 된다
-    tin  = {'FL_cmd','FR_cmd','Kp','Flim','FB_cmd'};
-    tout = {'FL','FR','n','F_err','FB'};
-    for k = 1:5
-        align_to(ts, tin{k},  'Outport', port_xy(ts, 'Plugin', 'Inport',  k));
-        align_to(ts, tout{k}, 'Inport',  port_xy(ts, 'Plugin', 'Outport', k));
-    end
-
-    sl_note(ts, 'n_b', [ ...
-        '선수추진기가 셋째 벌로 붙었다 (6주차 가제보 모델 /wamv/thrusters/bow/thrust).' newline ...
-        '플러그인은 좌·우와 **같은 것**이고 계수도 같다 — 바뀐 것은 벡터 길이뿐이다.' newline ...
-        '주의: 이 플러그인은 전진 속도와 무관하게 지령한 힘을 그대로 낸다.' newline ...
-        '실제 선수추진기는 2~3 kn 을 넘으면 효율이 크게 떨어진다 (9주차 본문 참고)'], 250, 520);
+    lh = get_param(ts, 'LineHandles');
+    hs = [lh.Inport(:).' lh.Outport(:).'];
+    for h = hs(hs > 0), delete_line(h); end
+    delete_block(ts);
+    delete_block([m '/Go_nprop']);     % 회전수 · 검산 태그 — 받던 곳(Logging)도 다시 짓는다
+    delete_block([m '/Go_Ferr']);
+    add_line(m, 'InnerLoop/1', 'Go_FL/1', 'autorouting','on');
+    add_line(m, 'InnerLoop/2', 'Go_FR/1', 'autorouting','on');
 
     % ---------- 4) 윗단 배관 ----------
-    add_line(m, 'InnerLoop/3', 'Thrusters/3', 'autorouting','on');   % FB 지령
     add_line(m, 'AvoidSeam/3', 'InnerLoop/6', 'autorouting','on');   % oa 깃발 (가지)
     G(m, 'FB', 1230, 780);
-    add_line(m, 'Thrusters/5', 'Go_FB/1', 'autorouting','on');
+    add_line(m, 'InnerLoop/3', 'Go_FB/1', 'autorouting','on');       % FB 지령
 
     % ---------- 5) 발행 토픽을 셋으로 ----------
     %  상자 안에 벌 하나를 손으로 끼우기보다 add_cmd_publisher 에 토픽 셋을

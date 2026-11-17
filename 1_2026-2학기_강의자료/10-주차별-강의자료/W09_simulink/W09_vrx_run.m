@@ -149,6 +149,7 @@ S        = W09_plot(out, sprintf('VRX / 회피 (%d초)', T_end));
 S.RTF    = RTF;
 S.k_sync = syncCheck(out);
 saveFig(S.fig, 'W09_1_vrx_result.png');   % gcf 는 추진기 창이다 — 궤적 창을 저장한다
+saveFig(S.fig2, 'W09_1_vrx_thrust.png');  % 추력 — 선수추진기가 회피 중에만 켜졌는가
 
 %% 5. 이음새가 일했는가 -------------------------------------------------
 %  그림만 보면 "안 피했다" 와 "피할 것이 없었다" 가 같아 보인다. 숫자로 가른다

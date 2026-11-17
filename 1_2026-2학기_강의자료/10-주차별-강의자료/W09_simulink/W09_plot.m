@@ -22,9 +22,9 @@ function S = W09_plot(out, ttl)
 %     .oa_n .oa_time .oa_frac  회피가 켜진 횟수 · 회피한 시간 [s] · 비율
 %     .mean_ye_los .max_ye_los LOS 구간만의 평균·최대 |y_e| [m]
 %     .mean_ye_all             전 구간 평균 |y_e| (참고 — 회피가 섞여 있다)
-%     .t_finish .mean_u .max_Ferr .fig
+%     .t_finish .mean_u .fig
 %
-%   쓰는 base 변수  wp_north wp_east R_LOS u_ref Ts_ctrl F_max n_max
+%   쓰는 base 변수  wp_north wp_east R_LOS u_ref Ts_ctrl F_max F_bow_max
 %                   obs_x_n obs_y_n   (모두 W09_setup 이 만든다)
 
 if nargin < 2 || isempty(ttl), ttl = '회피 주행'; end
@@ -34,7 +34,6 @@ u_ref = evalin('base','u_ref');
 R_LOS = evalin('base','R_LOS');
 F_max = evalin('base','F_max');
 F_bow_max = evalin('base','F_bow_max');
-n_max = evalin('base','n_max');
 ox    = evalin('base','obs_x_n');   oy = evalin('base','obs_y_n');
 
 %  스칼라 신호를 꺼낼 때는 반드시 col 로 감싼다. 같은 스칼라인데도 저장
@@ -52,9 +51,6 @@ u    = col(out.log_u.Data);
 FL   = col(out.log_FL.Data);      FR   = col(out.log_FR.Data);
 FB   = col(out.log_FB.Data);      % 선수추진기 — 회피할 때만 0 이 아니어야 한다
 
-%  회전수는 2원소 벡터 신호다. 저장 모양이 [2 x 1 x N] 일 수도 [N x 2] 일 수도 있다
-n = squeeze(out.log_n.Data);        if size(n,1)    ~= numel(t), n    = n.';    end
-Ferr = squeeze(out.log_F_err.Data); if size(Ferr,1) ~= numel(t), Ferr = Ferr.'; end
 
 %% 보는 구간 — 임무 완료까지 --------------------------------------------
 k = find(gate < 0.5, 1);
@@ -98,7 +94,6 @@ S.mean_ye_los = mean(abs(ye(los)));
 S.max_ye_los  = max(abs(ye(los)));
 S.mean_ye_all = mean(abs(ye(kk)));
 S.mean_u      = mean(u(s:k));
-S.max_Ferr    = max(abs(Ferr(:)));
 
 %% 4. 그림 --------------------------------------------------------------
 S.fig = figure('Name',['W09  ' ttl], 'Position',[60 50 1240 800], 'Color','w');
@@ -165,10 +160,9 @@ grid on; xlabel('시간 [s]');
 title(sprintf('회피 %d회 · 총 %.0f s (%.0f%%)', S.oa_n, S.oa_time, 100*S.oa_frac));
 
 %% 5. 추진기 — 5주차와 같은 형식 ----------------------------------------
-figure('Name',['W09 추진기  ' ttl], 'Position',[120 110 1200 380], 'Color','w');
+S.fig2 = figure('Name',['W09 추진기  ' ttl], 'Position',[120 110 900 420], 'Color','w');
 %  분홍 띠 밖에서 F_B 가 0 인지 **눈으로** 본다 — 이 주차가
 %  "제어는 5주차 그대로" 라고 말할 수 있는 근거가 그 한 줄이다
-subplot(1,3,1);
 shadeOA(t(kk), on);  hold on;
 plot(t(kk), FL(kk), '-', t(kk), FR(kk), '-', 'LineWidth',1.1);
 plot(t(kk), FB(kk), '-', 'LineWidth',1.6, 'Color',[0.85 0.33 0.10]);
@@ -181,19 +175,6 @@ grid on; xlabel('시간 [s]'); ylabel('추력 [N]');
 legend({'회피 구간','F_L','F_R','F_B (선수)'}, 'Location','best');
 title(sprintf('추력 — 선수추진기는 회피 중만 (최대 %.0f N)', S.FB_on_max));
 
-subplot(1,3,2);
-plot(t(kk), n(kk,1), '-', t(kk), n(kk,2), '-', ...
-     t(kk), n(kk,3), '-', 'LineWidth',1.1); hold on;
-yline( n_max, 'r:');  yline(-n_max, 'r:');
-grid on; xlabel('시간 [s]'); ylabel('회전수 [rev/s]');
-legend({'n_L','n_R','n_B'}, 'Location','best');  title('회전수');
-
-subplot(1,3,3);
-plot(t(kk), abs(Ferr(kk,:)), '-', 'LineWidth',1.1);
-grid on; xlabel('시간 [s]'); ylabel('|F_{err}| [N]');
-%  10^-14 지수 표시가 제목 왼쪽을 덮는다 — 눈금마다 지수를 적어 없앤다
-ytickformat('%.0e');
-title(sprintf('왕복 검산 — 최대 %.2e N', S.max_Ferr));
 
 %% 6. 숫자 --------------------------------------------------------------
 fprintf('\n  === 9주차 회피 주행 지표 ===\n');
@@ -208,7 +189,6 @@ fprintf('  평균 |y_e|       %6.2f m   <- LOS 구간만 (최대 %.2f)\n', ...
 fprintf('  (참고) 전 구간   %6.2f m   <- 회피가 섞여 있어 추종 지표가 아니다\n', ...
         S.mean_ye_all);
 fprintf('  평균 속도        %6.2f m/s (지령 %.2f)\n', S.mean_u, u_ref);
-fprintf('  추력 왕복 오차   %6.2e N\n', S.max_Ferr);
 fprintf('  선수추진기 |F_B|  회피 중 최대 %6.1f N (한계 %g)\n', S.FB_on_max, F_bow_max);
 fprintf('                   평상 중 최대 %6.1f N  <- 0 이어야 한다 (5주차와 같음)\n', S.FB_off_max);
 if isnan(S.t_finish)
