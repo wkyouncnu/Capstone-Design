@@ -24,7 +24,7 @@ source ~/vrx_ws/install/setup.bash
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GRADE="${1:-lite}"
-WORLD="${WORLD:-stationkeeping_task}"
+source "$HERE/w09_world.sh"   # 장애물 월드 · 띄울 자리 (W09_WORLD · W09_LAUNCH · W09_SPAWN)
 U="$HOME/capstone_ws/wamv/wamv_ca_${GRADE}.urdf"
 BASE=/wamv/sensors/lidars/lidar_wamv_sensor
 

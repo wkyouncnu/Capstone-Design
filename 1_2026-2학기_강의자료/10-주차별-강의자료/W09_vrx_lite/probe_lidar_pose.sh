@@ -24,7 +24,7 @@ source ~/vrx_ws/install/setup.bash
 : "${ROS_DOMAIN_ID:=7}"; export ROS_DOMAIN_ID
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORLD="${WORLD:-stationkeeping_task}"
+source "$HERE/w09_world.sh"   # 장애물 월드 · 띄울 자리 (W09_WORLD · W09_LAUNCH · W09_SPAWN)
 ZS=("$@"); [ ${#ZS[@]} -eq 0 ] && ZS=(1.6 1.8 2.2 2.6)
 
 ANALYZE='

@@ -20,7 +20,7 @@
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SEC="${SEC:-20}"
-WORLD="${WORLD:-stationkeeping_task}"
+source "$HERE/w09_world.sh"   # 장애물 월드 · 띄울 자리 (W09_WORLD · W09_LAUNCH · W09_SPAWN)
 PTS=/wamv/sensors/lidars/lidar_wamv_sensor/points
 LOG=/tmp/measure_rtf.log
 
