@@ -96,7 +96,7 @@ if want dock; then
   run 04_dock_cloud dock python3 "$PERC/see_dock_cloud.py" --out "$OUT/04_dock_cloud.png"
   ( python3 "$PERC/see_placard.py" --truth "$TRUTH" --out "$OUT/05_dock_cam.png" ) 2>&1 | tee "$OUT/05_dock_cam.log"
   shot 05_dock_cam
-  run 06_dock_C dock_C python3 "$PERC/see_placard.py" --truth "$TRUTH" --out "$OUT/06_dock_C_cam.png"
+  run 06_dock_C dock_C python3 "$PERC/see_placard.py" --sky-cut 0.15 --water-cut 0.8 --truth "$TRUTH" --out "$OUT/06_dock_C_cam.png"
   [ "$REC" = "1" ] && python3 "$PERC/rec_cam.py" --sec "$RECSEC" --overlay placard \
       --out "$OUT/05_dock_cam.mp4" 2>&1 | tail -2
 fi

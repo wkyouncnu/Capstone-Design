@@ -57,7 +57,7 @@
 
 <rect x="790" y="152" width="180" height="84" rx="5" fill="#ffffff" stroke="#d97706"/>
 <text x="880" y="186" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">월드</text>
-<text x="880" y="212" font-size="15" fill="#334155" text-anchor="middle">kaboat_term</text>
+<text x="880" y="212" font-size="15" fill="#334155" text-anchor="middle">haeyangnuri</text>
 
 <rect x="790" y="250" width="180" height="84" rx="5" fill="#ffffff" stroke="#d97706"/>
 <text x="880" y="284" font-size="16" font-weight="bold" fill="#1e293b" text-anchor="middle">WAM-V 라이트</text>

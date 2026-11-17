@@ -1,24 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1020" height="850" viewBox="0 0 1020 850" font-family="Malgun Gothic, sans-serif">
 <rect width="1020" height="850" fill="#ffffff"/>
-<text x="30" y="36" font-size="21" font-weight="bold" fill="#1e293b">TP_vrx_lite — 프로그램 계층</text>
+<text x="30" y="36" font-size="21" font-weight="bold" fill="#1e293b">TP_haeyang · TP_vrx_lite — 프로그램 계층</text>
 <text x="30" y="58" font-size="15" fill="#64748b">위에서 아래로 쓰는 순서다. 같은 줄의 것은 서로 독립이다.</text>
 
 <rect x="20" y="74" width="980" height="118" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
 <text x="34" y="96" font-size="16" font-weight="bold" fill="#334155">1 · 준비 — 학기에 한 번. 월드와 배를 만든다</text>
 <rect x="40" y="108" width="300" height="68" rx="5" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
-<text x="56" y="132" font-size="16" font-weight="bold" fill="#1d4ed8">make_term_world.py</text>
-<text x="56" y="156" font-size="15" fill="#334155">my_world.sdf → kaboat_term.sdf</text>
+<text x="56" y="132" font-size="16" font-weight="bold" fill="#1d4ed8">make_haeyang_world.py</text>
+<text x="56" y="156" font-size="15" fill="#334155">my_world_원본.sdf → haeyangnuri.sdf</text>
 <rect x="360" y="108" width="300" height="68" rx="5" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
 <text x="376" y="132" font-size="16" font-weight="bold" fill="#1d4ed8">make_wamv_term.sh</text>
 <text x="376" y="156" font-size="15" fill="#334155">선미 2 + 선수 1 · LiDAR · 카메라</text>
 <rect x="680" y="108" width="300" height="68" rx="5" fill="#f1f5f9" stroke="#64748b" stroke-dasharray="5 4"/>
-<text x="696" y="132" font-size="15" fill="#475569">낳는 것 : kaboat_term.sdf</text>
+<text x="696" y="132" font-size="15" fill="#475569">낳는 것 : haeyangnuri.sdf</text>
 <text x="696" y="156" font-size="15" fill="#475569">wamv_term_components.xacro</text>
 
 <rect x="20" y="204" width="980" height="118" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
 <text x="34" y="226" font-size="16" font-weight="bold" fill="#334155">2 · 띄우기·끄기 — 터미널 셋</text>
 <rect x="40" y="238" width="300" height="68" rx="5" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
-<text x="56" y="262" font-size="16" font-weight="bold" fill="#0d9488">run_vrx_term.sh</text>
+<text x="56" y="262" font-size="16" font-weight="bold" fill="#0d9488">run_haeyang.sh</text>
 <text x="56" y="286" font-size="15" fill="#334155">가제보 + ros_gz_bridge</text>
 <rect x="360" y="238" width="300" height="68" rx="5" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
 <text x="376" y="262" font-size="16" font-weight="bold" fill="#0d9488">rviz_term.sh</text>
@@ -31,10 +31,10 @@
 <text x="34" y="356" font-size="16" font-weight="bold" fill="#334155">3 · 배를 옮기고, 보는 눈을 옮긴다 — 확인할 자리로 간다</text>
 <rect x="40" y="368" width="460" height="68" rx="5" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
 <text x="56" y="392" font-size="16" font-weight="bold" fill="#d97706">goto.sh  &lt;지점&gt;</text>
-<text x="56" y="416" font-size="15" fill="#334155">배를 16 개 지점 중 하나로 순간이동 — 물리를 건드린다</text>
+<text x="56" y="416" font-size="15" fill="#334155">배를 14 개 지점 중 하나로 순간이동 — 물리를 건드린다</text>
 <rect x="520" y="368" width="460" height="68" rx="5" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
-<text x="536" y="392" font-size="16" font-weight="bold" fill="#d97706">topview.sh  &lt;자리&gt;</text>
-<text x="536" y="416" font-size="15" fill="#334155">보는 카메라만 공중으로 — 물리는 그대로</text>
+<text x="536" y="392" font-size="16" font-weight="bold" fill="#d97706">view.sh  &lt;자리&gt;</text>
+<text x="536" y="416" font-size="15" fill="#334155">보는 카메라만 21 개 자리로 — 물리는 그대로</text>
 
 <rect x="20" y="464" width="980" height="238" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
 <text x="34" y="486" font-size="16" font-weight="bold" fill="#334155">4 · 구간별 인지 확인 예제 — 알고리즘이 아니라 센서가 보이는지만 본다</text>
