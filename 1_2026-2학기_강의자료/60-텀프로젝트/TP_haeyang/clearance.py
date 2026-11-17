@@ -43,12 +43,15 @@ def fill_circle(cx, cy, r):
     cv2.circle(free, px(cx, cy), int(r / RES), 0, -1)
 
 
-# 긴 차단벽 — 난간 기둥까지 포함해 실제 선체가 닿는 폭 0.8 m
+# 부유 차단벽 — 각재 폭 0.9 m. 양 끝에 돔 펜더가 달려 있다 (반지름은 생성기가 정한다)
 for (x, y, a, L) in W.BARRIERS:
-    fill_box(x, y, L, 0.8, math.radians(a))
-# 흰 돔 부표 — 수면에서의 반지름 (반쯤 잠겨 z=0.15 에 중심, 수면 단면 ≈ 1.19)
+    rad = math.radians(a)
+    fill_box(x, y, L, 0.9, rad)
+    for s in (-L / 2.0, L / 2.0):
+        fill_circle(x + s * math.cos(rad), y + s * math.sin(rad), W.FENDER_R)
+# 흰 돔 부표 — 수면에서의 반지름 (반쯤 잠겨 z=0.15 에 중심)
 for (x, y) in W.DOMES:
-    fill_circle(x, y, 1.2)
+    fill_circle(x, y, W.DOME_R)
 # 주황 기둥
 for (x, y) in W.PILLARS:
     fill_circle(x, y, 0.7)
@@ -62,10 +65,25 @@ free = cv2.bitwise_and(free, outer)
 
 dist = cv2.distanceTransform(free, cv2.DIST_L2, 5) * RES     # m
 
-A = px(W.OBS_X1 - 3.8, -5.0)        # 진입구 바로 안
-B = px(W.OBS_X0 + 3.8, -27.0)        # 종료구 바로 안
-print(f'격자 {NW} x {NH} @ {RES} m    진입 여유 {dist[A[1], A[0]]:.2f} m'
-      f'   종료 여유 {dist[B[1], B[0]]:.2f} m')
+#  진입·종료 기준점은 **게이트 선 위에서 가장 여유 있는 칸**으로 잡는다.
+#    고정 좌표(북 -15 / -39)로 박아 두었더니, 목을 좁히려 놓은 흰 돔이 하필
+#    그 점 3 m 옆에 와서 기준점 자체가 2.36 m 로 좁아졌고, 이분법이 통로가 아니라
+#    **기준점의 여유**를 재어 버렸다 (통로는 10 m 대인데 4.72 m 로 나왔다).
+def best_on_line(x, ylo, yhi):
+    """동 x 선 위, 북 ylo..yhi 구간에서 여유가 가장 큰 칸을 돌려준다."""
+    cx = int((x - X0) / RES)
+    j0, j1 = int((ylo - Y0) / RES), int((yhi - Y0) / RES)
+    j = j0 + int(np.argmax(dist[j0:j1, cx]))
+    return cx, j
+
+
+A = best_on_line(W.OBS_X1 - 3.8, -21.0, -9.0)     # 진입구(북 -21..-9) 바로 안
+B = best_on_line(W.OBS_X0 + 3.8, -45.0, -33.0)    # 종료구(북 -45..-33) 바로 안
+print(f'격자 {NW} x {NH} @ {RES} m')
+print(f'  진입 기준점 (동 {X0 + A[0] * RES:.1f} · 북 {Y0 + A[1] * RES:.1f}) '
+      f'여유 {dist[A[1], A[0]]:.2f} m   '
+      f'종료 기준점 (동 {X0 + B[0] * RES:.1f} · 북 {Y0 + B[1] * RES:.1f}) '
+      f'여유 {dist[B[1], B[0]]:.2f} m')
 
 
 def connected(r):
