@@ -68,7 +68,7 @@ fi
 echo "ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}   GZ_PARTITION=${GZ_PARTITION:-<안 정함: hostname:username>}"
 echo "쓰는 URDF : $U   (센서 판 $GRADE)"
 echo "배 자리   : x=$SX  y=$SY  yaw=$SYAW rad"
-echo "위도/경도 : 월드 원점이 3·15 해양누리공원 앞 수역 (35.1859 N, 128.5661 E)"
+echo "위도/경도 : 월드 원점이 3·15 해양누리공원 앞 수역 (35.1862095 N, 128.5665903 E)"
 echo "토픽"
 echo "  /wamv/thrusters/{left,right,bow}/thrust                 std_msgs/msg/Float64 [N]"
 echo "  /wamv/sensors/lidars/lidar_wamv_sensor/points           sensor_msgs/msg/PointCloud2"
