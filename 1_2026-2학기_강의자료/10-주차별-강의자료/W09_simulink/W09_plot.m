@@ -20,6 +20,8 @@ function S = W09_plot(out, ttl)
 %     .clear_min .clear_at_x   최소 중심거리 [m] 와 그때의 x_n [m]
 %     .gap_min                 그때의 **선체 표면 대 장애물 표면** 틈 [m]
 %     .oa_n .oa_time .oa_frac  회피가 켜진 횟수 · 회피한 시간 [s] · 비율
+%     .u_oa_on .u_on .u_off    회피 중 지령 속력 · 그때 실제 속력 · 평상 속력 [m/s]
+%     .u_oa_min                회피기가 가장 많이 줄인 지령 속력 [m/s]
 %     .mean_ye_los .max_ye_los LOS 구간만의 평균·최대 |y_e| [m]
 %     .mean_ye_all             전 구간 평균 |y_e| (참고 — 회피가 섞여 있다)
 %     .t_finish .mean_u .fig
@@ -49,7 +51,8 @@ plos = col(out.log_psi_los.Data); poa  = col(out.log_psi_oa.Data);
 oa   = col(out.log_oa.Data);
 u    = col(out.log_u.Data);
 FL   = col(out.log_FL.Data);      FR   = col(out.log_FR.Data);
-FB   = col(out.log_FB.Data);      % 선수추진기 — 회피할 때만 0 이 아니어야 한다
+FB   = col(out.log_FB.Data);      % 선수추진기 — 이 주차에서는 내내 0 이어야 한다
+uoa  = col(out.log_u_oa.Data);    % 회피기가 낸 속력 지령 [m/s]
 
 
 %% 보는 구간 — 임무 완료까지 --------------------------------------------
@@ -65,7 +68,17 @@ on = oa(kk) > 0.5;                  % 회피 중인 샘플
 %  선체가 실제로 비켜간 틈(gap_min)이므로 둘을 함께 낸다
 OBS_R      = 1.5;      % 장애물 원기둥 반지름 [m] (W09_setup 의 obs_r)
 HULL_HALF  = 1.23;     % 선체 반폭 [m] (회피기 HULL_HALF_WIDTH 와 같은 값)
-SAFE_R     = 1.20;     % 회피기 safety_margin_m — 호 판정에 쓰는 값. 이보다 좁아지면 경고
+%  회피기의 keep-out 반경 (robot.safety_margin_m). run_ca_nodes.sh 가 띄울 때
+%  ROS 파라미터로 주는 값과 **같아야** 한다 — 기본 1.20 이 아니라 2.00 이다.
+%  회피기는 선체 직사각형 표면으로 재므로 이 반경은 선체 반폭 **위에 더하는**
+%  여유다. 그런데 (가) 점수식이 목표 정렬을 더 무겁게 보아 회피기가 그 여유를
+%  거의 다 써 버리고, (나) 여유는 **예측한 호**에 대한 것인데 실제 배는 헤딩
+%  지연·선회 반경 때문에 호 안쪽을 깎아 간다. 그래서 실제 틈이 더 작다 :
+%        실측(2026-11-17) : 반경 1.20 -> 틈 0.07 · 반경 2.00 -> 틈 0.76 · 0.79
+%        기울기는 거의 1 (반경 +0.80 -> 틈 +0.70), 치우침은 약 1.15 m
+CA_MARGIN  = 2.00;
+GAP_SHORT  = 1.15;                          % 실측 치우침 [m] — 예측 호와 실제 경로의 차이
+GAP_EXPECT = CA_MARGIN - GAP_SHORT;         % 이보다 뚜렷이 좁으면 무언가 어긋난 것이다
 D = hypot(x_n(kk) - ox(:).', y_n(kk) - oy(:).');
 [S.clear_min, ii] = min(D(:));
 S.gap_min    = S.clear_min - OBS_R - HULL_HALF;   % 선체 표면 대 장애물 표면
@@ -80,11 +93,19 @@ S.oa_n    = sum(diff([0; double(on(:))]) > 0);
 S.oa_time = sum(on) * Ts;
 S.oa_frac = mean(on);
 
-%  이 주차의 핵심 판정 — 회피가 꺼진 동안 선수추진기가 **정확히** 0 인가.
-%  Y_cmd = K_sway*ssa(psi_ref-psi)*oa 이므로 oa = 0 이면 곱이 0 이고,
-%  배분식의 M = N - l3*FB 도 M = N 으로 되돌아간다 (= 5주차 식 그대로)
+%  이 주차의 핵심 판정 둘
+%   (1) 선수추진기가 **내내** 0 인가. Y = 0 으로 묶었으므로 FB = 0 이어야 하고,
+%       그러면 배분식의 M = N - l3*FB 가 M = N 즉 5주차 식 그대로가 된다
 S.FB_on_max  = maxAbs(FB(kk(on)));
 S.FB_off_max = maxAbs(FB(kk(~on)));
+
+%   (2) 속력을 정말 넘겨받았는가. 회피 구간에서 u 가 u_oa 를 따라 내려가고,
+%       평상 구간에서는 u_ref 를 따라야 한다. 두 구간의 평균을 따로 낸다 —
+%       한 숫자로 섞으면 "느려졌다" 와 "원래 느리다" 를 가릴 수 없다
+S.u_oa_on   = mean(uoa(kk(on)),  'omitnan');   % 회피기가 시킨 속력
+S.u_on      = mean(u(kk(on)),    'omitnan');   % 그때 실제 속력
+S.u_off     = mean(u(kk(~on)),   'omitnan');   % 평상 구간 실제 속력
+S.u_oa_min  = min(uoa(kk));                    % 가장 많이 줄인 순간
 
 %% 3. 추종 성능 — LOS 구간만 --------------------------------------------
 los = ~on;
@@ -160,9 +181,10 @@ grid on; xlabel('시간 [s]');
 title(sprintf('회피 %d회 · 총 %.0f s (%.0f%%)', S.oa_n, S.oa_time, 100*S.oa_frac));
 
 %% 5. 추진기 — 5주차와 같은 형식 ----------------------------------------
-S.fig2 = figure('Name',['W09 추진기  ' ttl], 'Position',[120 110 900 420], 'Color','w');
-%  분홍 띠 밖에서 F_B 가 0 인지 **눈으로** 본다 — 이 주차가
-%  "제어는 5주차 그대로" 라고 말할 수 있는 근거가 그 한 줄이다
+S.fig2 = figure('Name',['W09 추진기·속력  ' ttl], 'Position',[120 110 1240 420], 'Color','w');
+%  왼쪽 — F_B 가 **내내** 0 인지 눈으로 본다. 이 주차가 "제어는 5주차 그대로"
+%  라고 말할 수 있는 근거가 그 한 줄이다 (Y = 0 으로 묶었다)
+subplot(1,2,1);
 shadeOA(t(kk), on);  hold on;
 plot(t(kk), FL(kk), '-', t(kk), FR(kk), '-', 'LineWidth',1.1);
 plot(t(kk), FB(kk), '-', 'LineWidth',1.6, 'Color',[0.85 0.33 0.10]);
@@ -173,7 +195,20 @@ yline(-F_bow_max, ':', 'Color',[0.85 0.33 0.10]);
 ylim([-1 1] * 1.2 * max([F_max, max(abs([FL(kk); FR(kk); FB(kk)]))]));
 grid on; xlabel('시간 [s]'); ylabel('추력 [N]');
 legend({'회피 구간','F_L','F_R','F_B (선수)'}, 'Location','best');
-title(sprintf('추력 — 선수추진기는 회피 중만 (최대 %.0f N)', S.FB_on_max));
+title(sprintf('추력 — 선수추진기는 내내 0 (최대 %.1f N)', max(S.FB_on_max, S.FB_off_max)));
+
+%  오른쪽 — 옆걸음을 뺀 **자리를 메우는 것**이 이 그림이다.
+%  분홍 띠 안에서 지령이 u_ref 아래로 내려가고 실제 속력이 그것을 따라가면
+%  "느려져서 더 작게 돌았다" 가 눈에 보인다 (1-8 절)
+subplot(1,2,2);
+shadeOA(t(kk), on);  hold on;
+plot(t(kk), uoa(kk), '-',  'LineWidth',1.6, 'Color',[0.85 0.33 0.10]);
+plot(t(kk), u(kk),   'b-', 'LineWidth',1.2);
+yline(u_ref, 'k:');
+grid on; xlabel('시간 [s]'); ylabel('속력 [m/s]');
+ylim([0 1.3*max([u_ref; u(kk); uoa(kk)])]);
+legend({'회피 구간','u_{oa} (회피기 지령)','u (실제)','u_{ref}'}, 'Location','best');
+title(sprintf('속력 — 회피 중 지령 %.2f, 실제 %.2f m/s', S.u_oa_on, S.u_on));
 
 
 %% 6. 숫자 --------------------------------------------------------------
@@ -189,8 +224,8 @@ fprintf('  평균 |y_e|       %6.2f m   <- LOS 구간만 (최대 %.2f)\n', ...
 fprintf('  (참고) 전 구간   %6.2f m   <- 회피가 섞여 있어 추종 지표가 아니다\n', ...
         S.mean_ye_all);
 fprintf('  평균 속도        %6.2f m/s (지령 %.2f)\n', S.mean_u, u_ref);
-fprintf('  선수추진기 |F_B|  회피 중 최대 %6.1f N (한계 %g)\n', S.FB_on_max, F_bow_max);
-fprintf('                   평상 중 최대 %6.1f N  <- 0 이어야 한다 (5주차와 같음)\n', S.FB_off_max);
+fprintf('  선수추진기 |F_B|  최대 %6.1f N  <- 내내 0 이어야 한다 (한계 %g, Y = 0)\n', ...
+        max(S.FB_on_max, S.FB_off_max), F_bow_max);
 if isnan(S.t_finish)
     fprintf('  완주             아직 (정지 시간을 늘려 다시 돌린다)\n');
 else
@@ -198,14 +233,24 @@ else
 end
 if S.gap_min < 0
     fprintf('  [경고] 선체 틈이 음수다 — 참값표 기준으로 **닿았다**. 라이다와 oa 를 본다\n');
-elseif S.gap_min < SAFE_R
-    fprintf(['  [참고] 선체 틈 %.2f m 가 회피기 안전여유 %.2f m 보다 좁다.\n' ...
-             '         라이다는 원기둥을 접선에서 맞혀 참값보다 0.5~0.7 m 멀게 보므로,\n' ...
-             '         회피기가 켜지지 않았어도 틀린 것은 아니다 (H-3 절 실측 참고)\n'], ...
-            S.gap_min, SAFE_R);
+elseif S.gap_min < GAP_EXPECT - 0.25
+    fprintf(['  [경고] 선체 틈 %.2f m 가 예상 %.2f m (keep-out %.2f - 실측 치우침 %.2f) 보다\n' ...
+             '         0.25 m 넘게 좁다. 회피기를 keep-out %.2f m 로 띄웠는지 본다 :\n' ...
+             '           ros2 param get /collision_avoidance_enu robot.safety_margin_m\n' ...
+             '         run_ca_nodes.sh 의 CA_MARGIN 과 이 파일의 CA_MARGIN 이 같아야 한다 (1-8 절)\n'], ...
+            S.gap_min, GAP_EXPECT, CA_MARGIN, GAP_SHORT, CA_MARGIN);
+else
+    fprintf('  [참고] 예상 틈 %.2f m (keep-out %.2f - 실측 치우침 %.2f) 과 맞는다\n', ...
+            GAP_EXPECT, CA_MARGIN, GAP_SHORT);
 end
-if S.FB_off_max > 0
-    fprintf('  [경고] 평상 구간에서 선수추진기가 0 이 아니다 — oa 게이트(SwayGate)를 본다\n');
+if max(S.FB_off_max, S.FB_on_max) > 0
+    fprintf('  [경고] 선수추진기가 0 이 아니다 — InnerLoop 의 Y_zero -> Alloc/2 선을 본다\n');
+end
+fprintf('  속력 넘겨받기     회피 중 지령 %4.2f / 실제 %4.2f, 평상 실제 %4.2f m/s (가장 느릴 때 지령 %4.2f)\n', ...
+        S.u_oa_on, S.u_on, S.u_off, S.u_oa_min);
+if S.oa_n > 0 && ~(S.u_on < S.u_off - 0.05)
+    fprintf(['  [경고] 회피 구간에서 속력이 줄지 않았다 — AvoidSeam 4번 출력(u_oa) 과\n' ...
+             '         InnerLoop 7번 입력, PickU 의 2번(판단) 배선을 본다\n']);
 end
 end
 

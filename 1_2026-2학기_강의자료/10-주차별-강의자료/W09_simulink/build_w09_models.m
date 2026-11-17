@@ -73,11 +73,15 @@ save_system(m);
 check_lines(m, false); export_diagram(m);
 close_system(m, 0);
 
-%  속 그림 — 이 주차에 새로 생긴 상자 셋만 따로 뽑는다. 나머지는 5주차 그림이 그대로 맞다
+%  속 그림 — 이 주차에 바뀐 상자만 따로 뽑는다. 나머지는 5주차 그림이 그대로 맞다.
+%  InnerLoop 는 새로 생긴 것이 아니라 **고쳐진** 것이다 (속력 스위치·6주차 배분) —
+%  이름이 5주차 것과 겹치지 않게 W09_ 를 붙여 저장한다
 for nm = {'AvoidSeam','GoalPublisher','VizPublisher'}
     f = export_diagram(m, '', nm{1});
     movefile(f, fullfile(here, 'img', [nm{1} '.png']), 'f');
 end
+f = export_diagram(m, '', 'InnerLoop');
+movefile(f, fullfile(here, 'img', 'W09_InnerLoop.png'), 'f');
 fprintf('  W09_1_vrx      생성\n');
 end
 
@@ -146,25 +150,30 @@ function build_vrx(here, m)
 
     % --- 6) 로깅·화면 ---------------------------------------------------
     addLogging(m, 2400, 60);
-    addObserve(m, {'psi_ref','psi'; 'psi_los','psi_oa'; '','oa'; '','y_e'; '','FB'; '','wp_idx'}, ...
+    addObserve(m, {'psi_ref','psi'; 'psi_los','psi_oa'; '','oa'; 'u_oa','u'; '','y_e'; '','FB'; '','wp_idx'}, ...
                2750, 1800);
 
     % --- 7) 설명 --------------------------------------------------------
     retitle(m, ['W09 실습 D  —  LOS 와 파이썬 회피를 한 제어기에 (Gazebo 필요)' newline ...
         'Guidance -> AvoidSeam -> Inner Loop -> Gazebo -> Navigation' newline ...
         '' newline ...
-        '제어기는 5주차 그대로다. 헤딩 P-D 와 속도 PI 는 블록 하나도 바뀌지 않았다.' newline ...
+        '제어기의 식은 5주차 그대로다 — 헤딩 P-D 와 속도 PI 의 이득도 블록도 같다.' newline ...
+        '달라진 것은 그 앞에 붙은 스위치 둘뿐이다 (방위각 Pick · 속력 PickU).' newline ...
         '바뀐 것은 둘이다 — (1) 제어기에 들어가는 명령을 누가 내는가,' newline ...
         '                  (2) 그 명령을 추진기 **셋**에 어떻게 나누는가 (배분은 6주차 것).' newline ...
-        '  oa_flag 가 0 : LOS 가 낸 psi_los 가 그대로 가고 선수추진기는 0 이다 (5주차와 완전히 같다)' newline ...
-        '  oa_flag 가 1 : 파이썬이 낸 psi_oa 가 대신 가고, 선수추진기가 켜져 옆으로도 비킨다' newline ...
-        '배분식의 M = N - l3*FB 가 선수추진기의 요를 되받아 빼므로,' newline ...
-        '옆으로 밀리는 동안에도 선수각은 제어기가 시킨 그대로 돈다 (6주차 2-4절).' newline ...
-        '로그의 psi_los 와 psi_ref 가 갈라지는 구간이 회피 구간이고, 그 구간에서만 FB 가 0 이 아니다.' newline ...
+        '  oa_flag 가 0 : LOS 의 psi_los 와 평상 속력 u_ref 가 간다 (5주차와 완전히 같다)' newline ...
+        '  oa_flag 가 1 : 파이썬의 psi_oa 와 회피 속력 u_oa 가 대신 간다' newline ...
+        '깃발 하나가 방위각과 속력을 **함께** 돌린다 — 그래서 이음새의 신선도 감시 하나가 둘을 다 지킨다.' newline ...
+        'Y(횡력) 는 늘 0 이고, 따라서 FB = 0 이다. 배분식의 M = N - l3*FB 가 M = N 이 되어' newline ...
+        '9주차 배분이 5주차 것과 글자까지 같아진다. 선수추진기 자리는 비워 둔 채 남겨 둔다.' newline ...
+        '로그에서 회피 구간은 psi_los 와 psi_ref 가 갈라지는 곳이고, 거기서 u_oa 가 u_ref 아래로 내려간다.' newline ...
+        '' newline ...
+        '간격은 시뮬링크가 아니라 **파이썬 쪽 keep-out 반경**이 번다 — 회피기가 그 여유를 거의 다 쓰므로' newline ...
+        '실제 틈은 반경보다 1.1 m 쯤 작다. run_ca_nodes.sh 가 2.00 m 로 띄운다 (1-8절).' newline ...
         '' newline ...
         '실행 전: (1) W09_setup  (2) bash run_vrx_ca.sh  (3) bash run_ca_nodes.sh'], ...
-        250, -330);
-    %  -330 인 까닭 — 이 주차의 설명은 5주차의 것보다 길어서 열한 줄(약 132 px)이다.
+        250, -342);
+    %  -342 인 까닭 — 이 주차의 설명은 5주차의 것보다 길어서 열다섯 줄(약 180 px)이다.
     %  -130 에 두면 상자가 [250 -130 590 2] 를 차지해 태그 줄(Go_x_e, y = -8..18)과
     %  겹친다. 240 px 를 더 올려 태그 줄 위로 완전히 비킨다
 
@@ -206,12 +215,13 @@ function addAvoidSeam(m, x, y)
 %   세로줄(x=985). Switch 세 포트가 서로 다른 줄에서 들어오니 피할 길이 없다.
 %   직각 교차는 배선 검사의 일곱 항목에 들지 않는다 (겹침·관통과 다른 것이다).
     s = add_subsys(m, 'AvoidSeam', [x y x+190 y+120], {'psi_los'}, ...
-                   {'psi_ref','psi_oa','oa'}, gnc_colour('guidance'));
+                   {'psi_ref','psi_oa','oa','u_oa'}, gnc_colour('guidance'));
 
     %  add_subsys 가 포트를 기본 자리(입력 x=60, 출력 x=700)에 떨어뜨린다.
     %  그 자리는 아래 상자들과 겹치므로 네 포트를 먼저 제자리에 놓는다
     set_param([s '/psi_los'], 'Position',[  60 240   90 260]);
-    set_param([s '/psi_oa' ], 'Position',[1160  30 1190  50]);
+    set_param([s '/psi_oa' ], 'Position',[1160  20 1190  40]);
+    set_param([s '/u_oa'   ], 'Position',[1160  50 1190  70]);
     set_param([s '/psi_ref'], 'Position',[1160 180 1190 200]);
     set_param([s '/oa'     ], 'Position',[1160 460 1190 480]);
 
@@ -226,9 +236,13 @@ function addAvoidSeam(m, x, y)
     add_block('simulink/Signal Routing/Goto', [s '/Go_new'], ...
               'GotoTag','cmd_new', 'Position',[240 78 320 102]);
 
+    %  한 메시지에서 둘을 뽑는다 — **속력**(linear.x) 과 **방위각**(angular.z).
+    %  차례는 OutputSignals 에 적은 순서다. 1번이 속력, 2번이 방위각이다.
+    %  속력까지 받는 것이 2026-11-17 의 변경이다 — 전에는 방위각만 받고 속력은
+    %  버렸고, 그 대신 선수추진기로 옆으로 밀었다 (addBowThrust 머리글)
     add_block('simulink/Signal Routing/Bus Selector', [s '/SelCmd'], ...
-              'Position',[380 110 430 150]);
-    set_param([s '/SelCmd'], 'OutputSignals','angular.z');
+              'Position',[380 100 430 160]);
+    set_param([s '/SelCmd'], 'OutputSignals','linear.x,angular.z');
 
     add_block('simulink/User-Defined Functions/Fcn', [s '/EnuToNed'], ...
               'Position',[500 112 640 148]);
@@ -278,7 +292,8 @@ function addAvoidSeam(m, x, y)
     %  마지막 인자가 0 이면 "통로가 필요 없다", 즉 양 끝이 같은 높이라 직선이다
     % 배선 — 회피 방위각
     lane_line(s, 'CmdSub',   2, 'SelCmd',   1, 0);      % 직선  y=130
-    lane_line(s, 'SelCmd',   1, 'EnuToNed', 1, 0);      % 직선  y=130
+    lane_line(s, 'SelCmd',   2, 'EnuToNed', 1, 465);    % 방위각 — 꺾임 1 (y=140 -> 130)
+    lane_line(s, 'SelCmd',   1, 'u_oa',     1, 470);    % 속력 — 도면 위(y=60)로 돌려 내보낸다
     lane_line(s, 'CmdSub',   1, 'Go_new',   1, 0);      % 직선  y=90
     % 배선 — 깃발
     lane_line(s, 'FlagSub',  2, 'SelFlag',  1, 0);      % 직선  y=340
@@ -305,8 +320,11 @@ function addAvoidSeam(m, x, y)
         '  Pick 의 2번(판단)이 0.5 보다 작으면 3번(LOS) 을, 크면 1번(회피) 을 낸다.\n' ...
         '  판단 = oa_flag AND (명령이 끊긴 지 %s 초보다 적다)\n' ...
         '\n' ...
+        '넘겨받는 것은 둘이다 — 방위각(여기서 고른다) 과 속력(u_oa 로 그대로 내보낸다).\n' ...
+        '속력을 고르는 스위치는 InnerLoop 안에 있다. 판단(oa) 하나가 둘을 함께 돌린다.\n' ...
+        '\n' ...
         '토픽 둘 — 둘 다 받기만 한다. 이 모델은 회피 쪽으로 아무것도 보내지 않는다.\n' ...
-        '  /vfh/command   geometry_msgs/Twist  angular.z = 절대 방위각 (ENU, rad)\n' ...
+        '  /vfh/command   geometry_msgs/Twist  linear.x = 속력, angular.z = 절대 방위각 (ENU, rad)\n' ...
         '  /vfh/oa_flag   std_msgs/Bool        피하는 중이면 true\n' ...
         '\n' ...
         'oa_flag 는 거리 문턱이 아니다. "목표까지 직진 통로가 막혔는가" 의 답이다.\n' ...
@@ -410,13 +428,15 @@ end
 % 로깅 · 화면
 % =====================================================================
 function addLogging(m, x, y)
-%  5주차 목록에 회피 신호 셋을 더했다 — psi_los, psi_oa, oa.
+%  5주차 목록에 회피 신호 넷을 더했다 — psi_los, psi_oa, oa, u_oa.
 %  psi_ref 는 이제 "제어기가 실제로 받은 명령" 이다.
-%  FB 도 더했다 — 선수추진기 추력 [N]. oa 가 0 인 구간에서 이 값이 정확히 0 인지
-%  보는 것이 "5주차와 같다" 는 말의 증거다 (W09_plot 이 같이 그린다)
-    sig = {'x_n','y_n','psi','psi_ref','psi_los','psi_oa','oa', ...
+%  u_oa 는 회피기가 낸 속력 지령 [m/s] 다. 회피 구간에서 u 가 그것을 따라
+%  내려가는 것이 "속력도 넘겨받았다" 는 말의 증거다.
+%  FB 도 더했다 — 선수추진기 추력 [N]. 이 주차에서는 **내내 0 이어야** 한다
+%  (Y = 0 으로 묶었다). 0 이 아니면 배분이나 배선이 틀린 것이다
+    sig = {'x_n','y_n','psi','psi_ref','psi_los','psi_oa','oa','u_oa', ...
            'y_e','x_e','beta','chi','u','r','U','gate','FL','FR','FB','wp_idx'};
-    tag = {'x_n','y_n','psi','psi_ref','psi_los','psi_oa','oa', ...
+    tag = {'x_n','y_n','psi','psi_ref','psi_los','psi_oa','oa','u_oa', ...
            'y_e','x_e','beta','chi','u','r','U','gate','FL','FR','FB','wp_idx'};
     add_logging_box(m, sig, tag, [x y], 'Ts_ctrl');
 end
@@ -466,11 +486,40 @@ end
 %       5주차   X = FL + FR,   N = (FL - FR)*b
 %       9주차   X = FL + FR,   Y = FB,   N = (FL - FR)*b + l3*FB
 %
-%   Y 지령은 회피할 때만 생긴다
-%       Y_cmd = K_sway * ssa(psi_ref - psi) * oa_flag
-%   oa_flag 가 0 이면 Y_cmd = 0 -> FB = 0 -> 배분식이 5주차와 글자까지 같아진다.
-%   그래서 "제어는 5주차 그대로" 라는 이 주차의 약속이 평상 주행에서 **글자대로**
-%   참이다. 선수추진기는 회피 구간에서만 켜진다.
+%   Y 지령은 **없다** — 늘 0 이다 (2026-11-17 변경)
+%       Y = 0 -> FB = 0 -> 배분식의 M = N - l3*FB 가 M = N 이 되어
+%       9주차 배분이 5주차 것과 **글자까지 같아진다.**
+%   그래도 배분·FB 출력·토픽은 그대로 둔다. 선수추진기를 쓸 자리가 생기면
+%   (예: 도킹 시 옆붙이기) Y 에 들어오는 선 하나만 갈아 끼우면 된다.
+%
+%   왜 옆걸음을 뺐는가 / why the sway branch is gone
+%       전에는 여기서 Y_cmd = K_sway * ssa(psi_ref - psi) * oa 를 만들어
+%       회피 구간에서 선수추진기로 옆으로 밀었다. 뺀 까닭은 둘이다.
+%       (1) 역할이 겹친다. 회피는 이제 파이썬 회피기가 낸 **방위각**으로 한다.
+%           같은 헤딩 오차를 한 번 더 써서 옆으로 미는 것은 두 번째 회피기다 —
+%           어느 쪽이 배를 비켰는지 로그에서 가릴 수 없다.
+%       (2) 학부 수준에서 설명값이 낮다. 9주차에서 배울 것은 "누가 방위각을
+%           내는가" 하나다. 옆힘은 거기에 더하는 것이 없다.
+%
+%   대신 **속력**을 받는다 — 같은 깃발 하나(oa)로 둘을 돌린다
+%       u_cmd = oa ? u_oa : u_ref
+%       /vfh/command 의 linear.x 가 회피기가 재어 낸 안전 속력이다. 전에는
+%       이것을 버리고 u_ref 로 계속 달렸다. 느려지면 선회 반경이 함께 줄고
+%       (R = u/r_max), 그래서 호 다발 회피기가 선회 반경에 묶여 못 피하던 자리를
+%       **돌아서** 번다. 그리고 버리던 신호를 쓰는 것이므로 공짜다.
+%
+%   그런데 속력만으로는 간격이 돌아오지 않았다 — 모자란 것은 keep-out 반경이었다
+%       2026-11-17 실측. K_sway = 0 만 하면 gap_min 이 0.01~0.10 m 까지 줄고
+%       (접촉은 clear 2.73 m), 속력까지 넘겨받아도 0.07 m 였다. 캐어 보니
+%       회피기가 keep-out 반경 robot.safety_margin_m = 1.20 m 로 호를 고르는데,
+%       (가) 점수식이 목표 정렬을 더 무겁게 보아 (clearance_weight 0.30) 그 여유를
+%       거의 다 쓰는 호를 고르고, (나) 그 여유는 **예측한 호**에 대한 것이라
+%       헤딩 PD 의 지연·선회 반경 때문에 실제 배는 호의 안쪽을 깎아 간다.
+%       그래서 실제 틈이 반경보다 1.1 m 쯤 작았다. K_sway = 250 은 그 모자람을
+%       옆으로 밀어 메우고 있었던 것이다.
+%       keep-out 을 2.00 m 로 올리니 (run_ca_nodes.sh 의 CA_MARGIN, ROS 파라미터이므로
+%       다시 빌드할 필요 없다) gap_min 이 0.76 · 0.79 m 가 되었다 — 옆힘을 쓰던
+%       예전(0.29~0.52 m)보다 **낫고** F_B ≡ 0 이다. 강의자료 1-8절의 표를 볼 것.
 %
 %   왜 요(yaw) 를 돕게 하지 않았는가 — 작동기로서 더 못하기 때문이다
 %       지레팔이 선수추진기는 l3 = 0.75 m, 선미 한 쌍은 b = 1.027 m 다.
@@ -480,17 +529,12 @@ end
 %       이 선체에서 N 의 30 % 를 선수추진기로 내면 FB = 160 N, 정상 옆속도가
 %       v = 0.86 m/s 다. u = 1.5 m/s 에서 30도 비스듬히 가는 셈이다.
 %
-%   그래서 선수추진기는 **옆걸음 전용**으로 쓴다. 호 다발 회피기가 선회 반경에
-%   묶여 못 피하는 자리를, 선수를 돌리지 않고 옆으로 비켜서 번다.
-%   (1.5 m/s 에서 r_max 약 12 deg/s 면 선회 반경이 7.1 m 다. 호 다발의 폭이
-%    2.7 x 4.5 m 로 배 길이 4.9 m 보다 짧은 것이 이 한계에서 온다.)
-%
-%   6주차의 핵심이 그대로 쓰인다 — allocFcn 의 M = N - l3*FB 한 줄이다.
-%   선수추진기가 낸 요 모멘트 l3*FB 를 선미 쌍이 되받아 빼므로, 옆으로 밀리는
-%   동안에도 선수각은 제어기가 시킨 그대로 돈다 (6주차 2-4절, 2-5절 실측).
+%   6주차의 핵심은 그대로 남는다 — allocFcn 의 M = N - l3*FB 한 줄이다.
+%   이 주차에서는 FB = 0 이라 그 줄이 아무 일도 하지 않지만, 식은 6주차 것 그대로다.
+%   한 식을 두 군데 적어 두지 않는다는 규칙을 지키기 위해 베끼지 않고 가져다 쓴다.
 %
 %   포트는 **끼워 넣지 않고 뒤에 붙인다.** InnerLoop 입력 1~5번과 출력 1~2번,
-%   InnerLoop 의 새 포트(oa · FB)는 맨 뒤에 붙인다 — 5주차 신호선의 번호가 밀리지 않는다.
+%   새 포트(입력 oa·u_oa, 출력 FB)는 맨 뒤에 붙인다 — 5주차 신호선의 번호가 밀리지 않는다.
 % =====================================================================
 function addBowThrust(here, m)
     %  6주차 배분식 본문을 **글자 그대로** 가져온다. 베껴 적지 않는다 —
@@ -499,21 +543,25 @@ function addBowThrust(here, m)
     addpath(p6);
     cl = onCleanup(@() rmpath(p6));   %#ok<NASGU> — 함수를 빠져나갈 때 되돌린다
 
-    % ---------- 1) InnerLoop : 회피 깃발 입력 하나, 선수추력 출력 하나 ----------
+    % ---------- 1) InnerLoop : 회피 깃발·회피 속력 입력 둘, 선수추력 출력 하나 ----------
     ss = [m '/InnerLoop'];
     add_block('simulink/Sources/In1', [ss '/oa'], ...
               'Position', [40 460 75 490], 'Port','6');
+    add_block('simulink/Sources/In1', [ss '/u_oa'], ...
+              'Position', [40 510 75 540], 'Port','7');
 
-    %  Y_cmd = K_sway * ssa(psi_ref - psi) * oa
-    %  헤딩 오차는 제어기가 **이미 센 것**을 받아 쓴다 (Ssa 의 출력). 같은 오차를
-    %  두 번 세지 않는다 — 두 번 세면 한쪽만 고쳐질 자리가 하나 더 생긴다
-    add_block('simulink/Math Operations/Gain', [ss '/K_sway'], ...
-              'Position', [410 180 460 220], 'Gain','K_sway');
-    add_block('simulink/Math Operations/Product', [ss '/SwayGate'], ...
-              'Position', [540 180 575 220]);
-    add_line(ss, 'Ssa/1',    'K_sway/1',  'autorouting','on');
-    add_line(ss, 'K_sway/1', 'SwayGate/1','autorouting','on');
-    add_line(ss, 'oa/1',     'SwayGate/2','autorouting','on');
+    %  u_cmd = oa ? u_oa : u_ref
+    %  이음새(AvoidSeam) 가 방위각을 고르는 것과 **똑같은 꼴**이다. 깃발 하나가
+    %  방위각과 속력을 함께 돌린다 — 그래서 신선도 감시 하나가 둘을 다 지킨다.
+    %  스위치를 도면에 보이게 두는 까닭도 이음새와 같다 (addAvoidSeam 머리글)
+    add_block('simulink/Signal Routing/Switch', [ss '/PickU'], ...
+              'Position', [200 370 240 450]);
+    set_param([ss '/PickU'], 'Criteria','u2 >= Threshold', 'Threshold','0.5');
+    delete_line(ss, 'u_ref/1', 'Gate/1');
+    add_line(ss, 'u_oa/1',  'PickU/1', 'autorouting','on');   % 1번 : 회피 속력
+    add_line(ss, 'oa/1',    'PickU/2', 'autorouting','on');   % 2번 : 판단
+    add_line(ss, 'u_ref/1', 'PickU/3', 'autorouting','on');   % 3번 : 평상 속력
+    add_line(ss, 'PickU/1', 'Gate/1',  'autorouting','on');
 
     % ---------- 2) 배분을 6주차 것으로 갈아 끼운다 ----------
     delete_line(ss, 'PI_u/1',  'Alloc/1');
@@ -532,11 +580,15 @@ function addBowThrust(here, m)
 
     add_block('simulink/Sources/Constant', [ss '/PRM'], ...
               'Position', [600 460 690 490], 'Value','alloc_prm');
+    %  Y 는 늘 0 이다 — 상수를 **보이게** 둔다. 선을 지워 포트를 비우면
+    %  "안 쓰는 것" 과 "쓰려다 잊은 것" 을 도면에서 가릴 수 없다 (이 함수 머리글)
+    add_block('simulink/Sources/Constant', [ss '/Y_zero'], ...
+              'Position', [600 510 690 540], 'Value','0');
     add_block('simulink/Sinks/Out1', [ss '/FB'], ...
               'Position', [960 370 995 400], 'Port','3');
 
     add_line(ss,'PI_u/1',    'Alloc/1','autorouting','on');   % X  전후력
-    add_line(ss,'SwayGate/1','Alloc/2','autorouting','on');   % Y  횡력 (회피할 때만)
+    add_line(ss,'Y_zero/1',  'Alloc/2','autorouting','on');   % Y  횡력 — 늘 0
     add_line(ss,'SatN/1',    'Alloc/3','autorouting','on');   % N  요 모멘트
     add_line(ss,'PRM/1',     'Alloc/4','autorouting','on');   % p  = alloc_prm
     add_line(ss,'Alloc/1','FL/1','autorouting','on');
@@ -564,6 +616,15 @@ function addBowThrust(here, m)
     add_line(m, 'AvoidSeam/3', 'InnerLoop/6', 'autorouting','on');   % oa 깃발 (가지)
     G(m, 'FB', 1230, 780);
     add_line(m, 'InnerLoop/3', 'Go_FB/1', 'autorouting','on');       % FB 지령
+    %  회피 속력은 **태그로** 보낸다. 로깅이 어차피 u_oa 태그를 받으므로
+    %  (addLogging) 같은 태그를 InnerLoop 7번 입력에도 쓴다 — 도면을 가로지르는
+    %  긴 선을 하나 안 그린다. oa(6번) 가 직선으로 가는 것과 꼴이 다른 까닭이다.
+    %  이것이 이 주차에서 눈으로 볼 수 있는 회피의 흔적 둘 중 하나다
+    %  (다른 하나는 psi_los 와 psi_ref 가 갈라지는 것)
+    G(m, 'u_oa', 940, 205);
+    add_line(m, 'AvoidSeam/4', 'Go_u_oa/1', 'autorouting','on');
+    fu = F(m, 'u_oa', 900, 860);
+    add_line(m, [fu '/1'], 'InnerLoop/7', 'autorouting','on');
 
     % ---------- 5) 발행 토픽을 셋으로 ----------
     %  상자 안에 벌 하나를 손으로 끼우기보다 add_cmd_publisher 에 토픽 셋을
@@ -595,6 +656,13 @@ function setFcn(sys, path, code)
     ch = S.find('-isa','Stateflow.EMChart','Path',[sys '/' path]);
     ch.Script = code;
     set_param([sys '/' path], 'Position', fpos);
+end
+
+function nm = F(m, tag, x, y)
+%  From 블록 이름은 `Fr_<태그>` 다 — 5주차 빌더의 F 와 같은 것이다
+    nm = from_name(m, tag);
+    add_block('simulink/Signal Routing/From', [m '/' nm], ...
+              'Position', [x y x+70 y+25], 'GotoTag', tag);
 end
 
 function G(m, tag, x, y)
