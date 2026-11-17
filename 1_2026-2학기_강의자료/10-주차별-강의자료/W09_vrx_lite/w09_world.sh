@@ -10,13 +10,19 @@
 #     1) world/stationkeeping_task.sdf 와 world/custom_obstacle/ 을 ASCII 경로로 복사
 #        (~/capstone_ws/worlds/w09/ — 한글 경로를 gz 가 못 읽는 경우를 피한다)
 #     2) GZ_SIM_RESOURCE_PATH 에 그 자리를 넣는다 — model://custom_obstacle 을 찾게
-#     3) W09_WORLD (월드 경로) · W09_LAUNCH (launch 파일) · W09_SPAWN (자리 인자) 를 정한다
+#     3) W09_WORLD (월드 경로) · W09_LAUNCH (launch 파일) · W09_SPAWN (자리 인자) ·
+#        W09_HEADLESS (화면 없이 띄우는 인자) 를 정한다
 #
 #   WORLD=sydney_regatta 처럼 **이름을** 주면 VRX 가 들고 있는 그 월드를 그대로 띄운다.
 
 _W09_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 W09_LAUNCH="$_W09_HERE/w09_ca.launch.py"
 W09_SPAWN=("x:=${START_X:--532}" "y:=${START_Y:-200}" "yaw:=${START_YAW:-1.0}")
+#  화면 없이 띄울 때도 **서버의 렌더 엔진은 ogre 로 낮춘다.** 라이다는 서버가 그린다 —
+#  기본값 ogre2 로 두면 내장 그래픽 노트북에서 라이다가 10 Hz 대신 0.6 Hz 로 나온다
+#  (2026-11-17 노트북 실측: ogre2 0.60 Hz). run_vrx_ca.sh 가 창 있는 판에서 하는 일과 같다
+#  SERVER_ENGINE=ogre2 로 주면 낮추지 않고 띄운다 — 두 엔진을 견줘 볼 때
+W09_HEADLESS=("headless:=true" "extra_gz_args:=--render-engine-server ${SERVER_ENGINE:-ogre}")
 
 if [ -z "$WORLD" ]; then
   _W09_DIR="$HOME/capstone_ws/worlds/w09"

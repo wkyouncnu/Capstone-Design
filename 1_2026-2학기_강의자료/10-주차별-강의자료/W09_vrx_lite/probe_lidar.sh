@@ -33,8 +33,8 @@ BASE=/wamv/sensors/lidars/lidar_wamv_sensor
 bash "$HERE/../W03_vrx_lite/stop_vrx.sh" >/dev/null 2>&1 || true
 sleep 2
 echo "== $GRADE 판으로 띄운다 (화면 없이) =="
-ros2 launch vrx_gz competition.launch.py world:="$WORLD" \
-     urdf:="$U" headless:=true > /tmp/w09_probe_launch.log 2>&1 &
+ros2 launch "$W09_LAUNCH" world:="$W09_WORLD" "${W09_SPAWN[@]}" \
+     urdf:="$U" "${W09_HEADLESS[@]}" > /tmp/w09_probe_launch.log 2>&1 &
 LPID=$!
 trap 'kill $LPID 2>/dev/null; bash "$HERE/../W03_vrx_lite/stop_vrx.sh" >/dev/null 2>&1' EXIT
 

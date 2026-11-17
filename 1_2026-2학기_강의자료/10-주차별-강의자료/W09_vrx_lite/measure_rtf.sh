@@ -58,12 +58,14 @@ printf '%s\n' "------------------------------------------------------------"
 
 for G in "${GRADES[@]}"; do
   U="$(urdf_of "$G")"
-  [ -f "$U" ] || { echo "$G: URDF 가 없음 ($U) — 먼저 make_wamv_ca.sh"; continue; }
+  #  없는 판은 그 자리에서 만든다 — 네 판을 재려고 make_wamv_ca.sh 를 세 번 칠 일이 없게
+  [ -f "$U" ] || [ "$G" = none ] || bash "$HERE/make_wamv_ca.sh" "$G" >/dev/null 2>&1
+  [ -f "$U" ] || { echo "$G: URDF 가 없음 ($U) — bash make_wamv_ca.sh $G 를 따로 돌려 오류를 볼 것"; continue; }
 
   bash "$HERE/../W03_vrx_lite/stop_vrx.sh" >/dev/null 2>&1
 
-  nohup ros2 launch vrx_gz competition.launch.py world:="$WORLD" \
-        urdf:="$U" headless:=true > "$LOG" 2>&1 &
+  nohup ros2 launch "$W09_LAUNCH" world:="$W09_WORLD" "${W09_SPAWN[@]}" \
+        urdf:="$U" "${W09_HEADLESS[@]}" > "$LOG" 2>&1 &
   ST="$(find_stats)" || { echo "$G: gz 통계 토픽이 안 뜸 — $LOG 를 볼 것"; continue; }
   sleep 10                      # 물리가 자리잡기를 기다린다
 

@@ -73,8 +73,8 @@ for Z in "${ZS[@]}"; do
   sleep 2
   CA_LIDAR_Z="$Z" OUT="$HOME/capstone_ws/wamv/wamv_ca_probe.urdf" \
     bash "$HERE/make_wamv_ca.sh" lite >/dev/null 2>&1
-  ros2 launch vrx_gz competition.launch.py world:="$WORLD" \
-       urdf:="$HOME/capstone_ws/wamv/wamv_ca_probe.urdf" headless:=true \
+  ros2 launch "$W09_LAUNCH" world:="$W09_WORLD" "${W09_SPAWN[@]}" \
+       urdf:="$HOME/capstone_ws/wamv/wamv_ca_probe.urdf" "${W09_HEADLESS[@]}" \
        > /tmp/w09_pose_launch.log 2>&1 &
   LPID=$!
   for _ in $(seq 1 60); do

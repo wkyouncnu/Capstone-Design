@@ -8,6 +8,7 @@ function S = W09_vrx_run(T_end, show)
 %
 %   이 스크립트가 대신 해 주는 것
 %     1. **네 가지 토픽**이 다 보이는지 확인 (하나라도 없으면 여기서 멈춘다)
+%        이어서 모델을 올려 미리 컴파일한다 (1-b) — 처음에는 몇 분 걸린다
 %     2. RTF 를 20초 동안 실제로 측정해 페이싱 비율로 쓴다
 %     3. 실행
 %     4. 결과 그림 (W09_plot) + 동기 점검 k + 회피가 실제로 일어났는지 판정
@@ -25,7 +26,7 @@ function S = W09_vrx_run(T_end, show)
 %       bash run_vrx_ca.sh
 %     터미널 2 (회피 노드 + 극좌표 그림)
 %       bash run_ca_nodes.sh
-%     끝낼 때 (**반드시**)  source ~/vrx_ws/install/setup.bash; ros2 run vrx_llm_dock cleanup
+%     끝낼 때 (**반드시**)  bash ../W03_vrx_lite/stop_vrx.sh
 %       남은 gz sim 이 62 GB 까지 자라 메모리를 다 먹는다
 %
 %   시뮬링크 화면(show)을 기본으로 끄는 까닭
@@ -90,6 +91,16 @@ if miss
            '  터미널 2 :  bash run_ca_nodes.sh']);
 end
 fprintf('   넷 다 보인다 — 토픽 %d개\n', numel(tl));
+
+%% 1-b. 모델을 먼저 올리고 컴파일해 둔다 --------------------------------
+%  처음 돌릴 때는 ROS 블록 코드를 만드느라 **몇 분**이 걸린다 (2026-11-17 노트북
+%  실측 약 5 분, 두 번째부터는 수 초). 이것을 RTF 를 잰 **뒤에** 하면 잰 값과
+%  실제 주행 사이가 벌어지고, 그동안 시뮬레이터 시각만 흘러간다.
+%  그래서 재기 전에 끝내 둔다
+fprintf('1-b) 모델 준비 (처음이면 몇 분 걸린다) ... ');   tc = tic;
+load_system(m);
+set_param(m, 'SimulationCommand', 'update');
+fprintf('%.0f 초\n', toc(tc));
 
 %% 2. RTF 측정과 스폰 위치 ----------------------------------------------
 fprintf('2) RTF 측정 (20초)\n');

@@ -5,10 +5,12 @@
 #     터미널 1 :  bash run_vrx_ca.sh
 #     터미널 2 :  bash run_ca_nodes.sh
 #
-#   띄우는 것 셋
-#     ca_bridge.py           참값 오도메트리 -> /wamv/gps_pose   (자를 하나로 맞춘다, 3-2)
-#     collision_avoidance_enu  라이다(.../lidar_wamv_sensor/scan)를 보고 /vfh/command 와 /vfh/oa_flag 를 낸다
-#     ca_viz.py              궤적 · 장애물 · 헤딩 명령 넷을 실시간으로 그린다 (2-6)
+#   띄우는 것 셋 — 학생 PC 에서는 bin/ 의 **실행 파일**로 뜬다 (소스는 저장소에 없다)
+#     bin/ca_bridge     참값 오도메트리 -> /wamv/gps_pose   (자를 하나로 맞춘다, 3-2)
+#     bin/vfh_avoider   회피기. 노드 이름은 collision_avoidance_enu —
+#                       라이다(.../lidar_wamv_sensor/scan)를 보고 /vfh/command 와 /vfh/oa_flag 를 낸다
+#     bin/ca_viz        궤적 · 장애물 · 헤딩 명령 넷을 실시간으로 그린다 (2-6)
+#   소스(ca_bridge.py · ca_viz.py · collision_avoidance_enu.py)가 이 폴더에 있으면 그것을 띄운다
 #
 #   띄우지 **않는** 것 둘 — 이 주차의 요점이 여기에 있다
 #     heading_controller_enu   헤딩 제어는 시뮬링크가 한다 (5주차 PD 를 그대로 쓴다)
@@ -57,10 +59,32 @@ LOG=/tmp/w09_ca_nodes.log
 : > "$LOG"
 echo "노드 로그: $LOG"
 
-python3 "$HERE/ca_bridge.py" >> "$LOG" 2>&1 & PIDS+=($!)
+#  ── 셋을 무엇으로 띄울지 고른다 ─────────────────────────────────────────────
+#  학생 PC  : 소스가 없다 → bin/ 의 실행 파일 (git pull 로 받은 것)
+#  교수 PC  : 소스가 있다 → 소스를 그대로 (고치면 바로 반영된다)
+#  USE_BIN=1 을 주면 소스가 있어도 실행 파일로 띄운다 — 배포본을 시험할 때
+chmod +x "$HERE"/bin/* 2>/dev/null || true
+pick() {   # $1 = 이름 (ca_bridge · ca_viz)  → CMD 배열
+  if [ -z "$USE_BIN" ] && [ -f "$HERE/$1.py" ]; then CMD=(python3 "$HERE/$1.py")
+  elif [ -f "$HERE/bin/$1" ];                     then CMD=("$HERE/bin/$1")
+  else echo "$1 이 없다 — git pull 로 bin/$1 을 받을 것"; exit 1; fi
+}
+if   [ -z "$USE_BIN" ] && [ -f "$HERE/collision_avoidance_enu.py" ]; then
+  AVO=(python3 "$HERE/collision_avoidance_enu.py");            AVO_SAY="소스 (이 폴더)"
+elif [ -z "$USE_BIN" ] && ros2 pkg prefix vrx_control >/dev/null 2>&1; then
+  AVO=(ros2 run vrx_control collision_avoidance_enu);          AVO_SAY="소스 (vrx_control 패키지)"
+elif [ -f "$HERE/bin/vfh_avoider" ]; then
+  AVO=("$HERE/bin/vfh_avoider");                               AVO_SAY="실행 파일 bin/vfh_avoider"
+else
+  echo "회피기가 없다 — git pull 로 bin/vfh_avoider 를 받을 것"; exit 1
+fi
+echo "회피기   : $AVO_SAY"
+
+pick ca_bridge
+"${CMD[@]}" >> "$LOG" 2>&1 & PIDS+=($!)
 sleep 1
 
-ros2 run vrx_control collision_avoidance_enu >> "$LOG" 2>&1 & PIDS+=($!)
+"${AVO[@]}" >> "$LOG" 2>&1 & PIDS+=($!)
 sleep 1
 
 #  ── 시뮬링크 자리를 임시로 메우는 둘 (점검용) ─────────────────────────────────
@@ -87,7 +111,9 @@ if [ -n "$VIZ_SAVE" ]; then
   #  VIZ_EVERY 를 주면 그 초마다 번호를 붙여 여러 장 남긴다 — 회피는 한순간이라
   #  한 장만 찍으면 그 순간을 놓친다. 강의자료 그림 고를 때 쓴다
   [ -n "$VIZ_EVERY" ] && ARGS+=(--every "$VIZ_EVERY")
-  python3 "$HERE/ca_viz.py" "${ARGS[@]}"
+  pick ca_viz
+  "${CMD[@]}" "${ARGS[@]}"
 else
-  python3 "$HERE/ca_viz.py"
+  pick ca_viz
+  "${CMD[@]}"
 fi

@@ -9,6 +9,10 @@
 #   명령만 확인   : DRY=1 bash run_vrx_ca.sh
 #   월드를 바꾸려면 : WORLD=sydney_regatta bash run_vrx_ca.sh
 #
+#   월드와 배 자리 — VRX 원본 stationkeeping_task 에는 피할 장애물이 없고 배가 북 162 에서 뜬다.
+#   이 주차는 이 폴더의 world/stationkeeping_task.sdf (기둥을 놓은 판) 를 쓰고
+#   배를 (동 -532, 북 200) 에 띄운다. 채비는 w09_world.sh, 띄우는 것은 w09_ca.launch.py 가 한다.
+#
 #   6주차 run_vrx_bow.sh 와 다른 곳은 딱 한 군데다 — 렌더 엔진.
 #   6주차 URDF 에는 그림을 그리는 센서가 없어서 서버는 아무것도 렌더하지 않았다.
 #   라이다를 달면 서버가 매 스캔마다 장면을 그린다. 그래서 서버 엔진도 ogre 로 낮춘다.
@@ -17,7 +21,7 @@
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GRADE="${1:-lite}"
 MODE="${2:-gui}"
-WORLD="${WORLD:-stationkeeping_task}"
+source "$HERE/w09_world.sh"   # 장애물 월드 · 띄울 자리 (W09_WORLD · W09_LAUNCH · W09_SPAWN)
 
 source /opt/ros/humble/setup.bash
 source ~/vrx_ws/install/setup.bash
@@ -56,10 +60,12 @@ echo "ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}  (MATLAB W09_setup 의 ros_domain_id 와
 echo "쓰는 URDF  : $U   (라이다 판 $GRADE)"
 echo "추진기 토픽: /wamv/thrusters/{left,right,bow}/thrust   (std_msgs/msg/Float64, 단위 N)"
 echo "라이다 토픽: /wamv/sensors/lidars/lidar_wamv_sensor/points   (sensor_msgs/msg/PointCloud2)"
+echo "월드      : $W09_WORLD"
+echo "배 자리   : ${W09_SPAWN[*]}   (경로 원점 = 동 -532 · 북 200)"
 echo "실행 명령:"
-printf '  ros2 launch vrx_gz competition.launch.py world:=%s' "$WORLD"
-for a in "${ARGS[@]}"; do printf ' "%s"' "$a"; done; echo
+printf '  ros2 launch %s world:=%s' "$W09_LAUNCH" "$W09_WORLD"
+for a in "${W09_SPAWN[@]}" "${ARGS[@]}"; do printf ' "%s"' "$a"; done; echo
 [ -n "$DRY" ] && exit 0
 echo "띄운 뒤 배를 풀어 주어야 움직인다:  gz topic -t /vrx/release -m gz.msgs.Empty -p ''"
 echo "끝낼 때는 이 터미널에서 Ctrl+C"
-exec ros2 launch vrx_gz competition.launch.py world:="$WORLD" "${ARGS[@]}"
+exec ros2 launch "$W09_LAUNCH" world:="$W09_WORLD" "${W09_SPAWN[@]}" "${ARGS[@]}"
