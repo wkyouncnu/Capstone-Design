@@ -25,6 +25,7 @@ function out = TP_gcs(v, t)
 %   조종 — 이 창이 앞에 있을 때
 %     마우스   화살표를 **누르고 있는 동안** 힘이 나간다. 떼면 0
 %     키보드   W 전진 · S 후진 · A 좌선회 · D 우선회 · Q 좌현 횡이동 · E 우현 횡이동 · 스페이스 정지
+%     정지     가운데 '정지' 원을 클릭하면 Simulink 의 정지 버튼이 켜진다 (모든 출력 0, 다시 누르면 풀림)
 %              (방향키 ↑ ↓ ← → 도 W S A D 와 같다)
 %     눌린 값은 appdata 'TP_keys' 에 두고, 모델의 ManualPad/GcsKeys 블록이 매 스텝 읽는다
 %
@@ -230,7 +231,7 @@ end
 th = linspace(0, 2*pi, 40);
 G.hStop = patch(G.pad, 4.5 + 0.62*cos(th), 3.0 + 0.62*sin(th), [0.99 0.89 0.89], ...
                 'EdgeColor', [0.86 0.15 0.15], 'LineWidth', 1.4, ...
-                'ButtonDownFcn', @(~, ~) release_all());
+                'ButtonDownFcn', @(~, ~) toggle_stop(mdl));
 text(G.pad, 4.5, 3.0, '정지', 'HorizontalAlignment', 'center', 'FontSize', 9, ...
      'Color', [0.86 0.15 0.15], 'PickableParts', 'none');
 
@@ -304,6 +305,13 @@ for k = 1:6
     end
 end
 
+%  Simulink 의 정지 버튼(ManualPad/c_stop)이 눌려 있는가 — 눌려 있으면 가운데 원을 빨갛게 채운다
+stopped = false;
+try, stopped = str2double(get_param([G.mdl '/ManualPad/c_stop'], 'Value')) > 0.5; catch, end
+if stopped, set(G.hStop, 'FaceColor', [0.90 0.15 0.15]);
+else,       set(G.hStop, 'FaceColor', [0.99 0.89 0.89]);
+end
+
 %  현재값
 [lat, lon] = G_ll(G, v(1), v(2));
 s = cell(1, 2);
@@ -325,6 +333,11 @@ set(G.txt, 'String', { ...
     sprintf('추력  좌 %+5.0f   우 %+5.0f   선수 %+5.0f N', v(7), v(8), v(9)), ...
     s{1}, s{2}, ...
     sprintf('(판정 : %.0f m 이내 · %.1f m/s 이하 · %.0f 초)', G.holdR, G.holdU, G.holdT)});
+if stopped
+    str = get(G.txt, 'String');
+    str{1} = sprintf('t = %.1f s    ** 정지 버튼 눌림 — 모든 출력 0 **', t);
+    set(G.txt, 'String', str);
+end
 end
 
 % =====================================================================
@@ -360,6 +373,18 @@ end
 
 function release_all()
 setappdata(0, 'TP_keys', zeros(1, 6));
+end
+
+function toggle_stop(mdl)
+%TOGGLE_STOP  GCS 가운데의 '정지' 원 — Simulink 의 정지 버튼(ManualPad/c_stop)을 켜고 끈다
+%   켜면 모든 출력이 0 이 되고, 다시 누르면 풀린다. Simulink 캔버스의 정지 버튼과 같은 값을 쓴다
+release_all();
+try
+    b = [mdl '/ManualPad/c_stop'];
+    on = str2double(get_param(b, 'Value')) > 0.5;
+    set_param(b, 'Value', num2str(double(~on)));
+catch
+end
 end
 
 function key_down(~, e)

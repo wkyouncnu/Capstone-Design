@@ -31,6 +31,8 @@ if ~isequal(getappdata(0, 'TP_skip_setup'), true)
 end
 evalin('base', 'clear out');
 setappdata(0, 'TP_keys', zeros(1, 6));
+%  정지 버튼이 눌린 채로 끝났으면 풀어 놓고 시작한다 (눌린 채면 아무 키도 안 먹는다)
+try, set_param([mdl '/ManualPad/c_stop'], 'Value', '0'); catch, end
 if isappdata(0, 'TP_state'), rmappdata(0, 'TP_state'); end
 setappdata(0, 'TP_gcs_model', mdl);
 B = @(v) evalin('base', v);

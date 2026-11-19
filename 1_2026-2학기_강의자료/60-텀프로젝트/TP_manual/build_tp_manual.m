@@ -10,6 +10,7 @@ function build_tp_manual()
 %
 %   상자마다 하는 일
 %     ManualPad    화살표 버튼 여섯. 누르는 동안 1, 떼면 0. GCS 창의 키보드 입력도 여기로 들어온다
+%                  정지 버튼 하나 — 눌러 두면 모든 출력이 0 (Latch)
 %                  출력 surge · sway · turn  (각각 −1 · 0 · +1)
 %     Allocation   버튼 값에 힘을 곱해 요구 힘 X · Y · N 을 만들고, 세 추진기로 나눈다 (6주차 배분식)
 %     Thrusters    /wamv/thrusters/{left,right,bow}/thrust 로 발행                    (vrx)
@@ -202,6 +203,16 @@ function addManualPad(m, pos)
         set_param(b, 'Binding', info, 'OnValue','1', 'OffValue','0', 'ButtonType','Momentary');
     end
 
+    %  정지 버튼 — 눌러 두면 **모든 출력이 0** 이 된다. 다른 버튼·키보드·스크립트보다 앞선다.
+    %  다른 버튼과 달리 Latch 다 : 한 번 누르면 눌린 채로 있고, 다시 눌러야 풀린다
+    C(ss, 'c_stop', '0', 420, 480);
+    add_block('simulink_hmi_blocks/Push Button', [ss '/btn_stop'], 'Position', [20 400 130 450]);
+    info = Simulink.HMI.ParamSourceInfo;
+    info.BlockPath = [ss '/c_stop'];
+    info.ParamName = 'Value';
+    info.Label     = 'stop';
+    set_param([ss '/btn_stop'], 'Binding', info, 'OnValue','1', 'OffValue','0', 'ButtonType','Latch');
+
     %  GCS 창(키보드 W S A D Q E · 화살표 클릭)에서 눌린 값
     add_block('simulink/Sources/Digital Clock', [ss '/Clk'], 'Position', [420 420 490 450], ...
               'SampleTime','Ts_tp');
@@ -215,8 +226,8 @@ function addManualPad(m, pos)
 'k = zeros(6, 1);'                                                               newline ...
 'k = TP_gcs_keys(t);']);
 
-    addFcn(ss, 'Mix', [780 40 940 470], [ ...
-'function [surge, sway, turn] = Mix(fwd, back, left, right, port, stbd, k)'      newline ...
+    addFcn(ss, 'Mix', [780 40 940 530], [ ...
+'function [surge, sway, turn] = Mix(fwd, back, left, right, port, stbd, k, stop)' newline ...
 '%#codegen'                                                                      newline ...
 '% 버튼 여섯(이 상자의 Push Button)과 GCS 창의 입력 k 를 합친다.'                   newline ...
 '% 어느 쪽에서 누르든 같다 — 하나라도 눌리면 1.'                                    newline ...
@@ -224,17 +235,24 @@ function addManualPad(m, pos)
 ''                                                                               newline ...
 'surge = b(1) - b(2);     % 전진 +1, 후진 -1'                                     newline ...
 'sway  = b(6) - b(5);     % 우현 +1, 좌현 -1   (선수추진기가 맡는다)'              newline ...
-'turn  = b(4) - b(3);     % 우선회 +1 (시계방향), 좌선회 -1']);
+'turn  = b(4) - b(3);     % 우선회 +1 (시계방향), 좌선회 -1'                       newline ...
+''                                                                               newline ...
+'% 정지 버튼이 눌려 있으면 무엇이 눌렸든 0 을 낸다 — 추력 셋이 모두 0 이 된다'       newline ...
+'if stop > 0.5'                                                                  newline ...
+'    surge = 0;  sway = 0;  turn = 0;'                                           newline ...
+'end']);
 
     for k = 1:6, L(ss, ['c_' key{k} '/1'], sprintf('Mix/%d', k)); end
     L(ss, 'Clk/1', 'GcsKeys/1');
     L(ss, 'GcsKeys/1', 'Mix/7');
+    L(ss, 'c_stop/1', 'Mix/8');
     for k = 1:3, L(ss, sprintf('Mix/%d', k), [outs{k} '/1']); end
 
     add_block('built-in/Note', [ss '/n'], 'Position', [20 520 20 520], 'Text', ...
         ['버튼은 신호가 아니라 파라미터를 누른다 — 각 버튼이 Constant 의 Value 에 묶여 있다.' newline ...
          '누르는 동안만 1 이 된다 (Momentary). 모델을 돌린 상태에서 눌러야 반응한다.' newline ...
-         'GcsKeys 는 GCS 창의 키보드(W S A D Q E)와 화살표 클릭을 같은 순서로 들여온다.']);
+         'GcsKeys 는 GCS 창의 키보드(W S A D Q E)와 화살표 클릭을 같은 순서로 들여온다.' newline ...
+         '정지 버튼만 다르다 — 한 번 누르면 눌린 채로 있고(Latch), 그동안 모든 출력이 0 이다. 다시 눌러 푼다.']);
 end
 
 %  버튼을 조종기 모양으로 놓는다 — tidy_model 이 끝난 뒤에 부른다
@@ -262,10 +280,13 @@ function placePad(m)
         set_param([ss '/btn_' lay{k,1}], 'Position', [x y x+w y+h], ...
                   'ButtonText', [lay{k,2} ' ' lay{k,3}], 'ShowName', 'off');
     end
+    ys = y0 + 2*(h+gy);
+    set_param([ss '/btn_stop'], 'Position', [x0 ys x0 + 3*w + 2*gx ys + h], ...
+              'ButtonText', [char(9632) ' 정지 — 모든 출력 0  (다시 누르면 풀림)'], 'ShowName', 'off');
     nt = find_system(ss, 'SearchDepth',1, 'FindAll','on', 'Type','annotation');
     for k = 1:numel(nt)
         p = get_param(nt(k), 'Position');
-        set_param(nt(k), 'Position', [x0, y0 + 2*(h+gy) + 20, x0 + p(3)-p(1), y0 + 2*(h+gy) + 20 + p(4)-p(2)]);
+        set_param(nt(k), 'Position', [x0, ys + h + 40, x0 + p(3)-p(1), ys + h + 40 + p(4)-p(2)]);
     end
 end
 
