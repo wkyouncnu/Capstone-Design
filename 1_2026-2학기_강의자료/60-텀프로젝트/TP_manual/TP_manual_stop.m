@@ -26,6 +26,11 @@ if endsWith(mdl, '_vrx')
     end
 end
 
+%  GCS 를 끄고 돌린 실행(animate = 0)에는 기록이 없다. 지난 실행의 요약을 찍지 않게 여기서 끝낸다
+if isequal(getappdata(0, 'TP_gcs_on'), false)
+    S = struct('n', 0);
+    return
+end
 S = TP_gcs('result');
 if isempty(S) || S.n < 2
     return
