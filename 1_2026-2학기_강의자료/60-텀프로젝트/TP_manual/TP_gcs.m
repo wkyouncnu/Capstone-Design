@@ -87,6 +87,21 @@ if t - G.tDraw < G.every, return; end
 G.tDraw = t;
 draw(G, v, t);
 drawnow limitrate
+
+%% 녹화 — appdata 'TP_rec' 에 폴더와 간격을 주면 그 간격(모델 시간)마다 창을 한 장씩 남긴다
+%   파일 이름에 벽시계(ms)와 모델 시각을 넣는다. 가제보 화면과 나란히 붙일 때 벽시계로 맞춘다
+rec = getappdata(0, 'TP_rec');
+if isstruct(rec) && t - G.tRec >= rec.every
+    if ~isfinite(G.tRec) && ~isfolder(rec.dir), mkdir(rec.dir); end
+    G.tRec = t;
+    fr = getframe(G.fig);
+    im = fr.cdata;
+    %  고해상도 화면에서는 창이 두 배 크기로 잡힌다. 절반으로 줄여 쓴다 — 쓰는 시간이 1/3 로 준다
+    %  (2026-11-19 실측 : getframe 0.09 s + 2760x1560 쓰기 0.07 s. 1 초마다 남겼더니 k = 1.225)
+    if size(im, 2) > 2000, im = im(1:2:end, 1:2:end, :); end
+    imwrite(im, fullfile(rec.dir, sprintf('gcs_%013.0f_%07.1f.jpg', ...
+            double(java.lang.System.currentTimeMillis()), t)), 'Quality', 90);
+end
 end
 
 % =====================================================================
@@ -107,7 +122,7 @@ bm      = B('basemap_name', 'satellite');
 [G.dLat, G.dLon] = deg_per_m(G.lat0);
 
 G.D = zeros(20000, 16);   G.n = 0;
-G.tPrev = 0;   G.tDraw = -inf;
+G.tPrev = 0;   G.tDraw = -inf;   G.tRec = -inf;
 G.hold = [0 0];   G.done = [NaN NaN];   G.dist = [NaN NaN];   G.inside = [false false];
 
 %  미션 지점 — TP_haeyang/haeyang_points.m 이 숫자의 원본이다
@@ -169,7 +184,7 @@ title(G.gx, '3·15 해양누리공원 앞 수역 — 노랑 항적 · 하늘색 
 % --- 오른쪽 그래프 넷 --------------------------------------------------
 x0 = 0.585;  wd = 0.385;  ht = 0.170;
 yb = [0.775 0.545 0.315 0.075];
-ttl = {'선수각 \psi [deg]   (북 0° · 동 90° · 남 180° · 서 270°)', '선수 방향 속도 u [m/s]', ...
+ttl = {'선수각 \psi [deg]   (-180 ~ +180 으로 접음.  북 0 · 동 +90 · 서 -90 · 남 \pm180.  점선이 \pm180 경계)', '선수 방향 속도 u [m/s]', ...
        '위치 [m]   (북 x, 동 y — 월드 원점 기준)', '추력 [N]'};
 for k = 1:4
     G.ax(k) = axes('Parent', G.fig, 'Position', [x0 yb(k) wd ht]); %#ok<LAXES>
@@ -188,7 +203,11 @@ G.hFL  = plot(G.ax(4), NaN, NaN, '-', 'Color', [0.85 0.47 0.02], 'LineWidth', 1.
 G.hFR  = plot(G.ax(4), NaN, NaN, '-', 'Color', [0.49 0.23 0.75], 'LineWidth', 1.3);
 G.hFB  = plot(G.ax(4), NaN, NaN, '-', 'Color', [0.09 0.64 0.29], 'LineWidth', 1.3);
 legend(G.ax(4), {'F_L 좌현', 'F_R 우현', 'F_B 선수'}, 'Location', 'northwest', 'FontSize', 8);
-set(G.ax(1), 'YLim', [0 360], 'YTick', 0:90:360);
+%  축을 ±200 으로 조금 넓게 잡고 ±180 에 점선을 긋는다. 축 끝이 정확히 ±180 이면 경계에서
+%  반대편으로 건너뛰는 자리가 축 밖으로 나가는 것처럼 보인다 (값은 언제나 ±180 안이다)
+set(G.ax(1), 'YLim', [-200 200], 'YTick', -180:90:180);
+yline(G.ax(1),  180, ':', 'Color', [0.35 0.35 0.35], 'LineWidth', 1.0, 'HandleVisibility', 'off');
+yline(G.ax(1), -180, ':', 'Color', [0.35 0.35 0.35], 'LineWidth', 1.0, 'HandleVisibility', 'off');
 
 % --- 조종 버튼 ---------------------------------------------------------
 G.pad = axes('Parent', G.fig, 'Position', [0.015 0.010 0.260 0.235], ...
@@ -252,15 +271,15 @@ for k = 1:2
     else,                  set(G.hRing(k), 'Color', [1.00 0.60 0.15], 'LineWidth', 1.6);
     end
 end
-psd = mod(v(3)*180/pi, 360);
+psd = atan2(sin(v(3)), cos(v(3)))*180/pi;          % -180 ~ +180
 
 %  오른쪽 그래프 — 최근 gcs_window 초
 i0 = find(tv >= t - G.win, 1);
 if isempty(i0), i0 = 1; end
 T  = tv(i0:end);   E = D(i0:end, :);
-ps = mod(E(:, 4)*180/pi, 360);                    % 나침반처럼 0~360° 로 읽는다
-jump = [false; abs(diff(ps)) > 180];              % 0° ↔ 360° 를 넘는 자리에서 선을 끊는다
-ps(jump) = NaN;
+ps = atan2(sin(E(:, 4)), cos(E(:, 4)))*180/pi;    % -180 ~ +180 으로 접는다 (wrapToPi 와 같다)
+jump = [false; abs(diff(ps)) > 180];              % +180 ↔ -180 을 건너뛰는 자리에서 선을 끊는다
+ps(jump) = NaN;                                   % (잇지 않는다 — 이으면 세로줄이 화면을 가로지른다)
 set(G.hPsi, 'XData', T, 'YData', ps);
 set(G.hU,   'XData', T, 'YData', E(:, 5));
 set(G.hV,   'XData', T, 'YData', E(:, 6));
@@ -301,7 +320,7 @@ set(G.txt, 'String', { ...
     sprintf('t = %.1f s', t), ...
     sprintf('위도 %.7f°   경도 %.7f°', lat, lon), ...
     sprintf('북 x %+8.2f m    동 y %+8.2f m', v(1), v(2)), ...
-    sprintf('선수각 %6.1f°    각속도 %+6.1f °/s', psd, v(6)*180/pi), ...
+    sprintf('선수각 %+7.1f°    각속도 %+6.1f °/s', psd, v(6)*180/pi), ...
     sprintf('u %+5.2f m/s    v %+5.2f m/s    속력 %4.2f m/s', v(4), v(5), hypot(v(4), v(5))), ...
     sprintf('추력  좌 %+5.0f   우 %+5.0f   선수 %+5.0f N', v(7), v(8), v(9)), ...
     s{1}, s{2}, ...

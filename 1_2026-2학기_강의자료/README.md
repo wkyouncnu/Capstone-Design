@@ -236,7 +236,7 @@ summary: VRX 기반 USV 제어·자율임무 수업의 강의자료와 지식 �
 
 | 코드 | 내용 |
 |---|---|
-| `TP_manual/` | 수동 조종 실습 — `TP_manual_offline.slx` · `TP_manual_vrx.slx` (쌍둥이) · `TP_gcs.m` (위성지도 GCS) · `TP_manual_setup.m` · `TP_manual_check.m` (버튼 결과표·확인 주행) · `build_tp_manual.m` |
+| `TP_manual/` | 수동 조종 실습 — `TP_manual_offline.slx` · `TP_manual_vrx.slx` (쌍둥이) · `TP_gcs.m` (위성지도 GCS) · `TP_manual_setup.m` · `TP_manual_check.m` (버튼 결과표·확인 주행) · **`TP_mission.m`** (전 구간 — 도킹·탐색·장애물까지 버튼만으로) · `rec_gazebo.py` · `TP_make_video.m` (좌 가제보 · 우 GCS 동영상) · `build_tp_manual.m`. 동영상 `TP_manual_mission.mp4` 는 용량 때문에 저장소 밖(Dropbox)에만 있음 |
 | `TP_haeyang/` | 해양누리 월드 — `haeyangnuri.sdf` · `run_haeyang.sh` · `goto.sh` · `view.sh` · `check_all.sh` · `run_map.m` · **`passable.py`** (선체 크기로 통로 검사) · **`lidar_reach.py`** (장애물이 라이다에 잡히는 거리) · `shots/` 캡처 69 장 (2026-11-19 재측정) |
 | `TP_vrx_lite/` | 텀프로젝트 월드와 인지 확인 예제 — `make_term_world.py` (월드 생성) · `run_vrx_term.sh` · `goto.sh` (16 지점 순간이동) · `topview.sh` (공중 시점 9 자리) · `tp_percep.py` (OpenCV 공통) · `see_placard.py` · `check_all.sh` (전 구간 일괄 점검) · `rec_run.sh` · `xcap.py` · `rec_cam.py` (녹화) |
 | `TP_vrx_lite/shots/` | 실행 캡처 64 장 (공중 9 · 구간 55) + 녹화 18 개 (구간 6 × 가제보·Rviz2·카메라) |

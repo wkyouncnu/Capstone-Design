@@ -4,6 +4,10 @@
 
     python3 passable.py                # 숫자만
     python3 passable.py --png out.png  # 그림까지 (matplotlib 필요)
+    python3 passable.py --path obs.csv # 장애물 구간의 길을 (동, 북) CSV 로 내보낸다
+    python3 passable.py --track run.csv --png run.png
+                                       # **실제로 몬 항적**을 넣어 선체와 장애물 사이를 잰다
+                                       # CSV 열 : t, x_n(북), y_n(동), psi(선수각 rad, 북에서 시계방향)
 
 clearance.py 와 다른 점
     clearance.py 는 배를 **점**으로 보고 통로의 폭만 잰다.
@@ -206,11 +210,117 @@ def build_gates():
     return g, (0.0, -32.0), (W.WP1[0], W.WP1[1]), ys
 
 
+def build_course():
+    """코스 전체 — 부딪힐 수 있는 것을 모두 그린다 (실제 항적을 검사할 때 쓴다)"""
+    g = Grid(-82, 22, -52, 36)
+    for gy, hw, cx in W.GATES:
+        g.circle(cx - hw, gy, 0.75)
+        g.circle(cx + hw, gy, 0.75)
+    g.circle(W.WP1[0], W.WP1[1], 0.5)                 # 위치유지 지점 한가운데의 주황 부표
+    g.circle(W.WP2[0], W.WP2[1], 0.5)
+    #  도킹 구조물 — 뒷벽 하나와 칸막이 넷
+    back_y = W.DOCK_Y_IN + W.BAY_D + W.WALL_T / 2.0
+    g.box(W.DOCK_CX, back_y, 3 * W.BAY_W + 4 * W.WALL_T, W.WALL_T, 0.0)
+    for off in (-1.5, -0.5, 0.5, 1.5):
+        g.box(W.DOCK_CX + off * (W.BAY_W + W.WALL_T), W.DOCK_Y_IN + W.BAY_D / 2.0,
+              W.WALL_T, W.BAY_D, 0.0)
+    for (x, y, _c) in W.SEARCH:
+        g.circle(x, y, 0.6)
+    for (x, y, a, ln) in W.BARRIERS:
+        r = math.radians(a)
+        g.box(x, y, ln, 0.9, r)
+        for sgn in (-ln / 2, ln / 2):
+            g.circle(x + sgn * math.cos(r), y + sgn * math.sin(r), W.FENDER_R)
+    for (x, y) in W.DOMES:
+        g.circle(x, y, W.DOME_R)
+    for (x, y) in W.PILLARS:
+        g.circle(x, y, 0.7)
+    for (rx, ry, gx, gy) in (W.GATE_IN, W.GATE_OUT):
+        g.circle(rx, ry, 0.75)
+        g.circle(gx, gy, 0.75)
+    return g
+
+
+def check_track(csv, png):
+    """실제 항적(t, 북, 동, 선수각)으로 선체 사각형을 놓아 장애물까지의 거리를 잰다"""
+    d = np.loadtxt(csv, delimiter=',', skiprows=1)
+    t, north, east, psi = d[:, 0], d[:, 1], d[:, 2], d[:, 3]
+    g = build_course()
+    dist = g.distance()
+    e = np.r_[np.arange(-L / 2, L / 2, 0.1), L / 2]
+    f = np.r_[np.arange(-B / 2, B / 2, 0.1), B / 2]
+    bx = np.r_[e, e, np.full(f.size, -L / 2), np.full(f.size, L / 2)]
+    by = np.r_[np.full(e.size, -B / 2), np.full(e.size, B / 2), f, f]
+    th = math.pi / 2 - psi                                   # NED 선수각 -> ENU 방위
+    clr = np.empty(len(t))
+    for k in range(len(t)):
+        c, s_ = math.cos(th[k]), math.sin(th[k])
+        hx, hy = east[k] + bx * c - by * s_, north[k] + bx * s_ + by * c
+        i = np.clip(np.round((hx - g.x0) / RES).astype(int), 0, g.nx - 1)
+        j = np.clip(np.round((hy - g.y0) / RES).astype(int), 0, g.ny - 1)
+        clr[k] = dist[j, i].min()
+    #  경계 로프 — 충돌체는 없지만 넘으면 실격. 선체 중심이 구간 안에 있는 동안 로프까지의 거리
+    gr = Grid(-82, 22, -52, 36)
+    for sg in W.ROPE_SEGS:
+        gr.segment(*sg, half=0.05)
+    dr = gr.distance()
+    ins = (east > W.OBS_X0) & (east < W.OBS_X1) & (north > W.OBS_Y0) & (north < W.OBS_Y1)
+    rope = np.array([dr[gr.ij(east[k], north[k])[1], gr.ij(east[k], north[k])[0]] for k in range(len(t))])
+    k = int(np.argmin(clr))
+    print(f'\n[실제 항적 — {os.path.basename(csv)}]')
+    print(f'  기록 {len(t)} 점,  t = {t[0]:.1f} ~ {t[-1]:.1f} s,  '
+          f'길이 {np.hypot(np.diff(east), np.diff(north)).sum():.1f} m')
+    print(f'  **선체 최소 여유 (전 구간)** : {clr[k]:.2f} m   t = {t[k]:.1f} s  (동 {east[k]:.1f} · 북 {north[k]:.1f})')
+    for nm, m in (('항로추종 (북 -30 ~ 4, 동 -9 ~ 9)', (north > -30) & (north < 4) & (np.abs(east) < 9)),
+                  ('도킹 (북 16 이상, 동 -6 ~ 6)', (north > 16) & (np.abs(east) < 6)),
+                  ('탐색 부표 둘레 (동 -45 ~ -20, 북 18 ~ 38)', (east > -45) & (east < -20) & (north > 18) & (north < 38)),
+                  ('장애물 구간 (가상경계선 안)', ins)):
+        if m.any():
+            kk = np.flatnonzero(m)[int(np.argmin(clr[m]))]
+            print(f'    {nm:42s} 최소 {clr[kk]:.2f} m  (t = {t[kk]:.1f} s)')
+    if ins.any():
+        print(f'  가상경계선(로프)까지 선체 중심의 최소 거리 : {rope[ins].min():.2f} m  '
+              f'— 구간 안에 머문 시간 {t[ins][-1] - t[ins][0]:.1f} s')
+    if clr[k] <= 0:
+        print('  ** 선체가 장애물과 겹친 순간이 있다 **')
+    if png:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(13, 10.5))
+        ext = [g.x0, g.x0 + RES * (g.nx - 1), g.y0, g.y0 + RES * (g.ny - 1)]
+        ax.imshow(np.where(g.free, np.minimum(dist, 6.0), np.nan), origin='lower', extent=ext,
+                  cmap='Blues', vmin=0, vmax=6)
+        ax.imshow(np.where(g.free, np.nan, 1.0), origin='lower', extent=ext, cmap='gray', vmin=0, vmax=2)
+        for sg in W.ROPE_SEGS:
+            ax.plot([sg[0], sg[2]], [sg[1], sg[3]], '-', color='#dc2626', lw=1.5)
+        ax.plot(east, north, '-', color='#d97706', lw=1.6)
+        step = max(1, int(round(4.0 / max(np.median(np.diff(t)), 1e-3))))       # 4 초마다 선체
+        for q in range(0, len(t), step):
+            c, s_ = math.cos(th[q]), math.sin(th[q])
+            qx = np.array([-L / 2, L / 2, L / 2, -L / 2, -L / 2])
+            qy = np.array([-B / 2, -B / 2, B / 2, B / 2, -B / 2])
+            ax.plot(east[q] + qx * c - qy * s_, north[q] + qx * s_ + qy * c, '-', color='#dc2626', lw=0.8)
+        ax.plot(east[k], north[k], 'o', ms=14, mfc='none', mec='#dc2626', mew=2)
+        ax.set_title(f'driven track: min hull clearance {clr[k]:.2f} m at t = {t[k]:.0f} s', fontsize=12)
+        ax.set_xlabel('east x [m]')
+        ax.set_ylabel('north y [m]')
+        ax.set_aspect('equal')
+        fig.tight_layout()
+        fig.savefig(png, dpi=110)
+        print(f'  그림 저장 : {png}')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--png', default='')
     ap.add_argument('--speed', type=float, default=1.0)
+    ap.add_argument('--path', default='', help='장애물 구간의 길을 (동, 북) CSV 로 내보낸다')
+    ap.add_argument('--track', default='', help='실제 항적 CSV (t, 북, 동, 선수각 rad)')
     a = ap.parse_args()
+    if a.track:
+        check_track(a.track, a.png)
+        return
 
     print(f'배 : 길이 {L} m · 폭 {B} m   (반폭 {B / 2:.2f} m, 제자리 선회 때 휩쓰는 반경 '
           f'{math.hypot(L, B) / 2:.2f} m)')
@@ -228,6 +338,10 @@ def main():
     out['obs'] = (g2, d2, p2) + sweep(g2, d2, p2)
     r2 = report('장애물회피 — WP2 → 진입 게이트 → 차단벽 넷 → 종료 게이트', g2, d2, p2,
                 *out['obs'][3:], u=a.speed)
+
+    if a.path:
+        np.savetxt(a.path, p2, delimiter=',', header='east,north', comments='', fmt='%.2f')
+        print(f'\n길 저장 : {a.path}  ({len(p2)} 점, 0.25 m 간격)')
 
     print('\n[판정]')
     for nm, r in (('항로추종', r1), ('장애물회피', r2)):
