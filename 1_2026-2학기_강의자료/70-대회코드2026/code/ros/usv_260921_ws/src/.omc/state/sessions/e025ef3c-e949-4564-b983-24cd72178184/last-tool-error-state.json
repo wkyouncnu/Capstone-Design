@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"ls -la ~/.claude/plugins/ 2>/dev/null; echo \\\"=== marketplaces ===\\\"; ls -la ~/.claude/plugins/marketplaces/ 2>/dev/null; echo \\\"=== config ===\\\"; cat ~/.claude/plugins/config.json 2>/dev/...",
+  "error": "Exit code 2\n합계 432\ndrwxrwxr-x  5 ansl ansl   4096  9월 21 17:15 .\ndrwx------ 14 ansl ansl   4096  9월 21 17:24 ..\n-rw-rw-r--  1 ansl ansl     24  9월 21 17:06 .last_inuse_sweep\ndrwxrwxr-x  3 ansl ansl   4096  8월  7 12:04 cache\ndrwxrwxr-x  3 ansl ansl   4096  8월  7 12:04 data\n-rw-rw-r--  1 ansl ansl    400  8월  7 12:04 installed_plugins.json\n-rw-rw-r--  1 ansl ansl    519  9월 21 17:15 known_marketplaces.json\ndrwxrwxr-x  4 ansl ansl   4096  9월 21 17:23 marketplaces\n-rw-------  1 ansl ansl 406641  8월 ...",
+  "timestamp": "2026-09-21T08:24:23.416Z",
+  "retry_count": 1
+}

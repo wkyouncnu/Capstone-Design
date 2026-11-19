@@ -1,0 +1,20 @@
+uint64 timestamp
+
+
+float64 u_time_log
+float64 v_time_log
+float64 r_time_log
+float64 x_time_log
+float64 y_time_log
+float64 psi_time_log
+float64 taux_time_log
+float64 tauy_time_log
+float64 taun_time_log
+float64 motor1_time_log
+float64 motor2_time_log
+float64 motor3_time_log
+float64 motor4_time_log
+float64 alpha1_time_log
+float64 alpha2_time_log
+float64 alpha3_time_log
+float64 alpha4_time_log

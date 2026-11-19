@@ -1,0 +1,74 @@
+module_name: px4_simulink_app
+
+parameters:
+    - group: Waypoint Following
+      definitions:
+
+        SURGE_VEL_P:
+            description:
+                short: Surge Controller P gain
+                long: Surge Controller P gain
+            category: System
+            type: float
+            default: 100.0
+
+        SURGE_VEL_I:
+            description:
+                short: Surge Controller I gain
+                long: Surge Controller I gain
+            category: System
+            type: float
+            default: 0.0
+
+        SURGE_VEL_D:
+            description:
+                short: Surge Controller D gain
+                long: Surge Controller D gain
+            category: System
+            type: float
+            default: 0.0
+
+        SURGE_VEL_KANTI:
+            description:
+                short: Surge Controller Anti Windup
+                long: Surge Controller Anti Windup
+            category: System
+            type: float
+            default: 0.0
+
+        HEADING_P:
+            description:
+                short: Heading Controller P gain
+                long: Heading Controller P gain
+            category: System
+            type: float
+            default: 40.0
+
+        HEADING_D:
+            description:
+                short: Heading Controller D gain
+                long: Heading Controller D gain
+            category: System
+            type: float
+            default: 25.0
+
+    - group: Mission Command
+      definitions:
+
+        U_SETPOINT:
+            description:
+                short: desired surge velocity
+                long: desired surge velocity
+            category: System
+            type: float
+            default: 1.0
+
+        LOS_L:
+            description:
+                short: look ahead distance
+                long: look ahead distance
+            category: System
+            type: float
+            default: 1.5
+
+        

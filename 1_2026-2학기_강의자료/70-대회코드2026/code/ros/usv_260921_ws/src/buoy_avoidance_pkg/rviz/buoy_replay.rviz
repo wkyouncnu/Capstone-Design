@@ -1,0 +1,50 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Cell Size: 1
+      Plane Cell Count: 30
+      Value: true
+    - Class: rviz_default_plugins/PointCloud2
+      Name: LiDAR
+      Topic:
+        Value: /livox/lidar
+        Reliability Policy: Best Effort
+      Color Transformer: Intensity
+      Size (m): 0.03
+      Style: Points
+      Size (Pixels): 2
+      Decay Time: 0
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Buoys
+      Topic:
+        Value: /buoy/markers
+      Value: true
+    - Class: rviz_default_plugins/Image
+      Name: Overlay
+      Topic:
+        Value: /buoy/overlay_image
+        Reliability Policy: Reliable
+      Value: true
+  Global Options:
+    Fixed Frame: livox_frame
+    Background Color: 48; 48; 48
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Name: Current View
+      Scale: 40
+      X: 8
+      Y: 0
+Window Geometry:
+  Height: 1000
+  Width: 1800
+  Overlay:
+    collapsed: false

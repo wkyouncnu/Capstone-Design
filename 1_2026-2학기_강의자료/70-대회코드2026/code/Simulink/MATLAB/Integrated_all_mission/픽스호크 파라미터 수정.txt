@@ -1,0 +1,15 @@
+(바로 스위치 LED 라이트가 안켜질 때 할 것)
+
+PWM_MAIN_FUNC5 = Motor 5
+PWM_MAIN_FUNC8 = Motor 8
+SYS_HITL       = Disabled
+
+픽스호크 재부팅
+
+MAVLink Console 복붙
+
+param set PWM_MAIN_FUNC5 105
+param set PWM_MAIN_FUNC8 108
+param set SYS_HITL 0
+param save
+reboot

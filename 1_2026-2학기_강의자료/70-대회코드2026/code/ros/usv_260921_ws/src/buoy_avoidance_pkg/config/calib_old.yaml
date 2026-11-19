@@ -1,0 +1,17 @@
+# 카메라-라이다 보정값: 기존 배 (노란 선체, ~2026-11-04 실차 시험까지)
+#   내부(f, cx, cy, dist): exp1016 bag 부표 대응점 ~2,300쌍으로 추정.
+#   외부(rvec, tvec): 2026-11-02 야외 bag(rosbag2_2026_11_02-15_03_37, 14 s~) --extrinsic-only, 중앙 4.3 px.
+# 선택: ros2 launch buoy_avoidance_pkg buoy_avoidance.launch.py calib:=old
+# buoy_params.yaml 뒤에 로드되어 cam_* 를 덮어쓴다.
+buoy_avoidance:
+  ros__parameters:
+    cam_width: 640
+    cam_height: 480
+    cam_fx: 239.08
+    cam_fy: 239.08
+    cam_cx: 315.77
+    cam_cy: 233.47
+    cam_dist: [-0.0180, -0.0151, 0.0, 0.0]
+    cam_rvec_correction: [-0.0157, 0.0141, -0.0247]   # 광학 프레임 추가 회전 (rad)
+    cam_tvec: [-0.029, 0.216, 0.250]                # 광학 프레임에서 본 라이다 원점 (m): 오른쪽, 아래, 앞
+    cam_valid_radius_px: 330.0

@@ -1,0 +1,144 @@
+module_name: px4_simulink_app
+
+parameters:
+    - group: Waypoint Following
+      definitions:
+
+        SURGE_VEL_P:
+            description:
+                short: Surge Controller P gain
+                long: Surge Controller P gain
+            category: System
+            type: float
+            default: 100.0
+
+        SURGE_VEL_I:
+            description:
+                short: Surge Controller I gain
+                long: Surge Controller I gain
+            category: System
+            type: float
+            default: 0.0
+
+        SURGE_VEL_D:
+            description:
+                short: Surge Controller D gain
+                long: Surge Controller D gain
+            category: System
+            type: float
+            default: 0.0
+
+        SURGE_VEL_KANTI:
+            description:
+                short: Surge Controller Anti Windup
+                long: Surge Controller Anti Windup
+            category: System
+            type: float
+            default: 0.0
+
+        HEADING_P:
+            description:
+                short: Heading Controller P gain
+                long: Heading Controller P gain
+            category: System
+            type: float
+            default: 40.0
+
+        HEADING_D:
+            description:
+                short: Heading Controller D gain
+                long: Heading Controller D gain
+            category: System
+            type: float
+            default: 25.0
+
+    - group: Mission Command
+      definitions:
+
+        U_SETPOINT:
+            description:
+                short: desired surge velocity
+                long: desired surge velocity
+            category: System
+            type: float
+            default: 1.0
+
+        LOS_L:
+            description:
+                short: look ahead distance
+                long: look ahead distance
+            category: System
+            type: float
+            default: 1.5
+
+        R_D:
+            description:
+                short: disired orbit radius
+                long: disired orbit radius
+            category: System
+            type: float
+            default: 3.0
+
+        P_C:
+            description:
+                short: guidance parameter
+                long: guidance parameter
+            category: System
+            type: float
+            default: 1.0
+        
+        LOITER_ANGLE_DEG:
+            description:
+                short: loitering angle degree
+                long: gloitering angle degree
+            category: System
+            type: float
+            default: 360.0
+
+        DOCKING_RADIUS:
+            description:
+                short: docking switch radius
+                long: docking switch radius
+            category: System
+            type: float
+            default: 0.5
+
+        IDX_X_BIAS:
+            description:
+                short: idx x bias
+                long: idx x bias
+            category: System
+            type: float
+            default: 0.0
+
+        IDX_Y_BIAS:
+            description:
+                short: idx y bias
+                long: idx y bias
+            category: System
+            type: float
+            default: 0.0
+
+        WP_X_BIAS:
+            description:
+                short: wp x bias
+                long: wp x bias
+            category: System
+            type: float
+            default: 0.0
+
+        WP_Y_BIAS:
+            description:
+                short: wp y bias
+                long: wp y bias
+            category: System
+            type: float
+            default: 0.0
+            
+        U_STOP_THRESH:
+            description:
+                short: u stop threshold
+                long: u stop threshold
+            category: System
+            type: float
+            default: 0.05

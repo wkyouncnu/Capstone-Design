@@ -1,0 +1,103 @@
+# buoy_avoidance_pkg 파라미터 — exp1016 bag (2026-10-16 수조 실험) 기준으로 맞춘 값
+# 노드는 시작 시 한 번만 읽는다. 수정 후 런치 재시작 (--symlink-install 이면 재빌드 불필요).
+
+buoy_avoidance:
+  ros__parameters:
+    lidar_topic: /livox/lidar
+    image_topic: /image_raw          # ⚠️ /image_raw/compressed 는 exp1016 에서 mono8(흑백)이었음
+
+    # ── 제어 명령 (/vfh/command, /vfh/oa_flag — collision_avoidance_node_livox 와 같은 규약) ──
+    # operation_mode == active_mode 일 때만 발행, 그 외엔 침묵 (충돌회피 3 / 도킹 4 와 배타).
+    # 부표 추종 중 oa_flag True, 부표가 없으면 경유점 직진(GOAL)/정지(HOLD) + oa_flag False.
+    # active_mode 는 launch 인자가 이 값을 덮어쓴다.
+    rate_hz: 20.0                    # 발행 주기
+    active_mode: 5
+    plan_timeout_sec: 0.5            # 라이다 처리 결과가 이보다 오래되면 속도 0 + oa_flag False
+    heading_timeout_sec: 0.5         # /usv/state/heading 이 이보다 오래되면 속도 0 + oa_flag False
+    position_timeout_sec: 0.5        # /usv/state/position_ned 가 이보다 오래되면 GOAL 대신 HOLD
+    goal_timeout_sec: 0.0            # goal_ned 는 WP 바뀔 때만 오는 이벤트 토픽 → 0 = 무제한
+    goal_speed: 0.8                  # 부표 없을 때 경유점 직진 속도 [m/s]
+    approach_timeout_sec: 15.0       # mode 5 진입 후 부표를 못 본 채 oa_flag True 를 유지하는 최대 시간 (그 뒤 False → mode 1)
+    sensor_qos_reliable: true        # 이미지/점군 구독 QoS. best-effort 는 큰 메시지가 대량 유실됨 (발행 쪽이 BE 일 때만 false)
+    max_image_age_sec: 0.3           # 라이다 도착 시점 기준 이미지가 이보다 오래되면 색 판정 생략
+    publish_overlay: true            # /buoy/overlay_image/compressed (JPEG, 카메라 오버레이 + BEV)
+    overlay_every_n: 1               # CPU 가 빠듯하면 2~5 로
+    overlay_jpeg_quality: 80
+    publish_overlay_raw: false       # true 면 /buoy/overlay_image (bgr8 1.6 MB)도 발행 — best-effort 구독에선 대부분 유실됨
+
+    # ── LiDAR 클러스터링 (라이다 프레임: x 전방, y 왼쪽, z 위) ──
+    min_range_m: 1.0
+    max_range_m: 20.0
+    x_min_m: -3.0
+    z_min_m: -1.0
+    z_max_m: 1.3
+    cluster_tolerance_m: 0.45
+    cluster_min_points: 4
+    buoy_min_extent_m: 0.05
+    buoy_max_extent_m: 1.3
+    buoy_top_max_z_m: 1.15
+    buoy_top_min_z_m: -0.1
+    buoy_bottom_max_z_m: 0.3
+    center_push_m: 0.15
+
+    # ── 어안 카메라 모델 (cv2.fisheye, Kannala-Brandt) ──
+    # cam_* 보정값은 배마다 달라서 config/calib_<이름>.yaml 로 분리했다 (2026-11-06).
+    #   calib_new.yaml  새 배 (하늘색 선체, 2026-11-06~)  ← launch 기본값
+    #   calib_old.yaml  기존 배 (노란 선체, ~2026-11-04)
+    # 선택: buoy_avoidance.launch.py calib:=new|old  (이 파일 뒤에 로드되어 cam_* 를 덮어씀)
+    # 카메라나 라이다 장착을 바꾸면 tools/fit_camera_from_bag.py 로 다시 맞춰 새 calib_*.yaml 을 만들 것.
+
+    # ── 색 판정 ── core.classify_clusters 참고
+    # adaptive(기본): Lab 색상각으로 후보를 나누고, 채도 문턱은 이번 프레임 같은 색 후보 중 최대 채도 × 비율.
+    #   그림자/역광에서 S·V 가 떨어져도 색상각은 유지돼서 고정 HSV 보다 강하다 (11-02 16:36 bag).
+    color_mode: adaptive
+    red_hue_deg: [-40.0, 45.0]
+    green_hue_deg: [100.0, 170.0]
+    color_min_chroma: 7.0
+    color_relative_chroma: 0.4
+    # hsv(비교용): OpenCV HSV, H 0~179. [Hlo,Slo,Vlo, Hhi,Shi,Vhi] 를 이어붙인 평평한 리스트
+    red_hsv_flat: [0, 90, 60, 9, 255, 255, 166, 90, 60, 179, 255, 255]
+    green_hsv_flat: [38, 60, 35, 88, 255, 255]
+    buoy_radius_m: 0.4
+    patch_radius_scale: 0.6
+    patch_min_radius_px: 2
+    patch_max_radius_px: 40
+    min_color_fraction: 0.2
+    color_dominance: 2.0
+
+    # ── 트래커 ──
+    assoc_distance_m: 0.7
+    position_alpha: 0.6
+    track_timeout_sec: 0.6
+    min_hits: 2
+    vote_decay: 0.97
+    min_color_votes: 1.5
+
+    # ── 게이트 플래너 ──
+    red_side: auto                 # auto / left / right — 진행 방향 기준 red 줄이 어느 쪽인지
+    side_memory_sec: 5.0           # auto: 마지막 게이트 쌍의 좌우 배치를 기억하는 시간 (한쪽 줄 모드에 사용)
+    gate_min_width_m: 1.5          # 게이트 폭 2.5 m 기준 (2026-11-11). 이전 exp1016 수조는 6.0~6.5 m 였음 (min 4.5 / max 8.0 / nominal 6.2)
+    gate_max_width_m: 8.0
+    gate_nominal_width_m: 2.5      # 한쪽 줄만 보일 때 줄에서 수로 안쪽으로 옮기는 거리 = 이 값 / 2
+    gate_min_x_m: 0.5
+    max_plan_range_m: 15.0
+    lookahead_m: 3.0
+    safety_radius_m: 1.0
+    clearance_step_m: 0.25
+    clearance_max_shift_m: 2.0
+    max_bearing_deg: 60.0
+    heading_smooth_alpha: 0.35
+    max_heading_rate_deg_s: 60.0
+    default_speed: 0.8
+    curvature_speed_gain: 0.6
+    min_speed_ratio: 0.3
+    hold_sec: 1.0                  # 부표를 다 놓친 뒤 직전 헤딩을 유지하는 시간 (게이트 깜빡임 흡수). 그 뒤엔 GOAL/HOLD 로 넘어감
+
+    # ── 후보 제한 (2026-11-02~, 마지막 게이트 통과 후 지나온 게이트로 되돌아가는 문제) ──
+    # 통과 기억/방향 검사는 /usv/state/position_ned + heading 이 살아 있을 때만 동작한다.
+    max_candidate_bearing_deg: 45.0  # 게이트 중점/한쪽 줄 부표는 전방 ±이 각도 안만 후보
+    passed_gate_memory_sec: 60.0     # 통과한 게이트(red-green 선분을 넘어감)를 후보에서 빼는 시간
+    passed_buoy_radius_m: 1.5        # NED 에서 이 거리 안의 부표는 통과한 게이트의 부표로 봄
+    pending_gate_timeout_sec: 10.0   # 본 게이트를 통과 판정 대기 목록에 두는 시간
+    gate_pass_margin_m: 1.0          # 통과 판정 시 선분 양끝 연장 거리
+    gate_max_turn_deg: 90.0          # 직전 통과 방향과 이보다 크게 다른 방향의 게이트는 버림
