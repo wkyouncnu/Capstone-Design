@@ -160,6 +160,20 @@ case 'W09_1_vrx'
     %   GoalPublisher 는 내보내기만 하므로 CmdPublisher 와 같은 연보라다 (2026-10-27)
     role = [GNC; {'AvoidSeam','guidance'; 'GoalPublisher','ros'}];
 
+% ---- USV 논문 재현 · 핸드 위치 L1-MPC (Ocean Eng. 368, 2026) ------------
+%   강의 사슬이 아니라 논문 재현용이다. 이름이 GNC 표와 다르므로 여기 적는다.
+%     Reference   기준 궤적을 만드는 자리 — 유도와 같은 연보라
+%     Controller  비선형 MPC ( + L1 적응) — 제어(주황)
+%     Environment 바람·파랑 — env(분홍). 외란이지 플랜트가 아니다
+%     Output      **제어점을 정하는 자리**. 이 논문의 핵심이 이 상자 하나다.
+%                 계산해 내보내기만 하므로 measurement(회색)로 둔다
+%     Measure     Table 3·4 의 세 지표가 나오는 자리 — measurement
+case {'USV_1_mpc_cog','USV_2_mpc_hp','USV_3_l1mpc_cog','USV_4_l1mpc_hp'}
+    role = [GNC; {'Command','command'; 'Reference','reference'; ...
+                  'Controller','control'; 'Allocation','allocation'; ...
+                  'Environment','env'; 'MotionModel','plant'; ...
+                  'Output','measurement'; 'Measure','measurement'}];
+
 otherwise
     role = GNC;     % 이름이 관례를 따르면 그대로 맞는다
 end
