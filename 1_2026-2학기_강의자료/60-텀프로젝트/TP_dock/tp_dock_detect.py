@@ -120,7 +120,21 @@ class DockDetect(Node):
         #  90 초 누적을 40 도에 걸쳐 문지른다. 월드로 모으면 접근 중에도 모을 수 있다
         d('accum.world', True)
         d('accum.voxel', 0.05)
-        d('accum.target_pts', 4000)   # voxel 0.05 의 유니크 셀 상한은 약 7000 (0.10 은 1760 이라 4000 에 도달 못함)
+        d('accum.target_pts', 4000)
+        #  **배가 움직이는 동안의 프레임은 버린다** (2026-11-19 실측)
+        #    월드 누적은 odom 자세로 변환해 모으므로, 선회 중에는 스캔 시각과
+        #    자세 시각의 어긋남이 그대로 점을 문지른다. 표류하는 동안 모은
+        #    4000 점으로는 칸이 **두 개만** 잡혔다 (정지 상태에서 모으면 세 개)
+        d('accum.still_only', True)
+        #  한계값을 왜 이렇게 두는가 — 정지한 라이다는 같은 셀만 다시 때린다
+        #    (프레임당 약 250 점, 유니크 셀은 곧 포화) 므로 완전 정지만
+        #    허용하면 4000 점에 **영원히 닿지 않는다**. 시점이 조금씩
+        #    움직여야 셀이 늘어난다. 문지름의 크기로 한계를 정한다:
+        #    자세 시각과 스캔 시각의 어긋남 0.05 초 x 6 deg/s = 0.3 deg,
+        #    15 m 거리에서 8 cm (복셀 5 cm 와 같은 자리). 20 deg/s 면 26 cm 로
+        #    벽이 두 겹으로 보인다 — 그 프레임만 버린다
+        d('accum.still_v', 0.50)        # m/s
+        d('accum.still_w', 6.0)         # deg/s   # voxel 0.05 의 유니크 셀 상한은 약 7000 (0.10 은 1760 이라 4000 에 도달 못함)
         # 기둥 검출 (대회 bay.*)
         d('bay.band_depth', 9.0)
         d('bay.bin_w', 0.20)
@@ -152,6 +166,8 @@ class DockDetect(Node):
 
         self.acc = PointAccumulator(P('accum.voxel'), P('accum.target_pts'))
         self.pose = None        # (북, 동, yaw_ENU)
+        self.spd = 0.0          # 속력 — 누적 게이트가 본다
+        self.wz = 0.0           # 선회율 rad/s
         self.pts2d = None       # 검출에 쓴 2D 점군 (선체계)
         self.bays = []          # 선체계 베이
         self.world = []         # 월드 (북, 동, 개구부방위 rad, 폭, 접근wp북, 접근wp동)
@@ -203,6 +219,9 @@ class DockDetect(Node):
     def cb_odom(self, m):
         q = m.pose.pose.orientation
         self.pose = (m.pose.pose.position.y, m.pose.pose.position.x, yaw_of(q))
+        v = m.twist.twist.linear
+        self.spd = math.hypot(v.x, v.y)
+        self.wz = abs(m.twist.twist.angular.z)
 
     # 선체계(라이다) <-> 월드 NED 2D 변환 -------------------------------
     #   M = [[sy, cy], [cy, -sy]] 는 대칭이고 M^2 = I 라 같은 식이 역변환이다
@@ -238,6 +257,15 @@ class DockDetect(Node):
             return
         if P('accum.enable'):
             world = P('accum.world') and self.pose is not None
+            moving = (P('accum.still_only') and not self.acc.ready and
+                      (self.spd > P('accum.still_v') or
+                       self.wz > math.radians(P('accum.still_w'))))
+            if moving:
+                self.pts2d = d2          # RViz 에는 그대로 보여 준다
+                self.status = ('WAIT STILL %.2f m/s %.1f deg/s (%d/%d)'
+                               % (self.spd, math.degrees(self.wz),
+                                  self.acc.count(), P('accum.target_pts')))
+                return
             self.acc.add(self.b2w(d2) if world else d2)
             pts = self.acc.get()
             if world and len(pts):
