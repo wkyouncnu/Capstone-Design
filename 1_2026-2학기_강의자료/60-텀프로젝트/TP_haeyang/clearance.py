@@ -49,7 +49,7 @@ for (x, y, a, L) in W.BARRIERS:
     fill_box(x, y, L, 0.9, rad)
     for s in (-L / 2.0, L / 2.0):
         fill_circle(x + s * math.cos(rad), y + s * math.sin(rad), W.FENDER_R)
-# 흰 돔 부표 — 수면에서의 반지름 (반쯤 잠겨 z=0.15 에 중심)
+# 흰 돔 부표 — 반지름 그대로 막는다 (중심 높이는 생성기의 DOME_Z)
 for (x, y) in W.DOMES:
     fill_circle(x, y, W.DOME_R)
 # 주황 기둥

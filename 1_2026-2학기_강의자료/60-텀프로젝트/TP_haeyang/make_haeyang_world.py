@@ -111,14 +111,24 @@ def cyl_buoy(name, x, y, rgb, radius=0.6, length=2.0):
 
 DOME_R = 0.9          # 홀로 뜬 흰 돔 부표의 반지름 — 끝 펜더(FENDER_R)와 같은 크기로 둔다
 
+#  라이다에 잡히는 높이 — 2026-11-19 실측(lidar_reach.py)으로 올렸다.
+#    라이다는 수면 위 약 1.7 m 에 있고 세로 16 줄이 2 도 간격(±15 도)이다.
+#    물체 윗면이 h 이면 가장 아래 줄(−15 도)도 (1.7 − h)/tan 15° 안쪽에서는 그 위로 지나간다.
+#      차단벽 윗면 0.50 m  → 12 m 밖에서는 한 점도 안 잡히고, 3~12 m 에서도 줄 사이로 빠져
+#                            5.8 · 171 · 11 · 178 점으로 들쭉날쭉했다
+#      돔 윗면     1.05 m  → 2.5 m 에서 0 점. 접촉 거리(0.9 + 1.23 = 2.13 m) 직전에 사라졌다
+#    그래서 둘 다 올린다. 높이만 바꾸는 것이므로 평면 꼴(폭·반지름)은 그대로다.
+BARRIER_TOP = 1.2     # 차단벽 윗면 높이 [m] (전에는 0.495)
+DOME_Z = 0.45         # 돔·펜더 중심 높이 [m] (전에는 0.15) → 윗면 1.35 m
+
 
 def dome_buoy(name, x, y, radius=DOME_R):
-    """영상의 흰 돔(버섯) 부표. 반쯤 잠긴 구."""
+    """영상의 흰 돔(버섯) 부표. 아래 4 분의 1 이 잠긴 구 (중심 DOME_Z)."""
     r, g, b = WHITE
     return f"""
     <model name="{name}">
       <static>true</static>
-      <pose>{x} {y} 0.15 0 0 0</pose>
+      <pose>{x} {y} {DOME_Z} 0 0 0</pose>
       <link name="link">
         <visual name="visual"><geometry><sphere><radius>{radius}</radius></sphere></geometry>{mat(r, g, b)}</visual>
         <collision name="collision"><geometry><sphere><radius>{radius}</radius></sphere></geometry></collision>
@@ -145,12 +155,14 @@ def barrier(name, x, y, yaw_deg, length=22.0):
     yaw = math.radians(yaw_deg)
     w = 0.9                                   # 각재 폭
     v = []
-    v.append(box_vis('hull', x, y, 0.22, length, w, 0.55, yaw, WHITE))
+    #  각재 — 수면 아래 0.1 m 부터 윗면 BARRIER_TOP 까지 (라이다에 잡히도록 올렸다, 위 설명)
+    hz = BARRIER_TOP + 0.1
+    v.append(box_vis('hull', x, y, BARRIER_TOP - hz / 2.0, length, w, hz, yaw, WHITE))
     #  길이 방향 노란 띠 두 줄
     for i, off in enumerate((-w / 2 + 0.08, w / 2 - 0.08)):
         px = x - off * math.sin(yaw)
         py = y + off * math.cos(yaw)
-        v.append(box_vis(f'rail{i}', px, py, 0.52, length, 0.12, 0.08, yaw,
+        v.append(box_vis(f'rail{i}', px, py, BARRIER_TOP + 0.025, length, 0.12, 0.08, yaw,
                          YELLOW, collide=False))
     #  노란 가로대 (사다리 발판) — 1.2 m 마다
     n = max(2, int(length // 1.2))
@@ -158,17 +170,17 @@ def barrier(name, x, y, yaw_deg, length=22.0):
         s = -length / 2.0 + i * length / n
         px = x + s * math.cos(yaw)
         py = y + s * math.sin(yaw)
-        v.append(box_vis(f'rung{i}', px, py, 0.52, 0.14, w + 0.1, 0.07, yaw,
+        v.append(box_vis(f'rung{i}', px, py, BARRIER_TOP + 0.025, 0.14, w + 0.1, 0.07, yaw,
                          YELLOW, collide=False))
     #  양 끝 흰 돔 펜더 — 영상에서 차단벽을 받치고 있는 그것
     for i, s in enumerate((-length / 2.0, length / 2.0)):
         px = x + s * math.cos(yaw)
         py = y + s * math.sin(yaw)
         r, g, b = WHITE
-        v.append(f'<visual name="fender{i}"><pose>{px:.2f} {py:.2f} 0.15 0 0 0</pose>'
+        v.append(f'<visual name="fender{i}"><pose>{px:.2f} {py:.2f} {DOME_Z} 0 0 0</pose>'
                  f'<geometry><sphere><radius>{FENDER_R}</radius></sphere></geometry>'
                  f'{mat(r, g, b)}</visual>')
-        v.append(f'<collision name="fc{i}"><pose>{px:.2f} {py:.2f} 0.15 0 0 0</pose>'
+        v.append(f'<collision name="fc{i}"><pose>{px:.2f} {py:.2f} {DOME_Z} 0 0 0</pose>'
                  f'<geometry><sphere><radius>{FENDER_R}</radius></sphere></geometry></collision>')
     return static_model(name, ''.join(v),
                         f'부유 차단벽(사다리) {length} m + 양 끝 돔 펜더  — 영상 그대로')
@@ -381,12 +393,15 @@ def land():
 #    새 꼴 : 5.5 m 간격 여섯 쌍, 중심이 0 → +2.6 → +2.6 → 0 → −2.6 → −2.6 (완만한 S 한 번).
 #            구간마다 침로 변화가 최대 25° 다 — 조향은 보이되 과하지 않다.
 #            (게이트 사이 5.5 m 에 좌우 2.6 m 이동 → atan(2.6/5.5) = 25°)
+#  2026-11-19 — 가운데 넷의 반폭을 4.0 → 4.5 m 로 넓혔다 (여섯 쌍 모두 폭 9 m).
+#    passable.py 로 선체 사각형(4.9 x 2.46 m)을 길 따라 밀어 보니, 폭 8 m 에서는 S 자로 비스듬히
+#    지날 때 선체 모서리와 부표 사이가 1.27 m 까지 줄었다. 장애물 구간(2.19 m)보다 빠듯했다.
 #  (북[y], 반폭, 중심 동[x])
 GATES = [(-26.0, 4.5, 0.0),
-         (-20.5, 4.0, 2.6),
-         (-15.0, 4.0, 2.6),
-         (-9.5, 4.0, 0.0),
-         (-4.0, 4.0, -2.6),
+         (-20.5, 4.5, 2.6),
+         (-15.0, 4.5, 2.6),
+         (-9.5, 4.5, 0.0),
+         (-4.0, 4.5, -2.6),
          (1.5, 4.5, -2.6)]
 WP1 = (0.0, 10.0)
 #  선회 궤도 반경 — 부표 하나를 돌 때 그리는 원. 제자리 선회 반경 2.74 m 보다 크게 잡는다.
@@ -423,19 +438,24 @@ OBS_Y0, OBS_Y1 = -46.0, -8.0
 #   막는 쪽 끝은 로프까지 2 m 만 남기고, 그 2 m 는 끝단 펜더(반지름 1.2)가 메운다.
 #   요(yaw)를 90°에서 ±3~5° 흩뜨려 손으로 놓은 꼴을 낸다.
 #   (x, y, yaw[deg], 길이[m])  — y 는 차단벽 한가운데
-#   자리는 **끝을 도는 목**이 7 m 대로 남도록 잡았다. 열 간격 9.0 m, 기울기는 ±1.5° 안.
+#   자리는 **끝을 도는 목**이 8 m 대로 남도록 잡았다. 열 간격 10.0 m, 기울기는 ±1.5° 안.
 #   (기울기를 ±5° 로 주었더니 끝이 옆 열 쪽으로 0.9 m 씩 기울어 목이 5.7 m 로 좁아졌다)
-BARRIERS = [(-34.5, -33.5, 91.2, 22.0),   # 남쪽을 막음 → 북쪽이 통로
-            (-43.5, -20.5, 88.6, 22.0),   # 북쪽을 막음 → 남쪽이 통로
-            (-52.5, -33.5, 91.6, 22.0),   # 남쪽을 막음
-            (-61.5, -20.5, 88.8, 22.0)]   # 북쪽을 막음
+#   2026-11-19 — 열 간격을 9.0 → 10.0 m 로 벌렸다 (동 -34 · -44 · -54 · -64).
+#     9.0 m 일 때 열 사이 목이 7.18 m (반폭 3.59 m) 였다. 선체는 2.19 m 여유로 지나가지만,
+#     9 주차 회피기의 keep-out 반경이 배 반폭 1.23 + 안전여유 2.00 = 3.23 m 라 **남는 틈이 0.7 m** 뿐이었다
+#     — 알고리즘이 맞아도 길이 열리지 않는 폭이다. 10.0 m 로 벌리면 목이 8 m 대가 된다 (passable.py).
+BARRIERS = [(-34.0, -33.5, 91.2, 22.0),   # 남쪽을 막음 → 북쪽이 통로
+            (-44.0, -20.5, 88.6, 22.0),   # 북쪽을 막음 → 남쪽이 통로
+            (-54.0, -33.5, 91.6, 22.0),   # 남쪽을 막음
+            (-64.0, -20.5, 88.8, 22.0)]   # 북쪽을 막음
 # 홀로 뜬 흰 돔 — 영상에도 차단벽과 따로 떠 있는 것이 여럿이다.
-#   앞 넷은 **목을 좁히는 것** : 뚫린 쪽 13.6 m 를 8.7 m 로 줄인다 (막지는 않는다)
+#   앞 넷은 **목을 좁히는 것** : 뚫린 쪽 13.6 m 를 9.7 m 로 줄인다 (막지는 않는다)
+#     2026-11-19 — 로프 쪽으로 1 m 물렸다 (8.7 → 9.7 m). 열 간격을 벌리고 나니 이 돔이 가장 좁은 목이 됐다
 #   뒤 다섯은 배가 지나지 않는 구석에 둔다 — 라이다에는 잡히고 길은 막지 않는다
-DOMES = [(-34.5, -12.0), (-43.5, -42.0), (-52.5, -12.0), (-61.5, -42.0),
-         (-32.3, -26.0), (-32.3, -40.0), (-48.0, -44.8), (-57.0, -10.2), (-66.0, -14.0)]
+DOMES = [(-34.0, -11.0), (-44.0, -43.0), (-54.0, -11.0), (-64.0, -43.0),
+         (-31.8, -26.0), (-31.8, -40.0), (-49.0, -44.8), (-59.0, -10.2), (-67.5, -14.0)]
 # 주황 기둥은 **로프 벽에 붙여** 둔다. 통로 한가운데 두면 차선을 둘로 쪼갠다.
-PILLARS = [(-38.0, -8.6), (-57.0, -45.4), (-66.0, -8.6)]
+PILLARS = [(-39.0, -8.6), (-59.0, -45.4), (-67.0, -8.6)]
 
 #  장애물 구간의 두 게이트 — (빨강 동, 빨강 북, 초록 동, 초록 북)
 #  이 구간은 **서진**이다. 서쪽을 보고 서면 오른손이 북쪽이므로 **빨강이 북**이어야 한다.
