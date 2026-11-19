@@ -174,6 +174,20 @@ case {'USV_1_mpc_cog','USV_2_mpc_hp','USV_3_l1mpc_cog','USV_4_l1mpc_hp'}
                   'Environment','env'; 'MotionModel','plant'; ...
                   'Output','measurement'; 'Measure','measurement'}];
 
+% ---- L1 적응제어 강의 예제 네 단 (L1_tutorial) --------------------------
+%   논문 재현이 아니라 **L1 을 처음 보는 사람에게 가르치는** 사다리다.
+%     u_d         목표 전진 속도 — 설정값이므로 command(흰색)
+%     Controller  식 (4) 기본 제어기 + 식 (11)~(19) L1 — 제어(주황)
+%     Allocation  식 (20) tau = m*nu. 가속도를 힘으로 — allocation(연노랑)
+%     Delay       추진기 입력 지연 (4 단에서만) — thruster(연노랑)
+%     Environment 식 (3) sigma — env(분홍). 외란이지 플랜트가 아니다
+%     Measure     err = u_d - u. 비교의 자 — measurement(회색)
+case {'L1_1_baseline','L1_2_estimator','L1_3_full','L1_4_delay'}
+    role = [GNC; {'u_d','command'; 'Controller','control'; ...
+                  'Allocation','allocation'; 'Delay','thruster'; ...
+                  'Environment','env'; 'MotionModel','plant'; ...
+                  'Measure','measurement'; 'Logging','measurement'}];
+
 otherwise
     role = GNC;     % 이름이 관례를 따르면 그대로 맞는다
 end
