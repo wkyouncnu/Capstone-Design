@@ -22,6 +22,7 @@
   - `1_2026-2학기_강의자료/.claude/skills/capstone-lecture-vault/SKILL.md` — 주차 자료 작성·검사
   - `.../skills/simulink-gnc-models/SKILL.md` — Simulink GNC 모델 작성
   - `.../skills/capstone-git-sync/SKILL.md` — 커밋·푸시 관례
+  - `.claude/skills/kakao-done-notify/SKILL.md` (저장소 루트) — **시킨 일이 끝나면 카카오톡 나와의 채팅으로 한 줄 알린다**
 - **VRX 실행 절차**: `.../capstone-lecture-vault/references/vrx-runbook.md` — 다시 알아내지 말고 이것을 읽는다.
 
 ## 손이 자주 미끄러지는 네 가지
@@ -37,6 +38,13 @@
    - 세션마다 다른 값을 주고, `gz topic`/`gz service` 를 치는 터미널에도 **같은 값**을 준다: `export GZ_PARTITION=a2; bash run_vrx.sh`
    - 실측: 값이 다르면 받은 메시지 0 줄, 같으면 둘 다 받음. `GZ_PARTITION=$(hostname):$(whoami)` 로 보낸 것이 **아무것도 설정하지 않은** 구독자에게 닿음
    - **`stop_vrx.sh` 와 `cleanup` 은 칸을 보지 않는다** — 프로세스 이름으로 끄므로 **남의 가제보까지 끈다.** 둘이 돌 때는 띄운 터미널에서 `Ctrl+C`
+
+## 일이 끝나면 카카오톡으로 알린다
+
+교수님이 시킨 일 하나가 끝났을 때 (또는 막혀서 멈출 때) **카카오톡 나와의 채팅으로 한 줄 보낸다.**
+`ToolSearch` 에 `"KakaotalkChat MemoChat"` 으로 도구를 찾아 쓴다 — **최대 200자.**
+중간 단계마다 보내지 않고, 알림은 **교수님과 대화하는 세션 하나만** 보낸다.
+무엇을 적고 무엇을 넣지 않는지는 `.claude/skills/kakao-done-notify/SKILL.md` 에 있다.
 
 ## 세션이 끝날 때
 
