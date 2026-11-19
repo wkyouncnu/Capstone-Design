@@ -1,0 +1,563 @@
+function build_tp_manual()
+% BUILD_TP_MANUAL  수동 조종 실습 모델 둘을 만든다 — 모델이 깨지면 이 한 줄로 되돌린다
+%
+%     TP_manual_offline.slx   버튼 → 추력 배분 → 운동방정식.            가제보 필요 없음
+%     TP_manual_vrx.slx       버튼 → 추력 배분 → 가제보(해양누리 월드).  위치는 GPS 에서
+%
+%   둘은 최상위에서 한 자리만 다르다 (쌍둥이)
+%     offline : ManualPad → Allocation → MotionModel                 → [태그] → GCS · Logging
+%     vrx     : ManualPad → Allocation → Thrusters …가제보… Navigation → [태그] → GCS · Logging
+%
+%   상자마다 하는 일
+%     ManualPad    화살표 버튼 여섯. 누르는 동안 1, 떼면 0. GCS 창의 키보드 입력도 여기로 들어온다
+%                  출력 surge · sway · turn  (각각 −1 · 0 · +1)
+%     Allocation   버튼 값에 힘을 곱해 요구 힘 X · Y · N 을 만들고, 세 추진기로 나눈다 (6주차 배분식)
+%     Thrusters    /wamv/thrusters/{left,right,bow}/thrust 로 발행                    (vrx)
+%     Navigation   GPS → 위치,  오도메트리 → 선수각·속도.  ENU → NED                     (vrx)
+%     MotionModel  3 자유도 운동방정식 + 적분기 (6주차와 같은 계수)                       (offline)
+%     GCS          위성지도 창을 부른다 (TP_gcs.m)
+%     Logging      같은 신호 묶음을 log_tp 로 남긴다
+%
+%   GCS · Logging 이 받는 신호 묶음의 순서 — TP_gcs.m 머리말의 표와 같다
+%     x_n y_n psi u v r FL FR FB X Y N x_true y_true valid   (+ 16 번째에 시각 t)
+
+    here  = fileparts(mfilename('fullpath'));
+    tools = fullfile(here, '..', '..', '_tools');
+    addpath(tools);  addpath(here);
+    cd(here);
+    evalin('base', 'TP_manual_setup');
+    load_system('ros2lib');
+    load_system('simulink_hmi_blocks');
+
+    models = {'TP_manual_offline', 'TP_manual_vrx'};
+    for k = 1:2
+        m = models{k};
+        build_one(m, k == 2);
+        try
+            tidy_model(m, 'KeepRoot', true);
+            load_system(m);
+            placePad(m);                       % 버튼은 배치기가 모른다 — 손으로 놓는다
+            %  Goto 는 아이콘에 태그가 적혀 있다. 이름표까지 두면 옆 선이 그 위를 지난다
+            gt = find_system(m, 'BlockType', 'Goto');
+            for j = 1:numel(gt), set_param(gt{j}, 'ShowName', 'off'); end
+            save_system(m);
+            paint_roles(m, roles());
+            check_colour(m);
+            check_lines(m, false);
+            check_tags(m);
+            export_diagram(m, fullfile(here, 'img'));
+            subs = {'ManualPad', 'Allocation', 'Thrusters', 'Navigation', 'MotionModel', 'GCS'};
+            for j = 1:numel(subs)
+                if getSimulinkBlockHandle([m '/' subs{j}]) > 0
+                    try, export_diagram(m, fullfile(here, 'img'), subs{j}); catch e2, warning(e2.message); end
+                end
+            end
+        catch e
+            warning('build_tp_manual:tidy', '%s', e.message);
+        end
+        try, close_system(m, 0); catch, end
+    end
+    fprintf('\n완료. 생성된 모델:\n');
+    for k = 1:2, fprintf('  %s.slx\n', models{k}); end
+end
+
+% =====================================================================
+function r = roles()
+%  색은 _tools/gnc_colour.m 의 표를 따른다. ManualPad 가 파랑인 까닭 — 유도 자리에 사람이 들어간다
+    r = {'ManualPad','guidance'; 'Allocation','allocation'; 'Thrusters','ros'; ...
+         'Navigation','ros'; 'MotionModel','plant'; 'GCS','measurement'; 'Logging','measurement'};
+end
+
+% =====================================================================
+function build_one(m, is_vrx)
+    try, close_system(m, 0); catch, end
+    if exist([m '.slx'], 'file'), delete([m '.slx']); end
+    new_system(m);
+
+    if is_vrx
+        set_param(m, 'SolverType','Fixed-step', 'SolverName','FixedStepDiscrete');
+    else
+        set_param(m, 'SolverType','Fixed-step', 'SolverName','ode4');   % 연속 적분기가 있다
+    end
+    set_param(m, 'FixedStep','Ts_tp', 'StopTime','T_end_tp', 'SimulationMode','normal', ...
+                 'EnablePacing','on', 'PacingRate','1');
+    %  Run 만 눌러도 돌게 — 경로·설정·GCS 창을 콜백이 맡는다
+    set_param(m, 'PostLoadFcn', sprintf('addpath(fileparts(get_param(''%s'',''FileName'')));', m), ...
+                 'InitFcn',     sprintf('TP_manual_init(''%s'');', m), ...
+                 'StopFcn',     sprintf('TP_manual_stop(''%s'');', m));
+
+    addManualPad(m,  [ 60 140 260 320]);
+    addAllocation(m, [440 140 640 320]);
+    if is_vrx
+        addThrusters(m,  [820 140 1020 320]);
+        addNavigation(m, [820 460 1020 640]);
+        plant = 'Thrusters';
+    else
+        addMotionModel(m, [820 140 1020 320]);
+        plant = 'MotionModel';
+    end
+    addGcs(m,     [ 60 460 260 640]);
+    addLogging(m, [440 460 640 640]);
+
+    for k = 1:3
+        add_line(m, sprintf('ManualPad/%d', k),  sprintf('Allocation/%d', k), 'autorouting','on');
+        add_line(m, sprintf('Allocation/%d', k), sprintf('%s/%d', plant, k),   'autorouting','on');
+    end
+
+    if is_vrx
+        txt = ['텀프로젝트 실습 — 버튼으로 배를 몬다 (가제보 해양누리 월드)' newline newline ...
+               'Run 을 누르면 GCS(위성지도) 창이 뜬다. 그 창을 한 번 클릭하고' newline ...
+               '  W 전진  S 후진  A 좌선회  D 우선회  Q 좌현 횡이동  E 우현 횡이동  스페이스 정지' newline ...
+               'ManualPad 를 더블클릭해 화살표 버튼을 눌러도 같다 (누르는 동안만 힘이 나간다).' newline newline ...
+               '위치는 GPS, 선수각·속도는 오도메트리에서 받는다 (Navigation).' newline ...
+               '실행 전 : WSL 에서 bash run_haeyang.sh lite gui → 배를 푼다 (/vrx/release)'];
+    else
+        txt = ['텀프로젝트 실습 — 버튼으로 배를 몬다 (가제보 없이, 운동방정식)' newline newline ...
+               'Run 을 누르면 GCS(위성지도) 창이 뜬다. 그 창을 한 번 클릭하고' newline ...
+               '  W 전진  S 후진  A 좌선회  D 우선회  Q 좌현 횡이동  E 우현 횡이동  스페이스 정지' newline ...
+               'ManualPad 를 더블클릭해 화살표 버튼을 눌러도 같다 (누르는 동안만 힘이 나간다).' newline newline ...
+               'TP_manual_vrx 와 최상위에서 한 자리만 다르다 — Thrusters·Navigation 대신 MotionModel.' newline ...
+               '값은 TP_manual_setup.m 에서 고친다.'];
+    end
+    add_block('built-in/Note', [m '/n1'], 'Position', [60 -70 60 -70], 'Text', txt);
+
+    save_system(m);
+    fprintf('  %s 생성\n', m);
+end
+
+% =====================================================================
+% 공통 헬퍼
+% =====================================================================
+function ss = newSub(m, name, pos)
+    ss = [m '/' name];
+    add_block('simulink/Ports & Subsystems/Subsystem', ss, 'Position', pos);
+    delete_line(ss, 'In1/1', 'Out1/1');
+    delete_block([ss '/In1']);
+    delete_block([ss '/Out1']);
+end
+
+function inP(ss, name, k)
+    y = 60 + (k-1)*70;
+    add_block('simulink/Sources/In1', [ss '/' name], 'Port', num2str(k), 'Position', [20 y 50 y+14]);
+end
+
+function outP(ss, name, k, x)
+    if nargin < 4, x = 1000; end
+    y = 60 + (k-1)*70;
+    add_block('simulink/Sinks/Out1', [ss '/' name], 'Port', num2str(k), 'Position', [x y x+30 y+14]);
+end
+
+function C(sys, name, value, x, y)
+    add_block('simulink/Sources/Constant', [sys '/' name], 'Position', [x y x+110 y+30], 'Value', value);
+end
+
+function addFcn(sys, name, pos, code)
+    add_block('simulink/User-Defined Functions/MATLAB Function', [sys '/' name], 'Position', pos);
+    fpos = get_param([sys '/' name], 'Position');
+    ch = sfroot().find('-isa','Stateflow.EMChart','Path',[sys '/' name]);
+    ch.Script = code;
+    set_param([sys '/' name], 'Position', fpos);     % 포트가 생기며 블록이 자란다 — 다시 놓는다
+end
+
+function G(sys, tag, x, y, vis)
+    if nargin < 5, vis = 'global'; end
+    add_block('simulink/Signal Routing/Goto', [sys '/Go_' tag], ...
+              'Position', [x y x+80 y+25], 'GotoTag', tag, 'TagVisibility', vis);
+end
+
+function nm = F(sys, tag, x, y)
+    nm = from_name(sys, tag);
+    add_block('simulink/Signal Routing/From', [sys '/' nm], 'Position', [x y x+70 y+25], 'GotoTag', tag);
+end
+
+function L(sys, src, dst)
+    add_line(sys, src, dst, 'autorouting','on');
+end
+
+function tags = busTags()
+%  GCS · Logging 이 받는 신호 묶음. **순서가 곧 계약이다** — TP_gcs.m 머리말의 표와 같다
+    tags = {'x_n','y_n','psi','u','v','r','FL','FR','FB','X','Y','N','x_true','y_true','valid'};
+end
+
+% =====================================================================
+% ManualPad (파랑) — 화살표 버튼 여섯 + GCS 창의 입력
+%   출력 surge (앞 +) · sway (우현 +) · turn (시계방향 +),  각각 −1 · 0 · +1
+% =====================================================================
+function addManualPad(m, pos)
+    ss = newSub(m, 'ManualPad', pos);
+    outs = {'surge','sway','turn'};
+    for k = 1:3, outP(ss, outs{k}, k, 1000); end
+
+    %  버튼은 **신호가 아니라 파라미터**를 누른다. 옆 Constant 의 Value 에 묶어 두고
+    %  누르는 동안 1, 떼면 0 이 되게 한다 (Momentary)
+    key = {'fwd','back','left','right','port','stbd'};
+    for k = 1:6
+        C(ss, ['c_' key{k}], '0', 420, 40 + (k-1)*60);
+        b = [ss '/btn_' key{k}];
+        add_block('simulink_hmi_blocks/Push Button', b, 'Position', [20 40+(k-1)*60 130 90+(k-1)*60]);
+        info = Simulink.HMI.ParamSourceInfo;
+        info.BlockPath = [ss '/c_' key{k}];
+        info.ParamName = 'Value';
+        info.Label     = key{k};
+        set_param(b, 'Binding', info, 'OnValue','1', 'OffValue','0', 'ButtonType','Momentary');
+    end
+
+    %  GCS 창(키보드 W S A D Q E · 화살표 클릭)에서 눌린 값
+    add_block('simulink/Sources/Digital Clock', [ss '/Clk'], 'Position', [420 420 490 450], ...
+              'SampleTime','Ts_tp');
+    addFcn(ss, 'GcsKeys', [560 410 700 460], [ ...
+'function k = GcsKeys(t)'                                                        newline ...
+'%#codegen'                                                                      newline ...
+'% GCS 창에서 눌린 조종 입력을 읽는다 (TP_gcs_keys.m).'                            newline ...
+'%   k = [전진; 후진; 좌선회; 우선회; 좌현 횡이동; 우현 횡이동],  각 0 또는 1'      newline ...
+'% 그림 창의 값이라 코드 생성 대상이 아니다. extrinsic 으로 부른다.'                 newline ...
+'coder.extrinsic(''TP_gcs_keys'');'                                              newline ...
+'k = zeros(6, 1);'                                                               newline ...
+'k = TP_gcs_keys(t);']);
+
+    addFcn(ss, 'Mix', [780 40 940 470], [ ...
+'function [surge, sway, turn] = Mix(fwd, back, left, right, port, stbd, k)'      newline ...
+'%#codegen'                                                                      newline ...
+'% 버튼 여섯(이 상자의 Push Button)과 GCS 창의 입력 k 를 합친다.'                   newline ...
+'% 어느 쪽에서 누르든 같다 — 하나라도 눌리면 1.'                                    newline ...
+'b = min(1, [fwd; back; left; right; port; stbd] + k);'                          newline ...
+''                                                                               newline ...
+'surge = b(1) - b(2);     % 전진 +1, 후진 -1'                                     newline ...
+'sway  = b(6) - b(5);     % 우현 +1, 좌현 -1   (선수추진기가 맡는다)'              newline ...
+'turn  = b(4) - b(3);     % 우선회 +1 (시계방향), 좌선회 -1']);
+
+    for k = 1:6, L(ss, ['c_' key{k} '/1'], sprintf('Mix/%d', k)); end
+    L(ss, 'Clk/1', 'GcsKeys/1');
+    L(ss, 'GcsKeys/1', 'Mix/7');
+    for k = 1:3, L(ss, sprintf('Mix/%d', k), [outs{k} '/1']); end
+
+    add_block('built-in/Note', [ss '/n'], 'Position', [20 520 20 520], 'Text', ...
+        ['버튼은 신호가 아니라 파라미터를 누른다 — 각 버튼이 Constant 의 Value 에 묶여 있다.' newline ...
+         '누르는 동안만 1 이 된다 (Momentary). 모델을 돌린 상태에서 눌러야 반응한다.' newline ...
+         'GcsKeys 는 GCS 창의 키보드(W S A D Q E)와 화살표 클릭을 같은 순서로 들여온다.']);
+end
+
+%  버튼을 조종기 모양으로 놓는다 — tidy_model 이 끝난 뒤에 부른다
+%     [Q 좌현]  [W 전진]  [E 우현]
+%     [A 좌선회][S 후진]  [D 우선회]
+function placePad(m)
+    ss  = [m '/ManualPad'];
+    blk = find_system(ss, 'SearchDepth', 1, 'Type', 'block');
+    xmin = inf;  ymin = inf;
+    for k = 2:numel(blk)
+        if contains(get_param(blk{k}, 'Name'), 'btn_'), continue; end
+        p = get_param(blk{k}, 'Position');
+        xmin = min(xmin, p(1));  ymin = min(ymin, p(2));
+    end
+    w = 130;  h = 70;  gx = 14;  gy = 30;
+    x0 = xmin - 3*w - 2*gx - 90;   y0 = ymin + 20;
+    lay = {'port',  char(8678), '좌현 횡 (Q)',  1, 1
+           'fwd',   char(9650), '전진 (W)',     2, 1
+           'stbd',  char(8680), '우현 횡 (E)',  3, 1
+           'left',  char(9664), '좌선회 (A)',   1, 2
+           'back',  char(9660), '후진 (S)',     2, 2
+           'right', char(9654), '우선회 (D)',   3, 2};
+    for k = 1:size(lay, 1)
+        x = x0 + (lay{k,4}-1)*(w+gx);   y = y0 + (lay{k,5}-1)*(h+gy);
+        set_param([ss '/btn_' lay{k,1}], 'Position', [x y x+w y+h], ...
+                  'ButtonText', [lay{k,2} ' ' lay{k,3}], 'ShowName', 'off');
+    end
+    nt = find_system(ss, 'SearchDepth',1, 'FindAll','on', 'Type','annotation');
+    for k = 1:numel(nt)
+        p = get_param(nt(k), 'Position');
+        set_param(nt(k), 'Position', [x0, y0 + 2*(h+gy) + 20, x0 + p(3)-p(1), y0 + 2*(h+gy) + 20 + p(4)-p(2)]);
+    end
+end
+
+% =====================================================================
+% Allocation (노랑) — 버튼 값 → 요구 힘 → 세 추진기
+% =====================================================================
+function addAllocation(m, pos)
+    ss = newSub(m, 'Allocation', pos);
+    ins  = {'surge','sway','turn'};
+    outs = {'FL','FR','FB'};
+    for k = 1:3, inP(ss, ins{k}, k); outP(ss, outs{k}, k, 900); end
+
+    C(ss, 'gain', '[X_btn; Y_btn; N_btn]', 60, 300);
+    C(ss, 'p',    'alloc_prm',             60, 370);
+
+    addFcn(ss, 'Alloc', [300 40 480 420], [ ...
+'function [FL, FR, FB, X, Y, N] = Alloc(surge, sway, turn, g, p)'                 newline ...
+'%#codegen'                                                                      newline ...
+'% 1) 버튼 값(-1 · 0 · +1)에 힘을 곱해 요구 힘·모멘트를 만든다'                     newline ...
+'%      g = [X_btn; Y_btn; N_btn]   버튼 하나가 요구하는 힘 (TP_manual_setup.m)'   newline ...
+'X = g(1)*surge;          % 전후력 [N]      앞 +'                                 newline ...
+'Y = g(2)*sway;           % 횡력 [N]        우현 +'                               newline ...
+'N = g(3)*turn;           % 요 모멘트 [N m] 시계방향 +'                           newline ...
+''                                                                               newline ...
+'% 2) 추력 배분 — 세 추진기로 나눈다 (6주차 W06 의 배분식 그대로)'                  newline ...
+'%      X = FL + FR'                                                             newline ...
+'%      Y = FB                           횡력은 선수추진기만 낸다'                 newline ...
+'%      N = (FL - FR)*b + l3*FB'                                                 newline ...
+'%    p = [b; l3; Fmax; Fbmax]'                                                  newline ...
+'%      b   좌·우 추진기까지의 반폭 [m],  l3  선수추진기의 앞쪽 거리 [m]'           newline ...
+'%'                                                                              newline ...
+'%    선수추진기가 횡력을 내면 요 모멘트 l3*FB 가 딸려 온다. 그 몫을 좌·우'          newline ...
+'%    추진기가 되받아 빼야 선수각이 돌지 않는다 — 아래 N - l3*FB 가 그것이다.'       newline ...
+'b = p(1);  l3 = p(2);  Fmax = p(3);  Fbmax = p(4);'                             newline ...
+'FB = min(max(Y, -Fbmax), Fbmax);'                                               newline ...
+'M  = N - l3*FB;          % 포화된 뒤의 FB 로 센다 — 실제로 딸려 온 만큼만 되받는다' newline ...
+'FL = X/2 + M/(2*b);'                                                            newline ...
+'FR = X/2 - M/(2*b);'                                                            newline ...
+'FL = min(max(FL, -Fmax), Fmax);'                                                newline ...
+'FR = min(max(FR, -Fmax), Fmax);']);
+
+    for k = 1:3, L(ss, [ins{k} '/1'], sprintf('Alloc/%d', k)); end
+    L(ss, 'gain/1', 'Alloc/4');
+    L(ss, 'p/1',    'Alloc/5');
+    tg = {'FL','FR','FB','X','Y','N'};
+    for k = 1:6
+        G(ss, tg{k}, 620, 40 + (k-1)*62);
+        L(ss, sprintf('Alloc/%d', k), ['Go_' tg{k} '/1']);
+    end
+    for k = 1:3, L(ss, sprintf('Alloc/%d', k), [outs{k} '/1']); end
+end
+
+% =====================================================================
+% Thrusters (연보라) — 추력 셋을 가제보로 발행한다                          (vrx)
+% =====================================================================
+function addThrusters(m, pos)
+    ss = newSub(m, 'Thrusters', pos);
+    side = {'left','right','bow'};   tag = {'L','R','B'};   in = {'FL','FR','FB'};
+    for k = 1:3
+        inP(ss, in{k}, k);
+        y = 40 + (k-1)*200;
+        add_block('ros2lib/Blank Message', [ss '/Blank' tag{k}], 'Position', [120 y 230 y+40]);
+        set_param([ss '/Blank' tag{k}], 'entityType','std_msgs/Float64', ...
+                  'messageType','std_msgs/Float64', 'SampleTime','Ts_tp');
+        add_block('simulink/Signal Routing/Bus Assignment', [ss '/Asg' tag{k}], ...
+                  'Position', [360 y-10 420 y+100]);
+        set_param([ss '/Asg' tag{k}], 'AssignedSignals','data');
+        add_block('ros2lib/Publish', [ss '/Pub' tag{k}], 'Position', [540 y+15 650 y+55]);
+        set_param([ss '/Pub' tag{k}], 'topicSource','Specify your own', ...
+                  'topic', ['/wamv/thrusters/' side{k} '/thrust'], 'messageType','std_msgs/Float64');
+        L(ss, ['Blank' tag{k} '/1'], ['Asg' tag{k} '/1']);
+        L(ss, [in{k} '/1'],          ['Asg' tag{k} '/2']);
+        L(ss, ['Asg' tag{k} '/1'],   ['Pub' tag{k} '/1']);
+    end
+    add_block('built-in/Note', [ss '/n'], 'Position', [120 640 120 640], 'Text', ...
+        ['추력 [N] 을 /wamv/thrusters/{left,right,bow}/thrust 로 보낸다 (std_msgs/Float64).' newline ...
+         '가제보의 추진기 플러그인은 명령이 끊기면 마지막 값을 유지한다.' newline ...
+         '그래서 모델의 StopFcn (TP_manual_stop.m) 이 끝에서 0 을 한 번 더 보낸다.']);
+end
+
+% =====================================================================
+% Navigation (연보라) — GPS → 위치,  오도메트리 → 선수각·속도              (vrx)
+%   출력은 포트가 아니라 태그다. GCS · Logging 이 From 으로 받는다
+% =====================================================================
+function addNavigation(m, pos)
+    ss = newSub(m, 'Navigation', pos);
+
+    add_block('ros2lib/Subscribe', [ss '/GpsSub'], 'Position', [60 60 190 120]);
+    set_param([ss '/GpsSub'], 'topicSource','Specify your own', ...
+        'topic','/wamv/sensors/gps/gps/fix', 'messageType','sensor_msgs/NavSatFix', 'sampleTime','Ts_tp');
+    add_block('simulink/Signal Routing/Bus Selector', [ss '/SelGps'], 'Position', [280 150 330 250]);
+    set_param([ss '/SelGps'], 'OutputSignals', 'latitude,longitude');
+
+    add_block('ros2lib/Subscribe', [ss '/OdomSub'], 'Position', [60 330 190 390]);
+    set_param([ss '/OdomSub'], 'topicSource','Specify your own', ...
+        'topic','/wamv/sensors/position/ground_truth_odometry', 'messageType','nav_msgs/Odometry', ...
+        'sampleTime','Ts_tp');
+    add_block('simulink/Signal Routing/Bus Selector', [ss '/SelOdom'], 'Position', [280 290 330 760]);
+    set_param([ss '/SelOdom'], 'OutputSignals', ...
+        ['pose.pose.position.x,pose.pose.position.y,' ...
+         'pose.pose.orientation.x,pose.pose.orientation.y,' ...
+         'pose.pose.orientation.z,pose.pose.orientation.w,' ...
+         'twist.twist.linear.x,twist.twist.linear.y,twist.twist.angular.z']);
+
+    C(ss, 'lat0',  'lat0_tp', 280, 800);
+    C(ss, 'lon0',  'lon0_tp', 280, 860);
+    C(ss, 'dgps',  'd_gps',   280, 920);
+
+    addFcn(ss, 'Nav', [520 40 720 980], [ ...
+'function [x_n, y_n, psi, u, v, r, x_true, y_true, valid] = Nav(gps_new, odo_new, lat, lon, ex, ey, qx, qy, qz, qw, bx, by, wz, lat0, lon0, d_gps)' newline ...
+'%#codegen'                                                                      newline ...
+'% 항법 — 센서 값을 NED 항법량으로 바꾼다.'                                        newline ...
+'%   위치 (x_n, y_n)        GPS 위도·경도 → 월드 원점 기준 북·동 [m]'              newline ...
+'%   선수각 psi · 속도 u v r  오도메트리 (ENU → NED)'                              newline ...
+'%   참값 (x_true, y_true)  오도메트리의 위치. **비교용으로만** 쓴다'               newline ...
+'%'                                                                              newline ...
+'% 가드 — Subscribe 는 첫 메시지 전에 0 으로 채운 버스를 낸다. 위도 0 · 경도 0 은'  newline ...
+'% 실제로 있는 곳(기니만)이라 값으로는 가릴 수 없다. IsNew 깃발을 붙잡아 둔다.'      newline ...
+'persistent seen_gps seen_odo'                                                   newline ...
+'if isempty(seen_gps), seen_gps = false; seen_odo = false; end'                  newline ...
+'if gps_new, seen_gps = true; end'                                               newline ...
+'if odo_new, seen_odo = true; end'                                               newline ...
+'valid = double(seen_gps && seen_odo);'                                          newline ...
+''                                                                               newline ...
+'% 1) 선수각 — 쿼터니언 → yaw_ENU → psi_NED = pi/2 - yaw_ENU'                    newline ...
+'yaw = atan2(2*(qw*qz + qx*qy), 1 - 2*(qy*qy + qz*qz));'                         newline ...
+'p   = pi/2 - yaw;'                                                              newline ...
+'psi = atan2(sin(p), cos(p));'                                                   newline ...
+''                                                                               newline ...
+'% 2) 속도 — y·z 축이 뒤집히므로 부호가 바뀐다'                                    newline ...
+'u =  bx;   v = -by;   r = -wz;'                                                 newline ...
+''                                                                               newline ...
+'% 3) 참값 위치 — ENU 의 y 가 북, x 가 동'                                        newline ...
+'x_true = ey;   y_true = ex;'                                                    newline ...
+''                                                                               newline ...
+'% 4) GPS 위치 — 평면 근사 (A2 부록 예제 5 와 같은 식)'                            newline ...
+'a  = 6378137.0;            % WGS84 장반경 [m]'                                   newline ...
+'e2 = 6.69437999014e-3;     % 제1 이심률의 제곱'                                  newline ...
+'s2 = sind(lat0)^2;'                                                             newline ...
+'Rm = a*(1 - e2)/(1 - e2*s2)^1.5;      % 자오선 곡률반경 (남-북)'                  newline ...
+'Rn = a/sqrt(1 - e2*s2);               % 묘유선 곡률반경 (동-서)'                  newline ...
+'xa = (lat - lat0)*pi/180*Rm;                 % 안테나의 북 [m]'                  newline ...
+'ya = (lon - lon0)*pi/180*Rn*cosd(lat0);      % 안테나의 동 [m]'                  newline ...
+''                                                                               newline ...
+'% 5) 안테나 → 선체 중심. 안테나가 중심 뒤 d_gps 에 있으므로 선수 쪽으로 옮긴다'    newline ...
+'x_n = xa + d_gps*cos(psi);'                                                     newline ...
+'y_n = ya + d_gps*sin(psi);'                                                     newline ...
+''                                                                               newline ...
+'if valid < 0.5'                                                                 newline ...
+'    x_n = 0; y_n = 0; psi = 0; u = 0; v = 0; r = 0; x_true = 0; y_true = 0;'   newline ...
+'end']);
+
+    L(ss, 'GpsSub/1',  'Nav/1');
+    L(ss, 'OdomSub/1', 'Nav/2');
+    L(ss, 'GpsSub/2',  'SelGps/1');
+    L(ss, 'OdomSub/2', 'SelOdom/1');
+    for k = 1:2, L(ss, sprintf('SelGps/%d', k),  sprintf('Nav/%d', k+2)); end
+    for k = 1:9, L(ss, sprintf('SelOdom/%d', k), sprintf('Nav/%d', k+4)); end
+    L(ss, 'lat0/1', 'Nav/14');
+    L(ss, 'lon0/1', 'Nav/15');
+    L(ss, 'dgps/1', 'Nav/16');
+
+    tg = {'x_n','y_n','psi','u','v','r','x_true','y_true','valid'};
+    for k = 1:9
+        G(ss, tg{k}, 860, 60 + (k-1)*100);
+        L(ss, sprintf('Nav/%d', k), ['Go_' tg{k} '/1']);
+    end
+    add_block('built-in/Note', [ss '/n'], 'Position', [60 1040 60 1040], 'Text', ...
+        ['위치는 GPS (/wamv/sensors/gps/gps/fix, 약 20 Hz) 에서, 선수각과 속도는 오도메트리에서 받는다.' newline ...
+         '월드 원점이 실제 위도·경도(35.1862095 N, 128.5665903 E)라 GPS 값이 위성지도에 그대로 얹힌다.' newline ...
+         'x_true · y_true 는 가제보의 참값이다. GPS 로 구한 위치가 맞는지 견줄 때만 쓴다.']);
+end
+
+% =====================================================================
+% MotionModel (초록) — 3 자유도 운동방정식 + 적분기                       (offline)
+%   Thrusters · 가제보 · Navigation 세 자리를 이 상자 하나가 대신한다
+% =====================================================================
+function addMotionModel(m, pos)
+    ss = newSub(m, 'MotionModel', pos);
+    in = {'FL','FR','FB'};
+    for k = 1:3, inP(ss, in{k}, k); end
+
+    F(ss, 's', 60, 40);
+    C(ss, 'p', 'usv_p', 60, 300);
+    addFcn(ss, 'EOM', [260 30 430 340], [ ...
+'function xdot = EOM(s, FL, FR, FB, p)'                                           newline ...
+'%#codegen'                                                                      newline ...
+'% 3 자유도 운동방정식 (NED).  s = [u v r x_n y_n psi]'''                         newline ...
+'%   계수는 VRX 설정파일에서 읽은 값이다 (6주차 W06_setup.m 과 같다)'               newline ...
+'%   p = [m Izz Xu Xuu Yv Yvv Nr Nrr b l3]'''                                    newline ...
+'u = s(1);  v = s(2);  r = s(3);  psi = s(6);'                                   newline ...
+'m_s = p(1);  Izz = p(2);  Xu = p(3);  Xuu = p(4);  Yv = p(5);  Yvv = p(6);'     newline ...
+'Nr = p(7);  Nrr = p(8);  b_h = p(9);  l3 = p(10);'                              newline ...
+''                                                                               newline ...
+'% 추진기 셋이 내는 힘과 모멘트'                                                   newline ...
+'X = FL + FR;'                                                                   newline ...
+'Y = FB;'                                                                        newline ...
+'N = (FL - FR)*b_h + l3*FB;'                                                     newline ...
+''                                                                               newline ...
+'% 저항 — 선형 + 제곱'                                                            newline ...
+'Dx = (Xu + Xuu*abs(u))*u;'                                                      newline ...
+'Dy = (Yv + Yvv*abs(v))*v;'                                                      newline ...
+'Dn = (Nr + Nrr*abs(r))*r;'                                                      newline ...
+''                                                                               newline ...
+'du = (X - Dx)/m_s + v*r;'                                                       newline ...
+'dv = (Y - Dy)/m_s - u*r;'                                                       newline ...
+'dr = (N - Dn)/Izz;'                                                             newline ...
+''                                                                               newline ...
+'xdot = [du; dv; dr; ...'                                                        newline ...
+'        u*cos(psi) - v*sin(psi); ...'                                           newline ...
+'        u*sin(psi) + v*cos(psi); ...'                                           newline ...
+'        r];']);
+    add_block('simulink/Continuous/Integrator', [ss '/Integ'], 'Position', [500 165 540 205], ...
+              'InitialCondition', 'x0_tp');
+    G(ss, 's', 620, 260, 'local');
+    addFcn(ss, 'States', [620 30 780 230], [ ...
+'function [x_n, y_n, psi, u, v, r] = States(s)'                                   newline ...
+'%#codegen'                                                                      newline ...
+'% 상태 벡터 s = [u v r x_n y_n psi] 를 이름 있는 신호로 꺼낸다.'                   newline ...
+'% psi 는 적분값이라 한 바퀴 돌면 2*pi 를 넘는다. -pi..pi 로 접는다.'               newline ...
+'u = s(1);  v = s(2);  r = s(3);'                                                newline ...
+'x_n = s(4);  y_n = s(5);'                                                       newline ...
+'psi = atan2(sin(s(6)), cos(s(6)));']);
+    C(ss, 'One', '1', 620, 420);
+
+    L(ss, 'Fr_s/1', 'EOM/1');
+    for k = 1:3, L(ss, [in{k} '/1'], sprintf('EOM/%d', k+1)); end
+    L(ss, 'p/1', 'EOM/5');
+    L(ss, 'EOM/1', 'Integ/1');
+    L(ss, 'Integ/1', 'States/1');
+    L(ss, 'Integ/1', 'Go_s/1');
+
+    tg = {'x_n','y_n','psi','u','v','r'};
+    for k = 1:6
+        G(ss, tg{k}, 880, 30 + (k-1)*40);
+        L(ss, sprintf('States/%d', k), ['Go_' tg{k} '/1']);
+    end
+    %  운동방정식에는 GPS 와 참값의 구분이 없다. 같은 값을 참값 태그에도 건다
+    G(ss, 'x_true', 880, 290);   L(ss, 'States/1', 'Go_x_true/1');
+    G(ss, 'y_true', 880, 340);   L(ss, 'States/2', 'Go_y_true/1');
+    G(ss, 'valid',  880, 420);   L(ss, 'One/1',    'Go_valid/1');
+end
+
+% =====================================================================
+% GCS (회색) — 신호 열다섯을 묶어 TP_gcs.m 을 부른다
+% =====================================================================
+function addGcs(m, pos)
+    ss = newSub(m, 'GCS', pos);
+    tags = busTags();   n = numel(tags);
+    %  열다섯 신호 + 시각 t 를 한 줄로 묶는다 (16 번째가 t)
+    add_block('simulink/Signal Routing/Mux', [ss '/Mux'], 'Inputs', num2str(n + 1), ...
+              'Position', [220 30 228 30 + (n + 1)*45]);
+    for k = 1:n
+        f = F(ss, tags{k}, 60, 40 + (k-1)*45);
+        L(ss, [f '/1'], sprintf('Mux/%d', k));
+    end
+    add_block('simulink/Sources/Digital Clock', [ss '/Clk'], 'Position', [60 40+n*45 130 65+n*45], ...
+              'SampleTime','Ts_tp');
+    L(ss, 'Clk/1', sprintf('Mux/%d', n + 1));
+    %  제어 주기마다 한 번만 부르게 붙잡는다. 없으면 오프라인(ode4)에서 적분기의 중간
+    %  계산 때마다 불려 한 스텝에 네 번 그린다 (2026-11-19 실측 — 기록이 4 배로 쌓였다)
+    add_block('simulink/Discrete/Zero-Order Hold', [ss '/Hold'], 'Position', [300 365 340 395], ...
+              'SampleTime', 'Ts_tp');
+    addFcn(ss, 'GcsFcn', [440 340 600 420], [ ...
+'function ok = GcsFcn(bus)'                                                       newline ...
+'%#codegen'                                                                      newline ...
+'% GCS 창(위성지도·그래프·조종 버튼)을 부른다 — TP_gcs.m'                          newline ...
+'%   bus = [x_n y_n psi u v r FL FR FB X Y N x_true y_true valid  t]'            newline ...
+'% 그림은 코드 생성 대상이 아니므로 extrinsic 으로 부른다.'                         newline ...
+'coder.extrinsic(''TP_gcs'');'                                                   newline ...
+'ok = 1;'                                                                        newline ...
+'TP_gcs(bus(1:15), bus(16));']);
+    add_block('simulink/Sinks/Terminator', [ss '/End'], 'Position', [680 370 700 390]);
+    G(ss, 'bus_tp', 440, 480);
+    L(ss, 'Mux/1', 'Hold/1');
+    L(ss, 'Hold/1', 'GcsFcn/1');
+    L(ss, 'Hold/1', 'Go_bus_tp/1');
+    L(ss, 'GcsFcn/1', 'End/1');
+end
+
+% =====================================================================
+% Logging (회색) — 같은 묶음을 log_tp 로 남긴다 (열 순서는 busTags 와 같다)
+% =====================================================================
+function addLogging(m, pos)
+    ss = newSub(m, 'Logging', pos);
+    f = F(ss, 'bus_tp', 60, 60);
+    add_block('simulink/Sinks/To Workspace', [ss '/log_tp'], 'Position', [220 55 320 90]);
+    set_param([ss '/log_tp'], 'VariableName','log_tp', 'SaveFormat','Timeseries', 'SampleTime','Ts_tp');
+    L(ss, [f '/1'], 'log_tp/1');
+    add_block('built-in/Note', [ss '/n'], 'Position', [60 140 60 140], 'Text', ...
+        ['log_tp 의 열 순서' newline ...
+         ' 1 x_n   2 y_n   3 psi   4 u   5 v   6 r' newline ...
+         ' 7 FL    8 FR    9 FB   10 X  11 Y  12 N' newline ...
+         '13 x_true  14 y_true  15 valid  16 t']);
+end
